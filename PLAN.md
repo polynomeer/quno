@@ -39,7 +39,10 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 - [x] 2.7 **Watch(Ward)**: 구독/해제(exists-check 기반 idempotent), `POST/DELETE /questions/{id}/watch`, `GET /me/watches`. Outbox 이벤트 발행 골격(V2 마이그레이션 `outbox_events`, `domain/common/OutboxEvent`)을 추가하고 ReviseQuestion/WriteAnswer/AcceptAnswer 유스케이스가 각각 QUESTION_REVISION/NEW_ANSWER/ANSWER_ACCEPTED를 같은 트랜잭션에서 기록하도록 연결(소비자는 Phase 2.8). curl+DB 조회로 와드 등록/멱등성/404, 리비전·답변·채택 시 outbox_events row 생성 확인 완료
 - [x] 2.8 **Notification**: `DispatchOutboxEventsUseCase`가 2초 주기 스케줄러(`OutboxDispatchScheduler`)로 `outbox_events`를 소비해 Watch 기반 fan-out. 이벤트별 추가 수신자(NEW_ANSWER→질문 작성자, ANSWER_ACCEPTED→답변 작성자)와 액터 제외 규칙 반영. `GET /api/v1/me/notifications`, `POST /api/v1/me/notifications/mark-read`(일괄 읽음). V3 마이그레이션으로 notifications.payload_json을 outbox_events와 동일하게 payload(TEXT)로 정리. curl로 질문작성자 자동 알림(미와드 상태에서도), 답변작성자 자동 알림, 액터 제외, 일괄 읽음 처리 전 구간 실제 스케줄러 동작으로 검증 완료
 - [x] 2.9 **Search/Related Questions**: PostgreSQL `to_tsvector`/`plainto_tsquery` 기반 전문검색(제목/본문/에러로그, 최신 버전만) + 태그 ILIKE, `GET /api/v1/search?q=&limit=`. `question_tags` 자기 조인으로 공유 태그 수를 계산하는 관련 질문 추천, `GET /api/v1/questions/{id}/related`(태그 매칭 우선, mvp-scope.md 반영). curl로 제목/본문/에러로그/태그 검색과 태그 중첩 기반 관련 질문(공유 태그 없는 질문 제외) 확인 완료
-- [ ] 2.10 도메인 단위 테스트 — 리비전 append-only, 채택 invariant, 와드 중복 방지, 태그 유일성 등 핵심 규칙 검증
+- [x] 2.10 도메인 단위 테스트 — 2.1~2.9에서 이미 작성한 단위 테스트(인메모리 fake 기반)로 리비전 append-only/버전 단조증가, 채택 invariant(1문제 1채택), 와드 중복 방지, 채택 권한, 리비전 권한 등을 감사. fake로는 검증 불가능한 두 가지 실제 DB 의존 규칙을 `integration/` 패키지에 `@SpringBootTest` 통합 테스트로 보강:
+  - `TagSlugUniquenessIntegrationTest` — 2.6에서 발견한 "Kotlin"/"kotlin" slug 충돌 버그의 회귀 테스트. 실제 `uq_tags_slug_active` 제약에 대해 find-or-create가 여전히 안전한지 확인 (인메모리 fake에는 이 제약이 없어 재현 불가)
+  - `ReviseQuestionConcurrencyIntegrationTest` — 8개 스레드가 동일 질문을 동시에 리비전해도 `SELECT ... FOR UPDATE` 락 덕분에 버전 번호 중복/누락이 없음을 실제 Postgres 트랜잭션으로 검증
+  - 범위 밖으로 확인: Question/Answer/Tag의 `softDelete`는 domain 클래스에 메서드는 있지만 이를 호출하는 유스케이스/API가 MVP P0에 없어("삭제된 질문 수정 금지" 등은 아직 실제로 도달 불가능한 코드) 지금 만들지 않음 — 삭제 기능이 실제로 추가되는 시점에 함께 테스트
 
 ## Phase 3 — MVP P1
 
