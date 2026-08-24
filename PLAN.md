@@ -1,0 +1,71 @@
+# Quno 개발 작업계획서
+
+Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 목록이다. 각 단계는 [커밋 규칙](CONTRIBUTING.md)에 따라 완료 즉시 별도 커밋한다. 진행하면서 체크박스를 갱신한다.
+
+- 제품 범위: [docs/product/mvp-scope.md](docs/product/mvp-scope.md)
+- 제품 철학: [docs/product/vision.md](docs/product/vision.md)
+- 시스템 설계: [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md)
+- 도메인 모델: [docs/architecture/domain-model.md](docs/architecture/domain-model.md)
+- API 설계: [docs/architecture/api-design.md](docs/architecture/api-design.md)
+
+## Phase 0 — 저장소/환경 설정 (완료)
+
+- [x] `.gitignore`, `CLAUDE.md`, `CONTRIBUTING.md` 작성 및 커밋
+- [x] 기획 문서 정리: `docs/product/`, `docs/architecture/` 재작성, 원본은 `docs/archive/`로 이동
+- [x] 작업계획서(`PLAN.md`) 작성
+
+## Phase 1 — 백엔드 프로젝트 스캐폴딩
+
+기술 스택: [system-architecture.md](docs/architecture/system-architecture.md#확정-기술-스택) 참고 (Kotlin, Spring Boot 4.0.0, Java 21, Gradle Kotlin DSL, 단일 모듈 DDD).
+
+- [ ] 1.1 Gradle Kotlin DSL 프로젝트 초기화 (`build.gradle.kts`, `settings.gradle.kts`) — Spring Web, Validation, Security, Data JPA, Data MongoDB, Data Redis, Flyway, Jackson-Kotlin-Module, kotlin-reflect 의존성 포함
+- [ ] 1.2 패키지 뼈대 생성 — [system-architecture.md](docs/architecture/system-architecture.md#패키지-구조-kotlin-단일-모듈)의 `domain / application / interfaces / infrastructure` 구조를 `com.quno.qunobackend` 아래에 생성
+- [ ] 1.3 `docker-compose.yml` 작성 — PostgreSQL 16, MongoDB 7, Redis 7 ([system-architecture.md](docs/architecture/system-architecture.md#로컬-개발-환경) 참고)
+- [ ] 1.4 `application.yml` / `application-local.yml` 작성 (DB/Mongo/Redis 접속 정보, 프로필 분리)
+- [ ] 1.5 Flyway 초기 마이그레이션(`V1__init.sql`) — [domain-model.md](docs/architecture/domain-model.md#erd-postgresql--운영형)의 `users`, `questions`, `question_versions`, `answers`, `tags`, `question_tags`, `watches`, `user_tag_follows`, `notifications` 테이블
+- [ ] 1.6 인증 방식 확정 및 문서 반영 — [api-design.md](docs/architecture/api-design.md#인증-확정-필요--phase-1-착수-시-결정)의 미결정 사항 해소
+- [ ] 1.7 헬스체크/기본 실행 확인 (`./gradlew bootRun`으로 애플리케이션 기동, DB 연결 확인)
+
+## Phase 2 — 코어 도메인 구현 (MVP P0)
+
+순서는 의존관계를 따른다: User → Question/QuestionVersion → Answer → Tag → Watch/Notification → Search 기초.
+
+- [ ] 2.1 **Identity**: User 도메인/JPA 엔티티, 회원가입·로그인 API, 기본 프로필 조회
+- [ ] 2.2 **Question 생성**: Question + QuestionVersion(v1) 생성 유스케이스, `POST /api/v1/questions`, `GET /api/v1/questions/{id}`
+- [ ] 2.3 **Question Revision**: 새 QuestionVersion append, `latest_version_id` 갱신, 동시성 방어(락/유니크 제약), Diff 조회, `POST /api/v1/questions/{id}/versions`, `GET /api/v1/questions/{id}/versions/{version}`
+- [ ] 2.4 **Answer**: 답변 작성/조회, 채택 유스케이스(soft invariant 검증 포함), `POST /api/v1/questions/{id}/answers`, `POST /api/v1/answers/{id}/accept`
+- [ ] 2.5 **Question Status**: `OPEN → NEEDS_INFO → UPDATED → RESOLVED` 상태 전이 구현
+- [ ] 2.6 **Tag**: 태그 CRUD, 질문-태그 연결, 태그 팔로우 API
+- [ ] 2.7 **Watch(Ward)**: 구독/해제(`ON CONFLICT DO NOTHING` idempotent), Outbox 이벤트 발행 골격
+- [ ] 2.8 **Notification**: Watch 기반 알림 fan-out(리비전/새 답변/채택), `GET /api/v1/me/notifications`, 읽음 처리
+- [ ] 2.9 **Search/Related Questions**: 제목·본문·태그·에러 텍스트 lexical search, 기본 유사 질문 추천 (태그 매칭 우선)
+- [ ] 2.10 도메인 단위 테스트 — 리비전 append-only, 채택 invariant, 와드 중복 방지, 태그 유일성 등 핵심 규칙 검증
+
+## Phase 3 — MVP P1
+
+- [ ] 3.1 태그 팔로우 기반 추천 점수식 구현 ([domain-model.md](docs/architecture/domain-model.md#태그-팔로우-기반-추천-쿼리) SQL 참고)
+- [ ] 3.2 라이트 대시보드 API — 오늘의 인기 질문, 내 Ward 업데이트, 팔로우 태그 피드, 태그 트렌드
+- [ ] 3.3 사용자 프로필 라이트 — 작성 질문/답변, 관심 태그 노출
+- [ ] 3.4 Redis 캐시 적용 — 대시보드/인기 질문 조회 경로
+
+## Phase 4 — 검증
+
+- [ ] 4.1 [mvp-scope.md](docs/product/mvp-scope.md#성공-지표) 지표(Revision Rate, Ward Adoption 등) 계측 포인트 구현/로깅
+- [ ] 4.2 E2E 시나리오 테스트: 질문 생성 → 리비전 → 답변 → 채택 → Ward 알림
+- [ ] 4.3 MVP 핵심 가설 검증을 위한 최소 프론트엔드 또는 API 데모 플로우 확인
+
+## Phase 5+ — MVP 이후 로드맵 (착수 시점에 세부 계획 별도 수립)
+
+[mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 1:1 대응한다. 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
+
+- [ ] Phase 2(로드맵): QPR Review / Needs Info / Re-request, 답변-질문버전 연결 고도화
+- [ ] Phase 3(로드맵): Question Cluster, Merge/Fork, Super Answer
+- [ ] Phase 4(로드맵): QunoBot, 기술 버전 영향 감지, Outdated/Regression
+- [ ] Phase 5(로드맵): Organization, 전문가 평판, Direct Ask
+- [ ] Phase 6(로드맵): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
+
+## 진행 방식
+
+- 각 체크박스 항목(또는 자연스러운 하위 묶음)을 하나의 작업 단위로 보고 완료 시 즉시 커밋한다.
+- 새로운 결정(스택 변경, 인증 방식 확정 등)은 관련 `docs/architecture/*.md`에 반영한 뒤 진행한다.
+- 문서와 실제 코드가 어긋나면 코드를 진실로 보고 문서를 갱신한다.

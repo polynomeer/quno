@@ -1,12 +1,20 @@
 # Quno
 
-Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이 아니라 리비전·클러스터링·재활성화가 가능한 **Living Question Card**로 다루는 것을 핵심 철학으로 한다. 상세 기획은 [docs/](docs/) 디렉터리를 참고한다.
+Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이 아니라 리비전·클러스터링·재활성화가 가능한 **Living Question Card**로 다루는 것을 핵심 철학으로 한다.
 
-- `docs/Quno 서비스 통합 기획서 — Living Question Knowledge Platform.md`: 통합 기획서 (제품 철학, 문제 정의, 핵심 개념)
-- `docs/*.docx`: 도메인 설계, 백엔드/시스템 설계 등 세부 기획 문서
-- `docs/quno-event-storming.png`: 이벤트 스토밍 다이어그램
+## 문서 구조
 
-현재는 기획 단계이며 코드베이스는 아직 없다. 코드가 추가되면 이 파일에 빌드/테스트/실행 방법과 아키텍처 개요를 갱신한다.
+- [PLAN.md](PLAN.md): **Claude Code가 순서대로 진행할 작업계획서.** 새 세션을 시작할 때 가장 먼저 확인한다.
+- [docs/product/vision.md](docs/product/vision.md): 제품 철학, 핵심 개념(Living Question Card), 차별화
+- [docs/product/mvp-scope.md](docs/product/mvp-scope.md): MVP 범위(P0/P1), 로드맵, 성공 지표
+- [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md): 확정 기술 스택, 시스템 아키텍처, 패키지 구조
+- [docs/architecture/domain-model.md](docs/architecture/domain-model.md): DDD Bounded Context, Aggregate, ERD, SQL 흐름
+- [docs/architecture/api-design.md](docs/architecture/api-design.md): REST API 설계
+- [docs/archive/](docs/archive/README.md): 초기 브레인스토밍 원본(.docx 등). 현재 방향과 다른 대안 탐색안(StackNext, MySQL+Kafka 백엔드안)도 여기 보관되어 있으며 활성 기준 문서가 아니다.
+
+## 확정 기술 스택
+
+Kotlin · Spring Boot 4.0.0 · Java 21 · Gradle Kotlin DSL · 단일 모듈 DDD · PostgreSQL + MongoDB + Redis. 상세는 [system-architecture.md](docs/architecture/system-architecture.md) 참고. 코드가 추가되면 이 파일에 빌드/테스트/실행 명령을 갱신한다.
 
 ## 커밋 규칙
 
