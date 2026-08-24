@@ -169,13 +169,13 @@ Docker Compose로 PostgreSQL, MongoDB, Redis를 실행하고 애플리케이션�
 services:
   postgres:
     image: postgres:16
-    ports: ["5432:5432"]
+    ports: ["5442:5432"]   # non-default host port; see docker-compose.yml
   mongo:
     image: mongo:7
     ports: ["27017:27017"]
   redis:
     image: redis:7
-    ports: ["6379:6379"]
+    ports: ["6390:6379"]   # non-default host port; see docker-compose.yml
 ```
 
 운영 배포 구성은 로컬 Compose와 분리한다. DDL 자동 생성(`ddl-auto`)은 로컬 실험 외에는 사용하지 않고 Flyway로 PostgreSQL 스키마를 관리한다.
