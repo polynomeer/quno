@@ -1,0 +1,26 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies (미래 코드 추가 대비)
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+out/
+*.log
+
+# Claude Code local settings (개인별 권한 오버라이드는 커밋하지 않음)
+.claude/settings.local.json
