@@ -17,3 +17,10 @@ management:
   endpoint:
     health:
       show-details: never
+
+quno:
+  jwt:
+    # Dev-only default. Override via QUNO_JWT_SECRET outside local dev.
+    secret: "change-me-quno-dev-secret-please-override-in-real-environments-0123456789"
+    access-token-ttl-seconds: 1800
+    refresh-token-ttl-seconds: 1209600

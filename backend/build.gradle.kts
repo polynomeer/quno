@@ -32,6 +32,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("tools.jackson.module:jackson-module-kotlin")
+	implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+	runtimeOnly("io.jsonwebtoken:jjwt-gson:0.13.0")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-mongodb-test")
@@ -58,4 +61,7 @@ allOpen {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	// Spring context tests (e.g. QunoBackendApplicationTests) need a real datasource/mongo/redis;
+	// the local profile points at the docker-compose services (see CLAUDE.md).
+	systemProperty("spring.profiles.active", "local")
 }

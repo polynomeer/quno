@@ -6,6 +6,10 @@
 
 | Method | Endpoint | 설명 |
 |---|---|---|
+| POST | `/api/v1/auth/signup` | 회원가입 |
+| POST | `/api/v1/auth/login` | 로그인, Access/Refresh Token 발급 |
+| POST | `/api/v1/auth/refresh` | Refresh Token으로 Access/Refresh Token 재발급 |
+| GET | `/api/v1/me` | 내 기본 프로필 조회 |
 | POST | `/api/v1/questions` | 질문과 Qv1 생성 |
 | GET | `/api/v1/questions/{id}` | 질문 최신본/버전 요약 조회 |
 | GET | `/api/v1/questions/{id}/versions/{version}` | 특정 질문 버전 조회 |
@@ -33,7 +37,8 @@
 - 비밀번호는 BCrypt로 단방향 해시한다.
 - 요청에서 `authorId`/`userId`를 클라이언트가 직접 지정하지 않는다. 인증 Principal(SecurityContext)에서 사용자 식별자를 얻는다.
 - 관리자/모더레이터 API가 추가되면 Role과 세부 권한을 분리한다.
-- 기본 필터 체인(`SecurityConfig`)은 `/actuator/health`, `/actuator/info`, `/api/v1/auth/**`만 공개하고 나머지는 인증을 요구한다. 실제 JWT 발급/검증 필터는 Identity 도메인 구현([PLAN.md](../../PLAN.md) Phase 2.1)에서 추가한다.
+- 기본 필터 체인(`SecurityConfig`)은 `/actuator/health`, `/actuator/info`, `/api/v1/auth/**`만 공개하고 나머지는 인증을 요구한다. `JwtAuthenticationFilter`가 `Authorization: Bearer <token>`을 검증해 SecurityContext에 사용자 id를 principal로 설정한다 (Phase 2.1에서 구현 완료).
+- Refresh Token은 서버 측 저장/revocation 목록 없이 서명·만료만 검증하는 순수 stateless 방식이다. 탈취 대응(조기 폐기 등)이 필요해지면 Redis 기반 revocation을 후속 단계에서 추가한다.
 
 ## 페이지네이션
 
