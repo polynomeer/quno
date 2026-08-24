@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.common
 
+import com.quno.qunobackend.domain.answer.AnswerNotFoundException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
@@ -31,6 +32,7 @@ class GlobalExceptionHandler {
         UserNotFoundException::class,
         QuestionNotFoundException::class,
         QuestionVersionNotFoundException::class,
+        AnswerNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))

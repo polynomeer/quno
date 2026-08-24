@@ -32,6 +32,10 @@ class Question private constructor(
         return Question(id, authorId, title, newStatus, versionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
     }
 
+    /** Used when an answer is accepted. */
+    fun resolve(acceptedAnswerId: Long): Question =
+        Question(id, authorId, title, QuestionStatus.RESOLVED, latestVersionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+
     companion object {
         fun open(authorId: Long, title: String): Question {
             require(title.isNotBlank()) { "title must not be blank" }

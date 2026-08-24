@@ -64,6 +64,16 @@ class QuestionTest {
         assertEquals(QuestionStatus.RESOLVED, revised.status)
     }
 
+    @Test
+    fun `resolve sets RESOLVED status and the accepted answer id`() {
+        val question = openQuestion(status = QuestionStatus.UPDATED)
+
+        val resolved = question.resolve(acceptedAnswerId = 99L)
+
+        assertEquals(QuestionStatus.RESOLVED, resolved.status)
+        assertEquals(99L, resolved.acceptedAnswerId)
+    }
+
     private fun openQuestion(status: QuestionStatus): Question {
         val now = Instant.now()
         return Question.reconstitute(
