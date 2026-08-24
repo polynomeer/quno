@@ -32,7 +32,7 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 
 - [x] 2.1 **Identity**: User 도메인/JPA 엔티티, 회원가입·로그인·리프레시 API, 기본 프로필 조회. JWT 발급/검증(`JwtTokenProvider`, `JwtAuthenticationFilter`) 포함, curl로 signup→login→me(무인증 401 확인)→refresh 전체 플로우 검증 완료
 - [x] 2.2 **Question 생성**: Question + QuestionVersion(v1) 생성 유스케이스, `POST /api/v1/questions`, `GET /api/v1/questions/{id}`. 두 엔드포인트 모두 인증 필요(SecurityConfig 기본값 유지) — 질문 조회를 비로그인 사용자에게 공개할지는 아직 결정하지 않았고, 향후 Search/Discovery(P1) 설계 시 재검토 필요. curl로 인증없이 생성 시 401, 생성/조회/404/유효성검증(400) 플로우 검증 완료
-- [ ] 2.3 **Question Revision**: 새 QuestionVersion append, `latest_version_id` 갱신, 동시성 방어(락/유니크 제약), Diff 조회, `POST /api/v1/questions/{id}/versions`, `GET /api/v1/questions/{id}/versions/{version}`
+- [x] 2.3 **Question Revision**: 새 QuestionVersion append, `latest_version_id` 갱신(작성자만, `Question.revise()`가 OPEN/NEEDS_INFO→UPDATED 전이, RESOLVED는 유지), 동시성 방어(`SELECT ... FOR UPDATE` 락 + DB unique 제약), LCS 기반 라인 Diff(`TextDiffer`, 순수 도메인 유틸). `POST/GET /api/v1/questions/{id}/versions`, `GET .../versions/{version}`, `GET .../versions/{version}/diff` 구현. curl로 타인 리비전 시도 403, 작성자 리비전 성공(상태 UPDATED 전이), 버전 히스토리/개별조회/404/diff 전체 플로우 검증 완료
 - [ ] 2.4 **Answer**: 답변 작성/조회, 채택 유스케이스(soft invariant 검증 포함), `POST /api/v1/questions/{id}/answers`, `POST /api/v1/answers/{id}/accept`
 - [ ] 2.5 **Question Status**: `OPEN → NEEDS_INFO → UPDATED → RESOLVED` 상태 전이 구현
 - [ ] 2.6 **Tag**: 태그 CRUD, 질문-태그 연결, 태그 팔로우 API
