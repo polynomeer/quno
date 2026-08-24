@@ -35,7 +35,7 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 - [x] 2.3 **Question Revision**: 새 QuestionVersion append, `latest_version_id` 갱신(작성자만, `Question.revise()`가 OPEN/NEEDS_INFO→UPDATED 전이, RESOLVED는 유지), 동시성 방어(`SELECT ... FOR UPDATE` 락 + DB unique 제약), LCS 기반 라인 Diff(`TextDiffer`, 순수 도메인 유틸). `POST/GET /api/v1/questions/{id}/versions`, `GET .../versions/{version}`, `GET .../versions/{version}/diff` 구현. curl로 타인 리비전 시도 403, 작성자 리비전 성공(상태 UPDATED 전이), 버전 히스토리/개별조회/404/diff 전체 플로우 검증 완료
 - [x] 2.4 **Answer**: 답변 작성/조회, 채택 유스케이스(질문 작성자만 채택, 기존 채택 답변 자동 해제, `Question.resolve()`로 RESOLVED 전환). `POST/GET /api/v1/questions/{id}/answers`, `POST /api/v1/answers/{id}/accept`. curl로 답변 작성/목록, 비작성자 채택 시도 403, 채택 성공 시 질문 RESOLVED 전환, 존재하지 않는 답변 404 검증 완료
 - [x] 2.5 **Question Status**: `OPEN`(생성) → `UPDATED`(리비전) → `RESOLVED`(채택) 전이는 2.2~2.4에서 이미 구현됨. `NEEDS_INFO`는 답변자의 "정보 요청" 액션이 있어야 발생하는데 이는 QPR Review 기능(mvp-scope.md에서 MVP 이후로 명시된 범위)에 속하므로 지금 만들지 않고 Phase 2(로드맵)에서 QPR과 함께 구현하기로 결정
-- [ ] 2.6 **Tag**: 태그 CRUD, 질문-태그 연결, 태그 팔로우 API
+- [x] 2.6 **Tag**: `Tag`(create/rename/softDelete), `POST /questions`가 `tags` 필드로 태그를 find-or-create해 `question_tags`에 연결(slug 기준 중복 제거), `GET /tags`(검색), `POST/DELETE /tags/{id}/follow`. 버그 발견 및 수정: 대소문자만 다른 태그명("Kotlin"/"kotlin")이 `uq_tags_slug_active` 유니크 제약을 위반하면서 예외가 `/error`로 forward되어 SecurityConfig에 막혀 401로 위장되는 문제 → find-or-create를 slug 기준 조회로 변경하고 `SecurityConfig`에 `/error` permitAll 추가. curl로 재현 및 수정 확인 완료
 - [ ] 2.7 **Watch(Ward)**: 구독/해제(`ON CONFLICT DO NOTHING` idempotent), Outbox 이벤트 발행 골격
 - [ ] 2.8 **Notification**: Watch 기반 알림 fan-out(리비전/새 답변/채택), `GET /api/v1/me/notifications`, 읽음 처리
 - [ ] 2.9 **Search/Related Questions**: 제목·본문·태그·에러 텍스트 lexical search, 기본 유사 질문 추천 (태그 매칭 우선)
