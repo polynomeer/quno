@@ -25,16 +25,15 @@
 | GET | `/api/v1/recommendations/questions?source=tags` | 태그 기반 추천 |
 | GET | `/api/v1/dashboard` | 대시보드 집계 |
 
-## 인증 (확정 필요 — Phase 1 착수 시 결정)
+## 인증 (확정 — 2026-08-24)
 
-원본 기획 문서들에는 인증 방식이 구체적으로 명시되어 있지 않다. 계정(P0) 구현 시 아래 중 하나를 확정하고 이 문서에 기록한다.
+**Spring Security + JWT (Access/Refresh Token 분리), Stateless 세션**을 사용한다. `system-architecture.md`의 React Web Client가 백엔드와 별도로 배포되는 구조이므로 서버 세션 공유보다 stateless 토큰 인증이 스케일링에 유리하다.
 
-- Spring Security + 세션 기반 인증
-- Spring Security + JWT (Access/Refresh Token 분리)
-
-공통 원칙:
+- Access Token은 짧은 만료 시간(예: 15~30분), Refresh Token은 별도 저장소/만료 정책으로 관리한다.
+- 비밀번호는 BCrypt로 단방향 해시한다.
 - 요청에서 `authorId`/`userId`를 클라이언트가 직접 지정하지 않는다. 인증 Principal(SecurityContext)에서 사용자 식별자를 얻는다.
 - 관리자/모더레이터 API가 추가되면 Role과 세부 권한을 분리한다.
+- 기본 필터 체인(`SecurityConfig`)은 `/actuator/health`, `/actuator/info`, `/api/v1/auth/**`만 공개하고 나머지는 인증을 요구한다. 실제 JWT 발급/검증 필터는 Identity 도메인 구현([PLAN.md](../../PLAN.md) Phase 2.1)에서 추가한다.
 
 ## 페이지네이션
 
