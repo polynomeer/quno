@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5442/quno
+    username: quno
+    password: quno
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/quno
+    redis:
+      host: localhost
+      port: 6390
+
+management:
+  endpoint:
+    health:
+      show-details: always
