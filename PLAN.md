@@ -16,15 +16,15 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 
 ## Phase 1 — 백엔드 프로젝트 스캐폴딩
 
-기술 스택: [system-architecture.md](docs/architecture/system-architecture.md#확정-기술-스택) 참고 (Kotlin, Spring Boot 4.0.0, Java 21, Gradle Kotlin DSL, 단일 모듈 DDD).
+기술 스택: [system-architecture.md](docs/architecture/system-architecture.md#확정-기술-스택) 참고 (Kotlin, Spring Boot 4.0.8, Java 21, Gradle Kotlin DSL, 단일 모듈 DDD). `backend/`에 프로젝트가 위치한다.
 
-- [ ] 1.1 Gradle Kotlin DSL 프로젝트 초기화 (`build.gradle.kts`, `settings.gradle.kts`) — Spring Web, Validation, Security, Data JPA, Data MongoDB, Data Redis, Flyway, Jackson-Kotlin-Module, kotlin-reflect 의존성 포함
-- [ ] 1.2 패키지 뼈대 생성 — [system-architecture.md](docs/architecture/system-architecture.md#패키지-구조-kotlin-단일-모듈)의 `domain / application / interfaces / infrastructure` 구조를 `com.quno.qunobackend` 아래에 생성
-- [ ] 1.3 `docker-compose.yml` 작성 — PostgreSQL 16, MongoDB 7, Redis 7 ([system-architecture.md](docs/architecture/system-architecture.md#로컬-개발-환경) 참고)
-- [ ] 1.4 `application.yml` / `application-local.yml` 작성 (DB/Mongo/Redis 접속 정보, 프로필 분리)
-- [ ] 1.5 Flyway 초기 마이그레이션(`V1__init.sql`) — [domain-model.md](docs/architecture/domain-model.md#erd-postgresql--운영형)의 `users`, `questions`, `question_versions`, `answers`, `tags`, `question_tags`, `watches`, `user_tag_follows`, `notifications` 테이블
-- [ ] 1.6 인증 방식 확정 및 문서 반영 — [api-design.md](docs/architecture/api-design.md#인증-확정-필요--phase-1-착수-시-결정)의 미결정 사항 해소
-- [ ] 1.7 헬스체크/기본 실행 확인 (`./gradlew bootRun`으로 애플리케이션 기동, DB 연결 확인)
+- [x] 1.1 Gradle Kotlin DSL 프로젝트 초기화 (`backend/build.gradle.kts`, `backend/settings.gradle.kts`) — Spring Initializr로 생성 (Spring Boot 4.0.8, Kotlin, Java 21). Web/Validation/Security/Data JPA/Data MongoDB/Data Redis/Flyway/PostgreSQL/Actuator 의존성 포함
+- [ ] 1.2 패키지 뼈대 생성 — [system-architecture.md](docs/architecture/system-architecture.md#패키지-구조-kotlin-단일-모듈)의 `domain / application / interfaces / infrastructure` 구조. `infrastructure/config`는 먼저 생성했고(SecurityConfig), 나머지 도메인별 하위 패키지(`domain/user`, `domain/question` 등)는 빈 폴더로 미리 만들지 않고 Phase 2에서 실제 코드와 함께 생성한다
+- [x] 1.3 `docker-compose.yml` 작성 — PostgreSQL 16, MongoDB 7, Redis 7 (이 머신의 다른 프로젝트와 겹치지 않도록 5442/6390 포트 사용, [system-architecture.md](docs/architecture/system-architecture.md#로컬-개발-환경) 참고)
+- [x] 1.4 `application.yml` / `application-local.yml` 작성 (DB/Mongo/Redis 접속 정보, 프로필 분리, 서버 포트 8081)
+- [x] 1.5 Flyway 초기 마이그레이션(`V1__init.sql`) — [domain-model.md](docs/architecture/domain-model.md#erd-postgresql--운영형)의 `users`, `questions`, `question_versions`, `answers`, `tags`, `question_tags`, `watches`, `user_tag_follows`, `notifications` 테이블
+- [x] 1.6 인증 방식 확정 및 문서 반영 — JWT(Access/Refresh, Stateless)로 확정, [api-design.md](docs/architecture/api-design.md#인증-확정--2026-08-24) 갱신, 최소 `SecurityConfig` 추가 (실제 JWT 필터는 Phase 2.1)
+- [x] 1.7 헬스체크/기본 실행 확인 — `docker compose up -d` + `SPRING_PROFILES_ACTIVE=local ./gradlew bootRun`으로 기동, `/actuator/health`에서 db/mongo/redis 모두 `UP` 확인, 미인증 요청은 거부됨을 확인
 
 ## Phase 2 — 코어 도메인 구현 (MVP P0)
 

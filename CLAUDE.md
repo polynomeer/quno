@@ -14,7 +14,29 @@ Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이
 
 ## 확정 기술 스택
 
-Kotlin · Spring Boot 4.0.0 · Java 21 · Gradle Kotlin DSL · 단일 모듈 DDD · PostgreSQL + MongoDB + Redis. 상세는 [system-architecture.md](docs/architecture/system-architecture.md) 참고. 코드가 추가되면 이 파일에 빌드/테스트/실행 명령을 갱신한다.
+Kotlin · Spring Boot 4.0.8 · Java 21 · Gradle Kotlin DSL · 단일 모듈 DDD · PostgreSQL + MongoDB + Redis. 상세는 [system-architecture.md](docs/architecture/system-architecture.md) 참고. 백엔드 프로젝트는 [backend/](backend/)에 있다.
+
+## 빌드/테스트/실행
+
+로컬 인프라(PostgreSQL/MongoDB/Redis, 포트 5442/6390/27017)를 먼저 띄운다.
+
+```bash
+docker compose up -d
+```
+
+```bash
+cd backend && ./gradlew build
+```
+
+```bash
+cd backend && ./gradlew test
+```
+
+```bash
+cd backend && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+```
+
+`local` 프로필로 기동하면 `http://localhost:8081/actuator/health`에서 DB/Mongo/Redis 연결 상태를 확인할 수 있다.
 
 ## 커밋 규칙
 
