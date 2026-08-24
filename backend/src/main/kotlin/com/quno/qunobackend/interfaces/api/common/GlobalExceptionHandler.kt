@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.common
 
+import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.user.DuplicateEmailException
 import com.quno.qunobackend.domain.user.DuplicateNicknameException
 import com.quno.qunobackend.domain.user.InvalidCredentialsException
@@ -24,7 +25,7 @@ class GlobalExceptionHandler {
     fun handleUnauthorized(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse("UNAUTHORIZED", ex.message.orEmpty()))
 
-    @ExceptionHandler(UserNotFoundException::class)
+    @ExceptionHandler(UserNotFoundException::class, QuestionNotFoundException::class)
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
