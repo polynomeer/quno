@@ -19,8 +19,18 @@ class Question private constructor(
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
+    /** Used right after creating Qv1: keeps status OPEN, only wires the pointer. */
     fun withLatestVersion(versionId: Long, title: String = this.title): Question =
         Question(id, authorId, title, status, versionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+
+    /**
+     * Used when a revision (Qv2+) is appended. A RESOLVED question stays RESOLVED —
+     * MVP has no re-open flow yet (see docs/product/mvp-scope.md 로드맵).
+     */
+    fun revise(versionId: Long, title: String): Question {
+        val newStatus = if (status == QuestionStatus.RESOLVED) status else QuestionStatus.UPDATED
+        return Question(id, authorId, title, newStatus, versionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+    }
 
     companion object {
         fun open(authorId: Long, title: String): Question {

@@ -28,6 +28,12 @@ class QuestionVersionRepositoryAdapter(
 
     override fun findById(id: Long): QuestionVersion? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
+    override fun findByQuestionIdAndVersionNumber(questionId: Long, versionNumber: Int): QuestionVersion? =
+        jpaRepository.findByQuestionIdAndVersionNumber(questionId, versionNumber)?.toDomain()
+
+    override fun findAllByQuestionIdOrderByVersionNumberAsc(questionId: Long): List<QuestionVersion> =
+        jpaRepository.findAllByQuestionIdOrderByVersionNumberAsc(questionId).map { it.toDomain() }
+
     private fun QuestionVersionJpaEntity.toDomain(): QuestionVersion = QuestionVersion.reconstitute(
         id = requireNotNull(id),
         questionId = questionId,

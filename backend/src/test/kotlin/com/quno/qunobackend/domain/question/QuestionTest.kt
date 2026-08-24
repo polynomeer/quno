@@ -43,4 +43,39 @@ class QuestionTest {
 
         assertEquals(42L, updated.latestVersionId)
     }
+
+    @Test
+    fun `revise moves an OPEN question to UPDATED`() {
+        val question = openQuestion(status = QuestionStatus.OPEN)
+
+        val revised = question.revise(versionId = 2L, title = "new title")
+
+        assertEquals(QuestionStatus.UPDATED, revised.status)
+        assertEquals("new title", revised.title)
+        assertEquals(2L, revised.latestVersionId)
+    }
+
+    @Test
+    fun `revise leaves a RESOLVED question RESOLVED`() {
+        val question = openQuestion(status = QuestionStatus.RESOLVED)
+
+        val revised = question.revise(versionId = 2L, title = "new title")
+
+        assertEquals(QuestionStatus.RESOLVED, revised.status)
+    }
+
+    private fun openQuestion(status: QuestionStatus): Question {
+        val now = Instant.now()
+        return Question.reconstitute(
+            id = 1L,
+            authorId = 1L,
+            title = "Redis timeout",
+            status = status,
+            latestVersionId = 1L,
+            acceptedAnswerId = null,
+            deletedAt = null,
+            createdAt = now,
+            updatedAt = now,
+        )
+    }
 }

@@ -1,6 +1,8 @@
 package com.quno.qunobackend.interfaces.api.common
 
+import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
 import com.quno.qunobackend.domain.user.DuplicateEmailException
 import com.quno.qunobackend.domain.user.DuplicateNicknameException
 import com.quno.qunobackend.domain.user.InvalidCredentialsException
@@ -25,9 +27,17 @@ class GlobalExceptionHandler {
     fun handleUnauthorized(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse("UNAUTHORIZED", ex.message.orEmpty()))
 
-    @ExceptionHandler(UserNotFoundException::class, QuestionNotFoundException::class)
+    @ExceptionHandler(
+        UserNotFoundException::class,
+        QuestionNotFoundException::class,
+        QuestionVersionNotFoundException::class,
+    )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
+
+    @ExceptionHandler(QuestionAccessDeniedException::class)
+    fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {

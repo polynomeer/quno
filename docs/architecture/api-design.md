@@ -12,8 +12,10 @@
 | GET | `/api/v1/me` | 내 기본 프로필 조회 |
 | POST | `/api/v1/questions` | 질문과 Qv1 생성 |
 | GET | `/api/v1/questions/{id}` | 질문 최신본/버전 요약 조회 |
+| GET | `/api/v1/questions/{id}/versions` | 질문 버전 히스토리(요약) 목록 |
 | GET | `/api/v1/questions/{id}/versions/{version}` | 특정 질문 버전 조회 |
-| POST | `/api/v1/questions/{id}/versions` | 새 질문 리비전 생성 |
+| POST | `/api/v1/questions/{id}/versions` | 새 질문 리비전 생성 (작성자만) |
+| GET | `/api/v1/questions/{id}/versions/{version}/diff?from={version}` | 두 버전의 본문 라인 diff (기본: 직전 버전과 비교) |
 | POST | `/api/v1/questions/{id}/answers` | 답변 등록 |
 | GET | `/api/v1/questions/{id}/answers` | 답변 목록 |
 | POST | `/api/v1/answers/{id}/accept` | 답변 채택 및 질문 RESOLVED 전환 |

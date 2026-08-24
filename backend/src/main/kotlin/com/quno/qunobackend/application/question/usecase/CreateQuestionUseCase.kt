@@ -1,7 +1,7 @@
 package com.quno.qunobackend.application.question.usecase
 
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
-import com.quno.qunobackend.application.question.dto.CreateQuestionResult
+import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersion
@@ -20,7 +20,7 @@ class CreateQuestionUseCase(
     private val questionVersionRepository: QuestionVersionRepository,
 ) {
     @Transactional
-    fun execute(command: CreateQuestionCommand): CreateQuestionResult {
+    fun execute(command: CreateQuestionCommand): QuestionMutationResult {
         val question = questionRepository.save(Question.open(authorId = command.authorId, title = command.title))
         val questionId = requireNotNull(question.id)
 
@@ -38,7 +38,7 @@ class CreateQuestionUseCase(
 
         val updatedQuestion = questionRepository.save(question.withLatestVersion(requireNotNull(version.id)))
 
-        return CreateQuestionResult(
+        return QuestionMutationResult(
             id = questionId,
             title = updatedQuestion.title,
             status = updatedQuestion.status,

@@ -6,4 +6,7 @@ interface QuestionRepository {
 
     /** Excludes soft-deleted questions. */
     fun findById(id: Long): Question?
+
+    /** Locks the row (SELECT ... FOR UPDATE) to serialize concurrent revision creation. */
+    fun findByIdForUpdate(id: Long): Question?
 }

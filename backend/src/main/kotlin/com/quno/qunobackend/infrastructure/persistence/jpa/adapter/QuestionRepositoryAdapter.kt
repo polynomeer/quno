@@ -28,6 +28,8 @@ class QuestionRepositoryAdapter(
 
     override fun findById(id: Long): Question? = jpaRepository.findByIdAndDeletedAtIsNull(id)?.toDomain()
 
+    override fun findByIdForUpdate(id: Long): Question? = jpaRepository.findByIdForUpdate(id)?.toDomain()
+
     private fun QuestionJpaEntity.toDomain(): Question = Question.reconstitute(
         id = requireNotNull(id),
         authorId = authorId,
