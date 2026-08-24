@@ -30,7 +30,7 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 
 순서는 의존관계를 따른다: User → Question/QuestionVersion → Answer → Tag → Watch/Notification → Search 기초.
 
-- [ ] 2.1 **Identity**: User 도메인/JPA 엔티티, 회원가입·로그인 API, 기본 프로필 조회
+- [x] 2.1 **Identity**: User 도메인/JPA 엔티티, 회원가입·로그인·리프레시 API, 기본 프로필 조회. JWT 발급/검증(`JwtTokenProvider`, `JwtAuthenticationFilter`) 포함, curl로 signup→login→me(무인증 401 확인)→refresh 전체 플로우 검증 완료
 - [ ] 2.2 **Question 생성**: Question + QuestionVersion(v1) 생성 유스케이스, `POST /api/v1/questions`, `GET /api/v1/questions/{id}`
 - [ ] 2.3 **Question Revision**: 새 QuestionVersion append, `latest_version_id` 갱신, 동시성 방어(락/유니크 제약), Diff 조회, `POST /api/v1/questions/{id}/versions`, `GET /api/v1/questions/{id}/versions/{version}`
 - [ ] 2.4 **Answer**: 답변 작성/조회, 채택 유스케이스(soft invariant 검증 포함), `POST /api/v1/questions/{id}/answers`, `POST /api/v1/answers/{id}/accept`
