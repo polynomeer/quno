@@ -69,7 +69,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
 | watches | user_id, question_id | 관계 데이터, hard delete 허용 |
-| notifications | id, user_id, type, question_id?, answer_id?, payload_json, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
+| notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
 
 ### 삭제/FK 운영 원칙
 
@@ -188,10 +188,20 @@ ON CONFLICT (user_id, question_id) DO NOTHING;
 
 ### Watch 사용자 알림 fan-out
 
+**구현 상태 (Phase 2.8)**: 원안의 단일 INSERT SELECT 대신, `outbox_events`를 폴링하는 `DispatchOutboxEventsUseCase`(2초 주기 스케줄러, [system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox))가 Watch 목록을 조회해 애플리케이션 코드에서 `notifications`에 건별 INSERT한다. `payload` 컬럼은 JSONB가 아니라 앱이 직접 쓰고 읽는 TEXT다(SQL JSON 연산자로 조회하지 않으므로).
+
+이벤트 타입별로 수신자가 "질문 액터 제외 Watch 목록"만은 아니다:
+
+- `QUESTION_REVISION`: Watch 목록 − 리비전 작성자(항상 질문 작성자와 동일)
+- `NEW_ANSWER`: Watch 목록 ∪ **질문 작성자**(명시적으로 Watch하지 않았어도 항상 알림) − 답변 작성자
+- `ANSWER_ACCEPTED`: Watch 목록 ∪ **채택된 답변의 작성자**(항상 알림) − 채택을 수행한 질문 작성자
+
+개념을 보여주는 참고용 SQL(실제로는 애플리케이션 코드가 이 조합을 계산한다):
+
 ```sql
-INSERT INTO notifications(user_id, type, question_id, payload_json)
+INSERT INTO notifications(user_id, type, question_id, payload)
 SELECT w.user_id, 'QUESTION_REVISION', :questionId,
-       jsonb_build_object('version_number', :versionNumber)
+       jsonb_build_object('version_number', :versionNumber)::text
 FROM watches w
 WHERE w.question_id = :questionId
   AND w.user_id <> :actorId;

@@ -20,18 +20,21 @@ class WriteAnswerUseCase(
 ) {
     @Transactional
     fun execute(command: WriteAnswerCommand): AnswerResult {
-        questionRepository.findById(command.questionId) ?: throw QuestionNotFoundException(command.questionId)
+        val question = questionRepository.findById(command.questionId)
+            ?: throw QuestionNotFoundException(command.questionId)
 
         val saved = answerRepository.save(
             Answer.write(questionId = command.questionId, authorId = command.authorId, bodyMarkdown = command.body),
         )
 
+        // questionAuthorId: the question's author is always notified, even if they never
+        // explicitly watched their own question — see DispatchOutboxEventsUseCase's kdoc.
         outboxEventRepository.save(
             OutboxEvent.create(
                 eventType = OutboxEventTypes.NEW_ANSWER,
                 aggregateType = "QUESTION",
                 aggregateId = command.questionId,
-                payload = """{"answerId":${saved.id}}""",
+                payload = """{"answerId":${saved.id},"actorId":${command.authorId},"questionAuthorId":${question.authorId}}""",
             ),
         )
 

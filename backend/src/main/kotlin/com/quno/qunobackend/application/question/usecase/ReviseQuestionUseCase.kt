@@ -57,7 +57,7 @@ class ReviseQuestionUseCase(
                 eventType = OutboxEventTypes.QUESTION_REVISION,
                 aggregateType = "QUESTION",
                 aggregateId = command.questionId,
-                payload = """{"versionNumber":${newVersion.versionNumber}}""",
+                payload = """{"versionNumber":${newVersion.versionNumber},"actorId":${command.actorId}}""",
             ),
         )
 

@@ -41,12 +41,14 @@ class AcceptAnswerUseCase(
             question.resolve(acceptedAnswerId = requireNotNull(acceptedAnswer.id)),
         )
 
+        // answerAuthorId: the accepted answer's author is always notified, even if they never
+        // explicitly watched the question — see DispatchOutboxEventsUseCase's kdoc.
         outboxEventRepository.save(
             OutboxEvent.create(
                 eventType = OutboxEventTypes.ANSWER_ACCEPTED,
                 aggregateType = "QUESTION",
                 aggregateId = answer.questionId,
-                payload = """{"answerId":${acceptedAnswer.id}}""",
+                payload = """{"answerId":${acceptedAnswer.id},"actorId":${command.actorId},"answerAuthorId":${answer.authorId}}""",
             ),
         )
 

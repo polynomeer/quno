@@ -6,6 +6,7 @@ import com.quno.qunobackend.infrastructure.persistence.jpa.entity.OutboxEventJpa
 import com.quno.qunobackend.infrastructure.persistence.jpa.repository.OutboxEventJpaRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 class OutboxEventRepositoryAdapter(
@@ -27,6 +28,10 @@ class OutboxEventRepositoryAdapter(
 
     override fun findUnpublished(limit: Int): List<OutboxEvent> =
         jpaRepository.findAllByPublishedAtIsNullOrderByCreatedAtAsc(PageRequest.of(0, limit)).map { it.toDomain() }
+
+    override fun markPublished(id: Long) {
+        jpaRepository.markPublished(id, Instant.now())
+    }
 
     private fun OutboxEventJpaEntity.toDomain(): OutboxEvent = OutboxEvent.reconstitute(
         id = requireNotNull(id),

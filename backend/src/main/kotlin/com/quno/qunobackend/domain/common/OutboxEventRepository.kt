@@ -4,6 +4,8 @@ package com.quno.qunobackend.domain.common
 interface OutboxEventRepository {
     fun save(event: OutboxEvent): OutboxEvent
 
-    /** Oldest-first, for a future poller (Phase 2.8) to consume in order. */
+    /** Oldest-first, for the dispatch poller to consume in order. */
     fun findUnpublished(limit: Int): List<OutboxEvent>
+
+    fun markPublished(id: Long)
 }
