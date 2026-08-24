@@ -2,12 +2,14 @@ package com.quno.qunobackend.application.answer.usecase
 
 import com.quno.qunobackend.application.answer.dto.AcceptAnswerCommand
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
+import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionRepository
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionStatus
 import org.junit.jupiter.api.Test
@@ -20,11 +22,12 @@ class AcceptAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val answerRepository = InMemoryAnswerRepository()
     private val tagRepository = InMemoryTagRepository()
+    private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
         questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
-    private val writeAnswerUseCase = WriteAnswerUseCase(questionRepository, answerRepository)
-    private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository)
+    private val writeAnswerUseCase = WriteAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
+    private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
 
     private fun questionAskedBy(authorId: Long): Long =
         createQuestionUseCase.execute(
@@ -63,5 +66,19 @@ class AcceptAnswerUseCaseTest {
         assertFailsWith<QuestionAccessDeniedException> {
             acceptAnswerUseCase.execute(AcceptAnswerCommand(answerId = answer.id, actorId = 2L))
         }
+    }
+
+    @Test
+    fun `records an ANSWER_ACCEPTED outbox event`() {
+        val questionId = questionAskedBy(authorId = 1L)
+        val answer = writeAnswerUseCase.execute(WriteAnswerCommand(questionId, authorId = 2L, body = "Try this."))
+
+        acceptAnswerUseCase.execute(AcceptAnswerCommand(answerId = answer.id, actorId = 1L))
+
+        assertTrue(
+            outboxEventRepository.events.any {
+                it.eventType == OutboxEventTypes.ANSWER_ACCEPTED && it.aggregateId == questionId
+            },
+        )
     }
 }

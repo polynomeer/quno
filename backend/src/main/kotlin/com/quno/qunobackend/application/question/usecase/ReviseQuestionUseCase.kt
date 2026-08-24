@@ -2,6 +2,9 @@ package com.quno.qunobackend.application.question.usecase
 
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
+import com.quno.qunobackend.domain.common.OutboxEvent
+import com.quno.qunobackend.domain.common.OutboxEventRepository
+import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
 class ReviseQuestionUseCase(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
+    private val outboxEventRepository: OutboxEventRepository,
 ) {
     @Transactional
     fun execute(command: ReviseQuestionCommand): QuestionMutationResult {
@@ -46,6 +50,15 @@ class ReviseQuestionUseCase(
 
         val updatedQuestion = questionRepository.save(
             question.revise(versionId = requireNotNull(newVersion.id), title = command.title),
+        )
+
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.QUESTION_REVISION,
+                aggregateType = "QUESTION",
+                aggregateId = command.questionId,
+                payload = """{"versionNumber":${newVersion.versionNumber}}""",
+            ),
         )
 
         return QuestionMutationResult(

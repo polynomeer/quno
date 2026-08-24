@@ -81,6 +81,8 @@ MVP는 MSA보다 **모듈형 모놀리스**를 선택한다. 배포 복잡도를
 
 질문 리비전 저장과 Redis publish를 단순 연속 호출하면 "DB commit 후 메시지 발행 실패" 같은 dual-write 문제가 발생한다. Transactional Outbox를 사용한다.
 
+**구현 상태 (Phase 2.7)**: `outbox_events` 테이블(V2 마이그레이션)과 프로듀서 측만 구현되어 있다. `ReviseQuestionUseCase`/`WriteAnswerUseCase`/`AcceptAnswerUseCase`가 각각 도메인 변경과 같은 트랜잭션에서 `QUESTION_REVISION`/`NEW_ANSWER`/`ANSWER_ACCEPTED` 이벤트를 기록한다(`domain/common/OutboxEvent`, `OutboxEventTypes`). Publisher/Worker(아래 다이어그램의 Outbox Publisher 이후 전부)는 Notification 구현(Phase 2.8)에서 추가한다.
+
 ```text
 [DB Transaction]
   Question Revision 저장 + OutboxEvent(QUESTION_REVISION_CREATED) 저장

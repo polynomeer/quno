@@ -1,23 +1,27 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionStatus
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ReviseQuestionUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val questionVersionRepository = InMemoryQuestionVersionRepository()
     private val tagRepository = InMemoryTagRepository()
+    private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createUseCase = CreateQuestionUseCase(
         questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
-    private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository)
+    private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository, outboxEventRepository)
 
     private fun createQuestion(authorId: Long = 1L): Long =
         createUseCase.execute(
@@ -64,5 +68,18 @@ class ReviseQuestionUseCaseTest {
         assertFailsWith<QuestionAccessDeniedException> {
             reviseUseCase.execute(ReviseQuestionCommand(questionId, actorId = 2L, title = "t2", body = "b2", environment = null, logs = null))
         }
+    }
+
+    @Test
+    fun `records a QUESTION_REVISION outbox event`() {
+        val questionId = createQuestion()
+
+        reviseUseCase.execute(ReviseQuestionCommand(questionId, 1L, "t2", "b2", null, null))
+
+        assertTrue(
+            outboxEventRepository.events.any {
+                it.eventType == OutboxEventTypes.QUESTION_REVISION && it.aggregateId == questionId
+            },
+        )
     }
 }

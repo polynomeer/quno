@@ -4,6 +4,9 @@ import com.quno.qunobackend.application.answer.dto.AcceptAnswerCommand
 import com.quno.qunobackend.application.answer.dto.AcceptAnswerResult
 import com.quno.qunobackend.domain.answer.AnswerNotFoundException
 import com.quno.qunobackend.domain.answer.AnswerRepository
+import com.quno.qunobackend.domain.common.OutboxEvent
+import com.quno.qunobackend.domain.common.OutboxEventRepository
+import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional
 class AcceptAnswerUseCase(
     private val questionRepository: QuestionRepository,
     private val answerRepository: AnswerRepository,
+    private val outboxEventRepository: OutboxEventRepository,
 ) {
     @Transactional
     fun execute(command: AcceptAnswerCommand): AcceptAnswerResult {
@@ -35,6 +39,15 @@ class AcceptAnswerUseCase(
         val acceptedAnswer = answerRepository.save(answer.accept())
         val resolvedQuestion = questionRepository.save(
             question.resolve(acceptedAnswerId = requireNotNull(acceptedAnswer.id)),
+        )
+
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.ANSWER_ACCEPTED,
+                aggregateType = "QUESTION",
+                aggregateId = answer.questionId,
+                payload = """{"answerId":${acceptedAnswer.id}}""",
+            ),
         )
 
         return AcceptAnswerResult(

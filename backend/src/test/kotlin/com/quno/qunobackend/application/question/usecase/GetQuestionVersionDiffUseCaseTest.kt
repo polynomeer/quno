@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
@@ -17,7 +18,7 @@ class GetQuestionVersionDiffUseCaseTest {
     private val createUseCase = CreateQuestionUseCase(
         questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
-    private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository)
+    private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository, InMemoryOutboxEventRepository())
     private val diffUseCase = GetQuestionVersionDiffUseCase(questionRepository, questionVersionRepository)
 
     @Test
