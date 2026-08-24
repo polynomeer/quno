@@ -16,6 +16,7 @@
 | GET | `/api/v1/questions/{id}/versions/{version}` | 특정 질문 버전 조회 |
 | POST | `/api/v1/questions/{id}/versions` | 새 질문 리비전 생성 (작성자만) |
 | GET | `/api/v1/questions/{id}/versions/{version}/diff?from={version}` | 두 버전의 본문 라인 diff (기본: 직전 버전과 비교) |
+| GET | `/api/v1/questions/{id}/related?limit=` | 태그 중첩 기반 유사 질문 추천 (공유 태그 수 내림차순) |
 | POST | `/api/v1/questions/{id}/answers` | 답변 등록 |
 | GET | `/api/v1/questions/{id}/answers` | 답변 목록 |
 | POST | `/api/v1/answers/{id}/accept` | 답변 채택 및 질문 RESOLVED 전환 |
@@ -27,7 +28,7 @@
 | GET | `/api/v1/tags` | 태그 검색 |
 | POST | `/api/v1/tags/{id}/follow` | 태그 팔로우 |
 | DELETE | `/api/v1/tags/{id}/follow` | 태그 언팔로우 |
-| GET | `/api/v1/search?q=...` | 질문/태그/에러 검색 |
+| GET | `/api/v1/search?q=...&limit=` | 질문/태그/에러 검색 (PostgreSQL 전문검색 + 태그 부분일치) |
 | GET | `/api/v1/recommendations/questions?source=tags` | 태그 기반 추천 |
 | GET | `/api/v1/dashboard` | 대시보드 집계 |
 
@@ -45,7 +46,15 @@
 
 ## 페이지네이션
 
-목록형 API(`GET /api/v1/questions`, `/api/v1/search`, `/api/v1/me/notifications` 등)는 페이지 번호 기반보다 **cursor pagination**을 권장한다. 예: `created_at` 또는 `last_activity_at` + `id`를 커서로 사용하면 데이터가 계속 추가되는 상황에서도 중복/누락을 줄일 수 있다.
+목록형 API(`GET /api/v1/questions`, `/api/v1/search`, `/api/v1/me/notifications` 등)는 페이지 번호 기반보다 **cursor pagination**을 권장한다. 예: `created_at` 또는 `last_activity_at` + `id`를 커서로 사용하면 데이터가 계속 추가되는 상황에서도 중복/누락을 줄일 수 있다. 현재 `/search`, `/related`는 `limit`만 받는 단순 형태이며, cursor는 MVP 이후 트래픽이 실제로 커졌을 때 도입한다.
+
+## 검색·관련 질문 구현 (Phase 2.9)
+
+전용 검색엔진(OpenSearch/Elasticsearch, [system-architecture.md](system-architecture.md#확정-기술-스택) "이후 검토") 도입 전 단계로, PostgreSQL 네이티브 기능만으로 구현한다.
+
+- `GET /search`: `to_tsvector('simple', title || body_markdown || logs) @@ plainto_tsquery('simple', q)`로 최신 버전의 제목/본문/에러로그를 전문검색하고, `tags.name ILIKE '%q%'`를 OR로 결합한다. 형태소 분석기는 `simple`(토큰화만, 어간 추출 없음) — 한국어 등 비영어 검색 품질이 필요해지면 `pg_bigm`/외부 검색엔진으로 교체한다.
+- `GET /questions/{id}/related`: `question_tags` 자기 조인으로 공유 태그 수를 계산해 내림차순 정렬한다 (mvp-scope.md "태그 매칭 우선"). 태그가 없는 질문은 관련 질문이 비어 있을 수 있다 — 본문 유사도 기반 추천은 MVP 이후 확장.
+- 두 기능 모두 soft-delete된 질문/태그는 제외한다.
 
 ## 입력 검증 공통 원칙
 

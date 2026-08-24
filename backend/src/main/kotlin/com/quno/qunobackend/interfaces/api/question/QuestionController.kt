@@ -9,6 +9,9 @@ import com.quno.qunobackend.application.question.usecase.GetQuestionVersionDiffU
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionUseCase
 import com.quno.qunobackend.application.question.usecase.ListQuestionVersionsUseCase
 import com.quno.qunobackend.application.question.usecase.ReviseQuestionUseCase
+import com.quno.qunobackend.application.search.usecase.QuestionSearchUseCase
+import com.quno.qunobackend.interfaces.api.search.QuestionSearchResultResponse
+import com.quno.qunobackend.interfaces.api.search.toResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -30,6 +33,7 @@ class QuestionController(
     private val listQuestionVersionsUseCase: ListQuestionVersionsUseCase,
     private val getQuestionVersionUseCase: GetQuestionVersionUseCase,
     private val getQuestionVersionDiffUseCase: GetQuestionVersionDiffUseCase,
+    private val questionSearchUseCase: QuestionSearchUseCase,
 ) {
 
     @PostMapping
@@ -128,6 +132,13 @@ class QuestionController(
             lines = result.lines.map { DiffLineResponse(type = it.type, text = it.text) },
         )
     }
+
+    @GetMapping("/{id}/related")
+    fun related(
+        @PathVariable id: Long,
+        @RequestParam(required = false) limit: Int?,
+    ): List<QuestionSearchResultResponse> =
+        questionSearchUseCase.related(id, limit ?: 5).map { it.toResponse() }
 
     private fun QuestionMutationResult.toResponse() =
         QuestionMutationResponse(id = id, title = title, status = status, versionNumber = versionNumber)
