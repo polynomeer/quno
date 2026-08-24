@@ -4,6 +4,7 @@ import com.quno.qunobackend.domain.answer.AnswerNotFoundException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
+import com.quno.qunobackend.domain.tag.TagNotFoundException
 import com.quno.qunobackend.domain.user.DuplicateEmailException
 import com.quno.qunobackend.domain.user.DuplicateNicknameException
 import com.quno.qunobackend.domain.user.InvalidCredentialsException
@@ -33,6 +34,7 @@ class GlobalExceptionHandler {
         QuestionNotFoundException::class,
         QuestionVersionNotFoundException::class,
         AnswerNotFoundException::class,
+        TagNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))

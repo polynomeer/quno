@@ -4,12 +4,14 @@ import com.quno.qunobackend.application.question.dto.QuestionSummaryResult
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import org.springframework.stereotype.Service
 
 @Service
 class GetQuestionUseCase(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
+    private val questionTagRepository: QuestionTagRepository,
 ) {
     fun execute(questionId: Long): QuestionSummaryResult {
         val question = questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
@@ -28,6 +30,7 @@ class GetQuestionUseCase(
             body = latestVersion.bodyMarkdown,
             environment = latestVersion.environment,
             logs = latestVersion.logs,
+            tags = questionTagRepository.findTagsByQuestionId(questionId).map { it.name },
             createdAt = question.createdAt,
             updatedAt = question.updatedAt,
         )

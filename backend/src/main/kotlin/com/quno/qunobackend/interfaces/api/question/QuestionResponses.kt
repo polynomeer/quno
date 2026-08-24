@@ -21,6 +21,7 @@ data class QuestionResponse(
     val body: String,
     val environment: String?,
     val logs: String?,
+    val tags: List<String>,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

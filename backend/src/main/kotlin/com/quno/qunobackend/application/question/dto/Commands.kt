@@ -6,6 +6,7 @@ data class CreateQuestionCommand(
     val body: String,
     val environment: String?,
     val logs: String?,
+    val tagNames: List<String> = emptyList(),
 )
 
 data class ReviseQuestionCommand(

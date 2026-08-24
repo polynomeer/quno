@@ -36,7 +36,7 @@ class QuestionController(
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
         @AuthenticationPrincipal authorId: Long,
-        @Valid @RequestBody request: QuestionContentRequest,
+        @Valid @RequestBody request: CreateQuestionRequest,
     ): QuestionMutationResponse {
         val result = createQuestionUseCase.execute(
             CreateQuestionCommand(
@@ -45,6 +45,7 @@ class QuestionController(
                 body = request.body,
                 environment = request.environment,
                 logs = request.logs,
+                tagNames = request.tags,
             ),
         )
         return result.toResponse()
@@ -62,6 +63,7 @@ class QuestionController(
             body = result.body,
             environment = result.environment,
             logs = result.logs,
+            tags = result.tags,
             createdAt = result.createdAt,
             updatedAt = result.updatedAt,
         )

@@ -2,6 +2,8 @@ package com.quno.qunobackend.application.question.usecase
 
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
+import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
+import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionStatus
 import org.junit.jupiter.api.Test
@@ -11,7 +13,10 @@ import kotlin.test.assertFailsWith
 class ReviseQuestionUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val questionVersionRepository = InMemoryQuestionVersionRepository()
-    private val createUseCase = CreateQuestionUseCase(questionRepository, questionVersionRepository)
+    private val tagRepository = InMemoryTagRepository()
+    private val createUseCase = CreateQuestionUseCase(
+        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+    )
     private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository)
 
     private fun createQuestion(authorId: Long = 1L): Long =

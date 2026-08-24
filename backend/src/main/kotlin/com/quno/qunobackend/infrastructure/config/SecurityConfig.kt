@@ -35,6 +35,10 @@ class SecurityConfig(
                 authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
             }
             authorizeHttpRequests {
+                // Boot forwards uncaught exceptions here; without this, that internal forward hits
+                // this same chain unauthenticated and the client sees a misleading 401 instead of
+                // the real error status (found via a uq_tags_slug_active violation surfacing as 401).
+                authorize("/error", permitAll)
                 authorize("/actuator/health", permitAll)
                 authorize("/actuator/info", permitAll)
                 authorize("/api/v1/auth/**", permitAll)
