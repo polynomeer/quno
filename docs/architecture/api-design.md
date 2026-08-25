@@ -65,6 +65,19 @@
 - `source` 파라미터는 향후 다른 추천 전략을 위해 받아두지만 MVP는 태그 팔로우 전략 하나뿐이라 현재는 무시한다.
 - 검색/관련 질문과 동일하게 candidate id를 랭킹한 뒤 `QuestionSummaryHydrator`(`application/common`)로 결과를 조립한다 — 세 기능이 이 조립 로직을 공유한다.
 
+## 라이트 대시보드 (Phase 3.2)
+
+`GET /dashboard`는 4개 섹션을 한 번에 조합한다. 대시보드 전용 비즈니스 로직은 두지 않고 기존 유스케이스/포트를 재사용한다.
+
+| 섹션 | 소스 |
+|---|---|
+| `popularQuestions` (Top 5) | `DashboardRepository.findPopularQuestionIds` — `watch_count*3 + answer_count*2` 내림차순, 최신순 tiebreak |
+| `wardUpdates` (최근 5건) | `ListMyNotificationsUseCase` 재사용 |
+| `followingTagsFeed` (최대 10건) | `RecommendQuestionsUseCase` 재사용 (Phase 3.1과 동일 로직) |
+| `trendingTags` (최대 10건) | `DashboardRepository.findTrendingTags` — 최근 7일 내 생성된 질문에 달린 태그를 질문 수 기준 집계 |
+
+**알려진 단순화**: MVP는 조회수(view count)를 추적하지 않는다. "오늘의 인기 질문"은 문서에서 이상적으로 언급한 view/watch/answer/freshness 조합 대신 현재 확보된 신호(Watch 수, Answer 수)만으로 근사한다. 실제 조회 추적이 추가되면 이 랭킹 쿼리에 반영한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
