@@ -93,10 +93,10 @@ mvp-scope.md 로드맵 Phase 4(QunoBot, 기술 버전 영향 감지, Outdated/Re
 
 mvp-scope.md 로드맵 Phase 5(Organization, 전문가 평판, Direct Ask) 중 **기존 데이터만으로 계산 가능한 간단한 평판 점수만** 이번 Phase에서 다룬다(2026-08-25 결정). Organization(조직 인증)과 Direct Ask(결제 포함)는 조직 인증 방식·매칭 기준·결제 처리 범위 등 핵심 설계가 문서에 없어 임의로 설계하기보다 후속 Phase로 미룬다 — mvp-scope.md의 MVP 제외 목록도 "복잡한 Reputation Economy"만 제외했지 간단한 평판까지 배제하지 않았다.
 
-- [ ] 9.1 평판 점수 계산 — 새 `domain/reputation` 패키지(`UserReputation` 값 객체 — questionCount/answerCount/acceptedAnswerCount/superAnswerCount 원시 집계 + 계산된 `score` 프로퍼티, `ReputationRepository` 포트). `score = questionCount*1 + answerCount*2 + acceptedAnswerCount*15 + superAnswerCount*10`(채택 답변과 Super Answer 지정에 가중치를 크게 둠 — Stack Overflow 평판 모델과 같은 방향). native SQL 한 번으로 사용자당 4개 카운트를 집계(Metrics와 동일한 단일 행 subquery 패턴). 캐싱은 두지 않는다(사용자별 조회라 Dashboard/Spike처럼 모두에게 같은 결과가 아님)
-- [ ] 9.2 API — `GET /api/v1/users/{id}/reputation`. 존재하지 않는 사용자는 404. `UserReputation`은 도메인 불변조건이 없는 순수 조회 모델이라 ADR-0010과 동일하게 DTO 복제 없이 그대로 응답으로 노출
-- [ ] 9.3 테스트 — 단위 테스트(점수 계산 공식, 존재하지 않는 사용자 404)와 실제 서버+curl 검증(native SQL 집계라 Dashboard/Metrics/Spike Detection과 동일하게 자동 통합 테스트 대신 실제 데이터로 확인)
-- [ ] 9.4 문서화 — `domain-model.md`에 Reputation Bounded Context 반영, `api-design.md`에 "전문가 평판 (Phase 9)" 섹션 추가, 이번 스코프 결정을 ADR로 기록
+- [x] 9.1 평판 점수 계산 — 새 `domain/reputation` 패키지(`UserReputation` 값 객체 — questionCount/answerCount/acceptedAnswerCount/superAnswerCount 원시 집계 + 계산된 `score` 프로퍼티, `ReputationRepository` 포트). `score = questionCount*1 + answerCount*2 + acceptedAnswerCount*15 + superAnswerCount*10`(채택 답변과 Super Answer 지정에 가중치를 크게 둠 — Stack Overflow 평판 모델과 같은 방향). native SQL 한 번으로 사용자당 4개 카운트를 집계(Metrics와 동일한 단일 행 subquery 패턴). 캐싱은 두지 않는다(사용자별 조회라 Dashboard/Spike처럼 모두에게 같은 결과가 아님)
+- [x] 9.2 API — `GET /api/v1/users/{id}/reputation`. 존재하지 않는 사용자는 404. `UserReputation`은 도메인 불변조건이 없는 순수 조회 모델이라 ADR-0010과 동일하게 DTO 복제 없이 그대로 응답으로 노출
+- [x] 9.3 테스트 — 단위 테스트(점수 계산 공식, 활동 없음=0점, 존재하지 않는 사용자 404)와 실제 서버+curl 검증(질문/답변/채택/Super Answer 지정 단계별로 점수가 정확히 0→17→27로 증가하는 것을 확인 — native SQL 집계라 Dashboard/Metrics/Spike Detection과 동일하게 자동 통합 테스트 대신 실제 데이터로 검증)
+- [x] 9.4 문서화 — `domain-model.md`에 Reputation Bounded Context 반영, `api-design.md`에 "전문가 평판 (Phase 9)" 섹션 추가, ADR-0018로 스코프 결정 기록
 
 ## Phase 11+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
