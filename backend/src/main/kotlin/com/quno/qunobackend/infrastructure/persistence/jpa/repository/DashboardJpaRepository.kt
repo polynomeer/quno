@@ -42,4 +42,15 @@ interface DashboardJpaRepository : Repository<QuestionJpaEntity, Long> {
         nativeQuery = true,
     )
     fun findTrendingTags(@Param("limit") limit: Int): List<TagTrendProjection>
+
+    @Query(
+        value = """
+            SELECT id FROM questions
+            WHERE status = 'RESOLVED' AND deleted_at IS NULL AND updated_at >= date_trunc('day', NOW())
+            ORDER BY updated_at DESC
+            LIMIT :limit
+        """,
+        nativeQuery = true,
+    )
+    fun findResolvedTodayQuestionIds(@Param("limit") limit: Int): List<Long>
 }

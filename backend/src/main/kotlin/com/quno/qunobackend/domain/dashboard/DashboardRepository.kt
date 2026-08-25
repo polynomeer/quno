@@ -13,4 +13,7 @@ interface DashboardRepository {
 
     /** Tags on questions created in the last 7 days, ranked by distinct question count. */
     fun findTrendingTags(limit: Int): List<TagTrend>
+
+    /** Questions that turned RESOLVED since local midnight today, most recent first (PLAN.md 10.2). */
+    fun findResolvedTodayQuestionIds(limit: Int): List<Long>
 }

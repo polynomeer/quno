@@ -24,6 +24,10 @@ class DashboardController(
             trendingTags = result.trendingTags.map {
                 TagTrendResponse(id = it.id, name = it.name, slug = it.slug, questionCount = it.questionCount)
             },
+            headline = result.headline?.let { DashboardHeadlineResponse(text = it.text, questionId = it.questionId) },
+            resolvedToday = result.resolvedToday.map { it.toResponse() },
+            reopenedKnowledge = result.reopenedKnowledge.map { it.toResponse() },
+            trendingErrors = result.trendingErrors,
         )
     }
 }
