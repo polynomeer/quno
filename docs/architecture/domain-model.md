@@ -14,6 +14,7 @@
 | Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster |
 | Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
 | Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation) |
+| Flow | 기존 신호를 묶은 활동 스트림 | Read model 중심(FlowCard), 새 이벤트 없음 |
 
 `Organization`, `Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
 
@@ -30,7 +31,7 @@
 | Watch | watch/unwatch. user-question 중복 금지 |
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
-| QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음 |
+| QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음. `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
 
 ## Domain Events
 
@@ -46,7 +47,7 @@ ReviewReRequested (REVIEW_RE_REQUESTED)
 QuestionMarkedOutdated (QUESTION_OUTDATED)
 ```
 
-Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다.
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다.
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -85,7 +86,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
 | watches | user_id, question_id | 관계 데이터, hard delete 허용 |
 | review_requests | id, question_id, requested_by, message, status, question_version_number_at_request, addressed_at | append형, hard delete 불필요(상태만 전이) |
-| question_clusters | id, representative_answer_id, created_at | hard delete 불필요(멤버가 다른 클러스터로 옮겨가는 경로가 없음) |
+| question_clusters | id, representative_answer_id, created_at, updated_at | hard delete 불필요(멤버가 다른 클러스터로 옮겨가는 경로가 없음) |
 | notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
 
 ### 삭제/FK 운영 원칙

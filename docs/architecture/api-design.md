@@ -43,6 +43,7 @@
 | POST | `/api/v1/questions/{id}/outdated` | 질문을 OUTDATED로 표시 (사용자 명시적 판단, 권한 제한 없음) |
 | GET | `/api/v1/qunobot/spikes?limit=` | 최근 질문량이 급증한 태그 목록 (자동 감지) |
 | GET | `/api/v1/users/{id}/reputation` | 활동 기반 평판 점수 조회 |
+| GET | `/api/v1/flow?limit=` | Quno Flow 활동 스트림 (섹션당 개수, 기본 5) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -185,6 +186,37 @@
 - Metrics와 동일하게 native SQL 서브쿼리 4개를 한 번에 집계한다. Dashboard/Spike Detection과 달리 **캐시하지 않는다** — 결과가 사용자마다 다르고(모두에게 같은 결과가 아님) 개별 조회 비용이 이미 작아, 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
 - 채택 답변과 Super Answer 지정에 가중치를 크게 둬(각각 15점, 10점) 단순 활동량보다 "실제로 검증된 기여"를 더 반영한다 — 다만 동료 평가나 악용 방지 장치는 없는 순수 근사치다.
 - **범위 밖**: Organization(조직 인증), Direct Ask(결제 포함)는 이번 Phase에 포함하지 않았다 — 핵심 설계가 문서에 없어 착수 시점에 다시 설계한다([PLAN.md](../../PLAN.md) Phase 11+).
+
+## Quno Flow & 고급 Dashboard (Phase 10)
+
+[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)에서 결정한 대로, [docs/archive/](../../archive/README.md) 원본 기획서(22~23장)를 참고해 기존 신호를 조합하는 두 기능만 구현했다. 실시간 질문방(Live Chat)은 WebSocket 인프라가 필요해 범위 밖이고, Instant Question은 기존 `POST /questions`로 이미 충족된다.
+
+### 재활성화/Super Answer 갱신 신호 (Phase 10.1)
+
+`domain/flow`의 `FlowRepository`가 새 이벤트 로그 없이 기존 타임스탬프만으로 두 신호를 도출한다 — Spike Detection이 새 인프라 없이 기존 타임스탬프로 급증을 도출한 것과 같은 접근이다.
+
+- **재활성화(Reopened)**: 어떤 질문에 `QUESTION_OUTDATED` outbox 이벤트가 있고, 그 이후에 새 `question_versions`가 생겼으면 "재활성화됨"으로 본다.
+- **최근 Super Answer 지정**: `question_clusters.updated_at`(Phase 10.1에서 추가한 컬럼 — `designateSuperAnswer()` 호출 시 갱신)이 최근인 클러스터를 찾는다.
+
+### 고급 Dashboard (Phase 10.2)
+
+기존 `GET /dashboard`(Phase 3.2) 응답에 필드만 추가했다(하위 호환, 기존 4개 섹션은 그대로 유지):
+
+| 필드 | 내용 |
+|---|---|
+| `headline` | 가장 두드러진 신호 하나. 급증 태그가 있으면 그것을, 없으면 최고 인기 질문을 사용한다("무언가 심상치 않은 일"이 "늘 그렇듯 인기 있음"보다 헤드라인감이 크다는 판단). Quno Flow(10.3)의 카드 조립 로직을 그대로 재사용해 중복 구현하지 않는다 |
+| `resolvedToday` | 오늘(자정 이후) RESOLVED로 전환된 질문 |
+| `reopenedKnowledge` | 10.1의 재활성화 신호 재사용 |
+| `trendingErrors` | 10.1이 아니라 기존 `SpikeDetectionRepository.findSpikingTags` 재사용. **알려진 단순화**: 실제 에러 텍스트 추출/분류 없이 태그 급증으로 근사한다 — Phase 3.3의 "인기 질문을 조회수 없이 Watch/Answer 수로 근사"한 것과 같은 종류의 단순화 |
+
+`resolvedToday`는 단순 인덱스 조회라 Dashboard의 인기 질문/태그 트렌드와 달리 캐싱하지 않는다.
+
+### Quno Flow (Phase 10.3)
+
+`GET /flow?limit=`(섹션당 개수, 기본 5)가 4가지 카드를 **고정 섹션 순서**(인기 질문 → 태그 급증 → 재활성화 → Cluster Super Answer)로 이어붙여 반환한다. 하나의 타임라인으로 정렬하지 않는다 — 인기 질문/태그 급증은 "지금 이 순간의 상태" 스냅샷이라 자연스러운 발생 시각이 없고, 이걸 재활성화/Super Answer 같은 실제 이벤트와 억지로 한 타임라인에 섞으면 의미가 왜곡된다.
+
+- `FlowCard`(`domain/flow`)는 `{type, headline, questionId?, clusterId?}` — 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 API 응답까지 그대로 재사용한다.
+- `headline`은 사람이 읽는 완성된 문장이다(예: `"spring-boot 관련 질문이 평소보다 6.0배 늘었습니다"`) — 클라이언트가 별도로 조립하지 않는다.
 
 ## 입력 검증 공통 원칙
 
