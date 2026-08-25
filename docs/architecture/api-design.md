@@ -9,7 +9,8 @@
 | POST | `/api/v1/auth/signup` | 회원가입 |
 | POST | `/api/v1/auth/login` | 로그인, Access/Refresh Token 발급 |
 | POST | `/api/v1/auth/refresh` | Refresh Token으로 Access/Refresh Token 재발급 |
-| GET | `/api/v1/me` | 내 기본 프로필 조회 |
+| GET | `/api/v1/me` | 내 기본 프로필 조회 (이메일 포함, 비공개) |
+| GET | `/api/v1/users/{id}/profile` | 공개 프로필 — 작성 질문/답변, 팔로우 태그 (이메일 미포함) |
 | POST | `/api/v1/questions` | 질문과 Qv1 생성 (`tags: string[]` 선택 — find-or-create, slug 기준 중복 제거) |
 | GET | `/api/v1/questions/{id}` | 질문 최신본/버전 요약 조회 |
 | GET | `/api/v1/questions/{id}/versions` | 질문 버전 히스토리(요약) 목록 |
@@ -75,6 +76,13 @@
 | `wardUpdates` (최근 5건) | `ListMyNotificationsUseCase` 재사용 |
 | `followingTagsFeed` (최대 10건) | `RecommendQuestionsUseCase` 재사용 (Phase 3.1과 동일 로직) |
 | `trendingTags` (최대 10건) | `DashboardRepository.findTrendingTags` — 최근 7일 내 생성된 질문에 달린 태그를 질문 수 기준 집계 |
+
+## 사용자 프로필 라이트 (Phase 3.3)
+
+`GET /users/{id}/profile`은 작성 질문 전체(`QuestionSummaryHydrator`로 조립), 작성 답변 전체, 팔로우 태그 목록을 반환한다. `GET /me`와 달리 이메일을 포함하지 않는 공개용 응답이다.
+
+- 다른 조회 API와 동일하게 현재는 인증을 요구한다 — 비로그인 공개 열람 여부는 [PLAN.md](../../PLAN.md) Phase 2.2에서 미룬 "질문 조회 공개 여부" 결정과 함께 Search/Discovery 설계 시 재검토한다.
+- 질문/답변 목록은 개수 제한 없이 전체를 반환한다 — 사용자당 활동량이 많아지면 커서 페이지네이션이 필요해질 수 있다(제한 없음은 MVP 단순화).
 
 **알려진 단순화**: MVP는 조회수(view count)를 추적하지 않는다. "오늘의 인기 질문"은 문서에서 이상적으로 언급한 view/watch/answer/freshness 조합 대신 현재 확보된 신호(Watch 수, Answer 수)만으로 근사한다. 실제 조회 추적이 추가되면 이 랭킹 쿼리에 반영한다.
 

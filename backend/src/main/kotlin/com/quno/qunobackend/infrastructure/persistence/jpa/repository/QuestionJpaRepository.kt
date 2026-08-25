@@ -13,4 +13,6 @@ interface QuestionJpaRepository : JpaRepository<QuestionJpaEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select q from QuestionJpaEntity q where q.id = :id and q.deletedAt is null")
     fun findByIdForUpdate(@Param("id") id: Long): QuestionJpaEntity?
+
+    fun findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId: Long): List<QuestionJpaEntity>
 }

@@ -1,7 +1,6 @@
 package com.quno.qunobackend.interfaces.api.answer
 
 import com.quno.qunobackend.application.answer.dto.AcceptAnswerCommand
-import com.quno.qunobackend.application.answer.dto.AnswerResult
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.answer.usecase.AcceptAnswerUseCase
 import com.quno.qunobackend.application.answer.usecase.ListAnswersUseCase
@@ -51,14 +50,4 @@ class AnswerController(
             questionStatus = result.questionStatus,
         )
     }
-
-    private fun AnswerResult.toResponse() = AnswerResponse(
-        id = id,
-        questionId = questionId,
-        authorId = authorId,
-        body = body,
-        isAccepted = isAccepted,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-    )
 }

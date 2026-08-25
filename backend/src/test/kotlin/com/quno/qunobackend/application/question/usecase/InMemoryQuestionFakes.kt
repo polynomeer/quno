@@ -33,6 +33,9 @@ class InMemoryQuestionRepository : QuestionRepository {
 
     // No real locking needed for a single-threaded in-memory fake.
     override fun findByIdForUpdate(id: Long): Question? = findById(id)
+
+    override fun findAllByAuthorId(authorId: Long): List<Question> =
+        byId.values.filter { it.authorId == authorId }.sortedByDescending { it.createdAt }
 }
 
 class InMemoryQuestionVersionRepository : QuestionVersionRepository {

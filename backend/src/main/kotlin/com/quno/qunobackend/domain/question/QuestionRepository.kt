@@ -9,4 +9,7 @@ interface QuestionRepository {
 
     /** Locks the row (SELECT ... FOR UPDATE) to serialize concurrent revision creation. */
     fun findByIdForUpdate(id: Long): Question?
+
+    /** Most recent first. */
+    fun findAllByAuthorId(authorId: Long): List<Question>
 }

@@ -1,5 +1,8 @@
 package com.quno.qunobackend.interfaces.api.user
 
+import com.quno.qunobackend.interfaces.api.answer.AnswerResponse
+import com.quno.qunobackend.interfaces.api.search.QuestionSearchResultResponse
+import com.quno.qunobackend.interfaces.api.tag.TagResponse
 import java.time.Instant
 
 data class MyProfileResponse(
@@ -7,4 +10,12 @@ data class MyProfileResponse(
     val email: String,
     val nickname: String,
     val createdAt: Instant,
+)
+
+data class UserProfileResponse(
+    val userId: Long,
+    val nickname: String,
+    val questions: List<QuestionSearchResultResponse>,
+    val answers: List<AnswerResponse>,
+    val followedTags: List<TagResponse>,
 )

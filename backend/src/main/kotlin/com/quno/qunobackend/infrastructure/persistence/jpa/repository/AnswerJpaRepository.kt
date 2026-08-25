@@ -7,4 +7,5 @@ interface AnswerJpaRepository : JpaRepository<AnswerJpaEntity, Long> {
     fun findByIdAndDeletedAtIsNull(id: Long): AnswerJpaEntity?
     fun findAllByQuestionIdAndDeletedAtIsNull(questionId: Long): List<AnswerJpaEntity>
     fun findByQuestionIdAndIsAcceptedTrueAndDeletedAtIsNull(questionId: Long): AnswerJpaEntity?
+    fun findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId: Long): List<AnswerJpaEntity>
 }

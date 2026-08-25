@@ -24,7 +24,7 @@ class TagController(
 
     @GetMapping
     fun search(@RequestParam(required = false) q: String?): List<TagResponse> =
-        searchTagsUseCase.execute(q).map { TagResponse(id = it.id, name = it.name, slug = it.slug) }
+        searchTagsUseCase.execute(q).map { it.toResponse() }
 
     @PostMapping("/{id}/follow")
     @ResponseStatus(HttpStatus.NO_CONTENT)

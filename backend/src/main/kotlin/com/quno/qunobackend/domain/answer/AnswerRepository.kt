@@ -10,4 +10,7 @@ interface AnswerRepository {
 
     /** At most one per question, enforced by the accept use case. */
     fun findAcceptedByQuestionId(questionId: Long): Answer?
+
+    /** Most recent first. */
+    fun findAllByAuthorId(authorId: Long): List<Answer>
 }

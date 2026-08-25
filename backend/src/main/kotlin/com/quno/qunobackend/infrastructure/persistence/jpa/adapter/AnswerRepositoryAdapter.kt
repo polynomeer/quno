@@ -33,6 +33,9 @@ class AnswerRepositoryAdapter(
     override fun findAcceptedByQuestionId(questionId: Long): Answer? =
         jpaRepository.findByQuestionIdAndIsAcceptedTrueAndDeletedAtIsNull(questionId)?.toDomain()
 
+    override fun findAllByAuthorId(authorId: Long): List<Answer> =
+        jpaRepository.findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId).map { it.toDomain() }
+
     private fun AnswerJpaEntity.toDomain(): Answer = Answer.reconstitute(
         id = requireNotNull(id),
         questionId = questionId,
