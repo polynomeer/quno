@@ -12,6 +12,7 @@
 | Engagement | 질문 변화 구독과 알림 | Watch, Notification |
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
 | Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster |
+| Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
 
 `Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
 
@@ -21,7 +22,7 @@
 
 | 모델 | 주요 행위/규칙 |
 |---|---|
-| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1) |
+| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, markOutdated, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1). `revise()`가 이미 RESOLVED가 아니면 UPDATED로 전이하므로 OUTDATED도 리비전 한 번으로 자연히 벗어남(Phase 8.1) |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
 | Answer | create, edit, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) |
 | ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). status는 Question.status를 다시 게이팅하지 않는 독립 부기 정보(Phase 5.3, [ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)) |
@@ -41,6 +42,7 @@ QuestionWatched
 QuestionResolved
 ReviewRequested (REVIEW_REQUESTED)
 ReviewReRequested (REVIEW_RE_REQUESTED)
+QuestionMarkedOutdated (QUESTION_OUTDATED)
 ```
 
 Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다.
@@ -312,7 +314,7 @@ QuestionCreated/VersionCreated → SimilarityAnalyzed → QuestionClustered
   → SuperAnswerCreated/Updated → RelatedQuestionsUpdated → WatchersNotified
 ```
 
-**구현 상태 (PLAN.md Phase 6.1~6.3)**: `SimilarityAnalyzed → QuestionClustered`와 `ClusterThresholdReached → SuperAnswerCandidateDetected`는 자동화하지 않았다 — 임베딩/벡터 유사도 인프라 없이, 사용자가 `POST /questions/{id}/cluster`로 명시적으로 "같은 문제"를 표시하면 `QuestionClustered`에 해당하는 결과(클러스터 생성/합류)가 즉시 일어난다([ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). `SuperAnswerCreated`도 마찬가지로 자동 후보 탐지 없이 `POST /clusters/{id}/super-answer`로 사용자가 직접 지정한다. `RelatedQuestionsUpdated → WatchersNotified`는 만들지 않았다 — Cluster/Super Answer 액션은 outbox 이벤트로 발행하지 않고 API 응답으로 결과를 즉시 반환한다(비동기 알림이 필요한 시나리오가 아니라고 판단). Merge/Fork는 아직 착수하지 않았다(PLAN.md Phase 7+에서 번호 미정으로 대기).
+**구현 상태 (PLAN.md Phase 6.1~6.3)**: `SimilarityAnalyzed → QuestionClustered`와 `ClusterThresholdReached → SuperAnswerCandidateDetected`는 자동화하지 않았다 — 임베딩/벡터 유사도 인프라 없이, 사용자가 `POST /questions/{id}/cluster`로 명시적으로 "같은 문제"를 표시하면 `QuestionClustered`에 해당하는 결과(클러스터 생성/합류)가 즉시 일어난다([ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). `SuperAnswerCreated`도 마찬가지로 자동 후보 탐지 없이 `POST /clusters/{id}/super-answer`로 사용자가 직접 지정한다. `RelatedQuestionsUpdated → WatchersNotified`는 만들지 않았다 — Cluster/Super Answer 액션은 outbox 이벤트로 발행하지 않고 API 응답으로 결과를 즉시 반환한다(비동기 알림이 필요한 시나리오가 아니라고 판단). Merge/Fork는 아직 착수하지 않았다(PLAN.md Phase 9+에서 번호 미정으로 대기).
 
 ### QunoBot 이벤트 체인 (Phase 4)
 
@@ -321,3 +323,7 @@ TechnologyVersionReleased → ImpactScanRequested → AffectedKnowledgeDetected
   → QuestionOutdatedDetected / AnswerRegressionDetected
   → NotificationCreated → QuestionRevisionSuggested
 ```
+
+**구현 상태 (PLAN.md Phase 8)**: `TechnologyVersionReleased → ImpactScanRequested → AffectedKnowledgeDetected`는 구현하지 않았다 — 외부 기술 버전 릴리스 데이터 피드가 없어 진짜 자동 감지가 불가능하다([ADR-0017](decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)). 대신 `QuestionOutdatedDetected`에 해당하는 결과(`QUESTION_OUTDATED`)는 사용자가 `POST /questions/{id}/outdated`로 직접 표시하면 즉시 발생하고 `NotificationCreated`(기존 Watch fan-out)로 이어진다. `AnswerRegressionDetected`와 `QuestionRevisionSuggested`는 구현하지 않았다.
+
+이 체인과 별개로, Spike Detection(태그별 질문량 급증 감지)은 진짜 자동화가 가능해 별도로 구현했다 — `SpikeDetectionRepository`가 태그별 최근 1일 질문 수와 직전 14일 일평균을 비교해 급증 비율을 계산한다(`GET /qunobot/spikes`). 이는 QunoBot 이벤트 체인의 일부가 아니라 독립된 읽기 전용 신호다 — "무엇이 심상치 않은지"만 알려주고 원인(기술 버전 변화인지 다른 이유인지)은 사람이 판단한다.

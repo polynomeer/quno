@@ -40,6 +40,8 @@
 | GET | `/api/v1/questions/{id}/cluster` | 이 질문이 속한 클러스터 조회 (멤버 질문 + Super Answer) |
 | GET | `/api/v1/clusters/{id}` | 클러스터 직접 조회 |
 | POST | `/api/v1/clusters/{id}/super-answer` | 클러스터의 Super Answer 지정 (채택된 답변만 가능) |
+| POST | `/api/v1/questions/{id}/outdated` | 질문을 OUTDATED로 표시 (사용자 명시적 판단, 권한 제한 없음) |
+| GET | `/api/v1/qunobot/spikes?limit=` | 최근 질문량이 급증한 태그 목록 (자동 감지) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -157,7 +159,21 @@
   - 그 답변이 채택(accepted)되지 않았으면 409(`AnswerNotAcceptedException`) — Super Answer는 검증된 해결책이어야 한다는 취지.
   - 지정 권한 제한은 없다(현재 역할/평판 시스템이 없어 ReviewRequest와 동일하게 인증된 사용자 누구나 가능).
 - Cluster/Super Answer 액션은 outbox 이벤트를 발행하지 않는다 — 호출자가 API 응답으로 결과를 바로 확인하므로 Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다.
-- **범위 밖**: Merge(두 클러스터/질문 병합), Fork(질문 파생), 지식 그래프 시각화는 이번 Phase에 포함하지 않았다 — 사용 패턴을 관찰한 뒤 별도 Phase로 설계한다([PLAN.md](../../PLAN.md) Phase 7+).
+- **범위 밖**: Merge(두 클러스터/질문 병합), Fork(질문 파생), 지식 그래프 시각화는 이번 Phase에 포함하지 않았다 — 사용 패턴을 관찰한 뒤 별도 Phase로 설계한다([PLAN.md](../../PLAN.md) Phase 9+).
+
+## Outdated 표시 & Spike Detection (Phase 8)
+
+[ADR-0017](decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)에서 결정한 대로, "기술 버전 변화로 인한 Outdated"의 진짜 자동 감지(외부 릴리스 피드 연동)는 범위 밖이다. 대신 Cluster/Review와 같은 **사용자 명시적 표시** 패턴을 재사용하고, 별도로 기존 데이터만으로 진짜 자동화가 가능한 Spike Detection을 추가했다.
+
+- `POST /questions/{id}/outdated` (body: `reason`): 질문을 `OUTDATED` 상태로 전환한다. 권한 제한이 없다 — 작성자 본인을 포함해 누구나 표시할 수 있다(Cluster와 동일한 커뮤니티 판단 모델).
+  - 이미 `OUTDATED`면 멱등하게 그대로 둔다(에러 아님).
+  - `RESOLVED`를 포함해 어떤 상태에서도 표시 가능하다 — vision.md의 "RESOLVED → ... → OUTDATED → 새 Revision → REOPENED" 흐름 중 RESOLVED 이후 단계를 반영한다.
+  - `QUESTION_OUTDATED` outbox 이벤트가 기존 fan-out에 실려 Ward 구독자 + 질문 작성자(액터 제외)에게 알림을 보낸다. `reason`은 알림 payload에 그대로 담긴다(JSON 이스케이프 처리).
+  - **되살아나는 법은 새 상태를 만들지 않는다**: `Question.revise()`가 이미 RESOLVED가 아닌 모든 상태를 UPDATED로 전이시키므로, OUTDATED 질문을 리비전하면 자동으로 UPDATED가 된다 — vision.md가 말하는 별도의 `REOPENED` 상태는 도입하지 않았다.
+- `GET /qunobot/spikes?limit=`: 최근 1일 질문 수가 자기 자신의 직전 14일 일평균 대비 급증한 태그를 `spikeRatio` 내림차순으로 반환한다. 노이즈 방지를 위해 최근 질문이 3건 미만인 태그는 제외한다(하드코딩된 임계값).
+  - `TagSpike`(`domain/qunobot`)는 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 별도 DTO로 복제하지 않고 API 응답까지 그대로 재사용한다.
+  - `SpikeDetectionRepositoryAdapter`가 [ADR-0009](decisions/0009-redis-cache-global-aggregates-only.md)와 동일한 cache-aside 패턴(모든 사용자에게 동일한 결과, TTL 60초)을 그대로 재사용한다 — 새 ADR 없이 기존 결정을 적용한 것.
+  - 급증 자체가 원인을 설명하지 않는다 — "이 태그에 무슨 일이 있다"는 신호일 뿐이고, 실제 원인(기술 버전 변화 등) 분석은 사람이 한다.
 
 ## 입력 검증 공통 원칙
 
