@@ -53,9 +53,9 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 
 ## Phase 4 — 검증
 
-- [ ] 4.1 [mvp-scope.md](docs/product/mvp-scope.md#성공-지표) 지표(Revision Rate, Ward Adoption 등) 계측 포인트 구현/로깅
-- [ ] 4.2 E2E 시나리오 테스트: 질문 생성 → 리비전 → 답변 → 채택 → Ward 알림
-- [ ] 4.3 MVP 핵심 가설 검증을 위한 최소 프론트엔드 또는 API 데모 플로우 확인
+- [x] 4.1 [mvp-scope.md](docs/product/mvp-scope.md#성공-지표) 지표 계측 — `GET /api/v1/metrics`가 백엔드 데이터만으로 계산 가능한 지표(Revision Rate, Answer/Accept Rate, Ward 커버리지, North Star 후보 "주간 활성 Living Questions")를 native SQL 한 번으로 집계. `MetricsLoggingScheduler`가 동일 스냅샷을 30분 주기로 INFO 로깅. CTR/D1·D7 Retention은 클라이언트 이벤트 트래킹이 필요해 프론트엔드가 없는 현재는 계측 지점이 없음을 명시하고 범위에서 제외([api-design.md](docs/architecture/api-design.md#지표-계측-phase-41) 기록). 실제 서버 기동 후 curl로 응답 확인 완료
+- [x] 4.2 E2E 시나리오 테스트 — `QuestionLifecycleE2ETest`(`integration/`)를 기존 통합 테스트들과 달리 `MockMvc`로 실제 HTTP+JWT 보안 필터까지 통과시켜 작성: 질문 생성 → Ward(watch) → 리비전 → (outbox 소비 후) QUESTION_REVISION 알림 확인 → 답변 → NEW_ANSWER 알림 → 채택(RESOLVED 전환) → ANSWER_ACCEPTED 알림까지 한 번에 검증. `DispatchOutboxEventsUseCase`를 테스트에서 직접 호출해 2초 스케줄러 타이밍에 의존하지 않도록 결정적으로 구성. 실제 Postgres 대상으로 통과 확인 완료
+- [x] 4.3 MVP 핵심 가설 검증 데모 — 프론트엔드 대신 `backend/scripts/demo.sh`(API 데모 플로우)를 선택: 실행 중인 서버에 대해 가입→질문 생성→Ward→리비전→diff 확인→Ward 알림→답변→채택→알림→검색→태그 팔로우 추천→공개 프로필→대시보드→지표 스냅샷까지 curl로 순서대로 호출하며 각 단계 응답을 사람이 읽을 수 있게 출력. 실제 로컬 서버에 대해 전체 스크립트 실행 및 통과 확인 완료(outbox 비동기 처리 타이밍 때문에 알림 확인 단계에 짧은 대기를 넣음)
 
 ## Phase 5+ — MVP 이후 로드맵 (착수 시점에 세부 계획 별도 수립)
 
