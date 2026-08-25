@@ -77,6 +77,15 @@
 | `followingTagsFeed` (최대 10건) | `RecommendQuestionsUseCase` 재사용 (Phase 3.1과 동일 로직) |
 | `trendingTags` (최대 10건) | `DashboardRepository.findTrendingTags` — 최근 7일 내 생성된 질문에 달린 태그를 질문 수 기준 집계 |
 
+### Redis 캐시 (Phase 3.4)
+
+`popularQuestions`/`trendingTags` 두 섹션만 캐시한다 — 이 둘은 **모든 사용자에게 동일한** 결과이자 비용이 큰 native 집계 쿼리이기 때문이다. `wardUpdates`/`followingTagsFeed`는 사용자별로 다르고 최신성이 정확도에 직결돼(내 알림이 오래된 값으로 보이면 버그처럼 느껴짐) 캐시하지 않는다.
+
+- 방식: cache-aside. `DashboardRepositoryAdapter`가 `StringRedisTemplate`으로 키를 먼저 조회하고, miss 시 native 쿼리를 실행한 뒤 결과를 Jackson으로 직렬화해 저장한다.
+- 키: `dashboard:popular-questions:{limit}`, `dashboard:trending-tags:{limit}`
+- TTL: 60초 — "트렌드"류 데이터는 약간의 지연이 자연스러우므로 능동적 무효화(질문/답변/와드 생성 시 캐시 삭제)는 두지 않고 TTL 만료로만 갱신한다. 더 강한 신선도가 필요해지면 이 부분을 재검토한다.
+- 값 직렬화는 `readValue(String, Class)`/`writeValueAsString`만 사용한다 (Jackson 3의 `TypeReference`/`JavaType` 제네릭 API는 배열 타입(`Array<T>::class.java`)으로 우회해 불필요한 복잡도를 피했다).
+
 ## 사용자 프로필 라이트 (Phase 3.3)
 
 `GET /users/{id}/profile`은 작성 질문 전체(`QuestionSummaryHydrator`로 조립), 작성 답변 전체, 팔로우 태그 목록을 반환한다. `GET /me`와 달리 이메일을 포함하지 않는 공개용 응답이다.
