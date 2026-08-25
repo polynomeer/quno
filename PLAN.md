@@ -57,15 +57,25 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 - [x] 4.2 E2E 시나리오 테스트 — `QuestionLifecycleE2ETest`(`integration/`)를 기존 통합 테스트들과 달리 `MockMvc`로 실제 HTTP+JWT 보안 필터까지 통과시켜 작성: 질문 생성 → Ward(watch) → 리비전 → (outbox 소비 후) QUESTION_REVISION 알림 확인 → 답변 → NEW_ANSWER 알림 → 채택(RESOLVED 전환) → ANSWER_ACCEPTED 알림까지 한 번에 검증. `DispatchOutboxEventsUseCase`를 테스트에서 직접 호출해 2초 스케줄러 타이밍에 의존하지 않도록 결정적으로 구성. 실제 Postgres 대상으로 통과 확인 완료
 - [x] 4.3 MVP 핵심 가설 검증 데모 — 프론트엔드 대신 `backend/scripts/demo.sh`(API 데모 플로우)를 선택: 실행 중인 서버에 대해 가입→질문 생성→Ward→리비전→diff 확인→Ward 알림→답변→채택→알림→검색→태그 팔로우 추천→공개 프로필→대시보드→지표 스냅샷까지 curl로 순서대로 호출하며 각 단계 응답을 사람이 읽을 수 있게 출력. 실제 로컬 서버에 대해 전체 스크립트 실행 및 통과 확인 완료(outbox 비동기 처리 타이밍 때문에 알림 확인 단계에 짧은 대기를 넣음)
 
-## Phase 5+ — MVP 이후 로드맵 (착수 시점에 세부 계획 별도 수립)
+## Phase 5 — 협업형 QPR (mvp-scope.md 로드맵 Phase 2)
 
-[mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 1:1 대응한다. 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
+GitHub PR의 Review/Re-request 개념을 질문에 적용한다 — [vision.md](docs/product/vision.md#다른-서비스에서-차용하는-개념)의 QPR(Question Pull Request) 컨셉과 [domain-model.md](docs/architecture/domain-model.md#qpr-이벤트-체인-phase-2) 이벤트 체인(`RequestMoreInfo → NEEDS_INFO → 리비전 → ReRequestReview`)을 그대로 구현 대상으로 삼는다. 여러 리뷰어가 각자 독립적으로 정보를 요청/재요청할 수 있는 **다중 리뷰 요청 스레드 모델**로 구현하기로 결정했다(2026-08-25, GitHub PR review와 동일한 형태이며 단일 NEEDS_INFO 플래그안보다 이벤트 체인·vision.md 취지에 더 부합한다고 판단).
 
-- [ ] Phase 2(로드맵): QPR Review / Needs Info / Re-request, 답변-질문버전 연결 고도화
-- [ ] Phase 3(로드맵): Question Cluster, Merge/Fork, Super Answer
-- [ ] Phase 4(로드맵): QunoBot, 기술 버전 영향 감지, Outdated/Regression
-- [ ] Phase 5(로드맵): Organization, 전문가 평판, Direct Ask
-- [ ] Phase 6(로드맵): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
+- [ ] 5.1 답변–질문버전 연결 고도화 — `answers.target_version_number` 컬럼 추가(V4 마이그레이션). 답변 작성 시점의 질문 최신 버전 번호를 자동 기록(버전 선택 UI는 만들지 않음 — MVP 단순화). 응답에 `targetVersionNumber`와, 질문이 그 이후 리비전됐는지를 나타내는 `isStale`을 노출해 vision.md가 지적한 "답변이 어느 시점의 질문을 대상으로 했는지 불명확" 문제를 해소
+- [ ] 5.2 ReviewRequest 도메인 — 새 Aggregate `ReviewRequest`(id, questionId, requestedBy, message, status: OPEN/ADDRESSED, questionVersionNumberAtRequest, createdAt, addressedAt)와 `ReviewRequestRepository`. `Question`에 `requestMoreInfo()` 도메인 메서드 추가(RESOLVED면 거부, 그 외 상태에서는 NEEDS_INFO로 전이 — 이미 NEEDS_INFO면 no-op). `POST /api/v1/questions/{id}/review-requests`(작성자 본인은 요청 불가), `GET /api/v1/questions/{id}/review-requests`(전체 목록, 상태 포함)
+- [ ] 5.3 재요청(Re-request Review) — `POST /api/v1/questions/{id}/review-requests/{reviewRequestId}/re-request`(질문 작성자만 가능, 이미 ADDRESSED인 요청 거부, 요청 시점(`questionVersionNumberAtRequest`) 이후 실제 리비전이 있어야 허용 — 없으면 "아직 반영된 리비전이 없다"는 전용 예외). 해당 요청을 ADDRESSED로 전환하고, 그 질문에 열려있는 요청이 더 없으면 `Question.reviewAddressed()`로 NEEDS_INFO→UPDATED 복귀
+- [ ] 5.4 알림 통합 — 기존 outbox/fan-out 패턴에 두 이벤트 추가: `REVIEW_REQUESTED`(작성자 + Ward 구독자, 요청자 본인 제외), `REVIEW_RE_REQUESTED`(원 요청자 + Ward 구독자, 작성자 본인 제외)
+- [ ] 5.5 테스트 — 인메모리 fake 기반 단위 테스트(본인 질문 요청 금지, RESOLVED 질문 요청 금지, 재요청 권한/상태 invariant, 리비전 전 재요청 거부, 마지막 요청 해소 시 상태 복귀)와 `QuestionLifecycleE2ETest`에 준하는 QPR 시나리오 통합 테스트(정보요청 → 리비전 → 재요청 → 알림, 실제 HTTP+JWT로 검증)
+- [ ] 5.6 문서화 — `domain-model.md` ERD에 `review_requests` 테이블과 갱신된 상태 전이 규칙 반영, `api-design.md`에 "QPR Review (Phase 5)" 섹션 추가, 본 PLAN.md에 완료 내역 기록
+
+## Phase 6+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
+
+- [ ] Phase 6 — 질문 네트워크 (mvp-scope.md 로드맵 Phase 3): Question Cluster, Merge/Fork, Super Answer, 지식 그래프 시각화
+- [ ] Phase 7 — 자동 유지보수 (mvp-scope.md 로드맵 Phase 4): QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection
+- [ ] Phase 8 — 신뢰 네트워크 (mvp-scope.md 로드맵 Phase 5): Organization, 전문가 평판, Direct Ask
+- [ ] Phase 9 — 소비 경험 강화 (mvp-scope.md 로드맵 Phase 6): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
 
 ## 진행 방식
 
