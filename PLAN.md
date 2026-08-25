@@ -46,7 +46,7 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 
 ## Phase 3 — MVP P1
 
-- [ ] 3.1 태그 팔로우 기반 추천 점수식 구현 ([domain-model.md](docs/architecture/domain-model.md#태그-팔로우-기반-추천-쿼리) SQL 참고)
+- [x] 3.1 태그 팔로우 기반 추천 점수식 구현 ([domain-model.md](docs/architecture/domain-model.md#태그-팔로우-기반-추천-쿼리) SQL 참고). `GET /api/v1/recommendations/questions?source=tags`, 점수식 `matched_tag_count*3 + LEAST(answer_count,5)`. Search/Related와 candidate-id 랭킹 후 hydrate 패턴이 겹쳐 `application/common/QuestionSummaryHydrator`로 결과 조립 로직을 공용화(3중복 시점에 추출). curl로 팔로우 전/후 추천 변화, 본인 질문 제외(`author_id <> userId`) 확인 완료
 - [ ] 3.2 라이트 대시보드 API — 오늘의 인기 질문, 내 Ward 업데이트, 팔로우 태그 피드, 태그 트렌드
 - [ ] 3.3 사용자 프로필 라이트 — 작성 질문/답변, 관심 태그 노출
 - [ ] 3.4 Redis 캐시 적용 — 대시보드/인기 질문 조회 경로
