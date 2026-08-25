@@ -6,4 +6,5 @@ object OutboxEventTypes {
     const val NEW_ANSWER = "NEW_ANSWER"
     const val ANSWER_ACCEPTED = "ANSWER_ACCEPTED"
     const val REVIEW_REQUESTED = "REVIEW_REQUESTED"
+    const val REVIEW_RE_REQUESTED = "REVIEW_RE_REQUESTED"
 }

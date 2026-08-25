@@ -5,3 +5,9 @@ data class CreateReviewRequestCommand(
     val requestedBy: Long,
     val message: String,
 )
+
+data class ReRequestReviewCommand(
+    val questionId: Long,
+    val reviewRequestId: Long,
+    val actorId: Long,
+)

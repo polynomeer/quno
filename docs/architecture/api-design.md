@@ -35,6 +35,7 @@
 | GET | `/api/v1/metrics` | MVP 성공 지표 스냅샷 (내부/운영용) |
 | POST | `/api/v1/questions/{id}/review-requests` | QPR 정보 요청(Review) 생성 — 질문을 NEEDS_INFO로 전환 |
 | GET | `/api/v1/questions/{id}/review-requests` | 질문에 걸린 정보 요청 전체 목록 (상태 포함) |
+| POST | `/api/v1/questions/{id}/review-requests/{reviewRequestId}/re-request` | 정보 요청 재요청 — 해당 요청을 ADDRESSED로 전환 (작성자만) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -132,7 +133,8 @@
   - RESOLVED 질문에 요청하면 409(`QuestionAlreadyResolvedException`).
 - `GET /questions/{id}/review-requests`: 해당 질문의 모든 요청(OPEN/ADDRESSED 무관)을 최신순으로 반환한다.
 - `REVIEW_REQUESTED` outbox 이벤트를 기존 Watch/Notification fan-out 파이프라인에 태운다 — 수신자는 Ward 구독자 + 질문 작성자(요청자 본인 제외), `NEW_ANSWER`와 같은 규칙이다.
-- 재요청(Re-request Review)과 "모든 요청이 해소되면 NEEDS_INFO→UPDATED 복귀"는 Phase 5.3에서 추가한다 — 지금은 정보 요청을 여는 것까지만 구현됐다.
+- 재요청(Re-request Review, Phase 5.3): `POST .../review-requests/{reviewRequestId}/re-request`는 질문 작성자만 호출할 수 있고(작성자 아니면 403), 요청 시점(`questionVersionNumberAtRequest`) 이후 실제 리비전이 있어야 허용된다(없으면 409 `QuestionNotRevisedSinceRequestException`). 이미 ADDRESSED인 요청을 다시 재요청하면 409다. 성공하면 그 `ReviewRequest`만 ADDRESSED로 바뀌고 `REVIEW_RE_REQUESTED` 이벤트가 원 요청자(+ Ward 구독자)에게 알림을 보낸다.
+  - **중요**: 재요청은 **Question.status를 건드리지 않는다.** `Question.revise()`가 이미 리비전 시점에 무조건 NEEDS_INFO를 벗어나므로(열려있는 요청 개수와 무관), 재요청이 호출될 때는 항상 이미 UPDATED 상태다. `ReviewRequest.status`(OPEN/ADDRESSED)는 리뷰어별 독립 부기 정보이지 Question.status를 다시 게이팅하는 값이 아니다 — 구현 중 유닛 테스트로 이 모순을 발견하고 정리했다([ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)).
 
 ## 입력 검증 공통 원칙
 

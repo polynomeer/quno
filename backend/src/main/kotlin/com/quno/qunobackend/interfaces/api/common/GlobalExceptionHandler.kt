@@ -5,6 +5,9 @@ import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
+import com.quno.qunobackend.domain.review.QuestionNotRevisedSinceRequestException
+import com.quno.qunobackend.domain.review.ReviewRequestAlreadyAddressedException
+import com.quno.qunobackend.domain.review.ReviewRequestNotFoundException
 import com.quno.qunobackend.domain.review.SelfReviewRequestException
 import com.quno.qunobackend.domain.tag.TagNotFoundException
 import com.quno.qunobackend.domain.user.DuplicateEmailException
@@ -23,7 +26,13 @@ data class ErrorResponse(val code: String, val message: String)
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
-    @ExceptionHandler(DuplicateEmailException::class, DuplicateNicknameException::class, QuestionAlreadyResolvedException::class)
+    @ExceptionHandler(
+        DuplicateEmailException::class,
+        DuplicateNicknameException::class,
+        QuestionAlreadyResolvedException::class,
+        ReviewRequestAlreadyAddressedException::class,
+        QuestionNotRevisedSinceRequestException::class,
+    )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
 
@@ -37,6 +46,7 @@ class GlobalExceptionHandler {
         QuestionVersionNotFoundException::class,
         AnswerNotFoundException::class,
         TagNotFoundException::class,
+        ReviewRequestNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))

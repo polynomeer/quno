@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional
  *   - ANSWER_ACCEPTED: watchers + the accepted answer's author
  *   - REVIEW_REQUESTED: watchers + the question's author (the requester is never the author —
  *     see SelfReviewRequestException)
+ *   - REVIEW_RE_REQUESTED: watchers + the original reviewer (the actor is always the question
+ *     author — see ReRequestReviewUseCase)
  * The actor who caused the event is never notified about their own action.
  */
 @Service
@@ -45,6 +47,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.NEW_ANSWER -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.ANSWER_ACCEPTED -> extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
             OutboxEventTypes.REVIEW_REQUESTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.REVIEW_RE_REQUESTED -> extractLong(event.payload, "reviewerId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 

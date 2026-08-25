@@ -23,7 +23,7 @@ MVP 이후 확장 시 `Knowledge`(Cluster, SuperAnswer), `Direct Ask`, `Feed` �
 | Question | create, revise, resolve/acceptAnswer, requestMoreInfo, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능 |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
 | Answer | create, edit, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) |
-| ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)) |
+| ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). status는 Question.status를 다시 게이팅하지 않는 독립 부기 정보(Phase 5.3, [ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)) |
 | Watch | watch/unwatch. user-question 중복 금지 |
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
@@ -292,7 +292,7 @@ RequestMoreInfo → AdditionalInfoRequested → QuestionStatusChanged(NEEDS_INFO
   → ReRequestReview → ReviewReRequested → AnswerCreated
 ```
 
-**구현 상태 (PLAN.md Phase 5.2)**: `RequestMoreInfo → AdditionalInfoRequested(REVIEW_REQUESTED) → QuestionStatusChanged(NEEDS_INFO)`까지 구현됐다 — `ReviewRequest` Aggregate가 다중 리뷰어의 독립적인 요청을 스레드로 관리한다([ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). `UpdateQuestionVersion`(기존 리비전 기능 재사용) 이후의 `QuestionReadyForReview → ReRequestReview → ReviewReRequested`는 Phase 5.3에서 추가한다.
+**구현 상태 (PLAN.md Phase 5.2~5.3)**: 전체 체인이 구현됐다 — `ReviewRequest` Aggregate가 다중 리뷰어의 독립적인 요청을 스레드로 관리하고([ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)), `UpdateQuestionVersion`은 기존 리비전 기능(`Question.revise()`)을 그대로 재사용한다. 단, `QuestionReadyForReview`라는 별도 상태/이벤트는 두지 않았다 — `revise()`가 이미 무조건 NEEDS_INFO를 벗어나 UPDATED로 전이시키므로 별도 신호가 필요 없다. `ReRequestReview → ReviewReRequested(REVIEW_RE_REQUESTED)`는 해당 `ReviewRequest`만 ADDRESSED로 바꾸고 원 요청자에게 알릴 뿐, Question.status는 다시 건드리지 않는다([ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)).
 
 ### 지식 진화 체인 (Phase 3)
 

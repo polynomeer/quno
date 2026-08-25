@@ -26,6 +26,8 @@ class InMemoryReviewRequestRepository : ReviewRequestRepository {
         return saved
     }
 
+    override fun findById(id: Long): ReviewRequest? = byId[id]
+
     override fun findAllByQuestionId(questionId: Long): List<ReviewRequest> =
         byId.values.filter { it.questionId == questionId }.sortedByDescending { it.createdAt }
 }
