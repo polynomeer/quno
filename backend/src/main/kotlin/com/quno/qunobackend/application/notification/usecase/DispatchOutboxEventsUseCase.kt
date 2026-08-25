@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional
  *     see SelfReviewRequestException)
  *   - REVIEW_RE_REQUESTED: watchers + the original reviewer (the actor is always the question
  *     author — see ReRequestReviewUseCase)
+ *   - QUESTION_OUTDATED: watchers + the question's author (the actor marking it outdated can be
+ *     anyone, including the author themselves — see MarkQuestionOutdatedUseCase)
  * The actor who caused the event is never notified about their own action.
  */
 @Service
@@ -48,6 +50,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.ANSWER_ACCEPTED -> extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
             OutboxEventTypes.REVIEW_REQUESTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.REVIEW_RE_REQUESTED -> extractLong(event.payload, "reviewerId")?.let(recipients::add)
+            OutboxEventTypes.QUESTION_OUTDATED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 

@@ -22,3 +22,8 @@ data class QuestionContentRequest(
     val environment: String? = null,
     val logs: String? = null,
 )
+
+data class MarkQuestionOutdatedRequest(
+    @field:NotBlank
+    val reason: String,
+)

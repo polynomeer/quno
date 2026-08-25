@@ -53,6 +53,18 @@ class Question private constructor(
     fun joinCluster(clusterId: Long): Question =
         Question(id, authorId, title, status, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
 
+    /**
+     * Used when a user explicitly flags this question as outdated (PLAN.md 8.1, ADR-0017) —
+     * there is no automatic technology-version-change detection behind this. Idempotent:
+     * already being OUTDATED is a no-op. `revise()` already exits any non-RESOLVED status to
+     * UPDATED on its own, so reviving an outdated question just means revising it — no separate
+     * REOPENED status is needed.
+     */
+    fun markOutdated(): Question {
+        if (status == QuestionStatus.OUTDATED) return this
+        return Question(id, authorId, title, QuestionStatus.OUTDATED, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
+    }
+
     companion object {
         fun open(authorId: Long, title: String): Question {
             require(title.isNotBlank()) { "title must not be blank" }

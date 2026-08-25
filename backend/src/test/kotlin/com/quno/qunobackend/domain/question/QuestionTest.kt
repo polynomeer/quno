@@ -97,6 +97,29 @@ class QuestionTest {
     }
 
     @Test
+    fun `markOutdated transitions to OUTDATED from any status`() {
+        val question = openQuestion(status = QuestionStatus.RESOLVED)
+
+        assertEquals(QuestionStatus.OUTDATED, question.markOutdated().status)
+    }
+
+    @Test
+    fun `markOutdated is idempotent`() {
+        val question = openQuestion(status = QuestionStatus.OUTDATED)
+
+        assertEquals(QuestionStatus.OUTDATED, question.markOutdated().status)
+    }
+
+    @Test
+    fun `revise moves an OUTDATED question to UPDATED`() {
+        val question = openQuestion(status = QuestionStatus.OUTDATED)
+
+        val revised = question.revise(versionId = 2L, title = "new title")
+
+        assertEquals(QuestionStatus.UPDATED, revised.status)
+    }
+
+    @Test
     fun `joinCluster sets the cluster id without touching status`() {
         val question = openQuestion(status = QuestionStatus.OPEN)
 

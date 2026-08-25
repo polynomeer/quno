@@ -1,6 +1,7 @@
 package com.quno.qunobackend.interfaces.api.question
 
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
+import com.quno.qunobackend.application.question.dto.MarkQuestionOutdatedCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
@@ -8,6 +9,7 @@ import com.quno.qunobackend.application.question.usecase.GetQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionDiffUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionUseCase
 import com.quno.qunobackend.application.question.usecase.ListQuestionVersionsUseCase
+import com.quno.qunobackend.application.question.usecase.MarkQuestionOutdatedUseCase
 import com.quno.qunobackend.application.question.usecase.ReviseQuestionUseCase
 import com.quno.qunobackend.application.search.usecase.QuestionSearchUseCase
 import com.quno.qunobackend.interfaces.api.search.QuestionSearchResultResponse
@@ -34,6 +36,7 @@ class QuestionController(
     private val getQuestionVersionUseCase: GetQuestionVersionUseCase,
     private val getQuestionVersionDiffUseCase: GetQuestionVersionDiffUseCase,
     private val questionSearchUseCase: QuestionSearchUseCase,
+    private val markQuestionOutdatedUseCase: MarkQuestionOutdatedUseCase,
 ) {
 
     @PostMapping
@@ -139,6 +142,18 @@ class QuestionController(
         @RequestParam(required = false) limit: Int?,
     ): List<QuestionSearchResultResponse> =
         questionSearchUseCase.related(id, limit ?: 5).map { it.toResponse() }
+
+    @PostMapping("/{id}/outdated")
+    fun markOutdated(
+        @AuthenticationPrincipal actorId: Long,
+        @PathVariable id: Long,
+        @Valid @RequestBody request: MarkQuestionOutdatedRequest,
+    ): QuestionMutationResponse {
+        val result = markQuestionOutdatedUseCase.execute(
+            MarkQuestionOutdatedCommand(questionId = id, actorId = actorId, reason = request.reason),
+        )
+        return result.toResponse()
+    }
 
     private fun QuestionMutationResult.toResponse() =
         QuestionMutationResponse(id = id, title = title, status = status, versionNumber = versionNumber)

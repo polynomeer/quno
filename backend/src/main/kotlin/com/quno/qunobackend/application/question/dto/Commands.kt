@@ -17,3 +17,9 @@ data class ReviseQuestionCommand(
     val environment: String?,
     val logs: String?,
 )
+
+data class MarkQuestionOutdatedCommand(
+    val questionId: Long,
+    val actorId: Long,
+    val reason: String,
+)
