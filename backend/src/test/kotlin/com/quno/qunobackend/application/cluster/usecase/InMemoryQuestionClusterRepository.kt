@@ -13,6 +13,7 @@ class InMemoryQuestionClusterRepository : QuestionClusterRepository {
                 id = nextId++,
                 representativeAnswerId = cluster.representativeAnswerId,
                 createdAt = cluster.createdAt,
+                updatedAt = cluster.updatedAt,
             )
         } else {
             cluster

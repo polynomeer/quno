@@ -16,6 +16,7 @@ class QuestionClusterRepositoryAdapter(
             id = cluster.id,
             representativeAnswerId = cluster.representativeAnswerId,
             createdAt = cluster.createdAt,
+            updatedAt = cluster.updatedAt,
         )
         return jpaRepository.save(entity).toDomain()
     }
@@ -26,5 +27,6 @@ class QuestionClusterRepositoryAdapter(
         id = requireNotNull(id),
         representativeAnswerId = representativeAnswerId,
         createdAt = createdAt,
+        updatedAt = updatedAt,
     )
 }

@@ -20,4 +20,7 @@ class QuestionClusterJpaEntity(
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant,
+
+    @Column(name = "updated_at", nullable = false)
+    val updatedAt: Instant,
 )
