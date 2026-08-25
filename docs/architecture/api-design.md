@@ -42,6 +42,7 @@
 | POST | `/api/v1/clusters/{id}/super-answer` | 클러스터의 Super Answer 지정 (채택된 답변만 가능) |
 | POST | `/api/v1/questions/{id}/outdated` | 질문을 OUTDATED로 표시 (사용자 명시적 판단, 권한 제한 없음) |
 | GET | `/api/v1/qunobot/spikes?limit=` | 최근 질문량이 급증한 태그 목록 (자동 감지) |
+| GET | `/api/v1/users/{id}/reputation` | 활동 기반 평판 점수 조회 |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -174,6 +175,16 @@
   - `TagSpike`(`domain/qunobot`)는 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 별도 DTO로 복제하지 않고 API 응답까지 그대로 재사용한다.
   - `SpikeDetectionRepositoryAdapter`가 [ADR-0009](decisions/0009-redis-cache-global-aggregates-only.md)와 동일한 cache-aside 패턴(모든 사용자에게 동일한 결과, TTL 60초)을 그대로 재사용한다 — 새 ADR 없이 기존 결정을 적용한 것.
   - 급증 자체가 원인을 설명하지 않는다 — "이 태그에 무슨 일이 있다"는 신호일 뿐이고, 실제 원인(기술 버전 변화 등) 분석은 사람이 한다.
+
+## 전문가 평판 (Phase 9)
+
+[ADR-0018](decisions/0018-simple-reputation-score-only.md)에서 결정한 대로, Organization·Direct Ask는 핵심 설계가 없어 미루고 활동 기반 평판 점수만 구현했다.
+
+- `GET /users/{id}/reputation`: 질문 수·답변 수·채택된 답변 수·Super Answer 지정 횟수를 집계해 `score = questionCount*1 + answerCount*2 + acceptedAnswerCount*15 + superAnswerCount*10`으로 계산한다. 존재하지 않는 사용자는 404.
+- `UserReputation`(`domain/reputation`)은 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 별도 DTO로 복제하지 않고 API 응답까지 그대로 재사용한다.
+- Metrics와 동일하게 native SQL 서브쿼리 4개를 한 번에 집계한다. Dashboard/Spike Detection과 달리 **캐시하지 않는다** — 결과가 사용자마다 다르고(모두에게 같은 결과가 아님) 개별 조회 비용이 이미 작아, 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
+- 채택 답변과 Super Answer 지정에 가중치를 크게 둬(각각 15점, 10점) 단순 활동량보다 "실제로 검증된 기여"를 더 반영한다 — 다만 동료 평가나 악용 방지 장치는 없는 순수 근사치다.
+- **범위 밖**: Organization(조직 인증), Direct Ask(결제 포함)는 이번 Phase에 포함하지 않았다 — 핵심 설계가 문서에 없어 착수 시점에 다시 설계한다([PLAN.md](../../PLAN.md) Phase 11+).
 
 ## 입력 검증 공통 원칙
 

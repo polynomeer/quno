@@ -13,8 +13,9 @@
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
 | Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster |
 | Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
+| Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation) |
 
-`Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
+`Organization`, `Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
 
 ## Aggregate
 
