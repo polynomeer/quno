@@ -32,6 +32,7 @@
 | GET | `/api/v1/search?q=...&limit=` | 질문/태그/에러 검색 (PostgreSQL 전문검색 + 태그 부분일치) |
 | GET | `/api/v1/recommendations/questions?source=tags` | 태그 기반 추천 |
 | GET | `/api/v1/dashboard` | 대시보드 집계 |
+| GET | `/api/v1/metrics` | MVP 성공 지표 스냅샷 (내부/운영용) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -94,6 +95,23 @@
 - 질문/답변 목록은 개수 제한 없이 전체를 반환한다 — 사용자당 활동량이 많아지면 커서 페이지네이션이 필요해질 수 있다(제한 없음은 MVP 단순화).
 
 **알려진 단순화**: MVP는 조회수(view count)를 추적하지 않는다. "오늘의 인기 질문"은 문서에서 이상적으로 언급한 view/watch/answer/freshness 조합 대신 현재 확보된 신호(Watch 수, Answer 수)만으로 근사한다. 실제 조회 추적이 추가되면 이 랭킹 쿼리에 반영한다.
+
+## 지표 계측 (Phase 4.1)
+
+`GET /metrics`는 [mvp-scope.md](../product/mvp-scope.md#성공-지표)의 성공 지표 중 **백엔드 데이터만으로 계산 가능한 것들**을 하나의 native SQL로 집계해 반환한다. 응답은 원시 카운트와 0.0~1.0 사이의 비율(rate)을 함께 담는다.
+
+| 필드 | 정의 | 대응 지표 |
+|---|---|---|
+| `revisionRate` | `question_versions.version_number >= 2`인 질문 비율 | Question Revision Rate |
+| `answerRate` / `acceptRate` | 답변이 달린/채택된 질문 비율 | Answer Rate / Accept Rate |
+| `wardCoverageRate` | 최소 1명 이상이 watch한 질문 비율 | Ward Adoption의 질문 단위 근사치 |
+| `livingQuestionRate` | 최근 7일 내 `outbox_events`(리비전/답변/채택) 또는 `watches` 생성 이벤트가 있었던 질문 비율 | North Star 후보 "주간 활성 Living Questions" |
+
+**의도적으로 제외한 지표**: Related Question CTR, Tag Feed CTR, D1/D7 Retention은 클라이언트 이벤트 트래킹이 필요한데 이 세션까지 프론트엔드가 없어 계측 지점이 없다 — 프론트엔드 도입 시 재검토한다.
+
+- `MetricsSnapshot`(`domain/metrics`)은 도메인 불변조건이 없는 순수 조회 모델이라 application/interfaces 계층에서 별도 DTO로 복제하지 않고 그대로 재사용한다(다른 기능들과 다른 의도적 예외).
+- `MetricsLoggingScheduler`(`infrastructure/observability`)가 30분 주기로 같은 스냅샷을 INFO 레벨로 로깅한다 — 별도 메트릭 백엔드 없이도 로그 기반 관측 도구로 추적 가능하게 하기 위함.
+- 다른 조회 API와 동일하게 인증을 요구한다.
 
 ## 입력 검증 공통 원칙
 
