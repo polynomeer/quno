@@ -40,3 +40,4 @@
 | [0013](0013-defer-public-read-access.md) | 질문/프로필 조회의 비로그인 공개 여부는 보류 | 승인됨 (재검토 예정) |
 | [0014](0014-answer-target-version-auto-recorded.md) | 답변의 대상 버전은 작성 시점 최신 버전으로 자동 기록, 명시적 선택 UI는 미도입 | 승인됨 |
 | [0015](0015-review-request-status-independent-of-question-status.md) | ReviewRequest.status는 Question.status를 다시 게이팅하지 않음 | 승인됨 |
+| [0016](0016-manual-duplicate-marking-cluster.md) | Cluster는 자동 유사도 분석 대신 사용자 명시적 표시로 형성, 이번 Phase는 Cluster+Super Answer로 한정 | 승인됨 |

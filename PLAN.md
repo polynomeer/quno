@@ -68,14 +68,26 @@ GitHub PR의 Review/Re-request 개념을 질문에 적용한다 — [vision.md](
 - [x] 5.5 테스트 — 인메모리 fake 기반 단위 테스트를 5.1~5.3 구현과 함께 이미 작성함(본인 질문 요청 금지, RESOLVED 질문 요청 금지, 다중 리뷰어 독립성, 재요청 권한/상태 invariant, 리비전 전 재요청 거부, 중복 재요청 거부). 추가로 `QuestionReviewLifecycleE2ETest`(`integration/`)를 `QuestionLifecycleE2ETest`와 동일한 MockMvc+실제 JWT 패턴으로 작성해 정보요청(본인 요청 403 포함) → NEEDS_INFO 전환 → 작성자 알림 → 리비전 전 재요청 409 → 리비전 → 재요청 성공(ADDRESSED) → 원 요청자 알림 → 목록 조회까지 실제 HTTP로 검증
 - [x] 5.6 문서화 — `domain-model.md`의 Bounded Context/Aggregate 표·ERD·테이블별 책임·QPR 이벤트 체인 구현 상태를 5.1~5.3 진행과 함께 갱신했고, `api-design.md`에 "답변–질문버전 연결 (Phase 5.1)"과 "QPR Review — 정보 요청/재요청 (Phase 5.2~5.3)" 섹션을 추가했다. ADR-0014(답변 대상 버전 자동 기록), ADR-0015(ReviewRequest.status는 Question.status를 다시 게이팅하지 않음)를 새로 기록해 Phase 5 전체가 완료됐다
 
-## Phase 6+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 6 — 질문 네트워크: Cluster + Super Answer (mvp-scope.md 로드맵 Phase 3, 일부)
+
+mvp-scope.md 로드맵 Phase 3(질문 네트워크: Cluster, Merge/Fork, Super Answer, 지식 그래프 시각화) 중 **Cluster와 Super Answer만** 이번 Phase에서 다룬다(2026-08-25 결정). Merge/Fork는 실제 요청 UX가 아직 불명확해 사용 패턴을 관찰한 뒤 후속 Phase로 미루고, 지식 그래프 "시각화"는 프론트엔드가 없는 현재 범위 밖이다(Phase 4.3과 동일한 판단).
+
+**클러스터링 방식(2026-08-25 결정)**: 임베딩/벡터 유사도 기반 자동 클러스터링은 도입하지 않는다. 대신 Stack Overflow의 "mark as duplicate"처럼 **사용자가 두 질문이 같은 문제라고 명시적으로 표시**하면 클러스터가 생성/합류된다 — 기존 태그 중첩 기반 관련 질문 기능과 자연스럽게 이어지고, 새 ML/벡터 인프라가 필요 없다([ADR-0008](docs/architecture/decisions/0008-postgres-native-search.md)이 이미 벡터 유사도를 유보한 것과 같은 방향). 질문은 최대 하나의 클러스터에만 속한다(`questions.cluster_id`) — 이미 서로 다른 클러스터에 속한 두 질문을 하나로 합치는 것(클러스터 병합)은 지원하지 않고 명시적으로 거부한다(그 자체가 Merge 기능의 영역이므로 후속 Phase로 이연).
+
+- [ ] 6.1 QuestionCluster 도메인 — 새 Aggregate `QuestionCluster`(id, representativeAnswerId, createdAt)와 `QuestionClusterRepository`. `Question`에 `clusterId: Long?` 필드 추가(V6 마이그레이션: `question_clusters` 테이블 + `questions.cluster_id`). `POST /api/v1/questions/{id}/cluster`(body: `relatedQuestionId`)로 두 질문을 같은 클러스터로 묶는다: 둘 다 클러스터가 없으면 새로 생성, 하나만 있으면 다른 쪽이 합류, 이미 같은 클러스터면 no-op, 서로 다른 클러스터면 409(`ClustersAlreadyDistinctException`), 자기 자신을 지정하면 400
+- [ ] 6.2 클러스터 조회 — `GET /api/v1/questions/{id}/cluster`(이 질문이 속한 클러스터 — 없으면 404), `GET /api/v1/clusters/{id}`(클러스터 직접 조회). 멤버 질문 목록은 `QuestionSummaryHydrator` 재사용, Super Answer가 지정돼 있으면 함께 반환
+- [ ] 6.3 Super Answer 지정 — `POST /api/v1/clusters/{id}/super-answer`(body: `answerId`). 그 답변이 (a) 클러스터에 속한 질문 중 하나의 답변이어야 하고(아니면 409 `AnswerNotInClusterException`), (b) 채택된 답변이어야 한다(아니면 409 `AnswerNotAcceptedException`). 지정 권한은 리뷰 요청과 동일하게 특정 역할 제한 없이 인증된 사용자 누구나 가능(현재 역할/평판 시스템이 없음)
+- [ ] 6.4 테스트 — 단위 테스트(신규 생성/합류/no-op/거부 4분기, 자기 자신 지정 거부, 존재하지 않는 질문/클러스터/답변, Super Answer 조건 위반 2가지)와 `QuestionReviewLifecycleE2ETest`에 준하는 클러스터 시나리오 E2E 테스트(두 질문 생성 → 중복 표시 → 클러스터 조회로 멤버 확인 → 답변 채택 → Super Answer 지정 → 클러스터 조회에 반영 확인)
+- [ ] 6.5 문서화 — `domain-model.md`에 `Knowledge` Bounded Context/`QuestionCluster` Aggregate/ERD/"지식 진화 체인 (Phase 3)" 구현 상태 반영(자동 유사도 분석 단계는 구현하지 않았음을 명시), `api-design.md`에 "질문 Cluster & Super Answer (Phase 6)" 섹션 추가, 이번 두 스코프 결정을 ADR로 기록
+
+## Phase 7+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- [ ] Phase 6 — 질문 네트워크 (mvp-scope.md 로드맵 Phase 3): Question Cluster, Merge/Fork, Super Answer, 지식 그래프 시각화
-- [ ] Phase 7 — 자동 유지보수 (mvp-scope.md 로드맵 Phase 4): QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection
-- [ ] Phase 8 — 신뢰 네트워크 (mvp-scope.md 로드맵 Phase 5): Organization, 전문가 평판, Direct Ask
-- [ ] Phase 9 — 소비 경험 강화 (mvp-scope.md 로드맵 Phase 6): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
+- [ ] Phase ? — 질문 네트워크 잔여: Merge, Fork, 지식 그래프 시각화 (mvp-scope.md 로드맵 Phase 3, 나머지) — Cluster/Super Answer 사용 패턴을 관찰한 뒤 착수 시점과 번호를 정한다
+- [ ] Phase 8 — 자동 유지보수 (mvp-scope.md 로드맵 Phase 4): QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection
+- [ ] Phase 9 — 신뢰 네트워크 (mvp-scope.md 로드맵 Phase 5): Organization, 전문가 평판, Direct Ask
+- [ ] Phase 10 — 소비 경험 강화 (mvp-scope.md 로드맵 Phase 6): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
 
 ## 진행 방식
 
