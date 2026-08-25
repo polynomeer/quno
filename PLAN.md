@@ -98,6 +98,21 @@ mvp-scope.md 로드맵 Phase 5(Organization, 전문가 평판, Direct Ask) 중 *
 - [x] 9.3 테스트 — 단위 테스트(점수 계산 공식, 활동 없음=0점, 존재하지 않는 사용자 404)와 실제 서버+curl 검증(질문/답변/채택/Super Answer 지정 단계별로 점수가 정확히 0→17→27로 증가하는 것을 확인 — native SQL 집계라 Dashboard/Metrics/Spike Detection과 동일하게 자동 통합 테스트 대신 실제 데이터로 검증)
 - [x] 9.4 문서화 — `domain-model.md`에 Reputation Bounded Context 반영, `api-design.md`에 "전문가 평판 (Phase 9)" 섹션 추가, ADR-0018로 스코프 결정 기록
 
+## Phase 10 — 소비 경험 강화: Quno Flow + 고급 Dashboard (mvp-scope.md 로드맵 Phase 6, 일부)
+
+mvp-scope.md 로드맵 Phase 6(Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard) 중 **Quno Flow와 고급 Dashboard만** 이번 Phase에서 다룬다(2026-08-25 결정). mvp-scope.md/vision.md에는 한 줄뿐이지만 [docs/archive/Quno 서비스 통합 기획서](docs/archive/README.md)의 원본 절(22장 "Daily Newspaper Dashboard", 23장 "Quno Flow", 19장 "실시간 질문 공간")을 참고해 구체화했다.
+
+- **Quno Flow**는 원본 기획을 보면 사실 "살아 움직이는 Question Network의 Activity Stream"이다 — 인기 질문, 태그 급증, 재활성화(Outdated→리비전)된 질문, Cluster의 새 Super Answer 같은 **기존 신호를 하나의 카드 피드로 묶는 것**이라 새 인프라 없이 만들 수 있다.
+- **고급 Daily Dashboard**도 마찬가지로 기존 Dashboard(Phase 3.2)에 헤드라인·오늘 해결된 질문·재활성화된 질문·Trending Errors 섹션을 추가하는 확장이다.
+- **실시간 질문방(Live Chat, 19장)**은 WebSocket 기반 실시간 연결·현재 접속자 수 추적·메시지 영속화라는 완전히 새로운 인프라가 필요해 이번 세션의 다른 Phase들과 투자 규모가 다르다 — 범위 밖에 두고 번호 미정으로 미룬다.
+- **Instant Question**은 원본 기획서에서도 별도 백엔드 설계가 없고, 이미 `POST /questions`가 필수 필드(title/body)만으로 질문을 만들 수 있어 그 자체로 "즉석 질문"을 지원한다 — 프론트엔드 UX 문제일 뿐 추가 백엔드 작업이 없다(이 세션 전체에 프론트엔드가 없다는 점도 Phase 4.3과 동일).
+
+- [ ] 10.1 재활성화/Super Answer 갱신 신호 — 새 `domain/flow` 패키지에 `FlowRepository` 포트. `findRecentlyReopenedQuestionIds(limit)`: `outbox_events`(QUESTION_OUTDATED) 발생 이후 새 `question_versions`가 생긴 질문을 찾는 native SQL(새 컬럼 없이 기존 이벤트 로그+리비전 기록만으로 "재활성화"를 도출 — Spike Detection과 같은 방식). `question_clusters`에 `updated_at` 컬럼 추가(V7 마이그레이션)하고 `QuestionCluster.designateSuperAnswer()`가 갱신하도록 수정한 뒤 `findRecentlySuperAnsweredClusterIds(limit)` 추가. 이 포트는 10.2와 10.3이 함께 재사용한다
+- [ ] 10.2 고급 Daily Dashboard 확장 — 기존 `GetDashboardUseCase`/`DashboardResult`/`DashboardResponse`(Phase 3.2)에 필드 추가(하위 호환 — 기존 필드는 그대로 둠): `headline`(가장 두드러진 신호 하나 — 급증 태그가 있으면 그것, 없으면 최고 인기 질문), `resolvedToday`(오늘 RESOLVED 전환된 질문), `reopenedKnowledge`(10.1 재사용), `trendingErrors`(기존 `SpikeDetectionRepository.findSpikingTags` 재사용 — "알려진 단순화": 별도 에러 텍스트 추출 없이 태그 급증으로 근사, Phase 3.3의 "인기 질문 근사"와 같은 방식)
+- [ ] 10.3 Quno Flow — 새 `application/flow/usecase/GetActivityFeedUseCase`. `FlowCard`(type, questionId?, clusterId?, headline: String, occurredAt: Instant)와 `FlowCardType`(POPULAR_QUESTION/TAG_SPIKE/REOPENED_QUESTION/CLUSTER_SUPER_ANSWER) 4종을 고정 섹션 순서로 묶어 반환(전체를 하나의 타임라인으로 정렬하지 않음 — 인기/급증은 "현재 상태" 스냅샷이라 자연스러운 발생 시각이 없어 이벤트 기반 신호와 섞어 정렬하는 것은 억지). `GET /api/v1/flow?limit=`(섹션당 개수, 기본 5)
+- [ ] 10.4 테스트 — 헤드라인 문자열 포매팅 등 순수 로직은 단위 테스트. reopened/super-answered native SQL과 확장된 Dashboard/Flow 전체는 Dashboard/Metrics/Spike Detection과 동일하게 자동 통합 테스트 대신 실제 서버+curl로 검증(질문 outdated→리비전→재활성화 카드 등장, 클러스터 Super Answer 지정→카드 등장 흐름 포함)
+- [ ] 10.5 문서화 — `domain-model.md`에 Flow Bounded Context와 `question_clusters.updated_at` 반영, `api-design.md`에 "Quno Flow & 고급 Dashboard (Phase 10)" 섹션 추가(Trending Errors 근사 방식 포함), 실시간 질문방/Instant Question을 범위 밖에 둔 이유를 ADR로 기록
+
 ## Phase 11+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
@@ -105,7 +120,7 @@ mvp-scope.md 로드맵 Phase 5(Organization, 전문가 평판, Direct Ask) 중 *
 - [ ] Phase ? — 질문 네트워크 잔여: Merge, Fork, 지식 그래프 시각화 (mvp-scope.md 로드맵 Phase 3, 나머지) — Cluster/Super Answer 사용 패턴을 관찰한 뒤 착수 시점과 번호를 정한다
 - [ ] Phase ? — 기술 버전 영향 감지 실제 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지) — 외부 기술 버전 릴리스 데이터 소스 연동이 실제로 필요해지고 그 소스를 정할 수 있을 때 착수
 - [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
-- [ ] Phase 10 — 소비 경험 강화 (mvp-scope.md 로드맵 Phase 6): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
+- [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
 
 ## 진행 방식
 
