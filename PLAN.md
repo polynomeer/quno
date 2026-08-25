@@ -80,12 +80,21 @@ mvp-scope.md 로드맵 Phase 3(질문 네트워크: Cluster, Merge/Fork, Super A
 - [x] 6.4 테스트 — 단위 테스트(신규 생성/합류/no-op/거부 4분기, 자기 자신 지정 거부, 존재하지 않는 질문/클러스터/답변, Super Answer 조건 위반 2가지)와 `QuestionClusterLifecycleE2ETest`(`integration/`)를 다른 Lifecycle E2E 테스트와 동일한 MockMvc+실제 JWT 패턴으로 작성해 자기 자신 클러스터링 400 → 클러스터 생성 → 조회 → 미채택 답변 지정 409 → 채택 → Super Answer 지정 성공 → 재조회 반영까지 실제 HTTP로 검증
 - [x] 6.5 문서화 — `domain-model.md`에 `Knowledge` Bounded Context/`QuestionCluster` Aggregate/ERD/테이블별 책임/Domain Events/"지식 진화 체인 (Phase 3)" 구현 상태를 반영(자동 유사도 분석·자동 Super Answer 후보 탐지·Cluster/Super Answer의 outbox 미발행 이유를 명시), `api-design.md`에 "질문 Cluster & Super Answer (Phase 6)" 섹션 추가, ADR-0016(클러스터링 방식·이번 Phase 범위 결정)으로 스코프 결정을 기록. 실제 서버로 자기 클러스터링 400, 클러스터 생성/조회, 미채택 답변 409, Super Answer 지정 성공까지 curl 검증 완료
 
-## Phase 7+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 8 — 자동 유지보수: Outdated 표시 + Spike Detection (mvp-scope.md 로드맵 Phase 4, 일부)
+
+mvp-scope.md 로드맵 Phase 4(QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection) 중 **실제로 자동화 가능한 부분만** 이번 Phase에서 다룬다(2026-08-25 결정). "기술 버전 영향 감지"의 진짜 자동화는 외부 기술 버전 릴리스 데이터 피드(예: endoflife.date)가 있어야 가능한데 그런 연동은 없다 — 그 부분은 명시적으로 범위 밖에 두고, 대신 Cluster/Review와 동일한 **사용자 명시적 표시** 패턴으로 Outdated를 근사한다. 반대로 Spike Detection(특정 태그의 질문량 급증 감지)은 기존 대시보드 집계 인프라만으로 진짜 자동 감지가 가능해 이번 Phase에 포함한다.
+
+- [ ] 8.1 Question OUTDATED 상태 + 수동 표시 — `QuestionStatus`에 `OUTDATED` 추가. `Question.markOutdated()`(멱등 — 이미 OUTDATED면 no-op). `POST /api/v1/questions/{id}/outdated`(body: `reason`, 권한 제한 없음 — Cluster와 동일). `QUESTION_OUTDATED` outbox 이벤트를 기존 fan-out에 추가(Ward 구독자 + 질문 작성자, 액터 제외). `Question.revise()`는 이미 RESOLVED가 아니면 UPDATED로 전이하므로 OUTDATED→UPDATED(리비전으로 "다시 살아남")는 코드 변경 없이 자연히 성립 — 별도 REOPENED 상태는 도입하지 않는다
+- [ ] 8.2 Spike Detection — 새 `domain/qunobot` 패키지(`TagSpike` 값 객체, `SpikeDetectionRepository` 포트). 태그별 최근 1일 질문 수 vs 직전 14일 일평균을 비교하는 native SQL로 급증 비율(spikeRatio)을 계산(최소 최근 건수 미달 태그는 제외해 노이즈 방지). `GET /api/v1/qunobot/spikes?limit=`. Dashboard의 트렌드 캐싱과 동일하게 Redis cache-aside 적용(ADR-0009 패턴 재사용, 새 ADR 불필요)
+- [ ] 8.3 테스트 — `markOutdated()`/`MarkQuestionOutdatedUseCase` 단위 테스트(멱등성, outbox 이벤트, 알림 fan-out)와 Outdated 시나리오 E2E 테스트. Spike Detection의 native SQL 자체는 Dashboard/Metrics와 동일하게 자동 테스트 대신 실제 서버+curl로 검증한다(날짜 윈도우 집계는 인메모리 fake로 재현 불가능한 영역)
+- [ ] 8.4 문서화 — `domain-model.md`에 새 상태값·QunoBot 이벤트 체인 구현 상태(기술 버전 자동 감지는 미구현임을 명시) 반영, `api-design.md`에 "Outdated 표시 & Spike Detection (Phase 8)" 섹션 추가, 이번 스코프 결정을 ADR로 기록
+
+## Phase 9+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
 - [ ] Phase ? — 질문 네트워크 잔여: Merge, Fork, 지식 그래프 시각화 (mvp-scope.md 로드맵 Phase 3, 나머지) — Cluster/Super Answer 사용 패턴을 관찰한 뒤 착수 시점과 번호를 정한다
-- [ ] Phase 8 — 자동 유지보수 (mvp-scope.md 로드맵 Phase 4): QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection
+- [ ] Phase ? — 기술 버전 영향 감지 실제 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지) — 외부 기술 버전 릴리스 데이터 소스 연동이 실제로 필요해지고 그 소스를 정할 수 있을 때 착수
 - [ ] Phase 9 — 신뢰 네트워크 (mvp-scope.md 로드맵 Phase 5): Organization, 전문가 평판, Direct Ask
 - [ ] Phase 10 — 소비 경험 강화 (mvp-scope.md 로드맵 Phase 6): Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard
 
