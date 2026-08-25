@@ -11,8 +11,9 @@
 | Tagging | 분류·관심 주제 관계 | Tag, UserTagFollow |
 | Engagement | 질문 변화 구독과 알림 | Watch, Notification |
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
+| Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster |
 
-MVP 이후 확장 시 `Knowledge`(Cluster, SuperAnswer), `Direct Ask`, `Feed` 컨텍스트가 추가된다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
+`Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
 
 ## Aggregate
 
@@ -20,13 +21,14 @@ MVP 이후 확장 시 `Knowledge`(Cluster, SuperAnswer), `Direct Ask`, `Feed` �
 
 | 모델 | 주요 행위/규칙 |
 |---|---|
-| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능 |
+| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1) |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
 | Answer | create, edit, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) |
 | ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). status는 Question.status를 다시 게이팅하지 않는 독립 부기 정보(Phase 5.3, [ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)) |
 | Watch | watch/unwatch. user-question 중복 금지 |
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
+| QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음 |
 
 ## Domain Events
 
@@ -38,7 +40,10 @@ AnswerAccepted (ANSWER_ACCEPTED)
 QuestionWatched
 QuestionResolved
 ReviewRequested (REVIEW_REQUESTED)
+ReviewReRequested (REVIEW_RE_REQUESTED)
 ```
+
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다.
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -55,8 +60,12 @@ users
   ├──< user_tag_follows >── tags
   └──< notifications
 
-questions.latest_version_id  ──> question_versions.id
-questions.accepted_answer_id ──> answers.id
+question_clusters ──< questions (questions.cluster_id, 질문 1개당 최대 1개 클러스터)
+
+questions.latest_version_id       ──> question_versions.id
+questions.accepted_answer_id      ──> answers.id
+questions.cluster_id              ──> question_clusters.id
+question_clusters.representative_answer_id ──> answers.id (Super Answer)
 notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 ```
 
@@ -65,7 +74,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | 테이블 | 핵심 컬럼 | 삭제 정책 |
 |---|---|---|
 | users | id, email, nickname, is_active | 비활성화 + 필요 시 익명화 (물리 삭제 지양) |
-| questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, deleted_at | soft delete, 핵심 FK 유지 |
+| questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, cluster_id, deleted_at | soft delete, 핵심 FK 유지 |
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
 | answers | id, question_id, author_id, body_markdown, is_accepted, target_version_number, deleted_at | soft delete |
 | tags | name, slug, deleted_at | soft delete + active partial unique index |
@@ -73,6 +82,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
 | watches | user_id, question_id | 관계 데이터, hard delete 허용 |
 | review_requests | id, question_id, requested_by, message, status, question_version_number_at_request, addressed_at | append형, hard delete 불필요(상태만 전이) |
+| question_clusters | id, representative_answer_id, created_at | hard delete 불필요(멤버가 다른 클러스터로 옮겨가는 경로가 없음) |
 | notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
 
 ### 삭제/FK 운영 원칙
@@ -301,6 +311,8 @@ QuestionCreated/VersionCreated → SimilarityAnalyzed → QuestionClustered
   → ClusterThresholdReached → SuperAnswerCandidateDetected
   → SuperAnswerCreated/Updated → RelatedQuestionsUpdated → WatchersNotified
 ```
+
+**구현 상태 (PLAN.md Phase 6.1~6.3)**: `SimilarityAnalyzed → QuestionClustered`와 `ClusterThresholdReached → SuperAnswerCandidateDetected`는 자동화하지 않았다 — 임베딩/벡터 유사도 인프라 없이, 사용자가 `POST /questions/{id}/cluster`로 명시적으로 "같은 문제"를 표시하면 `QuestionClustered`에 해당하는 결과(클러스터 생성/합류)가 즉시 일어난다([ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). `SuperAnswerCreated`도 마찬가지로 자동 후보 탐지 없이 `POST /clusters/{id}/super-answer`로 사용자가 직접 지정한다. `RelatedQuestionsUpdated → WatchersNotified`는 만들지 않았다 — Cluster/Super Answer 액션은 outbox 이벤트로 발행하지 않고 API 응답으로 결과를 즉시 반환한다(비동기 알림이 필요한 시나리오가 아니라고 판단). Merge/Fork는 아직 착수하지 않았다(PLAN.md Phase 7+에서 번호 미정으로 대기).
 
 ### QunoBot 이벤트 체인 (Phase 4)
 

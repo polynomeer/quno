@@ -36,6 +36,10 @@
 | POST | `/api/v1/questions/{id}/review-requests` | QPR 정보 요청(Review) 생성 — 질문을 NEEDS_INFO로 전환 |
 | GET | `/api/v1/questions/{id}/review-requests` | 질문에 걸린 정보 요청 전체 목록 (상태 포함) |
 | POST | `/api/v1/questions/{id}/review-requests/{reviewRequestId}/re-request` | 정보 요청 재요청 — 해당 요청을 ADDRESSED로 전환 (작성자만) |
+| POST | `/api/v1/questions/{id}/cluster` | 다른 질문과 "같은 문제"로 표시 — 클러스터 생성/합류 |
+| GET | `/api/v1/questions/{id}/cluster` | 이 질문이 속한 클러스터 조회 (멤버 질문 + Super Answer) |
+| GET | `/api/v1/clusters/{id}` | 클러스터 직접 조회 |
+| POST | `/api/v1/clusters/{id}/super-answer` | 클러스터의 Super Answer 지정 (채택된 답변만 가능) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -135,6 +139,25 @@
 - `REVIEW_REQUESTED` outbox 이벤트를 기존 Watch/Notification fan-out 파이프라인에 태운다 — 수신자는 Ward 구독자 + 질문 작성자(요청자 본인 제외), `NEW_ANSWER`와 같은 규칙이다.
 - 재요청(Re-request Review, Phase 5.3): `POST .../review-requests/{reviewRequestId}/re-request`는 질문 작성자만 호출할 수 있고(작성자 아니면 403), 요청 시점(`questionVersionNumberAtRequest`) 이후 실제 리비전이 있어야 허용된다(없으면 409 `QuestionNotRevisedSinceRequestException`). 이미 ADDRESSED인 요청을 다시 재요청하면 409다. 성공하면 그 `ReviewRequest`만 ADDRESSED로 바뀌고 `REVIEW_RE_REQUESTED` 이벤트가 원 요청자(+ Ward 구독자)에게 알림을 보낸다.
   - **중요**: 재요청은 **Question.status를 건드리지 않는다.** `Question.revise()`가 이미 리비전 시점에 무조건 NEEDS_INFO를 벗어나므로(열려있는 요청 개수와 무관), 재요청이 호출될 때는 항상 이미 UPDATED 상태다. `ReviewRequest.status`(OPEN/ADDRESSED)는 리뷰어별 독립 부기 정보이지 Question.status를 다시 게이팅하는 값이 아니다 — 구현 중 유닛 테스트로 이 모순을 발견하고 정리했다([ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)).
+
+## 질문 Cluster & Super Answer (Phase 6)
+
+[ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)에서 결정한 대로, 자동 유사도 분석 없이 **사용자가 명시적으로 "같은 문제"라고 표시**해야만 Cluster가 만들어진다. 질문은 최대 하나의 클러스터에만 속한다(`questions.cluster_id`).
+
+- `POST /questions/{id}/cluster` (body: `relatedQuestionId`): 두 질문을 같은 문제로 표시한다. 권한 제한은 없다(작성자가 아니어도, 심지어 두 질문의 작성자가 서로 달라도 누구나 표시 가능 — 커뮤니티 모더레이션 성격).
+  - 자기 자신을 지정하면 400(`CannotClusterWithSelfException`).
+  - 둘 다 클러스터가 없으면 새로 만들어 함께 합류시키고, 하나만 있으면 다른 쪽이 그 클러스터에 합류하고, 이미 같은 클러스터면 아무 것도 바뀌지 않는다(no-op, 200 응답은 동일).
+  - **이미 서로 다른 클러스터에 속해 있으면 409(`ClustersAlreadyDistinctException`)** — 두 기존 클러스터를 하나로 합치는 것은 Merge 기능의 영역이라 지원하지 않는다.
+  - 응답은 `{clusterId, memberQuestionIds, representativeAnswerId}` — 멤버는 id만 반환한다(요약 정보가 필요하면 아래 조회 API를 쓴다).
+- `GET /questions/{id}/cluster`: 이 질문이 속한 클러스터를 조회한다. 클러스터가 없으면 404(`QuestionNotInAnyClusterException`).
+- `GET /clusters/{id}`: 클러스터를 직접 조회한다(북마크된 클러스터 링크 등에서 사용). 없으면 404(`ClusterNotFoundException`).
+- 두 조회 API 모두 응답은 `{clusterId, members: QuestionSearchResultResponse[], representativeAnswerId}` — 멤버 질문 요약은 `QuestionSummaryHydrator`를 재사용한다(Search/Related/Recommendation과 동일한 조립 로직).
+- `POST /clusters/{id}/super-answer` (body: `answerId`): 클러스터의 "Super Answer"(vision.md)를 지정한다. 자동 선정 없이 사용자가 직접 고른다.
+  - 그 답변이 클러스터 멤버 질문에 속하지 않으면 409(`AnswerNotInClusterException`).
+  - 그 답변이 채택(accepted)되지 않았으면 409(`AnswerNotAcceptedException`) — Super Answer는 검증된 해결책이어야 한다는 취지.
+  - 지정 권한 제한은 없다(현재 역할/평판 시스템이 없어 ReviewRequest와 동일하게 인증된 사용자 누구나 가능).
+- Cluster/Super Answer 액션은 outbox 이벤트를 발행하지 않는다 — 호출자가 API 응답으로 결과를 바로 확인하므로 Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다.
+- **범위 밖**: Merge(두 클러스터/질문 병합), Fork(질문 파생), 지식 그래프 시각화는 이번 Phase에 포함하지 않았다 — 사용 패턴을 관찰한 뒤 별도 Phase로 설계한다([PLAN.md](../../PLAN.md) Phase 7+).
 
 ## 입력 검증 공통 원칙
 
