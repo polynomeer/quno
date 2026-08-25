@@ -7,3 +7,6 @@ class QuestionVersionNotFoundException(questionId: Long, versionNumber: Int) :
 
 class QuestionAccessDeniedException(questionId: Long) :
     RuntimeException("Not authorized to modify question: $questionId")
+
+class QuestionAlreadyResolvedException(questionId: Long) :
+    RuntimeException("Question is already resolved: $questionId")

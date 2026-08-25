@@ -74,6 +74,27 @@ class QuestionTest {
         assertEquals(99L, resolved.acceptedAnswerId)
     }
 
+    @Test
+    fun `requestMoreInfo moves an OPEN question to NEEDS_INFO`() {
+        val question = openQuestion(status = QuestionStatus.OPEN)
+
+        assertEquals(QuestionStatus.NEEDS_INFO, question.requestMoreInfo().status)
+    }
+
+    @Test
+    fun `requestMoreInfo on an already NEEDS_INFO question is a no-op`() {
+        val question = openQuestion(status = QuestionStatus.NEEDS_INFO)
+
+        assertEquals(QuestionStatus.NEEDS_INFO, question.requestMoreInfo().status)
+    }
+
+    @Test
+    fun `requestMoreInfo rejects a resolved question`() {
+        val question = openQuestion(status = QuestionStatus.RESOLVED)
+
+        assertFailsWith<QuestionAlreadyResolvedException> { question.requestMoreInfo() }
+    }
+
     private fun openQuestion(status: QuestionStatus): Question {
         val now = Instant.now()
         return Question.reconstitute(

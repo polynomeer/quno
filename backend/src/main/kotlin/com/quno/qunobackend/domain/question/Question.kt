@@ -36,6 +36,18 @@ class Question private constructor(
     fun resolve(acceptedAnswerId: Long): Question =
         Question(id, authorId, title, QuestionStatus.RESOLVED, latestVersionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
 
+    /**
+     * Used when a reviewer opens a ReviewRequest (QPR "Review", PLAN.md 5.2). A RESOLVED
+     * question can't be sent back to NEEDS_INFO — MVP has no re-open flow yet. Already being
+     * NEEDS_INFO (another open request exists) is a no-op, since multiple reviewers can have
+     * independent open requests at once.
+     */
+    fun requestMoreInfo(): Question {
+        if (status == QuestionStatus.RESOLVED) throw QuestionAlreadyResolvedException(requireNotNull(id))
+        if (status == QuestionStatus.NEEDS_INFO) return this
+        return Question(id, authorId, title, QuestionStatus.NEEDS_INFO, latestVersionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+    }
+
     companion object {
         fun open(authorId: Long, title: String): Question {
             require(title.isNotBlank()) { "title must not be blank" }

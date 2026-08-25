@@ -33,6 +33,8 @@
 | GET | `/api/v1/recommendations/questions?source=tags` | 태그 기반 추천 |
 | GET | `/api/v1/dashboard` | 대시보드 집계 |
 | GET | `/api/v1/metrics` | MVP 성공 지표 스냅샷 (내부/운영용) |
+| POST | `/api/v1/questions/{id}/review-requests` | QPR 정보 요청(Review) 생성 — 질문을 NEEDS_INFO로 전환 |
+| GET | `/api/v1/questions/{id}/review-requests` | 질문에 걸린 정보 요청 전체 목록 (상태 포함) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -120,6 +122,17 @@
 - `targetVersionNumber`: 답변 작성 시점의 질문 최신 버전 번호를 자동 기록한다. 버전을 사용자가 직접 고르는 UI는 만들지 않았다 — 항상 "지금 최신 버전"을 대상으로 한다는 단순한 규칙이다.
 - `isStale`: 질문이 그 이후 리비전되어(`question_versions`의 최신 버전 번호가 `targetVersionNumber`보다 커짐) 이 답변이 더 이상 최신 질문 내용을 반영하지 못할 수 있음을 나타낸다. 저장하지 않고 조회 시점에 계산한다.
 - `application/common/AnswerResultAssembler`가 이 계산을 전담한다 — `WriteAnswerUseCase`/`ListAnswersUseCase`/`GetUserProfileUseCase` 세 곳에서 공유한다(`QuestionSummaryHydrator`와 같은 이유로 3중복 시점에 추출).
+
+## QPR Review — 정보 요청 (Phase 5.2)
+
+[ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)에서 결정한 **다중 리뷰 요청 스레드 모델**의 첫 단계다. 여러 사람이 같은 질문에 각자 독립적으로 정보를 요청할 수 있다 — GitHub PR review와 동일하게, 하나의 질문에 열린(OPEN) 요청이 여러 개 동시에 존재할 수 있다.
+
+- `POST /questions/{id}/review-requests`: 질문 작성자가 아닌 사용자가 `message`와 함께 정보 요청을 연다. 성공하면 `ReviewRequest`(status=OPEN, `questionVersionNumberAtRequest`=요청 시점의 질문 최신 버전 번호)를 생성하고, `Question.requestMoreInfo()`로 질문을 NEEDS_INFO로 전환한다(이미 NEEDS_INFO면 no-op, RESOLVED면 409 Conflict).
+  - 작성자 본인이 요청하면 403(`SelfReviewRequestException`).
+  - RESOLVED 질문에 요청하면 409(`QuestionAlreadyResolvedException`).
+- `GET /questions/{id}/review-requests`: 해당 질문의 모든 요청(OPEN/ADDRESSED 무관)을 최신순으로 반환한다.
+- `REVIEW_REQUESTED` outbox 이벤트를 기존 Watch/Notification fan-out 파이프라인에 태운다 — 수신자는 Ward 구독자 + 질문 작성자(요청자 본인 제외), `NEW_ANSWER`와 같은 규칙이다.
+- 재요청(Re-request Review)과 "모든 요청이 해소되면 NEEDS_INFO→UPDATED 복귀"는 Phase 5.3에서 추가한다 — 지금은 정보 요청을 여는 것까지만 구현됐다.
 
 ## 입력 검증 공통 원칙
 

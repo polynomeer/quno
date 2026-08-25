@@ -7,7 +7,7 @@
 | Context | 역할 | 핵심 모델 |
 |---|---|---|
 | Identity | 사용자 식별과 프로필 | User |
-| QnA (Core) | 질문의 생애주기와 답변 | Question, QuestionVersion, Answer |
+| QnA (Core) | 질문의 생애주기와 답변 | Question, QuestionVersion, Answer, ReviewRequest |
 | Tagging | 분류·관심 주제 관계 | Tag, UserTagFollow |
 | Engagement | 질문 변화 구독과 알림 | Watch, Notification |
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
@@ -20,9 +20,10 @@ MVP 이후 확장 시 `Knowledge`(Cluster, SuperAnswer), `Direct Ask`, `Feed` �
 
 | 모델 | 주요 행위/규칙 |
 |---|---|
-| Question | create, revise, resolve/acceptAnswer, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능 |
+| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능 |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
-| Answer | create, edit, softDelete. accepted 상태 보유 |
+| Answer | create, edit, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) |
+| ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)) |
 | Watch | watch/unwatch. user-question 중복 금지 |
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
@@ -36,6 +37,7 @@ AnswerCreated (NEW_ANSWER)
 AnswerAccepted (ANSWER_ACCEPTED)
 QuestionWatched
 QuestionResolved
+ReviewRequested (REVIEW_REQUESTED)
 ```
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
@@ -47,7 +49,8 @@ users
   ├──< questions ──< question_versions
   │       ├──< answers
   │       ├──< watches >── users
-  │       └──< question_tags >── tags
+  │       ├──< question_tags >── tags
+  │       └──< review_requests >── users
   ├──< answers
   ├──< user_tag_follows >── tags
   └──< notifications
@@ -69,6 +72,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
 | watches | user_id, question_id | 관계 데이터, hard delete 허용 |
+| review_requests | id, question_id, requested_by, message, status, question_version_number_at_request, addressed_at | append형, hard delete 불필요(상태만 전이) |
 | notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
 
 ### 삭제/FK 운영 원칙
@@ -287,6 +291,8 @@ RequestMoreInfo → AdditionalInfoRequested → QuestionStatusChanged(NEEDS_INFO
   → UpdateQuestionVersion → QuestionVersionCreated → QuestionReadyForReview
   → ReRequestReview → ReviewReRequested → AnswerCreated
 ```
+
+**구현 상태 (PLAN.md Phase 5.2)**: `RequestMoreInfo → AdditionalInfoRequested(REVIEW_REQUESTED) → QuestionStatusChanged(NEEDS_INFO)`까지 구현됐다 — `ReviewRequest` Aggregate가 다중 리뷰어의 독립적인 요청을 스레드로 관리한다([ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). `UpdateQuestionVersion`(기존 리비전 기능 재사용) 이후의 `QuestionReadyForReview → ReRequestReview → ReviewReRequested`는 Phase 5.3에서 추가한다.
 
 ### 지식 진화 체인 (Phase 3)
 
