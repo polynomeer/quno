@@ -49,7 +49,7 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 - [x] 3.1 태그 팔로우 기반 추천 점수식 구현 ([domain-model.md](docs/architecture/domain-model.md#태그-팔로우-기반-추천-쿼리) SQL 참고). `GET /api/v1/recommendations/questions?source=tags`, 점수식 `matched_tag_count*3 + LEAST(answer_count,5)`. Search/Related와 candidate-id 랭킹 후 hydrate 패턴이 겹쳐 `application/common/QuestionSummaryHydrator`로 결과 조립 로직을 공용화(3중복 시점에 추출). curl로 팔로우 전/후 추천 변화, 본인 질문 제외(`author_id <> userId`) 확인 완료
 - [x] 3.2 라이트 대시보드 API — `GET /api/v1/dashboard`가 4개 섹션을 조합(오늘의 인기 질문 Top5/내 Ward 업데이트 5건/팔로우 태그 피드 10건/태그 트렌드 10건). 대시보드 전용 로직 없이 기존 유스케이스(`ListMyNotificationsUseCase`, `RecommendQuestionsUseCase`) 재사용. 인기 질문은 조회수 미구현으로 Watch·Answer 수 기반 근사([api-design.md](docs/architecture/api-design.md#라이트-대시보드-phase-32) "알려진 단순화" 기록). curl로 실제 누적 데이터 기준 4개 섹션 모두 확인(팔로우 피드가 본인 질문 제외 규칙과 일관되게 비어있음도 확인)
 - [x] 3.3 사용자 프로필 라이트 — `GET /api/v1/users/{id}/profile`(공개, 이메일 미포함). 작성 질문은 `QuestionSummaryHydrator` 재사용, 작성 답변은 기존 `AnswerResult`/`toResult()` 재사용, 팔로우 태그는 `UserTagFollowRepository`+`TagRepository` 조합. 이 참에 컨트롤러에 흩어져 있던 `toResponse()` 확장 함수들(Answer/Tag)을 각 Responses.kt로 승격해 재사용 가능하게 정리. curl로 실제 누적 데이터 기준 질문/답변/팔로우태그 전 섹션과 존재하지 않는 사용자 404 확인 완료
-- [ ] 3.4 Redis 캐시 적용 — 대시보드/인기 질문 조회 경로
+- [x] 3.4 Redis 캐시 적용 — `DashboardRepositoryAdapter`의 `popularQuestions`/`trendingTags`(모든 사용자 공통, 비용이 큰 native 집계 쿼리)에 cache-aside 적용. `StringRedisTemplate`+Jackson 직렬화, TTL 60초, 능동적 무효화 없음(TTL 만료로만 갱신). `wardUpdates`/`followingTagsFeed`는 사용자별 최신성이 중요해 캐시하지 않기로 결정([api-design.md](docs/architecture/api-design.md#redis-캐시-phase-34) 기록). redis-cli로 캐시 키/TTL 생성 확인, sentinel 값 주입 후 API가 그 값을 그대로 반환함을 확인해 실제로 캐시를 읽는다는 것을 증명, 키 삭제 후 재조회 시 DB에서 새로 채워지는 것도 확인 완료
 
 ## Phase 4 — 검증
 
