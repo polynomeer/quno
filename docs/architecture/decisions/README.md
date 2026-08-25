@@ -1,0 +1,40 @@
+# Architecture Decision Records (ADR)
+
+이 디렉터리는 Quno 개발 과정에서 내린 아키텍처/기술 결정을 기록한다. 각 ADR은 "왜 그렇게 결정했는지"와 "그 결정의 결과로 무엇을 감수했는지"를 남기는 것이 목적이다 — `system-architecture.md`/`domain-model.md`/`api-design.md`가 "현재 상태가 무엇인가"를 설명한다면, ADR은 "왜 지금 이 상태인가"를 설명한다.
+
+## 작성 규칙
+
+- 새 ADR은 [TEMPLATE.md](TEMPLATE.md)를 복사해서 시작한다.
+- 파일명은 `NNNN-짧은-제목.md` (4자리 순번, kebab-case).
+- 상태는 제안됨/승인됨/폐기됨/대체됨 중 하나. 기존 결정을 뒤집을 때는 옛 ADR을 지우지 않고 "대체됨(ADR-XXXX로)"로 표시한 뒤 새 ADR을 추가한다.
+- **Claude Code는 다음 기준에 해당하는 결정을 내리거나 발견하면, 사용자가 요청하지 않아도 알아서 새 ADR을 작성한다** (2026-08-25 확정, 아래 "ADR 자동 작성 기준" 참고). 작성 후 이 README의 목록에도 추가한다.
+
+## ADR 자동 작성 기준
+
+다음 중 하나에 해당하면 ADR감이다:
+
+- 기술 스택/라이브러리/인프라를 선택하거나 교체할 때 (예: 특정 DB, 캐시 전략, 메시징 방식)
+- 여러 구현 대안 중 하나를 선택하고 트레이드오프를 감수할 때 (예: 락 전략, 테스트 전략, 캐시 범위)
+- 버그 수정이 "이 코드 한 줄 고침"을 넘어서 앞으로 지켜야 할 규칙/정책을 만들 때 (예: 특정 필드를 조회 기준으로 통일)
+- 범위를 의도적으로 줄이거나 특정 결정을 보류하기로 할 때 (보류 자체가 결정이다)
+- `AskUserQuestion`으로 사용자에게 확인받은 설계/스코프 결정
+
+반대로 다음은 ADR로 남기지 않는다: 단순 리팩터링, 오타 수정, 이미 확정된 패턴을 그대로 따르는 반복 구현, PLAN.md 체크리스트 갱신처럼 그 자체로 결정이 아닌 기록.
+
+## 목록
+
+| ADR | 제목 | 상태 |
+|---|---|---|
+| [0001](0001-tech-stack.md) | 기술 스택을 Kotlin/Spring Boot 4 + PostgreSQL/MongoDB/Redis 단일 모듈 DDD로 확정 | 승인됨 |
+| [0002](0002-archive-alternative-proposals.md) | 기각된 대안 기획(StackNext, MySQL+Kafka)은 삭제 대신 참고 아카이브로 보관 | 승인됨 |
+| [0003](0003-stateless-jwt-auth.md) | Stateless JWT(Access/Refresh 분리) 인증 채택 | 승인됨 |
+| [0004](0004-question-version-aggregate-boundaries.md) | Question/QuestionVersion 분리, Answer는 독립 Aggregate, 리비전은 append-only | 승인됨 |
+| [0005](0005-pessimistic-locking-revision-concurrency.md) | 리비전 생성 동시성 방어로 Pessimistic Locking 채택 | 승인됨 |
+| [0006](0006-transactional-outbox-in-process-scheduler.md) | 비동기 이벤트 처리는 Transactional Outbox + in-process 스케줄러로 | 승인됨 |
+| [0007](0007-tag-slug-uniqueness-and-error-endpoint.md) | 태그 중복 판정을 slug 기준으로 통일하고 `/error`를 permitAll 처리 | 승인됨 |
+| [0008](0008-postgres-native-search.md) | 전용 검색엔진 도입 전, PostgreSQL 네이티브 전문검색으로 시작 | 승인됨 |
+| [0009](0009-redis-cache-global-aggregates-only.md) | Redis 캐시는 전역 집계에만, TTL 만료로만 갱신 | 승인됨 |
+| [0010](0010-metrics-read-model-skip-dto.md) | 성공 지표 스냅샷은 순수 읽기 모델로 취급해 DTO 복제 생략 | 승인됨 |
+| [0011](0011-mockmvc-e2e-testing.md) | 유스케이스 직접 호출 통합 테스트에 더해 MockMvc 기반 E2E 테스트 추가 | 승인됨 |
+| [0012](0012-qpr-multi-reviewer-thread-model.md) | QPR Review의 정보 요청은 다중 리뷰 요청 스레드 모델로 구현 | 승인됨 |
+| [0013](0013-defer-public-read-access.md) | 질문/프로필 조회의 비로그인 공개 여부는 보류 | 승인됨 (재검토 예정) |

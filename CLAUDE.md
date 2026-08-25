@@ -10,7 +10,16 @@ Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이
 - [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md): 확정 기술 스택, 시스템 아키텍처, 패키지 구조
 - [docs/architecture/domain-model.md](docs/architecture/domain-model.md): DDD Bounded Context, Aggregate, ERD, SQL 흐름
 - [docs/architecture/api-design.md](docs/architecture/api-design.md): REST API 설계
+- [docs/architecture/decisions/](docs/architecture/decisions/README.md): ADR(Architecture Decision Record). "현재 상태가 무엇인가"는 위 문서들이, "왜 지금 이 상태인가"는 여기가 답한다.
 - [docs/archive/](docs/archive/README.md): 초기 브레인스토밍 원본(.docx 등). 현재 방향과 다른 대안 탐색안(StackNext, MySQL+Kafka 백엔드안)도 여기 보관되어 있으며 활성 기준 문서가 아니다.
+
+## ADR (Architecture Decision Record)
+
+**Claude Code는 아키텍처/기술적으로 유의미한 결정을 내리거나 발견할 때마다, 사용자가 요청하지 않아도 [docs/architecture/decisions/](docs/architecture/decisions/README.md)에 ADR을 스스로 작성한다.** 어떤 결정이 해당하는지, 어떻게 쓰는지는 그 디렉터리의 README를 따른다. 요약:
+
+- 대상: 기술 스택/라이브러리 선택, 여러 대안 중 하나를 골라 트레이드오프를 감수하는 설계 결정, 정책으로 남을 버그 수정, 범위를 의도적으로 보류/축소하는 결정, `AskUserQuestion`으로 사용자에게 확인받은 스코프 결정.
+- 제외: 단순 리팩터링, 오타 수정, 이미 확정된 패턴을 반복 적용하는 구현.
+- ADR을 새로 쓴 뒤에는 `docs/architecture/decisions/README.md`의 목록도 함께 갱신하고, 관련 작업 커밋과 같은 단위로 커밋한다(또는 `docs(adr): ...` 커밋으로 분리).
 
 ## 확정 기술 스택
 
