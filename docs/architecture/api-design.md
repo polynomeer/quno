@@ -56,6 +56,15 @@
 - `GET /questions/{id}/related`: `question_tags` 자기 조인으로 공유 태그 수를 계산해 내림차순 정렬한다 (mvp-scope.md "태그 매칭 우선"). 태그가 없는 질문은 관련 질문이 비어 있을 수 있다 — 본문 유사도 기반 추천은 MVP 이후 확장.
 - 두 기능 모두 soft-delete된 질문/태그는 제외한다.
 
+## 태그 팔로우 기반 추천 (Phase 3.1)
+
+`GET /recommendations/questions?source=tags`는 [domain-model.md](domain-model.md#태그-팔로우-기반-추천-쿼리)의 점수식을 그대로 구현한다.
+
+- 후보: 요청자가 팔로우한 태그가 달린 질문 중 **본인이 작성하지 않은** 질문(`author_id <> :userId`)
+- 점수: `matched_tag_count * 3 + LEAST(answer_count, 5)`, 동점이면 최신순
+- `source` 파라미터는 향후 다른 추천 전략을 위해 받아두지만 MVP는 태그 팔로우 전략 하나뿐이라 현재는 무시한다.
+- 검색/관련 질문과 동일하게 candidate id를 랭킹한 뒤 `QuestionSummaryHydrator`(`application/common`)로 결과를 조립한다 — 세 기능이 이 조립 로직을 공유한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

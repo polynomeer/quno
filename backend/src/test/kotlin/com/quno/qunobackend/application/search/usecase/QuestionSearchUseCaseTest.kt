@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.search.usecase
 
+import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionRepository
@@ -20,7 +21,8 @@ class QuestionSearchUseCaseTest {
         questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
     )
     private val searchRepository = InMemorySearchRepository()
-    private val useCase = QuestionSearchUseCase(searchRepository, questionRepository, questionTagRepository)
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository)
+    private val useCase = QuestionSearchUseCase(searchRepository, questionRepository, hydrator)
 
     private fun question(title: String, tags: List<String> = emptyList()): Long =
         createUseCase.execute(
