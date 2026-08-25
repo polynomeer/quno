@@ -9,6 +9,9 @@ data class AnswerResult(
     val authorId: Long,
     val body: String,
     val isAccepted: Boolean,
+    val targetVersionNumber: Int,
+    /** True when the question has been revised since this answer targeted [targetVersionNumber]. */
+    val isStale: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

@@ -3,6 +3,7 @@ package com.quno.qunobackend.application.user.usecase
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
+import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
@@ -23,16 +24,20 @@ import kotlin.test.assertFailsWith
 class GetUserProfileUseCaseTest {
     private val userRepository = InMemoryUserRepository()
     private val questionRepository = InMemoryQuestionRepository()
+    private val questionVersionRepository = InMemoryQuestionVersionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val answerRepository = InMemoryAnswerRepository()
     private val userTagFollowRepository = InMemoryUserTagFollowRepository()
+    private val answerResultAssembler = AnswerResultAssembler(questionRepository, questionVersionRepository)
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
+        questionRepository, questionVersionRepository, tagRepository, questionTagRepository,
     )
-    private val writeAnswerUseCase = WriteAnswerUseCase(questionRepository, answerRepository, InMemoryOutboxEventRepository())
+    private val writeAnswerUseCase = WriteAnswerUseCase(
+        questionRepository, questionVersionRepository, answerRepository, InMemoryOutboxEventRepository(), answerResultAssembler,
+    )
     private val followTagUseCase = FollowTagUseCase(tagRepository, userTagFollowRepository)
     private val useCase = GetUserProfileUseCase(
         userRepository,
@@ -41,6 +46,7 @@ class GetUserProfileUseCaseTest {
         userTagFollowRepository,
         tagRepository,
         QuestionSummaryHydrator(questionRepository, questionTagRepository),
+        answerResultAssembler,
     )
 
     @Test

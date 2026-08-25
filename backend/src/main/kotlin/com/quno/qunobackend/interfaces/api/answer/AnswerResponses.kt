@@ -10,6 +10,8 @@ data class AnswerResponse(
     val authorId: Long,
     val body: String,
     val isAccepted: Boolean,
+    val targetVersionNumber: Int,
+    val isStale: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
 )
@@ -20,6 +22,8 @@ fun AnswerResult.toResponse() = AnswerResponse(
     authorId = authorId,
     body = body,
     isAccepted = isAccepted,
+    targetVersionNumber = targetVersionNumber,
+    isStale = isStale,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )

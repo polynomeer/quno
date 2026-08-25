@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.answer.usecase
 
 import com.quno.qunobackend.application.answer.dto.AcceptAnswerCommand
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
+import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
@@ -20,13 +21,20 @@ import kotlin.test.assertTrue
 
 class AcceptAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
+    private val questionVersionRepository = InMemoryQuestionVersionRepository()
     private val answerRepository = InMemoryAnswerRepository()
     private val tagRepository = InMemoryTagRepository()
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
-    private val writeAnswerUseCase = WriteAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
+    private val writeAnswerUseCase = WriteAnswerUseCase(
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        outboxEventRepository,
+        AnswerResultAssembler(questionRepository, questionVersionRepository),
+    )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
 
     private fun questionAskedBy(authorId: Long): Long =

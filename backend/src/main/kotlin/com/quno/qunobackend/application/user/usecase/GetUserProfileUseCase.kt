@@ -1,6 +1,6 @@
 package com.quno.qunobackend.application.user.usecase
 
-import com.quno.qunobackend.application.answer.usecase.toResult
+import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.tag.dto.TagResult
 import com.quno.qunobackend.application.user.dto.UserProfileResult
@@ -21,6 +21,7 @@ class GetUserProfileUseCase(
     private val userTagFollowRepository: UserTagFollowRepository,
     private val tagRepository: TagRepository,
     private val hydrator: QuestionSummaryHydrator,
+    private val answerResultAssembler: AnswerResultAssembler,
 ) {
     fun execute(userId: Long): UserProfileResult {
         val user = userRepository.findById(userId) ?: throw UserNotFoundException(userId)
@@ -28,7 +29,7 @@ class GetUserProfileUseCase(
         val questionIds = questionRepository.findAllByAuthorId(userId).mapNotNull { it.id }
         val questions = hydrator.hydrate(questionIds)
 
-        val answers = answerRepository.findAllByAuthorId(userId).map { it.toResult() }
+        val answers = answerResultAssembler.toResults(answerRepository.findAllByAuthorId(userId))
 
         val followedTags = userTagFollowRepository.findFollowedTagIds(userId)
             .mapNotNull { tagRepository.findById(it) }

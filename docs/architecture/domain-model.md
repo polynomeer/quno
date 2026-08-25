@@ -64,7 +64,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | users | id, email, nickname, is_active | 비활성화 + 필요 시 익명화 (물리 삭제 지양) |
 | questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, deleted_at | soft delete, 핵심 FK 유지 |
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
-| answers | id, question_id, author_id, body_markdown, is_accepted, deleted_at | soft delete |
+| answers | id, question_id, author_id, body_markdown, is_accepted, target_version_number, deleted_at | soft delete |
 | tags | name, slug, deleted_at | soft delete + active partial unique index |
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |

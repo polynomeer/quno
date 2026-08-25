@@ -113,6 +113,14 @@
 - `MetricsLoggingScheduler`(`infrastructure/observability`)가 30분 주기로 같은 스냅샷을 INFO 레벨로 로깅한다 — 별도 메트릭 백엔드 없이도 로그 기반 관측 도구로 추적 가능하게 하기 위함.
 - 다른 조회 API와 동일하게 인증을 요구한다.
 
+## 답변–질문버전 연결 (Phase 5.1)
+
+`AnswerResponse`(답변 작성/목록/공개 프로필 응답 공통)에 `targetVersionNumber`와 `isStale` 필드를 추가했다 — [vision.md](../product/vision.md)가 지적한 "답변이 어느 시점의 질문을 대상으로 했는지 불명확" 문제에 대한 최소 대응이다([ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md) 관련, PLAN.md 5.1).
+
+- `targetVersionNumber`: 답변 작성 시점의 질문 최신 버전 번호를 자동 기록한다. 버전을 사용자가 직접 고르는 UI는 만들지 않았다 — 항상 "지금 최신 버전"을 대상으로 한다는 단순한 규칙이다.
+- `isStale`: 질문이 그 이후 리비전되어(`question_versions`의 최신 버전 번호가 `targetVersionNumber`보다 커짐) 이 답변이 더 이상 최신 질문 내용을 반영하지 못할 수 있음을 나타낸다. 저장하지 않고 조회 시점에 계산한다.
+- `application/common/AnswerResultAssembler`가 이 계산을 전담한다 — `WriteAnswerUseCase`/`ListAnswersUseCase`/`GetUserProfileUseCase` 세 곳에서 공유한다(`QuestionSummaryHydrator`와 같은 이유로 3중복 시점에 추출).
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

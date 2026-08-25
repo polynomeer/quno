@@ -15,6 +15,7 @@ class InMemoryAnswerRepository : AnswerRepository {
                 authorId = answer.authorId,
                 bodyMarkdown = answer.bodyMarkdown,
                 isAccepted = answer.isAccepted,
+                targetVersionNumber = answer.targetVersionNumber,
                 deletedAt = answer.deletedAt,
                 createdAt = answer.createdAt,
                 updatedAt = answer.updatedAt,

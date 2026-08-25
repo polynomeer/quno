@@ -27,6 +27,9 @@ class AnswerJpaEntity(
     @Column(name = "is_accepted", nullable = false)
     val isAccepted: Boolean,
 
+    @Column(name = "target_version_number", nullable = false)
+    val targetVersionNumber: Int,
+
     @Column(name = "deleted_at")
     val deletedAt: Instant?,
 

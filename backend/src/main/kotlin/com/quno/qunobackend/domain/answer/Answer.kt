@@ -9,21 +9,24 @@ class Answer private constructor(
     val authorId: Long,
     val bodyMarkdown: String,
     val isAccepted: Boolean,
+    val targetVersionNumber: Int,
     val deletedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
     fun accept(): Answer {
         check(deletedAt == null) { "cannot accept a deleted answer" }
-        return Answer(id, questionId, authorId, bodyMarkdown, true, deletedAt, createdAt, Instant.now())
+        return Answer(id, questionId, authorId, bodyMarkdown, true, targetVersionNumber, deletedAt, createdAt, Instant.now())
     }
 
     fun unaccept(): Answer =
-        Answer(id, questionId, authorId, bodyMarkdown, false, deletedAt, createdAt, Instant.now())
+        Answer(id, questionId, authorId, bodyMarkdown, false, targetVersionNumber, deletedAt, createdAt, Instant.now())
 
     companion object {
-        fun write(questionId: Long, authorId: Long, bodyMarkdown: String): Answer {
+        /** [targetVersionNumber] is the question's latest version number at write time (see PLAN.md 5.1). */
+        fun write(questionId: Long, authorId: Long, bodyMarkdown: String, targetVersionNumber: Int): Answer {
             require(bodyMarkdown.isNotBlank()) { "bodyMarkdown must not be blank" }
+            require(targetVersionNumber >= 1) { "targetVersionNumber must be >= 1" }
             val now = Instant.now()
             return Answer(
                 id = null,
@@ -31,6 +34,7 @@ class Answer private constructor(
                 authorId = authorId,
                 bodyMarkdown = bodyMarkdown,
                 isAccepted = false,
+                targetVersionNumber = targetVersionNumber,
                 deletedAt = null,
                 createdAt = now,
                 updatedAt = now,
@@ -43,9 +47,10 @@ class Answer private constructor(
             authorId: Long,
             bodyMarkdown: String,
             isAccepted: Boolean,
+            targetVersionNumber: Int,
             deletedAt: Instant?,
             createdAt: Instant,
             updatedAt: Instant,
-        ): Answer = Answer(id, questionId, authorId, bodyMarkdown, isAccepted, deletedAt, createdAt, updatedAt)
+        ): Answer = Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, deletedAt, createdAt, updatedAt)
     }
 }
