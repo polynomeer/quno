@@ -42,3 +42,4 @@
 | [0015](0015-review-request-status-independent-of-question-status.md) | ReviewRequest.status는 Question.status를 다시 게이팅하지 않음 | 승인됨 |
 | [0016](0016-manual-duplicate-marking-cluster.md) | Cluster는 자동 유사도 분석 대신 사용자 명시적 표시로 형성, 이번 Phase는 Cluster+Super Answer로 한정 | 승인됨 |
 | [0017](0017-manual-outdated-marking-and-spike-detection-scope.md) | Outdated는 사용자 명시적 표시로 근사, 기술 버전 자동 감지는 범위 밖, Spike Detection은 포함 | 승인됨 |
+| [0018](0018-simple-reputation-score-only.md) | Phase 9는 간단한 평판 점수만, Organization/Direct Ask는 후속 Phase로 이연 | 승인됨 |
