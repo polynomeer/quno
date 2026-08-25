@@ -38,3 +38,4 @@
 | [0011](0011-mockmvc-e2e-testing.md) | 유스케이스 직접 호출 통합 테스트에 더해 MockMvc 기반 E2E 테스트 추가 | 승인됨 |
 | [0012](0012-qpr-multi-reviewer-thread-model.md) | QPR Review의 정보 요청은 다중 리뷰 요청 스레드 모델로 구현 | 승인됨 |
 | [0013](0013-defer-public-read-access.md) | 질문/프로필 조회의 비로그인 공개 여부는 보류 | 승인됨 (재검토 예정) |
+| [0014](0014-answer-target-version-auto-recorded.md) | 답변의 대상 버전은 작성 시점 최신 버전으로 자동 기록, 명시적 선택 UI는 미도입 | 승인됨 |
