@@ -1,6 +1,12 @@
 package com.quno.qunobackend.interfaces.api.common
 
 import com.quno.qunobackend.domain.answer.AnswerNotFoundException
+import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
+import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
+import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
+import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
+import com.quno.qunobackend.domain.cluster.ClustersAlreadyDistinctException
+import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -32,6 +38,9 @@ class GlobalExceptionHandler {
         QuestionAlreadyResolvedException::class,
         ReviewRequestAlreadyAddressedException::class,
         QuestionNotRevisedSinceRequestException::class,
+        ClustersAlreadyDistinctException::class,
+        AnswerNotInClusterException::class,
+        AnswerNotAcceptedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -47,6 +56,8 @@ class GlobalExceptionHandler {
         AnswerNotFoundException::class,
         TagNotFoundException::class,
         ReviewRequestNotFoundException::class,
+        ClusterNotFoundException::class,
+        QuestionNotInAnyClusterException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -60,4 +71,8 @@ class GlobalExceptionHandler {
         val message = ex.bindingResult.fieldErrors.joinToString("; ") { "${it.field}: ${it.defaultMessage}" }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("VALIDATION_ERROR", message))
     }
+
+    @ExceptionHandler(CannotClusterWithSelfException::class)
+    fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 }

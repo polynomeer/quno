@@ -18,6 +18,7 @@ class InMemoryQuestionRepository : QuestionRepository {
                 status = question.status,
                 latestVersionId = question.latestVersionId,
                 acceptedAnswerId = question.acceptedAnswerId,
+                clusterId = question.clusterId,
                 deletedAt = question.deletedAt,
                 createdAt = question.createdAt,
                 updatedAt = question.updatedAt,
@@ -36,6 +37,9 @@ class InMemoryQuestionRepository : QuestionRepository {
 
     override fun findAllByAuthorId(authorId: Long): List<Question> =
         byId.values.filter { it.authorId == authorId }.sortedByDescending { it.createdAt }
+
+    override fun findAllByClusterId(clusterId: Long): List<Question> =
+        byId.values.filter { it.clusterId == clusterId }
 }
 
 class InMemoryQuestionVersionRepository : QuestionVersionRepository {

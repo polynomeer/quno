@@ -15,13 +15,14 @@ class Question private constructor(
     val status: QuestionStatus,
     val latestVersionId: Long?,
     val acceptedAnswerId: Long?,
+    val clusterId: Long?,
     val deletedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
     /** Used right after creating Qv1: keeps status OPEN, only wires the pointer. */
     fun withLatestVersion(versionId: Long, title: String = this.title): Question =
-        Question(id, authorId, title, status, versionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+        Question(id, authorId, title, status, versionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
 
     /**
      * Used when a revision (Qv2+) is appended. A RESOLVED question stays RESOLVED —
@@ -29,12 +30,12 @@ class Question private constructor(
      */
     fun revise(versionId: Long, title: String): Question {
         val newStatus = if (status == QuestionStatus.RESOLVED) status else QuestionStatus.UPDATED
-        return Question(id, authorId, title, newStatus, versionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+        return Question(id, authorId, title, newStatus, versionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
     }
 
     /** Used when an answer is accepted. */
     fun resolve(acceptedAnswerId: Long): Question =
-        Question(id, authorId, title, QuestionStatus.RESOLVED, latestVersionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+        Question(id, authorId, title, QuestionStatus.RESOLVED, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
 
     /**
      * Used when a reviewer opens a ReviewRequest (QPR "Review", PLAN.md 5.2). A RESOLVED
@@ -45,8 +46,12 @@ class Question private constructor(
     fun requestMoreInfo(): Question {
         if (status == QuestionStatus.RESOLVED) throw QuestionAlreadyResolvedException(requireNotNull(id))
         if (status == QuestionStatus.NEEDS_INFO) return this
-        return Question(id, authorId, title, QuestionStatus.NEEDS_INFO, latestVersionId, acceptedAnswerId, deletedAt, createdAt, Instant.now())
+        return Question(id, authorId, title, QuestionStatus.NEEDS_INFO, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
     }
+
+    /** Used when this question is marked as the same problem as another (PLAN.md 6.1). */
+    fun joinCluster(clusterId: Long): Question =
+        Question(id, authorId, title, status, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
 
     companion object {
         fun open(authorId: Long, title: String): Question {
@@ -59,6 +64,7 @@ class Question private constructor(
                 status = QuestionStatus.OPEN,
                 latestVersionId = null,
                 acceptedAnswerId = null,
+                clusterId = null,
                 deletedAt = null,
                 createdAt = now,
                 updatedAt = now,
@@ -72,11 +78,12 @@ class Question private constructor(
             status: QuestionStatus,
             latestVersionId: Long?,
             acceptedAnswerId: Long?,
+            clusterId: Long?,
             deletedAt: Instant?,
             createdAt: Instant,
             updatedAt: Instant,
         ): Question = Question(
-            id, authorId, title, status, latestVersionId, acceptedAnswerId, deletedAt, createdAt, updatedAt,
+            id, authorId, title, status, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, updatedAt,
         )
     }
 }

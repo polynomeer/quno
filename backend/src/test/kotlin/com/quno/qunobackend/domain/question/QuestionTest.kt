@@ -34,6 +34,7 @@ class QuestionTest {
             status = QuestionStatus.OPEN,
             latestVersionId = null,
             acceptedAnswerId = null,
+            clusterId = null,
             deletedAt = null,
             createdAt = now,
             updatedAt = now,
@@ -95,6 +96,16 @@ class QuestionTest {
         assertFailsWith<QuestionAlreadyResolvedException> { question.requestMoreInfo() }
     }
 
+    @Test
+    fun `joinCluster sets the cluster id without touching status`() {
+        val question = openQuestion(status = QuestionStatus.OPEN)
+
+        val joined = question.joinCluster(clusterId = 7L)
+
+        assertEquals(7L, joined.clusterId)
+        assertEquals(QuestionStatus.OPEN, joined.status)
+    }
+
     private fun openQuestion(status: QuestionStatus): Question {
         val now = Instant.now()
         return Question.reconstitute(
@@ -104,6 +115,7 @@ class QuestionTest {
             status = status,
             latestVersionId = 1L,
             acceptedAnswerId = null,
+            clusterId = null,
             deletedAt = null,
             createdAt = now,
             updatedAt = now,

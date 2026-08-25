@@ -34,6 +34,9 @@ class QuestionJpaEntity(
     @Column(name = "accepted_answer_id")
     val acceptedAnswerId: Long?,
 
+    @Column(name = "cluster_id")
+    val clusterId: Long?,
+
     @Column(name = "deleted_at")
     val deletedAt: Instant?,
 

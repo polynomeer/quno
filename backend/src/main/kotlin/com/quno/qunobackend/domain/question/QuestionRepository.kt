@@ -12,4 +12,7 @@ interface QuestionRepository {
 
     /** Most recent first. */
     fun findAllByAuthorId(authorId: Long): List<Question>
+
+    /** Members of a Cluster (PLAN.md 6.1) — order is not significant. */
+    fun findAllByClusterId(clusterId: Long): List<Question>
 }

@@ -15,4 +15,6 @@ interface QuestionJpaRepository : JpaRepository<QuestionJpaEntity, Long> {
     fun findByIdForUpdate(@Param("id") id: Long): QuestionJpaEntity?
 
     fun findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId: Long): List<QuestionJpaEntity>
+
+    fun findAllByClusterIdAndDeletedAtIsNull(clusterId: Long): List<QuestionJpaEntity>
 }
