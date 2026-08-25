@@ -27,7 +27,15 @@ Kotlin · Spring Boot 4.0.8 · Java 21 · Gradle Kotlin DSL · 단일 모듈 DDD
 
 ## 빌드/테스트/실행
 
-로컬 인프라(PostgreSQL/MongoDB/Redis, 포트 5442/6390/27017)를 먼저 띄운다.
+가장 빠른 방법: 저장소 루트에서 [run.sh](run.sh) 하나로 Docker 인프라 기동부터 서버 실행까지 한 번에 처리한다.
+
+```bash
+./run.sh
+```
+
+Docker 데몬이 꺼져 있으면(macOS) 자동으로 켜고 기동을 기다린 뒤, PostgreSQL/MongoDB/Redis 컨테이너를 올리고, `local` 프로필로 서버를 포그라운드 실행한다(`http://localhost:8081/actuator/health`에서 상태 확인, Ctrl+C로 종료).
+
+개별 단계가 필요하면:
 
 ```bash
 docker compose up -d
@@ -44,8 +52,6 @@ cd backend && ./gradlew test
 ```bash
 cd backend && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 ```
-
-`local` 프로필로 기동하면 `http://localhost:8081/actuator/health`에서 DB/Mongo/Redis 연결 상태를 확인할 수 있다.
 
 ## 커밋 규칙
 
