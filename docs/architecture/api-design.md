@@ -124,7 +124,7 @@
 - `isStale`: 질문이 그 이후 리비전되어(`question_versions`의 최신 버전 번호가 `targetVersionNumber`보다 커짐) 이 답변이 더 이상 최신 질문 내용을 반영하지 못할 수 있음을 나타낸다. 저장하지 않고 조회 시점에 계산한다.
 - `application/common/AnswerResultAssembler`가 이 계산을 전담한다 — `WriteAnswerUseCase`/`ListAnswersUseCase`/`GetUserProfileUseCase` 세 곳에서 공유한다(`QuestionSummaryHydrator`와 같은 이유로 3중복 시점에 추출).
 
-## QPR Review — 정보 요청 (Phase 5.2)
+## QPR Review — 정보 요청과 재요청 (Phase 5.2~5.3)
 
 [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)에서 결정한 **다중 리뷰 요청 스레드 모델**의 첫 단계다. 여러 사람이 같은 질문에 각자 독립적으로 정보를 요청할 수 있다 — GitHub PR review와 동일하게, 하나의 질문에 열린(OPEN) 요청이 여러 개 동시에 존재할 수 있다.
 
