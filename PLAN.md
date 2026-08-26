@@ -123,11 +123,21 @@ mvp-scope.md 로드맵 Phase 6(Quno Flow, Instant Question, 실시간 질문방,
 - [x] F0.4 API Client + 인증 — `shared/api/http-client.ts`(fetch 래퍼) + `api-error.ts`(`ApiError` — status/code 보존). `shared/lib/token-storage.ts`로 Access/Refresh를 localStorage에 저장(SSR 안전), 401 응답 시 `/api/v1/auth/refresh`로 자동 재발급 후 원 요청 재시도(동시 요청은 모듈 스코프 `refreshPromise`로 중복 재발급 방지, [ADR-0003](docs/architecture/decisions/0003-stateless-jwt-auth.md)). `features/auth`에 로그인 폼(`app/(auth)/login/page.tsx`)과 세션 조회(`useSession`) 구현. 백엔드에 CORS 설정이 전혀 없어 `SecurityConfig`에 `http://localhost:3000` 허용 CORS Bean을 추가(별도 커밋 `feat(security): 프론트엔드 dev 서버용 CORS 허용`). `redirectTo` 보존과 회원가입 폼은 아직 미구현 — 로그인만으로 F0 검증 범위를 한정
 - [x] F0.5 AppShell — `widgets/app-header`에 Header(로고/검색창/Ask 버튼/로그인 상태에 따른 닉네임+로그아웃 또는 로그인 버튼) 구현, `app/layout.tsx`에 `Providers`(TanStack Query)와 함께 배치. 알림/프로필 드롭다운·반응형 네비게이션은 아직 없음(대상 화면이 없어 Frontend Phase 1 이후로 미룸). 실제 회원가입(`POST /api/v1/auth/signup`)→로그인→홈에서 `GET /api/v1/dashboard` 데이터 렌더링까지 브라우저로 엔드투엔드 검증 완료
 
-## Frontend Phase 1+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Frontend Phase 1 — 읽기 경험
+
+Home/Search/Question Detail/Tag 4개 화면을 모두 조회 전용으로 완성한다. 백엔드가 모든 조회 API에 인증을 요구하므로([ADR-0013](docs/architecture/decisions/0013-defer-public-read-access.md)) 이 Phase의 페이지도 전부 로그인이 필요하다 — 비로그인 접근은 `redirectTo`를 보존한 채 `/login`으로 보낸다. Vote/Comment/Watch/Accept 등 쓰기·커뮤니티 액션은 다음 Phase로 미룬다.
+
+- [x] F1.1 인증 가드 + `redirectTo` — `features/auth/hooks/useRequireAuth.ts` 추가: 미로그인 시 `/login?redirectTo=`로 리다이렉트, 로그인 성공 후 그 경로로 복귀(로그인 폼을 `Suspense`로 감싸고 `useSearchParams`로 읽음, F0.4에서 미룬 부분). **버그 발견 및 수정**: 검증 중 `useSession`이 `localStorage`를 렌더링 중 동기적으로 읽어 AppHeader의 로그인/로그아웃 분기가 SSR과 어긋나는 Hydration 에러를 발견 — `useSyncExternalStore`로 교체(서버 스냅샷은 항상 `false`, React가 하이드레이션 시 실제 값으로 스스로 보정). 이 수정 후에도 `useRequireAuth`가 로그인된 사용자를 잘못 `/login`으로 튕기는 2차 버그를 발견: disabled 쿼리가 "아직 fetch를 시작하지 않음"과 "정말 로그인 안 됨"을 `isLoading`만으로 구분하지 못해 생기는 레이스였다 — 토큰 존재 여부는 effect 안에서 직접 읽고(SSR에서 실행되지 않으므로 안전), 토큰이 있으면 `/me` 요청이 실제로 완료(`isFetched`)될 때까지 리다이렉트를 미루도록 수정. 브라우저로 로그아웃→보호된 페이지 접근→`/login?redirectTo=`→로그인→원래 페이지 복귀까지 전체 흐름 검증 완료
+- [x] F1.2 Home — `features/dashboard`(dashboard.api/flow.api) + `widgets/question-feed`(QuestionCard/QuestionList) + `widgets/activity-panel`(TrendingTagsPanel/FlowFeed)로 스모크 테스트용 임시 홈을 실제 화면으로 교체: 헤드라인 배너, 인기 질문, 오늘 해결된 질문/재활성화된 지식(있을 때만 렌더링), 관심 태그 피드, Trending 태그/에러 사이드 패널, Quno Flow 활동 스트림. 실제 서버 데이터(질문 생성→리비전→답변 채택→오늘 해결/태그 급증 반영)로 각 섹션 렌더링 확인
+- [x] F1.3 Questions/Search — `/questions?q=`: `features/search`로 `GET /search` 연동, `URLSearchParams` 기반 URL 동기화(뒤로가기/공유 가능), 로딩 스켈레톤/빈 결과/에러 상태. score 정렬 등 백엔드 미지원 옵션은 만들지 않음. AppHeader 검색창도 이 페이지로 연결
+- [x] F1.4 Question Detail — `/questions/{id}`: `features/question`(`GET /questions/{id}`, Markdown 렌더링은 `shared/ui/MarkdownContent`—`react-markdown`+`remark-gfm`, HTML을 직접 주입하지 않아 별도 sanitizer 없이 안전), `GET /questions/{id}/related`, `features/answer`로 `GET /questions/{id}/answers`(조회 전용 — 채택 배지·`isStale` 배지, Accept/작성은 Phase 2). Vote/Watch UI는 만들지 않음(Phase 3)
+- [x] F1.5 Question Revision History + Diff — `/questions/{id}/versions`: `GET .../versions` 목록 + From/To 버전 선택 UI로 `GET .../versions/{version}/diff?from=` 비교, `DiffView`가 ADDED/REMOVED/EQUAL 라인을 색상으로 표시. 리비전이 1개뿐이면 비교 UI 대신 안내 문구
+- [x] F1.6 Tag Directory + Detail — `/tags`(`GET /tags?q=` 검색), `/tags/{name}`(전용 조회 API가 없어 `GET /search?q={name}` 결과를 `tags` 배열 exact match로 클라이언트 필터링하는 근사치, [ADR-0021](docs/architecture/decisions/0021-tag-detail-via-search-approximation.md)). Follow 토글은 현재 사용자의 팔로우 여부를 알려주는 API가 없어 Phase 3(커뮤니티 액션)로 미룸
+
+## Frontend Phase 2+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [docs/frontend/roadmap.md](docs/frontend/roadmap.md#3-단계별-구현-로드맵)의 Phase 0~7과 대응한다. 백엔드 지원 여부에 따라 순서와 범위가 원본과 달라질 수 있다.
 
-- [ ] Frontend Phase 1 — 읽기 경험: Home(대시보드/Flow 연동), Questions/Search, Question Detail(리비전 히스토리/Diff 포함), Tag Detail
 - [ ] Frontend Phase 2 — 쓰기 경험: Ask(질문 작성, 유사 질문 검색), Answer Composer, Accept
 - [ ] Frontend Phase 3 — 커뮤니티 액션: Watch, 평판 프로필, QPR Review UI(정보 요청/재요청), Cluster/Super Answer 표시, Outdated 표시
 - [ ] Frontend Phase 4 — Discovery: 고급 검색 필터, 관련 질문, 태그 탐색, Quno Flow, 고급 Dashboard
