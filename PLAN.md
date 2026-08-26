@@ -134,11 +134,19 @@ Home/Search/Question Detail/Tag 4개 화면을 모두 조회 전용으로 완성
 - [x] F1.5 Question Revision History + Diff — `/questions/{id}/versions`: `GET .../versions` 목록 + From/To 버전 선택 UI로 `GET .../versions/{version}/diff?from=` 비교, `DiffView`가 ADDED/REMOVED/EQUAL 라인을 색상으로 표시. 리비전이 1개뿐이면 비교 UI 대신 안내 문구
 - [x] F1.6 Tag Directory + Detail — `/tags`(`GET /tags?q=` 검색), `/tags/{name}`(전용 조회 API가 없어 `GET /search?q={name}` 결과를 `tags` 배열 exact match로 클라이언트 필터링하는 근사치, [ADR-0021](docs/architecture/decisions/0021-tag-detail-via-search-approximation.md)). Follow 토글은 현재 사용자의 팔로우 여부를 알려주는 API가 없어 Phase 3(커뮤니티 액션)로 미룸
 
-## Frontend Phase 2+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Frontend Phase 2 — 쓰기 경험
+
+Ask/Answer/Accept 3개 흐름을 완성해 "질문→답변→채택"이라는 Q&A 핵심 루프를 프론트엔드에서 처음부터 끝까지 수행할 수 있게 한다.
+
+- [x] F2.1 MarkdownEditor + Textarea — `shared/ui/Textarea.tsx`, `shared/ui/MarkdownEditor.tsx`(Write/Preview 탭, `MarkdownContent` 재사용)를 구현해 Ask/Answer Composer가 공유
+- [x] F2.2 Ask — `/ask`: React Hook Form + Zod로 제목(필수, 300자)/본문(필수)/environment·logs(선택) 입력, `features/question/ui/TagInput`으로 태그(클라이언트에서 최대 5개). 제목 입력에 400ms debounce를 걸어 `GET /search`로 유사 질문을 보여주고(작성 중인 제목이라 `related`가 아니라 `search` 재사용), `POST /questions`로 생성 후 상세로 이동. 중복 제출 방지, localStorage 기반 draft 자동 저장/복원(초안은 성공 제출 시 삭제). **버그 발견 및 수정**: `TagInput`이 쉼표를 keydown 이벤트로만 감지해, 붙여넣기나 자동화 도구처럼 값이 한 번에 채워지는 입력에서는 태그가 전혀 분리되지 않는 것을 브라우저 검증 중 발견 — `onChange`에서도 쉼표를 분리하도록 수정
+- [x] F2.3 Answer Composer — Question Detail 하단에 답변 작성 영역 추가: `POST /questions/{id}/answers`, 성공 시 답변 목록 invalidate. 답변 정렬은 Best(수락 우선)/Newest/Oldest만 제공(Score는 투표 기능이 없어 제외, [ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)). 답변 수정 이력 UI는 만들지 않음(Answer에 리비전 자체가 없음)
+- [x] F2.4 Accept — 질문 작성자에게만 답변 카드에 Accept 버튼 노출(`question.authorId === me.id`), `POST /answers/{id}/accept` 성공 시 답변 목록 + 질문(상태 RESOLVED 반영) invalidate. 브라우저로 Ask→Answer→Accept 전체 루프(질문 생성→답변 작성→채택→질문 상태 Solved 전환)를 실제 서버로 검증 완료
+
+## Frontend Phase 3+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [docs/frontend/roadmap.md](docs/frontend/roadmap.md#3-단계별-구현-로드맵)의 Phase 0~7과 대응한다. 백엔드 지원 여부에 따라 순서와 범위가 원본과 달라질 수 있다.
 
-- [ ] Frontend Phase 2 — 쓰기 경험: Ask(질문 작성, 유사 질문 검색), Answer Composer, Accept
 - [ ] Frontend Phase 3 — 커뮤니티 액션: Watch, 평판 프로필, QPR Review UI(정보 요청/재요청), Cluster/Super Answer 표시, Outdated 표시
 - [ ] Frontend Phase 4 — Discovery: 고급 검색 필터, 관련 질문, 태그 탐색, Quno Flow, 고급 Dashboard
 - [ ] Frontend Phase 5 — Retention: Notifications, Watching 목록, Profile 확장
