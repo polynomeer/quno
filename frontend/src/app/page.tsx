@@ -1,39 +1,18 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useSession } from "@/features/auth/hooks/useSession";
-import { httpClient } from "@/shared/api/http-client";
-import { StatusBadge, type QuestionStatus } from "@/shared/ui/StatusBadge";
-import { TagChip } from "@/shared/ui/TagChip";
+import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
+import { useFlow } from "@/features/dashboard/hooks/useFlow";
+import { QuestionList } from "@/widgets/question-feed/QuestionList";
+import { TrendingTagsPanel } from "@/widgets/activity-panel/TrendingTagsPanel";
+import { FlowFeed } from "@/widgets/activity-panel/FlowFeed";
 import { Skeleton } from "@/shared/ui/Skeleton";
-
-interface QuestionSummary {
-  id: number;
-  title: string;
-  status: QuestionStatus;
-  tags: string[];
-}
-
-interface DashboardResponse {
-  popularQuestions: QuestionSummary[];
-}
-
-/**
- * Temporary smoke-test home page proving the full stack (Next.js → CORS → JWT → Postgres)
- * works end to end. Frontend Phase 1 (see PLAN.md) replaces this with the real Home/Feed
- * design from docs/frontend/design.md #9.
- */
-function useDashboard(enabled: boolean) {
-  return useQuery({
-    queryKey: ["dashboard"],
-    queryFn: () => httpClient.get<DashboardResponse>("/api/v1/dashboard"),
-    enabled,
-  });
-}
 
 export default function HomePage() {
   const { data: me, isLoading: sessionLoading } = useSession();
   const { data: dashboard, isLoading: dashboardLoading } = useDashboard(Boolean(me));
+  const { data: flow, isLoading: flowLoading } = useFlow(Boolean(me));
 
   if (sessionLoading) {
     return <Skeleton className="h-40 w-full" />;
@@ -48,30 +27,66 @@ export default function HomePage() {
     );
   }
 
+  if (dashboardLoading || !dashboard) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">인기 질문</h1>
-      {dashboardLoading && <Skeleton className="h-24 w-full" />}
-      <ul className="space-y-3">
-        {dashboard?.popularQuestions.map((question) => (
-          <li key={question.id} className="rounded-lg border border-border p-4">
-            <div className="flex items-center gap-2">
-              <StatusBadge status={question.status} />
-              <span className="font-medium">{question.title}</span>
-            </div>
-            {question.tags.length > 0 && (
-              <div className="mt-2 flex gap-1">
-                {question.tags.map((tag) => (
-                  <TagChip key={tag} name={tag} />
-                ))}
-              </div>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="space-y-8">
+        {dashboard.headline && (
+          <div className="rounded-lg border border-brand/30 bg-brand/5 p-4">
+            {dashboard.headline.questionId ? (
+              <Link href={`/questions/${dashboard.headline.questionId}`} className="font-medium hover:underline">
+                {dashboard.headline.text}
+              </Link>
+            ) : (
+              <span className="font-medium">{dashboard.headline.text}</span>
             )}
-          </li>
-        ))}
-        {dashboard && dashboard.popularQuestions.length === 0 && (
-          <li className="rounded-lg border border-border p-4 text-text-secondary">아직 질문이 없습니다.</li>
+          </div>
         )}
-      </ul>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">인기 질문</h2>
+          <QuestionList questions={dashboard.popularQuestions} emptyMessage="아직 질문이 없습니다." />
+        </section>
+
+        {dashboard.followingTagsFeed.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">관심 태그 피드</h2>
+            <QuestionList questions={dashboard.followingTagsFeed} emptyMessage="" />
+          </section>
+        )}
+
+        {dashboard.resolvedToday.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">오늘 해결된 질문</h2>
+            <QuestionList questions={dashboard.resolvedToday} emptyMessage="" />
+          </section>
+        )}
+
+        {dashboard.reopenedKnowledge.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">재활성화된 지식</h2>
+            <QuestionList questions={dashboard.reopenedKnowledge} emptyMessage="" />
+          </section>
+        )}
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Quno Flow</h2>
+          {flowLoading ? <Skeleton className="h-24 w-full" /> : <FlowFeed cards={flow ?? []} />}
+        </section>
+      </div>
+
+      <aside>
+        <TrendingTagsPanel tags={dashboard.trendingTags} spikes={dashboard.trendingErrors} />
+      </aside>
     </div>
   );
 }

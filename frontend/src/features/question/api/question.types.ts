@@ -1,0 +1,55 @@
+import type { QuestionStatus } from "@/shared/ui/StatusBadge";
+
+/** Shared "question summary" shape — backend's QuestionSearchResultResponse, reused across
+ * search/dashboard/related/cluster (see docs/architecture/api-design.md QuestionSummaryHydrator). */
+export interface QuestionSummary {
+  id: number;
+  title: string;
+  status: QuestionStatus;
+  tags: string[];
+}
+
+export interface QuestionDetail {
+  id: number;
+  authorId: number;
+  title: string;
+  status: QuestionStatus;
+  versionNumber: number;
+  body: string;
+  environment: string | null;
+  logs: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuestionVersionSummary {
+  versionNumber: number;
+  title: string;
+  createdBy: number;
+  createdAt: string;
+}
+
+export interface QuestionVersionDetail {
+  questionId: number;
+  versionNumber: number;
+  title: string;
+  body: string;
+  environment: string | null;
+  logs: string | null;
+  createdBy: number;
+  createdAt: string;
+}
+
+export type DiffLineType = "EQUAL" | "ADDED" | "REMOVED";
+
+export interface DiffLine {
+  type: DiffLineType;
+  text: string;
+}
+
+export interface QuestionVersionDiff {
+  fromVersion: number;
+  toVersion: number;
+  lines: DiffLine[];
+}

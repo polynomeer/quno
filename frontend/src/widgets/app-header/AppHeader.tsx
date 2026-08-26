@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useLogout } from "@/features/auth/hooks/useLogin";
 import { Button } from "@/shared/ui/Button";
@@ -10,6 +12,15 @@ import { Input } from "@/shared/ui/Input";
 export function AppHeader() {
   const { data: me, isLoading } = useSession();
   const logout = useLogout();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (query.trim()) {
+      router.push(`/questions?q=${encodeURIComponent(query.trim())}`);
+    }
+  }
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface">
@@ -17,9 +28,17 @@ export function AppHeader() {
         <Link href="/" className="text-lg font-semibold text-brand">
           Quno
         </Link>
-        <div className="flex-1">
-          <Input type="search" placeholder="Search questions, tags, errors..." />
-        </div>
+        <form onSubmit={handleSearch} className="flex-1">
+          <Input
+            type="search"
+            placeholder="Search questions, tags, errors..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </form>
+        <Link href="/tags" className="text-sm font-medium text-text-secondary hover:text-text-primary">
+          Tags
+        </Link>
         <Link href="/ask">
           <Button variant="primary">Ask</Button>
         </Link>
