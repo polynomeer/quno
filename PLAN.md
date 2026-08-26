@@ -113,6 +113,27 @@ mvp-scope.md 로드맵 Phase 6(Quno Flow, Instant Question, 실시간 질문방,
 - [x] 10.4 테스트 — `GetActivityFeedUseCase`(4개 카드 타입별 조립, 신호 없을 때 빈 목록)와 `GetDashboardUseCase`(헤드라인 우선순위: 급증 > 인기, 신호 없으면 null; resolvedToday/reopenedKnowledge/trendingErrors 조립)를 인메모리 fake로 단위 테스트. reopened/super-answered native SQL과 두 기능 전체는 Dashboard/Metrics/Spike Detection과 동일하게 실제 서버+curl로 검증(질문 outdated→리비전→재활성화 카드 등장, 클러스터 Super Answer 지정→카드 등장 및 대시보드 헤드라인 반영까지 확인)
 - [x] 10.5 문서화 — `domain-model.md`에 Flow Bounded Context와 `question_clusters.updated_at` 반영, `api-design.md`에 "Quno Flow & 고급 Dashboard (Phase 10)" 섹션 추가(Trending Errors 근사 방식 포함), ADR-0019로 실시간 질문방/Instant Question을 범위 밖에 둔 이유 기록
 
+## Frontend Phase 0 — 프로젝트 셋업 + 디자인 기반
+
+[docs/frontend/](docs/frontend/README.md) 설계서 기반 첫 프론트엔드 착수. [ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 **백엔드가 이미 지원하는 화면부터** 만든다 — Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전은 이번 범위에서 제외한다. 코드는 [frontend/](frontend/)에 둔다(백엔드는 [backend/](backend/)).
+
+- [ ] F0.1 프로젝트 스캐폴딩 — Next.js + TypeScript + Tailwind CSS로 `frontend/` 생성. ESLint/Prettier, `frontend/package.json` 스크립트(dev/build/lint/test) 구성. `run.sh`에 프론트엔드 기동을 추가할지는 백엔드 API 연동이 준비된 뒤 재검토
+- [ ] F0.2 디렉터리 구조 — [architecture.md](docs/frontend/architecture.md#26-디렉터리코드-구조)의 `app/features/entities/shared/widgets` 구조를 실제 폴더로 구성(당장 기능이 없는 `comment`/`moderation`은 만들지 않음)
+- [ ] F0.3 디자인 토큰 + 기본 컴포넌트 — [design.md](docs/frontend/design.md#7-디자인-시스템)의 Color Token/Typography를 CSS Variables + Tailwind 설정으로 구현. Button/Input/TagChip/StatusBadge/Skeleton 등 기본 컴포넌트
+- [ ] F0.4 API Client + 인증 — `shared/api/http-client.ts`(fetch 래퍼), 백엔드 `ErrorResponse.code` 기준 에러 분기([architecture.md](docs/frontend/architecture.md#282-response-handling)). JWT Access/Refresh 저장 및 401 시 자동 재발급([ADR-0003](docs/architecture/decisions/0003-stateless-jwt-auth.md)). 로그인/회원가입 폼과 `redirectTo` 보존
+- [ ] F0.5 AppShell — Header(검색창/Ask 버튼/알림/프로필), 반응형 네비게이션. 로그인 여부에 따른 조건부 렌더링
+
+## Frontend Phase 1+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[docs/frontend/roadmap.md](docs/frontend/roadmap.md#3-단계별-구현-로드맵)의 Phase 0~7과 대응한다. 백엔드 지원 여부에 따라 순서와 범위가 원본과 달라질 수 있다.
+
+- [ ] Frontend Phase 1 — 읽기 경험: Home(대시보드/Flow 연동), Questions/Search, Question Detail(리비전 히스토리/Diff 포함), Tag Detail
+- [ ] Frontend Phase 2 — 쓰기 경험: Ask(질문 작성, 유사 질문 검색), Answer Composer, Accept
+- [ ] Frontend Phase 3 — 커뮤니티 액션: Watch, 평판 프로필, QPR Review UI(정보 요청/재요청), Cluster/Super Answer 표시, Outdated 표시
+- [ ] Frontend Phase 4 — Discovery: 고급 검색 필터, 관련 질문, 태그 탐색, Quno Flow, 고급 Dashboard
+- [ ] Frontend Phase 5 — Retention: Notifications, Watching 목록, Profile 확장
+- [ ] Frontend Phase ? — Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정)
+
 ## Phase 11+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.

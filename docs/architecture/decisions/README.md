@@ -44,3 +44,4 @@
 | [0017](0017-manual-outdated-marking-and-spike-detection-scope.md) | Outdated는 사용자 명시적 표시로 근사, 기술 버전 자동 감지는 범위 밖, Spike Detection은 포함 | 승인됨 |
 | [0018](0018-simple-reputation-score-only.md) | Phase 9는 간단한 평판 점수만, Organization/Direct Ask는 후속 Phase로 이연 | 승인됨 |
 | [0019](0019-quno-flow-and-dashboard-only-no-live-chat.md) | Phase 10은 Quno Flow+고급 Dashboard만, 실시간 질문방(Live Chat)은 후속 Phase로 이연 | 승인됨 |
+| [0020](0020-frontend-scoped-to-backend-support.md) | 프론트엔드는 백엔드 지원 화면부터, Vote/Comment/Badge/모더레이션은 후속으로 이연 | 승인됨 |
