@@ -18,8 +18,13 @@
 - `Quno_서비스_기획_및_백엔드_설계서.docx` — Living Question/Ward/Revision 철학이 반영되지 않은 범용 Stack Overflow형 Q&A 설계안. **MySQL + Kafka** 스택을 제안하지만, 확정된 스택은 **PostgreSQL + MongoDB + Redis**다. 평판/투표/모더레이션 등 일부 아이디어는 후속 단계에서 재검토할 수 있다.
 - `StackNext_통합_서비스_기획서.docx` — Quno와 다른 프로덕트(기술 블로그 + Q&A + AI 학습 + 커리어 네트워크) 기획. 별도 브레인스토밍 산출물이며 Quno의 현재 방향이 아니다.
 
+### 프론트엔드 설계 (2026-08-26 추가 — 재작성의 근거 자료)
+
+- `Quno_프론트엔드_상세_설계서.docx` — React/Next.js 기반 프론트엔드 UX·디자인 시스템·기술 아키텍처 설계서(37개 절). 정리된 내용은 [docs/frontend/](../frontend/README.md)에 재작성되어 있다. **주의**: 이 문서는 Upvote/Downvote·댓글·배지·모더레이션 같은 범용 Stack Overflow형 기능을 전제하는데, 이는 아래 "대안 탐색안"의 `Quno_서비스_기획_및_백엔드_설계서.docx`가 다뤘던 것과 같은 계열의 아이디어이며 현재 백엔드([PLAN.md](../../PLAN.md))에는 대부분 구현돼 있지 않다 — 격차 목록은 [docs/frontend/roadmap.md](../frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고.
+
 ### 기타
 
+- `quno-design-sample.png` → [docs/frontend/quno-design-sample.png](../frontend/quno-design-sample.png)로 이동. 실제 화면 목업(홈/질문 상세/작성/태그/알림/프로필/모바일) — 프론트엔드 설계의 시각적 근거 자료라 프론트엔드 문서 쪽에 둔다.
 - `quno-event-storming.png` — 이벤트 스토밍 다이어그램 이미지. 텍스트 요약은 [docs/architecture/domain-model.md](../architecture/domain-model.md)의 Event Storming 절 참고.
 
 ## 확정된 사항 (2026-08-24)
