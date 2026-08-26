@@ -1,9 +1,21 @@
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
+import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
 import { cn } from "@/shared/lib/cn";
 import type { Answer } from "../api/answer.types";
 
-export function AnswerCard({ answer }: { answer: Answer }) {
+export function AnswerCard({
+  answer,
+  canAccept,
+  onAccept,
+  isAccepting,
+}: {
+  answer: Answer;
+  /** Only the question's author can accept (backend: QuestionAccessDeniedException otherwise). */
+  canAccept?: boolean;
+  onAccept?: () => void;
+  isAccepting?: boolean;
+}) {
   return (
     <li
       className={cn(
@@ -24,6 +36,11 @@ export function AnswerCard({ answer }: { answer: Answer }) {
         )}
         <span>사용자 #{answer.authorId}</span>
         <span>· {relativeTime(answer.createdAt)}</span>
+        {canAccept && !answer.isAccepted && (
+          <Button variant="secondary" className="ml-auto px-2 py-1 text-xs" onClick={onAccept} disabled={isAccepting}>
+            {isAccepting ? "채택 중..." : "Accept"}
+          </Button>
+        )}
       </div>
       <MarkdownContent>{answer.body}</MarkdownContent>
     </li>

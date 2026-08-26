@@ -1,25 +1,32 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useQuestion } from "@/features/question/hooks/useQuestion";
 import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestions";
 import { useAnswers } from "@/features/answer/hooks/useAnswers";
+import { useAcceptAnswer } from "@/features/answer/hooks/useAcceptAnswer";
 import { QuestionMeta } from "@/features/question/ui/QuestionMeta";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
+import { AnswerComposer } from "@/features/answer/ui/AnswerComposer";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
 import { TagChip } from "@/shared/ui/TagChip";
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Skeleton } from "@/shared/ui/Skeleton";
+import { ApiError } from "@/shared/api/api-error";
+
+type AnswerSort = "best" | "newest" | "oldest";
 
 export default function QuestionDetailPage({ params }: PageProps<"/questions/[id]">) {
   const { id } = use(params);
   const questionId = Number(id);
-  const { isLoading: authLoading } = useRequireAuth();
+  const { me, isLoading: authLoading } = useRequireAuth();
   const { data: question, isLoading, isError } = useQuestion(questionId);
   const { data: related } = useRelatedQuestions(questionId);
   const { data: answers } = useAnswers(questionId);
+  const acceptAnswer = useAcceptAnswer(questionId);
+  const [sort, setSort] = useState<AnswerSort>("best");
 
   if (authLoading || isLoading) {
     return (
@@ -35,9 +42,12 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
   }
 
   const sortedAnswers = [...(answers ?? [])].sort((a, b) => {
-    if (a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (sort === "best" && a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
+    const byTime = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    return sort === "newest" ? -byTime : byTime;
   });
+
+  const canAccept = Boolean(me && me.id === question.authorId);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
@@ -81,17 +91,48 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
         )}
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">{sortedAnswers.length} Answers</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{sortedAnswers.length} Answers</h2>
+            {sortedAnswers.length > 1 && (
+              <label className="flex items-center gap-1 text-sm text-text-secondary">
+                sort:
+                <select
+                  className="rounded-md border border-border bg-surface px-2 py-1"
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as AnswerSort)}
+                >
+                  <option value="best">Best</option>
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                </select>
+              </label>
+            )}
+          </div>
+
+          {acceptAnswer.isError && (
+            <p className="text-sm text-danger">
+              {acceptAnswer.error instanceof ApiError ? acceptAnswer.error.message : "답변을 채택하지 못했습니다."}
+            </p>
+          )}
+
           {sortedAnswers.length === 0 ? (
             <p className="text-sm text-text-secondary">아직 답변이 없습니다.</p>
           ) : (
             <ul className="space-y-3">
               {sortedAnswers.map((answer) => (
-                <AnswerCard key={answer.id} answer={answer} />
+                <AnswerCard
+                  key={answer.id}
+                  answer={answer}
+                  canAccept={canAccept}
+                  isAccepting={acceptAnswer.isPending && acceptAnswer.variables === answer.id}
+                  onAccept={() => acceptAnswer.mutate(answer.id)}
+                />
               ))}
             </ul>
           )}
         </section>
+
+        <AnswerComposer questionId={questionId} />
       </div>
 
       <aside className="space-y-3">

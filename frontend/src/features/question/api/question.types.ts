@@ -53,3 +53,18 @@ export interface QuestionVersionDiff {
   toVersion: number;
   lines: DiffLine[];
 }
+
+export interface CreateQuestionInput {
+  title: string;
+  body: string;
+  environment?: string;
+  logs?: string;
+  tags: string[];
+}
+
+export interface QuestionMutationResult {
+  id: number;
+  title: string;
+  status: QuestionStatus;
+  versionNumber: number;
+}

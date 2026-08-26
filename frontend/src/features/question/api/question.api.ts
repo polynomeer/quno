@@ -1,6 +1,8 @@
 import { httpClient } from "@/shared/api/http-client";
 import type {
+  CreateQuestionInput,
   QuestionDetail,
+  QuestionMutationResult,
   QuestionSummary,
   QuestionVersionDetail,
   QuestionVersionDiff,
@@ -8,6 +10,7 @@ import type {
 } from "./question.types";
 
 export const questionApi = {
+  create: (input: CreateQuestionInput) => httpClient.post<QuestionMutationResult>("/api/v1/questions", input),
   get: (id: number) => httpClient.get<QuestionDetail>(`/api/v1/questions/${id}`),
   listVersions: (id: number) => httpClient.get<QuestionVersionSummary[]>(`/api/v1/questions/${id}/versions`),
   getVersion: (id: number, version: number) =>
