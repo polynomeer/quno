@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
@@ -9,12 +10,15 @@ export function AnswerCard({
   canAccept,
   onAccept,
   isAccepting,
+  questionHref,
 }: {
   answer: Answer;
   /** Only the question's author can accept (backend: QuestionAccessDeniedException otherwise). */
   canAccept?: boolean;
   onAccept?: () => void;
   isAccepting?: boolean;
+  /** Shown above the body when this card is listed outside its question's own page (e.g. a profile). */
+  questionHref?: string;
 }) {
   return (
     <li
@@ -23,6 +27,11 @@ export function AnswerCard({
         answer.isAccepted ? "border-success bg-success-subtle/30" : "border-border",
       )}
     >
+      {questionHref && (
+        <Link href={questionHref} className="mb-2 block text-xs text-text-secondary hover:underline">
+          질문 보기 →
+        </Link>
+      )}
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
         {answer.isAccepted && (
           <span className="inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 font-medium text-success">

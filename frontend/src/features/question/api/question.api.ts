@@ -21,4 +21,6 @@ export const questionApi = {
   },
   related: (id: number, limit = 5) =>
     httpClient.get<QuestionSummary[]>(`/api/v1/questions/${id}/related?limit=${limit}`),
+  markOutdated: (id: number, reason: string) =>
+    httpClient.post<QuestionMutationResult>(`/api/v1/questions/${id}/outdated`, { reason }),
 };

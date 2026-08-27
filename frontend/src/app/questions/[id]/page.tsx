@@ -7,8 +7,12 @@ import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestio
 import { useAnswers } from "@/features/answer/hooks/useAnswers";
 import { useAcceptAnswer } from "@/features/answer/hooks/useAcceptAnswer";
 import { QuestionMeta } from "@/features/question/ui/QuestionMeta";
+import { OutdatedAction } from "@/features/question/ui/OutdatedAction";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
 import { AnswerComposer } from "@/features/answer/ui/AnswerComposer";
+import { WatchButton } from "@/features/watch/ui/WatchButton";
+import { ReviewRequestPanel } from "@/features/review/ui/ReviewRequestPanel";
+import { ClusterPanel } from "@/features/cluster/ui/ClusterPanel";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
 import { TagChip } from "@/shared/ui/TagChip";
@@ -48,26 +52,33 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
   });
 
   const canAccept = Boolean(me && me.id === question.authorId);
+  const acceptedAnswerId = answers?.find((a) => a.isAccepted)?.id ?? null;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
       <div className="space-y-6">
         <header className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={question.status} />
-            <h1 className="text-2xl font-semibold">{question.title}</h1>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={question.status} />
+              <h1 className="text-2xl font-semibold">{question.title}</h1>
+            </div>
+            <WatchButton questionId={question.id} />
           </div>
           <div className="flex flex-wrap gap-1">
             {question.tags.map((tag) => (
               <TagChip key={tag} name={tag} />
             ))}
           </div>
-          <QuestionMeta
-            questionId={question.id}
-            createdAt={question.createdAt}
-            updatedAt={question.updatedAt}
-            versionNumber={question.versionNumber}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <QuestionMeta
+              questionId={question.id}
+              createdAt={question.createdAt}
+              updatedAt={question.updatedAt}
+              versionNumber={question.versionNumber}
+            />
+            <OutdatedAction questionId={question.id} status={question.status} />
+          </div>
         </header>
 
         <MarkdownContent>{question.body}</MarkdownContent>
@@ -88,6 +99,15 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
               </div>
             )}
           </details>
+        )}
+
+        {me && (
+          <ReviewRequestPanel
+            questionId={question.id}
+            questionAuthorId={question.authorId}
+            questionVersionNumber={question.versionNumber}
+            currentUserId={me.id}
+          />
         )}
 
         <section className="space-y-3">
@@ -133,6 +153,8 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
         </section>
 
         <AnswerComposer questionId={questionId} />
+
+        <ClusterPanel questionId={question.id} acceptedAnswerId={acceptedAnswerId} />
       </div>
 
       <aside className="space-y-3">
