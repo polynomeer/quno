@@ -143,11 +143,22 @@ Ask/Answer/Accept 3개 흐름을 완성해 "질문→답변→채택"이라는 Q
 - [x] F2.3 Answer Composer — Question Detail 하단에 답변 작성 영역 추가: `POST /questions/{id}/answers`, 성공 시 답변 목록 invalidate. 답변 정렬은 Best(수락 우선)/Newest/Oldest만 제공(Score는 투표 기능이 없어 제외, [ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)). 답변 수정 이력 UI는 만들지 않음(Answer에 리비전 자체가 없음)
 - [x] F2.4 Accept — 질문 작성자에게만 답변 카드에 Accept 버튼 노출(`question.authorId === me.id`), `POST /answers/{id}/accept` 성공 시 답변 목록 + 질문(상태 RESOLVED 반영) invalidate. 브라우저로 Ask→Answer→Accept 전체 루프(질문 생성→답변 작성→채택→질문 상태 Solved 전환)를 실제 서버로 검증 완료
 
-## Frontend Phase 3+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Frontend Phase 3 — 커뮤니티 액션
+
+design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처음 노출한다 — QPR Review/Cluster/Outdated는 design.md 원본 설계에 없으므로 UI는 [domain-model.md](docs/architecture/domain-model.md)/[api-design.md](docs/architecture/api-design.md)를 근거로 새로 설계한다.
+
+- [x] F3.1 Watch — Question Detail 헤더에 `features/watch`의 WatchButton 추가. "지금 이 질문을 Watch 중인지"를 알려주는 전용 API가 없어 `GET /me/watches` 전체 목록에서 `questionId` 포함 여부로 초기 상태를 판단한다(Tag Follow와 달리 Watch는 이 목록 조회가 가능해 Phase 1의 Tag Detail Follow 보류와는 다르게 지금 구현 가능, [ADR-0021](docs/architecture/decisions/0021-tag-detail-via-search-approximation.md) 참고). `POST/DELETE /questions/{id}/watch`. 브라우저로 로그인 사용자가 Watch/Unwatch 토글 시 상태가 실제로 반영되는 것을 확인
+- [x] F3.2 평판 프로필 — `/users/{id}`: `entities/user`로 `GET /users/{id}/profile`(작성 질문/답변/팔로우 태그) + `GET /users/{id}/reputation`(점수와 4개 원시 카운트) 조합. Phase 0의 AppHeader가 이미 걸어둔 `/users/{id}` 링크(빈 라우트)를 채운다. `AnswerCard`에 `questionHref`를 선택적으로 추가해 프로필 목록에서 "질문 보기" 링크를 붙인다. 태그별 세분화 Expertise·Badge는 백엔드에 없어 만들지 않음([design.md](docs/frontend/design.md#16-사용자-프로필)). 브라우저로 실제 점수(질문 3·답변 2·채택 2·Super Answer 1 → 47점)가 [ADR-0018](docs/architecture/decisions/0018-simple-reputation-score-only.md) 산식과 정확히 일치하는 것을 확인
+- [x] F3.3 QPR Review UI — `features/review`로 Question Detail에 정보 요청 패널 추가: `GET /questions/{id}/review-requests` 목록(message/상태/요청자/요청 시점 버전), 작성자가 아닌 로그인 사용자만 `POST .../review-requests`로 새 요청 생성(작성자 본인 시도는 403 `SelfReviewRequestException` — 버튼 자체를 숨김), 질문 작성자만 리비전 이후 `POST .../review-requests/{id}/re-request`로 재요청(리비전 전이면 409, 이미 ADDRESSED면 409 — 조건 만족 시에만 버튼 노출). 브라우저로 정보 요청 생성(RESOLVED 질문에서는 409 에러 메시지 노출 확인)→작성자가 리비전→재요청 처리(OPEN→ADDRESSED, Question.status는 불변)까지 전체 흐름 검증
+- [x] F3.4 Cluster/Super Answer 표시 — `features/cluster`로 Question Detail에 클러스터 패널 추가: `GET /questions/{id}/cluster`(404면 클러스터 없음, `useCluster`가 `null`로 취급해 섹션 자체를 숨김)로 같은 문제로 묶인 질문 목록과 Super Answer 표시. 질문 ID를 직접 입력해 `POST /questions/{id}/cluster`로 다른 질문과 묶기(질문 검색 기반 picker는 이번 범위 밖 — 백엔드 API 자체가 ID 입력만 받음). 채택된 답변에 한해 `POST /clusters/{id}/super-answer`로 Super Answer 지정 가능. 브라우저로 두 질문을 클러스터로 묶고 채택된 답변을 Super Answer로 지정해 양쪽 질문 페이지에 모두 반영되는 것을 확인
+- [x] F3.5 Outdated 표시 — Question Detail에 `OutdatedAction`("Outdated로 표시" 액션, 사유 입력 필수, 권한 제한 없음 — 작성자 본인도 가능) 추가. `POST /questions/{id}/outdated`, 성공 시 질문 상태가 OUTDATED로 바뀌는 것을 기존 StatusBadge가 그대로 표시(Phase 0에서 이미 매핑됨). 브라우저로 표시 후 액션이 사라지는 것까지 확인
+
+**검증 중 발견한 도구 이슈(코드 버그 아님)**: 브라우저 자동화 중 tab의 실제 viewport가 0x0으로 굳어 스크린샷·스크롤·접근성 트리 조회가 모두 실패하는 현상을 겪었다 — `resize_window`(preset: desktop)로 뷰포트 에뮬레이션을 초기화해 해결. 이 세션의 브라우저 검증 도구 자체의 문제이지 프론트엔드 코드 문제는 아니다.
+
+## Frontend Phase 4+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [docs/frontend/roadmap.md](docs/frontend/roadmap.md#3-단계별-구현-로드맵)의 Phase 0~7과 대응한다. 백엔드 지원 여부에 따라 순서와 범위가 원본과 달라질 수 있다.
 
-- [ ] Frontend Phase 3 — 커뮤니티 액션: Watch, 평판 프로필, QPR Review UI(정보 요청/재요청), Cluster/Super Answer 표시, Outdated 표시
 - [ ] Frontend Phase 4 — Discovery: 고급 검색 필터, 관련 질문, 태그 탐색, Quno Flow, 고급 Dashboard
 - [ ] Frontend Phase 5 — Retention: Notifications, Watching 목록, Profile 확장
 - [ ] Frontend Phase ? — Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정)
