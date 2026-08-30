@@ -162,11 +162,13 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F4.1 검색 필터 — `features/search/ui/SearchFilters`로 `/questions`에 Status/Tags 필터 칩 추가(클라이언트 사이드로 `GET /search` 결과를 좁힘 — Tags는 AND 결합), 선택 상태를 `?q=&tags=&status=` URL query에 반영. Answered/Date/Score 필터와 Score/Newest 정렬은 응답에 해당 데이터가 없어 만들지 않음([ADR-0022](docs/architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)). 브라우저로 Status+Tags를 함께 적용해 16→4→3건으로 좁혀지는 것과 URL 반영을 확인
 - [x] F4.2 검색 자동완성 — `widgets/app-header/SearchBox` + `features/search/hooks/useAutocomplete`로 AppHeader 검색창에 입력 중 드롭다운으로 질문 제목(`GET /search`)과 태그(`GET /tags?q=`) 후보를 보여준다(design.md #10 "검색어 자동완성"). 2자 미만 입력 시 비활성화. 브라우저로 드롭다운 렌더링과 태그/질문 항목 클릭 시 이동까지 확인
 
-## Frontend Phase 5+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Frontend Phase 5 — Retention
 
-[docs/frontend/roadmap.md](docs/frontend/roadmap.md#3-단계별-구현-로드맵)의 Phase 0~7과 대응한다. 백엔드 지원 여부에 따라 순서와 범위가 원본과 달라질 수 있다.
+알림 6종(`QUESTION_REVISION`/`NEW_ANSWER`/`ANSWER_ACCEPTED`/`REVIEW_REQUESTED`/`REVIEW_RE_REQUESTED`/`QUESTION_OUTDATED`)은 `payload`가 이벤트별로 다른 JSON 문자열이라 [domain-model.md](docs/architecture/domain-model.md)의 발행 지점을 근거로 프론트에서 직접 메시지를 조립한다(design.md에는 없는 화면).
 
-- [ ] Frontend Phase 5 — Retention: Notifications, Watching 목록, Profile 확장
+- [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
+- [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
+- [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
 - [ ] Frontend Phase ? — Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정)
 
 ## Phase 11+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
