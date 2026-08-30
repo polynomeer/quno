@@ -9,6 +9,7 @@ import com.quno.qunobackend.domain.cluster.ClustersAlreadyDistinctException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
 import com.quno.qunobackend.domain.comment.CommentNotFoundException
+import com.quno.qunobackend.domain.follow.SelfFollowException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -72,6 +73,7 @@ class GlobalExceptionHandler {
         SelfReviewRequestException::class,
         SelfVoteException::class,
         CommentAccessDeniedException::class,
+        SelfFollowException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
