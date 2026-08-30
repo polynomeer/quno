@@ -7,4 +7,5 @@ data class QuestionSearchResult(
     val title: String,
     val status: QuestionStatus,
     val tags: List<String>,
+    val score: Long,
 )

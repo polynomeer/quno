@@ -15,11 +15,12 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryUserTagFollowRepository
 import com.quno.qunobackend.application.user.dto.SignUpCommand
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.user.UserNotFoundException
-import org.junit.jupiter.api.Test
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 
 class GetUserProfileUseCaseTest {
     private val userRepository = InMemoryUserRepository()
@@ -29,7 +30,7 @@ class GetUserProfileUseCaseTest {
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val answerRepository = InMemoryAnswerRepository()
     private val userTagFollowRepository = InMemoryUserTagFollowRepository()
-    private val answerResultAssembler = AnswerResultAssembler(questionRepository, questionVersionRepository)
+    private val answerResultAssembler = AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository())
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
     private val createQuestionUseCase = CreateQuestionUseCase(
@@ -45,7 +46,7 @@ class GetUserProfileUseCaseTest {
         answerRepository,
         userTagFollowRepository,
         tagRepository,
-        QuestionSummaryHydrator(questionRepository, questionTagRepository),
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
         answerResultAssembler,
     )
 

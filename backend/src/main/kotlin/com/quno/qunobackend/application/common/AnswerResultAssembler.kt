@@ -4,18 +4,21 @@ import com.quno.qunobackend.application.answer.dto.AnswerResult
 import com.quno.qunobackend.domain.answer.Answer
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.vote.VoteRepository
+import com.quno.qunobackend.domain.vote.VoteTargetType
 import org.springframework.stereotype.Component
 
 /**
- * Assembles [AnswerResult] with the "is this answer stale?" flag (PLAN.md 5.1) — an answer
- * is stale once its question has been revised past the version it targeted. Shared because
- * WriteAnswer/ListAnswers/GetUserProfile all need this, and profile answers can span many
- * different questions, so the per-question lookup is cached within one call.
+ * Assembles [AnswerResult] with the "is this answer stale?" flag (PLAN.md 5.1) and vote `score`
+ * (PLAN.md 11.3) — an answer is stale once its question has been revised past the version it
+ * targeted. Shared because WriteAnswer/ListAnswers/GetUserProfile all need this, and profile
+ * answers can span many different questions, so the per-question lookup is cached within one call.
  */
 @Component
 class AnswerResultAssembler(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
+    private val voteRepository: VoteRepository,
 ) {
     fun toResult(answer: Answer): AnswerResult = toResults(listOf(answer)).single()
 
@@ -36,6 +39,7 @@ class AnswerResultAssembler(
                 isAccepted = answer.isAccepted,
                 targetVersionNumber = answer.targetVersionNumber,
                 isStale = latestVersionNumber != null && answer.targetVersionNumber < latestVersionNumber,
+                score = voteRepository.sumScore(VoteTargetType.ANSWER, requireNotNull(answer.id)),
                 createdAt = answer.createdAt,
                 updatedAt = answer.updatedAt,
             )

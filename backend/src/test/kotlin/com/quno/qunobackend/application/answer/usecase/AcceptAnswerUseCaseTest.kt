@@ -10,14 +10,15 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionStatus
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class AcceptAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -33,7 +34,7 @@ class AcceptAnswerUseCaseTest {
         questionVersionRepository,
         answerRepository,
         outboxEventRepository,
-        AnswerResultAssembler(questionRepository, questionVersionRepository),
+        AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
 

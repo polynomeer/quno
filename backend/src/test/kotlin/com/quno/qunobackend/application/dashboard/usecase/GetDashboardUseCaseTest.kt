@@ -16,12 +16,13 @@ import com.quno.qunobackend.application.recommendation.usecase.InMemoryRecommend
 import com.quno.qunobackend.application.recommendation.usecase.RecommendQuestionsUseCase
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.dashboard.TagTrend
 import com.quno.qunobackend.domain.notification.Notification
 import com.quno.qunobackend.domain.qunobot.TagSpike
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.jupiter.api.Test
 
 class GetDashboardUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -33,7 +34,7 @@ class GetDashboardUseCaseTest {
     private val dashboardRepository = InMemoryDashboardRepository()
     private val notificationRepository = InMemoryNotificationRepository()
     private val recommendationRepository = InMemoryRecommendationRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository)
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
     private val flowRepository = InMemoryFlowRepository()
     private val spikeDetectionRepository = InMemorySpikeDetectionRepository()
     private val getActivityFeedUseCase = GetActivityFeedUseCase(

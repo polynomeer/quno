@@ -14,13 +14,14 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
+import com.quno.qunobackend.domain.answer.AnswerNotFoundException
 import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
 import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
-import com.quno.qunobackend.domain.answer.AnswerNotFoundException
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
 
 class DesignateSuperAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -36,12 +37,12 @@ class DesignateSuperAnswerUseCaseTest {
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
         questionRepository, questionVersionRepository, answerRepository, outboxEventRepository,
-        AnswerResultAssembler(questionRepository, questionVersionRepository),
+        AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
     private val markQuestionsAsSameProblemUseCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)
     private val getClusterUseCase = GetClusterUseCase(
-        questionClusterRepository, questionRepository, QuestionSummaryHydrator(questionRepository, questionTagRepository),
+        questionClusterRepository, questionRepository, QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
     )
     private val useCase = DesignateSuperAnswerUseCase(questionClusterRepository, questionRepository, answerRepository, getClusterUseCase)
 

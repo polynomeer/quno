@@ -12,6 +12,7 @@ data class AnswerResponse(
     val isAccepted: Boolean,
     val targetVersionNumber: Int,
     val isStale: Boolean,
+    val score: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
 )
@@ -24,6 +25,7 @@ fun AnswerResult.toResponse() = AnswerResponse(
     isAccepted = isAccepted,
     targetVersionNumber = targetVersionNumber,
     isStale = isStale,
+    score = score,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )

@@ -8,6 +8,8 @@ data class QuestionSearchResultResponse(
     val title: String,
     val status: QuestionStatus,
     val tags: List<String>,
+    val score: Long,
 )
 
-fun QuestionSearchResult.toResponse() = QuestionSearchResultResponse(id = id, title = title, status = status, tags = tags)
+fun QuestionSearchResult.toResponse() =
+    QuestionSearchResultResponse(id = id, title = title, status = status, tags = tags, score = score)

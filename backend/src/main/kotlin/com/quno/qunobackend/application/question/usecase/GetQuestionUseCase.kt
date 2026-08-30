@@ -5,6 +5,8 @@ import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
+import com.quno.qunobackend.domain.vote.VoteRepository
+import com.quno.qunobackend.domain.vote.VoteTargetType
 import org.springframework.stereotype.Service
 
 @Service
@@ -12,6 +14,7 @@ class GetQuestionUseCase(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
     private val questionTagRepository: QuestionTagRepository,
+    private val voteRepository: VoteRepository,
 ) {
     fun execute(questionId: Long): QuestionSummaryResult {
         val question = questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
@@ -31,6 +34,7 @@ class GetQuestionUseCase(
             environment = latestVersion.environment,
             logs = latestVersion.logs,
             tags = questionTagRepository.findTagsByQuestionId(questionId).map { it.name },
+            score = voteRepository.sumScore(VoteTargetType.QUESTION, questionId),
             createdAt = question.createdAt,
             updatedAt = question.updatedAt,
         )

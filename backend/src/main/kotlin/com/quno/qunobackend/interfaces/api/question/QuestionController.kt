@@ -71,6 +71,7 @@ class QuestionController(
             environment = result.environment,
             logs = result.logs,
             tags = result.tags,
+            score = result.score,
             createdAt = result.createdAt,
             updatedAt = result.updatedAt,
         )

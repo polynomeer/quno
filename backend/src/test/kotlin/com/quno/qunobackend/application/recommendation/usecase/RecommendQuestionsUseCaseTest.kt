@@ -7,9 +7,10 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
-import org.junit.jupiter.api.Test
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class RecommendQuestionsUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -21,7 +22,7 @@ class RecommendQuestionsUseCaseTest {
     private val recommendationRepository = InMemoryRecommendationRepository()
     private val useCase = RecommendQuestionsUseCase(
         recommendationRepository,
-        QuestionSummaryHydrator(questionRepository, questionTagRepository),
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
     )
 
     @Test

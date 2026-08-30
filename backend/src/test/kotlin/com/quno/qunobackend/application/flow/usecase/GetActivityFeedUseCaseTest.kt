@@ -17,11 +17,12 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersion
 import com.quno.qunobackend.application.qunobot.usecase.InMemorySpikeDetectionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.flow.FlowCardType
 import com.quno.qunobackend.domain.qunobot.TagSpike
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class GetActivityFeedUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -39,7 +40,7 @@ class GetActivityFeedUseCaseTest {
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
         questionRepository, questionVersionRepository, answerRepository, outboxEventRepository,
-        AnswerResultAssembler(questionRepository, questionVersionRepository),
+        AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
     private val markQuestionsAsSameProblemUseCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)

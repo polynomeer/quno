@@ -7,12 +7,13 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
-import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
-import org.junit.jupiter.api.Test
+import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
 
 class GetClusterUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -26,7 +27,7 @@ class GetClusterUseCaseTest {
     )
     private val markQuestionsAsSameProblemUseCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)
     private val useCase = GetClusterUseCase(
-        questionClusterRepository, questionRepository, QuestionSummaryHydrator(questionRepository, questionTagRepository),
+        questionClusterRepository, questionRepository, QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
     )
 
     private fun questionAskedBy(authorId: Long): Long =

@@ -21,6 +21,8 @@ import com.quno.qunobackend.domain.user.DuplicateNicknameException
 import com.quno.qunobackend.domain.user.InvalidCredentialsException
 import com.quno.qunobackend.domain.user.InvalidTokenException
 import com.quno.qunobackend.domain.user.UserNotFoundException
+import com.quno.qunobackend.domain.vote.InvalidVoteValueException
+import com.quno.qunobackend.domain.vote.SelfVoteException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -62,7 +64,7 @@ class GlobalExceptionHandler {
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
-    @ExceptionHandler(QuestionAccessDeniedException::class, SelfReviewRequestException::class)
+    @ExceptionHandler(QuestionAccessDeniedException::class, SelfReviewRequestException::class, SelfVoteException::class)
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
 
@@ -72,7 +74,7 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("VALIDATION_ERROR", message))
     }
 
-    @ExceptionHandler(CannotClusterWithSelfException::class)
+    @ExceptionHandler(CannotClusterWithSelfException::class, InvalidVoteValueException::class)
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 }

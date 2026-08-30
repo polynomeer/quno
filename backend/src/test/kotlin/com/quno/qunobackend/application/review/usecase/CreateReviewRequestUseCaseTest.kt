@@ -1,10 +1,10 @@
 package com.quno.qunobackend.application.review.usecase
 
 import com.quno.qunobackend.application.answer.dto.AcceptAnswerCommand
+import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.answer.usecase.AcceptAnswerUseCase
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
-import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
@@ -14,16 +14,17 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersion
 import com.quno.qunobackend.application.review.dto.CreateReviewRequestCommand
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.domain.review.ReviewRequestStatus
 import com.quno.qunobackend.domain.review.SelfReviewRequestException
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class CreateReviewRequestUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -38,7 +39,7 @@ class CreateReviewRequestUseCaseTest {
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
         questionRepository, questionVersionRepository, answerRepository, outboxEventRepository,
-        AnswerResultAssembler(questionRepository, questionVersionRepository),
+        AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
     private val useCase = CreateReviewRequestUseCase(

@@ -7,11 +7,12 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class QuestionSearchUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -21,7 +22,7 @@ class QuestionSearchUseCaseTest {
         questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
     )
     private val searchRepository = InMemorySearchRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository)
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
     private val useCase = QuestionSearchUseCase(searchRepository, questionRepository, hydrator)
 
     private fun question(title: String, tags: List<String> = emptyList()): Long =

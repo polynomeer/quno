@@ -22,6 +22,7 @@ data class QuestionSummaryResult(
     val environment: String?,
     val logs: String?,
     val tags: List<String>,
+    val score: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

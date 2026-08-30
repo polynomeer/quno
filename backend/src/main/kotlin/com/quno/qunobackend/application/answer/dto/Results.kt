@@ -12,6 +12,7 @@ data class AnswerResult(
     val targetVersionNumber: Int,
     /** True when the question has been revised since this answer targeted [targetVersionNumber]. */
     val isStale: Boolean,
+    val score: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
 )
