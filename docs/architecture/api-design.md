@@ -249,6 +249,15 @@
 - **새 댓글은 알림을 발생시킨다** — `NEW_ANSWER`와 동일한 `DispatchOutboxEventsUseCase` fan-out을 재사용한다. 질문 댓글은 Ward 구독자 + 질문 작성자, 답변 댓글은 Ward 구독자 + 질문 작성자 + 그 답변의 작성자(둘 다 payload에 담아 기존 `extractLong` 추출 로직을 그대로 재사용 — 답변 댓글이 아니면 `answerAuthorId`가 없어 자연히 스킵된다).
 - **범위 밖**(모두 [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)에서 의도적으로 보류): 대댓글(스레드), 댓글 수정, `@mention` 파싱과 멘션 알림. 실제 수요가 확인되면 각각 별도로 재설계한다.
 
+## Save (Phase 13)
+
+[ADR-0025](decisions/0025-save-as-separate-side-aggregate-from-watch.md)에서 결정한 대로, Save는 `Watch`와 데이터 모양은 같지만(별도 테이블) 별개의 side-aggregate다 — 구독(Watch)과 개인 보관(Save)은 서로 다른 개념이라는 design.md #18의 구분을 그대로 따른다.
+
+- `POST /questions/{id}/save`, `DELETE /questions/{id}/save`: `WatchController`와 동일하게 둘 다 204, 둘 다 멱등적이다(이미 저장했거나 저장한 적이 없어도 에러 아님). 자기 자신의 질문도 제한 없이 저장할 수 있다(Vote와 달리 자기 대상 금지 규칙이 없음).
+- `GET /me/saves`: 내가 저장한 질문 전체 목록(`{questionId, title, status}[]`, `GET /me/watches`와 완전히 같은 모양). "누가 이 질문을 저장했는지" 조회하는 API는 없다 — Watch의 `findWatcherIds`(알림 fan-out용)에 대응하는 쓰임이 Save에는 없기 때문이다.
+- **Save는 알림을 발생시키지 않는다** — 순수 개인 보관이라 다른 사용자에게 알릴 이유가 없다.
+- **범위 밖**: 저장한 질문 전용 정렬/폴더링, 저장 수 노출. 필요해지면 별도로 설계한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

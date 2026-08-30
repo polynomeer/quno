@@ -9,7 +9,7 @@
 | Identity | 사용자 식별과 프로필 | User |
 | QnA (Core) | 질문의 생애주기와 답변 | Question, QuestionVersion, Answer, ReviewRequest |
 | Tagging | 분류·관심 주제 관계 | Tag, UserTagFollow |
-| Engagement | 질문 변화 구독과 알림 | Watch, Notification |
+| Engagement | 질문에 대한 개인 관계(구독·보관)와 알림 | Watch, Save, Notification |
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
 | Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster |
 | Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
@@ -31,6 +31,7 @@
 | Answer | create, edit, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) |
 | ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). status는 Question.status를 다시 게이팅하지 않는 독립 부기 정보(Phase 5.3, [ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)) |
 | Watch | watch/unwatch. user-question 중복 금지 |
+| Save | save/unsave. user-question 중복 금지. Watch와 데이터 모양은 같지만 별도 테이블·독립 side-aggregate로 분리 — 알림도, "누가 저장했는지" 조회도 없음(Phase 13, [ADR-0025](decisions/0025-save-as-separate-side-aggregate-from-watch.md)) |
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
 | QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음. `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
@@ -63,6 +64,7 @@ users
   ├──< questions ──< question_versions
   │       ├──< answers
   │       ├──< watches >── users
+  │       ├──< saves >── users
   │       ├──< question_tags >── tags
   │       └──< review_requests >── users
   ├──< answers
@@ -92,6 +94,7 @@ comments.target_id ──> questions.id 또는 answers.id (target_type으로 구
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
 | watches | user_id, question_id | 관계 데이터, hard delete 허용 |
+| saves | user_id, question_id | 관계 데이터, hard delete 허용. PK가 (user_id, question_id) — watches와 같은 구조지만 별도 테이블(Phase 13, [ADR-0025](decisions/0025-save-as-separate-side-aggregate-from-watch.md)) |
 | review_requests | id, question_id, requested_by, message, status, question_version_number_at_request, addressed_at | append형, hard delete 불필요(상태만 전이) |
 | question_clusters | id, representative_answer_id, created_at, updated_at | hard delete 불필요(멤버가 다른 클러스터로 옮겨가는 경로가 없음) |
 | notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
@@ -102,7 +105,7 @@ comments.target_id ──> questions.id 또는 answers.id (target_type으로 구
 
 - Question/Answer/User 같은 코어 엔티티에 무분별한 `ON DELETE CASCADE`를 사용하지 않는다 (부모 한 건 삭제 시 대량 연쇄 삭제 위험 방지).
 - 질문/답변은 soft delete를 기본으로 하여 복구·감사·통계·지식 그래프의 과거 관계를 보존한다.
-- `question_tags`, `watches`, `user_tag_follows` 같은 순수 관계 데이터는 hard delete가 자연스럽다.
+- `question_tags`, `watches`, `saves`, `user_tag_follows` 같은 순수 관계 데이터는 hard delete가 자연스럽다.
 - Notification처럼 대량·약결합 데이터는 FK를 생략하거나 `SET NULL` 정책을 허용한다.
 - 영구 삭제가 필요하면 즉시 cascade하지 않고 retention/배치 purge 정책으로 통제한다.
 
