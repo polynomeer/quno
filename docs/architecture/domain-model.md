@@ -6,7 +6,7 @@
 
 | Context | 역할 | 핵심 모델 |
 |---|---|---|
-| Identity | 사용자 식별과 프로필 | User |
+| Identity | 사용자 식별·프로필과 사용자 간 관계 | User, UserFollow — 관계 기록·조회만, 활동 피드·알림은 후속 Phase로 이연(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
 | QnA (Core) | 질문의 생애주기와 답변 | Question, QuestionVersion, Answer, ReviewRequest |
 | Tagging | 분류·관심 주제 관계 | Tag, UserTagFollow |
 | Engagement | 질문에 대한 개인 관계(구독·보관)와 알림 | Watch, Save, Notification |
@@ -37,6 +37,7 @@
 | QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음. `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
 | Vote | cast(값 변경 포함)/retract. voter+targetType+targetId 유일(다른 값으로 다시 cast하면 upsert). 자기 자신의 질문/답변에는 투표 불가(`SelfVoteException`). `score`는 저장하지 않고 항상 `SUM(value)`로 집계 — Question/Answer는 Vote의 존재를 모름(Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
 | Comment | write, softDelete(작성자 본인만, 권한 검사는 use case에서 — `AcceptAnswerUseCase`와 같은 패턴). 대댓글 없이 대상(Question\|Answer)당 평면 목록. 수정 API 없음. soft-delete는 idempotent하며 행을 지우지 않고 `deleted_at`만 세운다 — 목록에는 계속 나타나지만 응답의 `body`는 null로 tombstone 처리(Phase 12, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)) |
+| UserFollow | follow/unfollow. follower-followee 중복 금지. 자기 자신 팔로우 불가(`SelfFollowException`). Watch/Save와 같은 순수 관계 데이터지만 대상이 Question이 아니라 User라 Engagement가 아닌 Identity 컨텍스트에 둠. 활동 피드·알림은 만들지 않음(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
 
 ## Domain Events
 
@@ -69,6 +70,7 @@ users
   │       └──< review_requests >── users
   ├──< answers
   ├──< user_tag_follows >── tags
+  ├──< user_follows >── users (자기 참조, Phase 14)
   └──< notifications
 
 question_clusters ──< questions (questions.cluster_id, 질문 1개당 최대 1개 클러스터)
@@ -100,12 +102,13 @@ comments.target_id ──> questions.id 또는 answers.id (target_type으로 구
 | notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
 | votes | voter_id, target_type, target_id, value | 관계 데이터, hard delete 허용(retract). PK가 (voter_id, target_type, target_id) — watches와 같은 구조 |
 | comments | id, target_type, target_id, author_id, body, deleted_at | soft delete(tombstone) — questions/answers와 같은 정책. 행은 남기고 응답의 body만 null 처리 |
+| user_follows | follower_id, followee_id | 관계 데이터, hard delete 허용. PK가 (follower_id, followee_id) — users에 대한 자기 참조(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
 
 ### 삭제/FK 운영 원칙
 
 - Question/Answer/User 같은 코어 엔티티에 무분별한 `ON DELETE CASCADE`를 사용하지 않는다 (부모 한 건 삭제 시 대량 연쇄 삭제 위험 방지).
 - 질문/답변은 soft delete를 기본으로 하여 복구·감사·통계·지식 그래프의 과거 관계를 보존한다.
-- `question_tags`, `watches`, `saves`, `user_tag_follows` 같은 순수 관계 데이터는 hard delete가 자연스럽다.
+- `question_tags`, `watches`, `saves`, `user_tag_follows`, `user_follows` 같은 순수 관계 데이터는 hard delete가 자연스럽다.
 - Notification처럼 대량·약결합 데이터는 FK를 생략하거나 `SET NULL` 정책을 허용한다.
 - 영구 삭제가 필요하면 즉시 cascade하지 않고 retention/배치 purge 정책으로 통제한다.
 

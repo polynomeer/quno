@@ -258,6 +258,14 @@
 - **Save는 알림을 발생시키지 않는다** — 순수 개인 보관이라 다른 사용자에게 알릴 이유가 없다.
 - **범위 밖**: 저장한 질문 전용 정렬/폴더링, 저장 수 노출. 필요해지면 별도로 설계한다.
 
+## Follow User (Phase 14)
+
+[ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)에서 결정한 대로, 이번 범위는 팔로우 관계의 기록·조회까지만이다 — 팔로우한 사용자의 활동 피드나 알림은 만들지 않는다.
+
+- `POST /users/{id}/follow`, `DELETE /users/{id}/follow`: 둘 다 204, 둘 다 멱등적이다(`WatchController`/`TagController.follow`와 동일한 패턴). 자기 자신을 팔로우하면 403(`SelfFollowException`). 대상 사용자가 없으면 404(`UserNotFoundException`, 기존 예외 재사용).
+- `GET /me/following`: 내가 팔로우하는 사용자 목록(`{userId, nickname}[]`).
+- **범위 밖**(모두 [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)에서 의도적으로 보류): 팔로워/팔로잉 수를 프로필에 노출하는 것, 팔로우한 사용자의 활동을 모으는 피드(Quno Flow 재설계 필요), 팔로우 대상의 활동에 대한 알림. 실제 사용 패턴이 확인되면 각각 별도로 설계한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
