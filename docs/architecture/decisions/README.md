@@ -47,3 +47,5 @@
 | [0020](0020-frontend-scoped-to-backend-support.md) | 프론트엔드는 백엔드 지원 화면부터, Vote/Comment/Badge/모더레이션은 후속으로 이연 | 승인됨 |
 | [0021](0021-tag-detail-via-search-approximation.md) | Tag Detail은 검색 결과 근사로 구현, 태그 통계/탭/Follow 상태는 후속으로 이연 | 승인됨 |
 | [0022](0022-search-filters-client-side-tag-and-status-only.md) | 고급 검색 필터는 클라이언트 사이드 Tags/Status만, Score/Date/Sort는 보류 | 승인됨 |
+| [0023](0023-vote-as-side-aggregate-no-reputation-impact.md) | Vote는 Watch와 같은 독립 side-aggregate, 평판 점수·인기순위엔 미반영 | 승인됨 |
+| [0024](0024-comment-flat-no-edit-tombstone-delete.md) | Comment는 스레드 없는 평면 목록, 수정 불가, soft-delete tombstone | 승인됨 |

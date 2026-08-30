@@ -169,9 +169,29 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
 - [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
 - [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
-- [ ] Frontend Phase ? — Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정)
+- [ ] Frontend Phase ? — Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로 백엔드 설계를 시작해 이 목록에서 분리함 — 진행 상황은 아래 Phase 13+의 "Frontend Phase ? — Vote/Comment UI" 항목 참고
 
-## Phase 11+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 11 — Vote (mvp-scope.md 로드맵에 없던 새 범위)
+
+design.md가 전제하는 Stack Overflow형 투표를 뒤늦게 추가한다. `Question`/`Answer` Aggregate는 건드리지 않고 `Watch`와 같은 독립 side-aggregate로 설계했다([ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) — 자기 투표 금지, 평판 점수·Dashboard 인기순위·검색 정렬에는 이번 범위에서 반영하지 않음.
+
+- [ ] 11.1 도메인 모델 — 새 `domain/vote` 패키지: `Vote`(voterId, targetType: `VoteTargetType`(QUESTION\|ANSWER), targetId, value: Int — `+1`/`-1`만 허용, 그 외 값은 `InvalidVoteValueException` 400), `VoteRepository` 포트(`findByVoterAndTarget`, `save`, `delete`, `sumScore(targetType, targetId): Long`, `sumScores(targetType, targetIds): Map<Long, Long>` — 목록 조회 N+1 방지용 배치 집계, `findByVoter(voterId): List<Vote>`). `voter_id`+`target_type`+`target_id` unique 제약(V8 마이그레이션`votes` 테이블, PK는 별도 id, score는 저장하지 않고 항상 `SUM(value)`로 집계)
+- [ ] 11.2 API — `POST/DELETE /api/v1/questions/{id}/vote`, `POST/DELETE /api/v1/answers/{id}/vote`(body: `{value: 1|-1}`, `VoteController`), `GET /api/v1/me/votes`(내 투표 전체 목록 — `WatchController.myWatches`와 같은 패턴). 자기 자신의 질문/답변에 투표 시도하면 `SelfVoteException` 403(대상의 `authorId`를 조회해 비교)
+- [ ] 11.3 기존 응답에 점수 통합 — `QuestionSummaryHydrator`에 `sumScores` 배치 조회를 추가해 `QuestionSearchResult`/`QuestionSearchResultResponse`에 `score: Long` 필드 추가(검색·Dashboard·related·Cluster 멤버가 한 번에 모두 점수를 갖게 됨). `AnswerResultAssembler`/`AnswerResponse`에도 동일하게 `score` 추가. `QuestionResponse`(상세)에도 단건 `sumScore` 조회로 추가
+- [ ] 11.4 테스트 — 단위 테스트(투표 생성/변경/철회, 자기 투표 차단, value 검증, score 집계)와 실제 서버+curl 검증(두 사용자가 같은 질문/답변에 투표→점수 변화, 같은 사용자가 up→down으로 바꿀 때 갱신되는지, 목록 API들에 score가 나타나는지)
+- [ ] 11.5 문서화 — `domain-model.md`에 Vote Bounded Context(Engagement 컨텍스트에 편입하거나 새 컨텍스트로 분리할지는 착수 시점에 확정) 반영, `api-design.md`에 "Vote (Phase 11)" 섹션 추가, 이번 결정은 이미 [ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)로 기록됨
+
+## Phase 12 — Comment (mvp-scope.md 로드맵에 없던 새 범위)
+
+QPR `ReviewRequest`와 성격이 다른 범용 clarification 댓글을 추가한다. 스레드 없는 평면 목록, 수정 불가, soft-delete tombstone으로 범위를 좁혔다([ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md)).
+
+- [ ] 12.1 도메인 모델 — 새 `domain/comment` 패키지: `Comment`(targetType: `CommentTargetType`(QUESTION\|ANSWER), targetId, authorId, body — 최대 600자, isDeleted, createdAt/updatedAt), `softDelete()`(권한 검사는 use case에서 — `AcceptAnswerUseCase`와 같은 패턴). `CommentRepository` 포트(`save`, `findById`, `listByTarget(targetType, targetId)`). `CommentNotFoundException`(404), `CommentAccessDeniedException`(403, 작성자 아닌 삭제 시도). V9 마이그레이션 `comments` 테이블
+- [ ] 12.2 API — `POST/GET /api/v1/questions/{id}/comments`, `POST/GET /api/v1/answers/{id}/comments`, `DELETE /api/v1/comments/{id}`(`CommentController`). 응답(`CommentResponse`)은 삭제된 댓글의 `body`를 `null`로 반환(원문을 서버 응답에서도 제거) — [ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md) 4번. Question.status는 건드리지 않아 RESOLVED 질문에도 댓글 가능
+- [ ] 12.3 알림 연동 — `OutboxEventTypes.NEW_COMMENT` 추가, `DispatchOutboxEventsUseCase`의 `when`에 분기 추가(질문 댓글: Ward 구독자+질문 작성자, 답변 댓글: Ward 구독자+질문 작성자+답변 작성자 — payload에 `questionAuthorId`/`answerAuthorId`를 함께 담아 둘 다 추출, 없는 필드는 자연히 스킵되는 기존 `extractLong` 동작 그대로 재사용). 프론트 알림 센터(F5.1)의 `describeNotification`에도 `NEW_COMMENT` 메시지 매핑 추가 필요
+- [ ] 12.4 테스트 — 단위 테스트(작성/목록/삭제, 삭제 후 body null, 작성자 아닌 삭제 403, 600자 초과 검증)와 실제 서버+curl 검증(질문/답변 댓글 작성→알림 fan-out까지)
+- [ ] 12.5 문서화 — `domain-model.md`에 Comment Bounded Context와 `NEW_COMMENT` Domain Event 반영, `api-design.md`에 "Comment (Phase 12)" 섹션 추가. 이번 결정은 이미 [ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md)로 기록됨
+
+## Phase 13+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
@@ -179,6 +199,9 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [ ] Phase ? — 기술 버전 영향 감지 실제 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지) — 외부 기술 버전 릴리스 데이터 소스 연동이 실제로 필요해지고 그 소스를 정할 수 있을 때 착수
 - [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
+- [ ] Phase ? — 검색 Score 정렬/Dashboard 인기순위·평판 점수에 Vote 반영 — Phase 11에서 의도적으로 보류([ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md) 5~7번). Vote 실사용 패턴을 관찰한 뒤 가중치를 다시 설계한다
+- [ ] Phase ? — Comment 대댓글/`@mention`/수정 이력 — Phase 12에서 의도적으로 보류([ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md) 2~3, 5번). 실사용 후 수요가 확인되면 착수
+- [ ] Frontend Phase ? — Vote/Comment UI — 이번 두 Phase로 백엔드가 준비되면 Action Rail 투표 컨트롤·Answer 카드 Score·댓글 섹션을 프론트엔드에 붙인다(대응 백엔드가 이제 있으므로 [ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)의 "후속으로 이연" 대상에서 Vote/Comment는 제외됨). Save(북마크)/Follow User/Badge/모더레이션/답변 리비전은 여전히 대응 백엔드가 없어 보류 상태 유지
 
 ## 진행 방식
 
