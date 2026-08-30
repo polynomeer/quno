@@ -8,4 +8,5 @@ export interface Answer {
   isStale: boolean;
   createdAt: string;
   updatedAt: string;
+  score: number;
 }

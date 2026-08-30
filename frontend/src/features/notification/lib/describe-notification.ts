@@ -39,6 +39,8 @@ export function describeNotification(notification: Notification): DescribedNotif
       const reason = typeof payload.reason === "string" ? payload.reason : null;
       return { message: `질문이 Outdated로 표시되었습니다${reason ? ` — ${reason}` : ""}`, href };
     }
+    case "NEW_COMMENT":
+      return { message: "새 댓글이 달렸습니다", href };
     default:
       return { message: notification.type, href };
   }

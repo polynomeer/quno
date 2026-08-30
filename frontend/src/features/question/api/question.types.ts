@@ -7,6 +7,7 @@ export interface QuestionSummary {
   title: string;
   status: QuestionStatus;
   tags: string[];
+  score: number;
 }
 
 export interface QuestionDetail {
@@ -21,6 +22,7 @@ export interface QuestionDetail {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  score: number;
 }
 
 export interface QuestionVersionSummary {

@@ -11,6 +11,8 @@ import { OutdatedAction } from "@/features/question/ui/OutdatedAction";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
 import { AnswerComposer } from "@/features/answer/ui/AnswerComposer";
 import { WatchButton } from "@/features/watch/ui/WatchButton";
+import { VoteControl } from "@/features/vote/ui/VoteControl";
+import { CommentSection } from "@/features/comment/ui/CommentSection";
 import { ReviewRequestPanel } from "@/features/review/ui/ReviewRequestPanel";
 import { ClusterPanel } from "@/features/cluster/ui/ClusterPanel";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
@@ -81,25 +83,38 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
           </div>
         </header>
 
-        <MarkdownContent>{question.body}</MarkdownContent>
+        <div className="flex gap-4">
+          <VoteControl
+            targetType="QUESTION"
+            targetId={question.id}
+            questionId={question.id}
+            score={question.score}
+            authorId={question.authorId}
+          />
+          <div className="flex-1 space-y-4">
+            <MarkdownContent>{question.body}</MarkdownContent>
 
-        {(question.environment || question.logs) && (
-          <details className="rounded-md border border-border p-3 text-sm">
-            <summary className="cursor-pointer font-medium text-text-secondary">환경 / 로그</summary>
-            {question.environment && (
-              <div className="mt-2">
-                <p className="text-xs font-medium text-text-secondary">Environment</p>
-                <pre className="mt-1 overflow-x-auto rounded bg-surface-subtle p-2 text-xs">{question.environment}</pre>
-              </div>
+            {(question.environment || question.logs) && (
+              <details className="rounded-md border border-border p-3 text-sm">
+                <summary className="cursor-pointer font-medium text-text-secondary">환경 / 로그</summary>
+                {question.environment && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-text-secondary">Environment</p>
+                    <pre className="mt-1 overflow-x-auto rounded bg-surface-subtle p-2 text-xs">{question.environment}</pre>
+                  </div>
+                )}
+                {question.logs && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-text-secondary">Logs</p>
+                    <pre className="mt-1 overflow-x-auto rounded bg-surface-subtle p-2 text-xs">{question.logs}</pre>
+                  </div>
+                )}
+              </details>
             )}
-            {question.logs && (
-              <div className="mt-2">
-                <p className="text-xs font-medium text-text-secondary">Logs</p>
-                <pre className="mt-1 overflow-x-auto rounded bg-surface-subtle p-2 text-xs">{question.logs}</pre>
-              </div>
-            )}
-          </details>
-        )}
+
+            <CommentSection targetType="QUESTION" targetId={question.id} />
+          </div>
+        </div>
 
         {me && (
           <ReviewRequestPanel
@@ -146,6 +161,7 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
                   canAccept={canAccept}
                   isAccepting={acceptAnswer.isPending && acceptAnswer.variables === answer.id}
                   onAccept={() => acceptAnswer.mutate(answer.id)}
+                  showEngagement
                 />
               ))}
             </ul>

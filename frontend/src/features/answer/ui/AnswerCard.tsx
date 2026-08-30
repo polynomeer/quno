@@ -3,6 +3,8 @@ import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
 import { cn } from "@/shared/lib/cn";
+import { VoteControl } from "@/features/vote/ui/VoteControl";
+import { CommentSection } from "@/features/comment/ui/CommentSection";
 import type { Answer } from "../api/answer.types";
 
 export function AnswerCard({
@@ -11,6 +13,7 @@ export function AnswerCard({
   onAccept,
   isAccepting,
   questionHref,
+  showEngagement,
 }: {
   answer: Answer;
   /** Only the question's author can accept (backend: QuestionAccessDeniedException otherwise). */
@@ -19,6 +22,9 @@ export function AnswerCard({
   isAccepting?: boolean;
   /** Shown above the body when this card is listed outside its question's own page (e.g. a profile). */
   questionHref?: string;
+  /** Vote/Comment need the card's own question page context (score invalidation, comment target) —
+   * off by default so profile-page answer lists stay read-only. */
+  showEngagement?: boolean;
 }) {
   return (
     <li
@@ -52,7 +58,23 @@ export function AnswerCard({
           </Button>
         )}
       </div>
-      <MarkdownContent>{answer.body}</MarkdownContent>
+      <div className="flex gap-4">
+        {showEngagement ? (
+          <VoteControl
+            targetType="ANSWER"
+            targetId={answer.id}
+            questionId={answer.questionId}
+            score={answer.score}
+            authorId={answer.authorId}
+          />
+        ) : (
+          <span className="text-sm font-semibold text-text-secondary">{answer.score}</span>
+        )}
+        <div className="flex-1">
+          <MarkdownContent>{answer.body}</MarkdownContent>
+          {showEngagement && <CommentSection targetType="ANSWER" targetId={answer.id} />}
+        </div>
+      </div>
     </li>
   );
 }
