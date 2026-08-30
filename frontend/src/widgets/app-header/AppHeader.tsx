@@ -1,26 +1,15 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useLogout } from "@/features/auth/hooks/useLogin";
 import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
+import { SearchBox } from "./SearchBox";
 
 /** Desktop header — see docs/frontend/design.md #6 글로벌 애플리케이션 셸. */
 export function AppHeader() {
   const { data: me, isLoading } = useSession();
   const logout = useLogout();
-  const router = useRouter();
-  const [query, setQuery] = useState("");
-
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (query.trim()) {
-      router.push(`/questions?q=${encodeURIComponent(query.trim())}`);
-    }
-  }
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface">
@@ -28,14 +17,7 @@ export function AppHeader() {
         <Link href="/" className="text-lg font-semibold text-brand">
           Quno
         </Link>
-        <form onSubmit={handleSearch} className="flex-1">
-          <Input
-            type="search"
-            placeholder="Search questions, tags, errors..."
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </form>
+        <SearchBox />
         <Link href="/tags" className="text-sm font-medium text-text-secondary hover:text-text-primary">
           Tags
         </Link>
