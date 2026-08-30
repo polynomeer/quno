@@ -22,8 +22,9 @@ export function AnswerCard({
 }) {
   return (
     <li
+      id={`answer-${answer.id}`}
       className={cn(
-        "rounded-lg border p-4",
+        "scroll-mt-20 rounded-lg border p-4",
         answer.isAccepted ? "border-success bg-success-subtle/30" : "border-border",
       )}
     >

@@ -5,6 +5,8 @@ import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useUserProfile } from "@/entities/user/hooks/useUserProfile";
 import { useUserReputation } from "@/entities/user/hooks/useUserReputation";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
+import { useMyWatches } from "@/features/watch/hooks/useMyWatches";
+import { WatchedQuestionList } from "@/features/watch/ui/WatchedQuestionList";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { TagChip } from "@/shared/ui/TagChip";
 import { Skeleton } from "@/shared/ui/Skeleton";
@@ -12,9 +14,11 @@ import { Skeleton } from "@/shared/ui/Skeleton";
 export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
   const { id } = use(params);
   const userId = Number(id);
-  const { isLoading: authLoading } = useRequireAuth();
+  const { me, isLoading: authLoading } = useRequireAuth();
   const { data: profile, isLoading: profileLoading, isError } = useUserProfile(userId);
   const { data: reputation } = useUserReputation(userId);
+  const isOwnProfile = Boolean(me && me.id === userId);
+  const { data: watches } = useMyWatches(isOwnProfile);
 
   if (authLoading || profileLoading) {
     return (
@@ -43,6 +47,14 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
           </div>
         )}
       </header>
+
+      {isOwnProfile && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Watching ({watches?.length ?? 0})</h2>
+          <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
+          <WatchedQuestionList questions={watches ?? []} emptyMessage="아직 Watch 중인 질문이 없습니다." />
+        </section>
+      )}
 
       {profile.followedTags.length > 0 && (
         <section className="space-y-2">
