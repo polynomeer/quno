@@ -44,6 +44,11 @@
 | GET | `/api/v1/qunobot/spikes?limit=` | 최근 질문량이 급증한 태그 목록 (자동 감지) |
 | GET | `/api/v1/users/{id}/reputation` | 활동 기반 평판 점수 조회 |
 | GET | `/api/v1/flow?limit=` | Quno Flow 활동 스트림 (섹션당 개수, 기본 5) |
+| POST | `/api/v1/questions/{id}/vote` | 질문에 투표 (`value: 1\|-1`, upsert — 다시 호출하면 값이 바뀜) |
+| DELETE | `/api/v1/questions/{id}/vote` | 질문 투표 철회 |
+| POST | `/api/v1/answers/{id}/vote` | 답변에 투표 (`value: 1\|-1`, upsert) |
+| DELETE | `/api/v1/answers/{id}/vote` | 답변 투표 철회 |
+| GET | `/api/v1/me/votes` | 내 투표 전체 목록 |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -217,6 +222,17 @@
 
 - `FlowCard`(`domain/flow`)는 `{type, headline, questionId?, clusterId?}` — 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 API 응답까지 그대로 재사용한다.
 - `headline`은 사람이 읽는 완성된 문장이다(예: `"spring-boot 관련 질문이 평소보다 6.0배 늘었습니다"`) — 클라이언트가 별도로 조립하지 않는다.
+
+## Vote (Phase 11)
+
+[ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)에서 결정한 대로, Vote는 `Watch`와 같은 독립 side-aggregate다 — Question/Answer는 Vote의 존재를 모른다.
+
+- `POST /questions/{id}/vote`, `POST /answers/{id}/vote`(body: `{"value": 1 | -1}`): 자기 자신의 질문/답변에 투표하면 403(`SelfVoteException`). `value`가 1/-1이 아니면 400(`InvalidVoteValueException`) — Bean Validation(`@Min`/`@Max`)으로는 "1 또는 -1"을 표현할 수 없어(0을 막지 못함) 도메인에서 직접 검증한다. 이미 투표한 상태에서 다시 호출하면 값을 덮어쓴다(upsert) — 별도의 "변경" API는 없다.
+- `DELETE /questions/{id}/vote`, `DELETE /answers/{id}/vote`: 투표 철회. `Watch.unwatch`와 동일하게 멱등적이다(투표한 적이 없어도 204).
+- `GET /me/votes`: 내가 투표한 전체 목록(`{targetType, targetId, value}[]`) — `GET /me/watches`와 같은 패턴으로, 프론트엔드가 "이 질문/답변에 내가 투표했는지"를 N+1 요청 없이 판단할 수 있게 한다.
+- **점수는 저장하지 않고 항상 집계한다.** `votes` 테이블에 개별 투표만 두고, `score`는 `SUM(value)`를 그때그때 계산한다. `QuestionSummaryHydrator`/`AnswerResultAssembler`에 통합했기 때문에 `GET /questions/{id}`, `GET /questions/{id}/answers`, `GET /search`, `GET /dashboard`, `GET /questions/{id}/related`, 추천, Cluster 멤버 목록까지 응답에 `score` 필드가 함께 나온다.
+- **투표는 알림을 발생시키지 않는다** — 매 투표마다 Notification이 쌓이면 스팸이 되므로 `outbox_events`에 새 이벤트 타입을 추가하지 않았다.
+- **범위 밖**(모두 [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)에서 의도적으로 보류): 평판 점수(`UserReputation`)에 투표 반영, Dashboard 인기 질문 순위 공식에 투표 반영, `GET /search`의 Score 정렬. 필요해지면 각각 별도로 재설계한다.
 
 ## 입력 검증 공통 원칙
 

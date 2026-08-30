@@ -15,8 +15,9 @@
 | Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
 | Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation) |
 | Flow | 기존 신호를 묶은 활동 스트림 | Read model 중심(FlowCard), 새 이벤트 없음 |
+| Voting | 질문/답변에 대한 품질 신호(up/down) | Vote — Watch와 같은 독립 side-aggregate (Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
 
-`Organization`, `Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
+`Organization`, `Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고). `Comment`는 Phase 12에서 착수 예정.
 
 ## Aggregate
 
@@ -32,6 +33,7 @@
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
 | QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음. `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
+| Vote | cast(값 변경 포함)/retract. voter+targetType+targetId 유일(다른 값으로 다시 cast하면 upsert). 자기 자신의 질문/답변에는 투표 불가(`SelfVoteException`). `score`는 저장하지 않고 항상 `SUM(value)`로 집계 — Question/Answer는 Vote의 존재를 모름(Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
 
 ## Domain Events
 
@@ -47,7 +49,7 @@ ReviewReRequested (REVIEW_RE_REQUESTED)
 QuestionMarkedOutdated (QUESTION_OUTDATED)
 ```
 
-Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다.
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)).
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -71,6 +73,7 @@ questions.accepted_answer_id      ──> answers.id
 questions.cluster_id              ──> question_clusters.id
 question_clusters.representative_answer_id ──> answers.id (Super Answer)
 notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
+votes.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 11)
 ```
 
 ### 테이블별 책임과 삭제 정책
@@ -88,6 +91,7 @@ notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 | review_requests | id, question_id, requested_by, message, status, question_version_number_at_request, addressed_at | append형, hard delete 불필요(상태만 전이) |
 | question_clusters | id, representative_answer_id, created_at, updated_at | hard delete 불필요(멤버가 다른 클러스터로 옮겨가는 경로가 없음) |
 | notifications | id, user_id, type, question_id?, answer_id?, payload, is_read | 대용량 주변 데이터, 느슨한 참조 + retention 정책 |
+| votes | voter_id, target_type, target_id, value | 관계 데이터, hard delete 허용(retract). PK가 (voter_id, target_type, target_id) — watches와 같은 구조 |
 
 ### 삭제/FK 운영 원칙
 
