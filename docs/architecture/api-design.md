@@ -49,6 +49,11 @@
 | POST | `/api/v1/answers/{id}/vote` | 답변에 투표 (`value: 1\|-1`, upsert) |
 | DELETE | `/api/v1/answers/{id}/vote` | 답변 투표 철회 |
 | GET | `/api/v1/me/votes` | 내 투표 전체 목록 |
+| POST | `/api/v1/questions/{id}/comments` | 질문에 댓글 작성 |
+| GET | `/api/v1/questions/{id}/comments` | 질문의 댓글 목록(삭제된 댓글도 tombstone으로 포함) |
+| POST | `/api/v1/answers/{id}/comments` | 답변에 댓글 작성 |
+| GET | `/api/v1/answers/{id}/comments` | 답변의 댓글 목록 |
+| DELETE | `/api/v1/comments/{id}` | 댓글 삭제 (작성자 본인만, soft-delete) |
 
 ## 인증 (확정 — 2026-08-24)
 
@@ -233,6 +238,16 @@
 - **점수는 저장하지 않고 항상 집계한다.** `votes` 테이블에 개별 투표만 두고, `score`는 `SUM(value)`를 그때그때 계산한다. `QuestionSummaryHydrator`/`AnswerResultAssembler`에 통합했기 때문에 `GET /questions/{id}`, `GET /questions/{id}/answers`, `GET /search`, `GET /dashboard`, `GET /questions/{id}/related`, 추천, Cluster 멤버 목록까지 응답에 `score` 필드가 함께 나온다.
 - **투표는 알림을 발생시키지 않는다** — 매 투표마다 Notification이 쌓이면 스팸이 되므로 `outbox_events`에 새 이벤트 타입을 추가하지 않았다.
 - **범위 밖**(모두 [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)에서 의도적으로 보류): 평판 점수(`UserReputation`)에 투표 반영, Dashboard 인기 질문 순위 공식에 투표 반영, `GET /search`의 Score 정렬. 필요해지면 각각 별도로 재설계한다.
+
+## Comment (Phase 12)
+
+[ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)에서 결정한 대로, Comment는 QPR `ReviewRequest`와 다른 별개 개념이다 — "정보 요청 → 리비전 → 재요청" 워크플로가 아니라 그냥 짧은 clarification이다.
+
+- `POST /questions/{id}/comments`, `POST /answers/{id}/comments`(body: `{"body": "..."}`, 최대 600자 — Stack Overflow와 동일한 제한): 대댓글 없이 평면 목록에 추가된다. 어떤 Question.status에서도(RESOLVED 포함) 작성 가능하고, 자기 자신의 질문/답변에도 댓글을 달 수 있다(Vote/QPR과 달리 권한 제한 없음).
+- `GET /questions/{id}/comments`, `GET /answers/{id}/comments`: 대상의 댓글을 오래된 순으로 전부 반환한다. 삭제된 댓글도 목록에서 사라지지 않는다 — `isDeleted: true`와 함께 `body: null`로 나온다(tombstone).
+- `DELETE /comments/{id}`: 작성자 본인만 가능(`CommentAccessDeniedException`, 403). 이미 삭제된 댓글을 다시 삭제해도 idempotent하게 그대로 둔다(에러 아님). soft-delete는 `deleted_at`만 세우고 원문은 DB에 남지만, **API 응답에서는 어떤 경로로도 삭제된 댓글의 원문을 다시 노출하지 않는다.**
+- **새 댓글은 알림을 발생시킨다** — `NEW_ANSWER`와 동일한 `DispatchOutboxEventsUseCase` fan-out을 재사용한다. 질문 댓글은 Ward 구독자 + 질문 작성자, 답변 댓글은 Ward 구독자 + 질문 작성자 + 그 답변의 작성자(둘 다 payload에 담아 기존 `extractLong` 추출 로직을 그대로 재사용 — 답변 댓글이 아니면 `answerAuthorId`가 없어 자연히 스킵된다).
+- **범위 밖**(모두 [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)에서 의도적으로 보류): 대댓글(스레드), 댓글 수정, `@mention` 파싱과 멘션 알림. 실제 수요가 확인되면 각각 별도로 재설계한다.
 
 ## 입력 검증 공통 원칙
 
