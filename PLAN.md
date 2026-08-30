@@ -212,10 +212,10 @@ design.md #18이 Watch(구독)와 분리해 정의하는 개인 북마크 기능
 
 design.md #18이 "후속 버전 기능"이라고 스스로 표시한 사용자 팔로우를 관계 기록·조회 범위로만 좁혀 추가한다. 팔로우한 사용자의 활동 피드·알림은 이번 범위에 포함하지 않는다([ADR-0026](docs/architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)).
 
-- [ ] 14.1 도메인 모델 — 새 `domain/follow` 패키지(또는 확정할 이름): `UserFollowRepository` 포트(`follow(followerId, followeeId)`/`unfollow`(idempotent)/`isFollowing`/`findFolloweeIds(followerId)` — `UserTagFollowRepository`와 동일한 관계 테이블 패턴). `SelfFollowException`(자기 자신 팔로우 시도, 403 — `SelfVoteException`/`SelfReviewRequestException`과 동일한 패턴). `(follower_id, followee_id)` 복합 PK의 `user_follows` 테이블(V11 마이그레이션)
-- [ ] 14.2 API — `POST/DELETE /api/v1/users/{id}/follow`(204), `GET /api/v1/me/following`(내가 팔로우하는 사용자 목록 — id/nickname 정도만). 대상 사용자가 없으면 기존 `UserNotFoundException`(404) 재사용
-- [ ] 14.3 테스트 — 단위 테스트(팔로우/언팔로우/자기 자신 팔로우 403/대상 없음 404/목록 조회)와 실제 서버+curl 검증
-- [ ] 14.4 문서화 — `domain-model.md`에 UserFollow Aggregate 반영(Bounded Context는 착수 시점 확정), `api-design.md`에 "Follow User (Phase 14)" 섹션 추가. 팔로워/팔로잉 카운트 노출, 활동 피드, 알림 연동은 [ADR-0026](docs/architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)에 따라 의도적으로 보류했음을 명시
+- [x] 14.1 도메인 모델 — 새 `domain/follow` 패키지: `UserFollowRepository` 포트(`follow(followerId, followeeId)`/`unfollow`(idempotent)/`isFollowing`/`findFolloweeIds(followerId)` — `UserTagFollowRepository`와 동일한 관계 테이블 패턴). `SelfFollowException`(자기 자신 팔로우 시도, 403 — `SelfVoteException`/`SelfReviewRequestException`과 동일한 패턴). `(follower_id, followee_id)` 복합 PK의 `user_follows` 테이블(V11 마이그레이션)
+- [x] 14.2 API — `POST/DELETE /api/v1/users/{id}/follow`(204, `UserFollowController`), `GET /api/v1/me/following`(내가 팔로우하는 사용자 목록 — `{userId, nickname}[]`). 대상 사용자가 없으면 기존 `UserNotFoundException`(404) 재사용
+- [x] 14.3 테스트 — 단위 테스트 7개(`FollowUserUseCaseTest`/`ListMyFollowingUseCaseTest` — 팔로우/중복 팔로우 idempotent/자기 자신 팔로우 403/대상 없음 404/언팔로우/목록 조회, `SignUpUseCase`로 실제 `User`를 만들어 닉네임까지 검증)와 실제 서버+curl 검증(회원가입 2명→A가 B 팔로우→중복 팔로우도 204→자기 자신 팔로우 403→존재하지 않는 사용자 404→목록에 B 확인→언팔로우→목록 비어짐). Save와 마찬가지로 별도 E2E 테스트 클래스는 만들지 않음(알림 fan-out처럼 여러 컴포넌트가 얽히는 지점이 없어 단위 테스트+수동 curl 검증으로 충분)
+- [x] 14.4 문서화 — `domain-model.md`의 Identity 컨텍스트 설명을 "사용자 식별과 프로필"에서 "사용자 식별·프로필과 사용자 간 관계"로 넓혀 UserFollow를 편입(Engagement가 아니라 Identity를 택함 — Watch/Save는 대상이 Question이지만 UserFollow는 대상이 User라 Engagement의 "질문에 대한 개인 관계" 정의와 맞지 않음). Aggregate 표·ERD(자기 참조로 표시)·테이블 삭제 정책에 `user_follows` 반영. `api-design.md`에 "Follow User (Phase 14)" 섹션 추가. 팔로워/팔로잉 카운트 노출, 활동 피드, 알림 연동은 [ADR-0026](docs/architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)에 따라 의도적으로 보류했음을 명시
 
 ## Phase 15 — Badge (mvp-scope.md 로드맵에 없던 새 범위)
 
