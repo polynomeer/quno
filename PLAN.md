@@ -155,11 +155,17 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 
 **검증 중 발견한 도구 이슈(코드 버그 아님)**: 브라우저 자동화 중 tab의 실제 viewport가 0x0으로 굳어 스크린샷·스크롤·접근성 트리 조회가 모두 실패하는 현상을 겪었다 — `resize_window`(preset: desktop)로 뷰포트 에뮬레이션을 초기화해 해결. 이 세션의 브라우저 검증 도구 자체의 문제이지 프론트엔드 코드 문제는 아니다.
 
-## Frontend Phase 4+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Frontend Phase 4 — Discovery
+
+원본 로드맵의 "관련 질문/태그 탐색/Quno Flow/고급 Dashboard"는 이미 Frontend Phase 1에서 구현했다(Question Detail·Ask의 Related Questions, `/tags`+`/tags/{name}` Tag Directory/Detail, Home의 Quno Flow 활동 스트림과 헤드라인/오늘 해결/재활성화 등 고급 Dashboard 필드) — 다시 만들지 않는다. 이번 Phase의 실질 범위는 **고급 검색 필터**와 **검색 자동완성** 두 가지뿐이다.
+
+- [x] F4.1 검색 필터 — `features/search/ui/SearchFilters`로 `/questions`에 Status/Tags 필터 칩 추가(클라이언트 사이드로 `GET /search` 결과를 좁힘 — Tags는 AND 결합), 선택 상태를 `?q=&tags=&status=` URL query에 반영. Answered/Date/Score 필터와 Score/Newest 정렬은 응답에 해당 데이터가 없어 만들지 않음([ADR-0022](docs/architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)). 브라우저로 Status+Tags를 함께 적용해 16→4→3건으로 좁혀지는 것과 URL 반영을 확인
+- [x] F4.2 검색 자동완성 — `widgets/app-header/SearchBox` + `features/search/hooks/useAutocomplete`로 AppHeader 검색창에 입력 중 드롭다운으로 질문 제목(`GET /search`)과 태그(`GET /tags?q=`) 후보를 보여준다(design.md #10 "검색어 자동완성"). 2자 미만 입력 시 비활성화. 브라우저로 드롭다운 렌더링과 태그/질문 항목 클릭 시 이동까지 확인
+
+## Frontend Phase 5+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [docs/frontend/roadmap.md](docs/frontend/roadmap.md#3-단계별-구현-로드맵)의 Phase 0~7과 대응한다. 백엔드 지원 여부에 따라 순서와 범위가 원본과 달라질 수 있다.
 
-- [ ] Frontend Phase 4 — Discovery: 고급 검색 필터, 관련 질문, 태그 탐색, Quno Flow, 고급 Dashboard
 - [ ] Frontend Phase 5 — Retention: Notifications, Watching 목록, Profile 확장
 - [ ] Frontend Phase ? — Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정)
 
