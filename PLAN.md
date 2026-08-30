@@ -203,10 +203,10 @@ QPR `ReviewRequest`와 성격이 다른 범용 clarification 댓글을 추가한
 
 design.md #18이 Watch(구독)와 분리해 정의하는 개인 북마크 기능을 추가한다. `watches`와 데이터 모양은 같지만 별도 테이블·독립 side-aggregate로 분리했다([ADR-0025](docs/architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)) — Watch/Save를 하나의 테이블에 합치지 않는다.
 
-- [ ] 13.1 도메인 모델 — 새 `domain/save` 패키지: `SaveRepository` 포트(`save`/`unsave`(모두 idempotent)/`isSaved`/`findSavedQuestionIds(userId)` — `WatchRepository`와 동일한 시그니처 패턴, `findWatcherIds`에 대응하는 "누가 저장했는지" 조회는 두지 않음). `(user_id, question_id)` 복합 PK의 `saves` 테이블(V10 마이그레이션). 자기 자신의 질문 저장은 막지 않음(제약 없음)
-- [ ] 13.2 API — `POST/DELETE /api/v1/questions/{id}/save`(204, `WatchController`와 동일 패턴), `GET /api/v1/me/saves`(`WatchedQuestionResponse`와 동일한 모양의 `SavedQuestionResponse` 목록)
-- [ ] 13.3 테스트 — 단위 테스트(저장/철회/중복 저장 idempotent/목록 조회)와 실제 서버+curl 검증(저장→목록에 나타남→철회→목록에서 사라짐)
-- [ ] 13.4 문서화 — `domain-model.md`에 Save Aggregate 반영(Bounded Context는 착수 시점에 Engagement 편입 여부 확정), `api-design.md`에 "Save (Phase 13)" 섹션 추가. 이번 결정은 이미 [ADR-0025](docs/architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)로 기록됨
+- [x] 13.1 도메인 모델 — 새 `domain/save` 패키지: `SaveRepository` 포트(`save`/`unsave`(모두 idempotent)/`isSaved`/`findSavedQuestionIds(userId)` — `WatchRepository`와 동일한 시그니처 패턴, `findWatcherIds`에 대응하는 "누가 저장했는지" 조회는 두지 않음). `(user_id, question_id)` 복합 PK의 `saves` 테이블(V10 마이그레이션). 자기 자신의 질문 저장은 막지 않음(제약 없음). `WatchJpaEntity`/`WatchRepositoryAdapter`를 파일 단위로 거의 그대로 미러링해 `SaveJpaEntity`/`SaveRepositoryAdapter` 구현
+- [x] 13.2 API — `POST/DELETE /api/v1/questions/{id}/save`(204, `WatchController`와 동일 패턴), `GET /api/v1/me/saves`(`WatchedQuestionResponse`와 동일한 모양의 `SavedQuestionResponse` 목록)
+- [x] 13.3 테스트 — 단위 테스트 7개(`SaveQuestionUseCaseTest`/`ListMySavesUseCaseTest` — 저장/중복 저장 idempotent/자기 질문 저장 허용/대상 없음 404/철회/목록 조회)와 실제 서버+curl 검증(회원가입→질문 생성→저장→중복 저장도 204→목록에 나타남→철회→목록에서 사라짐→존재하지 않는 질문 저장 404). **Watch 자체가 E2E(MockMvc) 테스트 없이 단위 테스트만 있던 선례를 따라 Save도 별도 E2E 테스트 클래스는 만들지 않음** — Vote/Comment와 달리 알림 fan-out처럼 여러 컴포넌트가 얽히는 지점이 없어 단위 테스트+수동 curl 검증으로 충분하다고 판단
+- [x] 13.4 문서화 — `domain-model.md`의 Engagement 컨텍스트 설명을 "질문 변화 구독과 알림"에서 "질문에 대한 개인 관계(구독·보관)와 알림"으로 넓혀 Save를 편입(별도 컨텍스트로 쪼개지 않음 — Watch와 마찬가지로 알림·집계에 영향을 주지 않는 순수 개인 관계라는 점에서 Vote/Comment가 별도 컨텍스트로 분리된 이유와는 다름), Aggregate 표·ERD·테이블 삭제 정책에 `saves` 반영. `api-design.md`에 "Save (Phase 13)" 섹션 추가. 이번 결정은 이미 [ADR-0025](docs/architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)로 기록됨
 
 ## Phase 14 — Follow User (mvp-scope.md 로드맵에 없던 새 범위)
 
