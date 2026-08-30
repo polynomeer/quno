@@ -169,7 +169,7 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
 - [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
 - [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
-- [ ] Frontend Phase ? — Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로 백엔드 설계를 시작해 이 목록에서 분리함 — 완료된 프론트엔드 작업은 아래 Frontend Phase 6 참고
+- [ ] Frontend Phase ? — 모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로, Save/Follow User/Badge는 Phase 13~15로 백엔드 설계를 시작해 이 목록에서 분리함 — 완료된 프론트엔드 작업은 아래 Frontend Phase 6 참고, Save/Follow User/Badge 프론트엔드는 해당 백엔드 Phase 완료 후 착수
 
 ## Frontend Phase 6 — Vote/Comment UI
 
@@ -199,7 +199,34 @@ QPR `ReviewRequest`와 성격이 다른 범용 clarification 댓글을 추가한
 - [x] 12.4 테스트 — 단위 테스트 15개(`CreateCommentUseCaseTest`/`DeleteCommentUseCaseTest`/`ListCommentsUseCaseTest` — 작성/목록(오래된순)/삭제/idempotent 재삭제/작성자 아닌 삭제 403/빈 문자열·600자 초과 거부/대상 없음 404/outbox payload 검증)와 `CommentLifecycleE2ETest`(실제 HTTP+Postgres로 질문·답변 댓글 작성→알림 fan-out(양쪽 다 알림 확인)→삭제 후 tombstone→권한 없는 삭제 403→600자 초과 400). E2E 작성 중 `GET .../comments` 호출에 Authorization 헤더를 빠뜨려 401이 나는 것을 발견해 수정(Vote Phase에서와 같은 종류의 실수)
 - [x] 12.5 문서화 — `domain-model.md`에 Discussion Bounded Context, Comment Aggregate, `NEW_COMMENT` Domain Event, ERD의 다형 연관, 테이블 삭제 정책 반영. `api-design.md`에 "Comment (Phase 12)" 섹션 추가. 이번 결정은 이미 [ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md)로 기록됨
 
-## Phase 13+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 13 — Save (mvp-scope.md 로드맵에 없던 새 범위)
+
+design.md #18이 Watch(구독)와 분리해 정의하는 개인 북마크 기능을 추가한다. `watches`와 데이터 모양은 같지만 별도 테이블·독립 side-aggregate로 분리했다([ADR-0025](docs/architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)) — Watch/Save를 하나의 테이블에 합치지 않는다.
+
+- [ ] 13.1 도메인 모델 — 새 `domain/save` 패키지: `SaveRepository` 포트(`save`/`unsave`(모두 idempotent)/`isSaved`/`findSavedQuestionIds(userId)` — `WatchRepository`와 동일한 시그니처 패턴, `findWatcherIds`에 대응하는 "누가 저장했는지" 조회는 두지 않음). `(user_id, question_id)` 복합 PK의 `saves` 테이블(V10 마이그레이션). 자기 자신의 질문 저장은 막지 않음(제약 없음)
+- [ ] 13.2 API — `POST/DELETE /api/v1/questions/{id}/save`(204, `WatchController`와 동일 패턴), `GET /api/v1/me/saves`(`WatchedQuestionResponse`와 동일한 모양의 `SavedQuestionResponse` 목록)
+- [ ] 13.3 테스트 — 단위 테스트(저장/철회/중복 저장 idempotent/목록 조회)와 실제 서버+curl 검증(저장→목록에 나타남→철회→목록에서 사라짐)
+- [ ] 13.4 문서화 — `domain-model.md`에 Save Aggregate 반영(Bounded Context는 착수 시점에 Engagement 편입 여부 확정), `api-design.md`에 "Save (Phase 13)" 섹션 추가. 이번 결정은 이미 [ADR-0025](docs/architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)로 기록됨
+
+## Phase 14 — Follow User (mvp-scope.md 로드맵에 없던 새 범위)
+
+design.md #18이 "후속 버전 기능"이라고 스스로 표시한 사용자 팔로우를 관계 기록·조회 범위로만 좁혀 추가한다. 팔로우한 사용자의 활동 피드·알림은 이번 범위에 포함하지 않는다([ADR-0026](docs/architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)).
+
+- [ ] 14.1 도메인 모델 — 새 `domain/follow` 패키지(또는 확정할 이름): `UserFollowRepository` 포트(`follow(followerId, followeeId)`/`unfollow`(idempotent)/`isFollowing`/`findFolloweeIds(followerId)` — `UserTagFollowRepository`와 동일한 관계 테이블 패턴). `SelfFollowException`(자기 자신 팔로우 시도, 403 — `SelfVoteException`/`SelfReviewRequestException`과 동일한 패턴). `(follower_id, followee_id)` 복합 PK의 `user_follows` 테이블(V11 마이그레이션)
+- [ ] 14.2 API — `POST/DELETE /api/v1/users/{id}/follow`(204), `GET /api/v1/me/following`(내가 팔로우하는 사용자 목록 — id/nickname 정도만). 대상 사용자가 없으면 기존 `UserNotFoundException`(404) 재사용
+- [ ] 14.3 테스트 — 단위 테스트(팔로우/언팔로우/자기 자신 팔로우 403/대상 없음 404/목록 조회)와 실제 서버+curl 검증
+- [ ] 14.4 문서화 — `domain-model.md`에 UserFollow Aggregate 반영(Bounded Context는 착수 시점 확정), `api-design.md`에 "Follow User (Phase 14)" 섹션 추가. 팔로워/팔로잉 카운트 노출, 활동 피드, 알림 연동은 [ADR-0026](docs/architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)에 따라 의도적으로 보류했음을 명시
+
+## Phase 15 — Badge (mvp-scope.md 로드맵에 없던 새 범위)
+
+design.md #19가 전제하는 배지 시스템을 Reputation(Phase 9, [ADR-0018](docs/architecture/decisions/0018-simple-reputation-score-only.md))과 같은 방식 — 영속화 없이 매 요청마다 계산하는 읽기 모델 — 로 추가한다. 획득 이벤트/알림/토스트는 이번 범위에서 만들지 않는다([ADR-0027](docs/architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md)).
+
+- [ ] 15.1 도메인 모델 — `domain/badge` 패키지: `BadgeType` enum(고정 6종 — `FIRST_QUESTION`/`FIRST_ANSWER`(Bronze), `PROBLEM_SOLVER`(채택 답변 5개 이상)/`WELL_RECEIVED`(받은 투표 점수 합 50점 이상, Silver), `TRUSTED_ANSWERER`(채택 답변 20개 이상)/`SUPER_ANSWER`(Super Answer 지정 1회 이상, Gold), `BadgeTier` enum(BRONZE/SILVER/GOLD). `BadgeRepository` 포트는 기존 `ReputationRepository.compute(userId)`(질문/답변/채택/Super Answer 수)에 없는 값 하나만 추가로 계산 — 사용자가 작성한 질문+답변에 대한 투표 점수 합(`votes`를 `questions`/`answers`의 `author_id`와 조인하는 새 네이티브 쿼리)
+- [ ] 15.2 API — `GET /api/v1/users/{id}/badges` — 위 집계치를 `BadgeType`별 조건과 비교해 현재 획득 조건을 만족하는 배지 목록만 반환(`{type, tier}`만 포함, 이름/설명 등 표시 문구는 `NotificationType`과 같은 원칙으로 프론트가 가짐). 대상 사용자가 없으면 `UserNotFoundException`(404)
+- [ ] 15.3 테스트 — 단위 테스트(6종 배지 각각의 경계값 — 조건 미달/충족, 여러 배지 동시 충족, 활동 없는 사용자는 빈 목록)와 실제 서버+curl 검증(질문/답변/채택/투표를 실제로 쌓아 배지가 나타나는지)
+- [ ] 15.4 문서화 — `domain-model.md`에 Badge를 Reputation Bounded Context에 반영(Reputation과 같은 "활동 기반 신뢰 신호" 성격이라 새 컨텍스트 없이 편입), `api-design.md`에 "Badge (Phase 15)" 섹션 추가. 획득 알림/영속화를 만들지 않은 이유는 이미 [ADR-0027](docs/architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md)로 기록됨
+
+## Phase 16+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
