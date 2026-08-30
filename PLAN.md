@@ -169,7 +169,15 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
 - [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
 - [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
-- [ ] Frontend Phase ? — Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로 백엔드 설계를 시작해 이 목록에서 분리함 — 진행 상황은 아래 Phase 13+의 "Frontend Phase ? — Vote/Comment UI" 항목 참고
+- [ ] Frontend Phase ? — Save/Follow User/Badge/모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로 백엔드 설계를 시작해 이 목록에서 분리함 — 완료된 프론트엔드 작업은 아래 Frontend Phase 6 참고
+
+## Frontend Phase 6 — Vote/Comment UI
+
+Phase 11(Vote)·Phase 12(Comment) 백엔드가 준비되어 Action Rail 투표 컨트롤·Answer 카드 Score·댓글 섹션을 프론트엔드에 붙인다(대응 백엔드가 이제 있으므로 [ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)의 "후속으로 이연" 대상에서 Vote/Comment는 제외됨). Save(북마크)/Follow User/Badge/모더레이션/답변 리비전은 여전히 대응 백엔드가 없어 보류 상태 유지.
+
+- [x] F6.1 Vote — `features/vote`(api/hooks/ui): `useMyVotes`(`GET /me/votes` 전체 조회 후 클라이언트에서 targetType+targetId로 매칭, `useMyWatches`와 동일 패턴), `useCastVote`/`useRetractVote`(같은 방향 재클릭 시 철회), `VoteControl`(▲ score ▼, 이미 투표한 방향 강조). 본인 질문/답변에는 백엔드가 `SelfVoteException`(403)을 던지므로 작성자 본인에게는 컨트롤 대신 점수만 표시. Question Detail 헤더 옆과 각 `AnswerCard`에 배치, 목록 카드(`QuestionCard`)에는 상호작용 없는 점수 텍스트만 노출(투표 UI를 목록에 넣는 것은 이번 범위 밖). 브라우저로 서로 다른 두 사용자 간 질문/답변 투표(본인 것은 숨김, 타인 것은 클릭 시 점수 반영)까지 확인
+- [x] F6.2 Comment — `features/comment`(api/hooks/ui): `useComments`/`useCreateComment`/`useDeleteComment`, `CommentSection`(목록 + "Add a comment" 클릭 시 나타나는 입력창, 600자 제한, 삭제는 작성자 본인만). 마크다운 렌더링 없이 평문 표시(ADR-0024와 일치). Question Detail의 질문 본문 아래와 각 `AnswerCard` 하단에 배치. 브라우저로 댓글 작성→다른 사용자에게는 삭제 버튼 미노출→작성자 삭제 시 tombstone("삭제된 댓글입니다")까지 확인
+- [x] F6.3 알림 연동 — `describe-notification.ts`에 `NEW_COMMENT` 메시지 매핑 추가(Phase 12.3에서 프론트 작업으로 남겨둔 항목), `NotificationType` 유니온에도 추가. 브라우저로 댓글 작성 시 알림 센터에 "새 댓글이 달렸습니다"가 뜨는 것까지 확인
 
 ## Phase 11 — Vote (mvp-scope.md 로드맵에 없던 새 범위)
 
@@ -201,7 +209,6 @@ QPR `ReviewRequest`와 성격이 다른 범용 clarification 댓글을 추가한
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
 - [ ] Phase ? — 검색 Score 정렬/Dashboard 인기순위·평판 점수에 Vote 반영 — Phase 11에서 의도적으로 보류([ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md) 5~7번). Vote 실사용 패턴을 관찰한 뒤 가중치를 다시 설계한다
 - [ ] Phase ? — Comment 대댓글/`@mention`/수정 이력 — Phase 12에서 의도적으로 보류([ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md) 2~3, 5번). 실사용 후 수요가 확인되면 착수
-- [ ] Frontend Phase ? — Vote/Comment UI — 이번 두 Phase로 백엔드가 준비되면 Action Rail 투표 컨트롤·Answer 카드 Score·댓글 섹션을 프론트엔드에 붙인다(대응 백엔드가 이제 있으므로 [ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)의 "후속으로 이연" 대상에서 Vote/Comment는 제외됨). Save(북마크)/Follow User/Badge/모더레이션/답변 리비전은 여전히 대응 백엔드가 없어 보류 상태 유지
 
 ## 진행 방식
 
