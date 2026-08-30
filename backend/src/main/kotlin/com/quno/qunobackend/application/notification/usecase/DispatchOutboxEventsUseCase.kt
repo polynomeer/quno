@@ -24,6 +24,10 @@ import org.springframework.transaction.annotation.Transactional
  *     author — see ReRequestReviewUseCase)
  *   - QUESTION_OUTDATED: watchers + the question's author (the actor marking it outdated can be
  *     anyone, including the author themselves — see MarkQuestionOutdatedUseCase)
+ *   - NEW_COMMENT: watchers + the question's author, plus the answer's author too when the
+ *     comment is on an answer (both extracted the same way; `answerAuthorId` is simply absent
+ *     from the payload for a question comment, so extractLong naturally skips it — see
+ *     CreateCommentUseCase)
  * The actor who caused the event is never notified about their own action.
  */
 @Service
@@ -51,6 +55,10 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.REVIEW_REQUESTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.REVIEW_RE_REQUESTED -> extractLong(event.payload, "reviewerId")?.let(recipients::add)
             OutboxEventTypes.QUESTION_OUTDATED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.NEW_COMMENT -> {
+                extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+                extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
+            }
         }
         actorId?.let(recipients::remove)
 

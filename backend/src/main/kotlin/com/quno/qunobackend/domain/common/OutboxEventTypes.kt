@@ -8,4 +8,5 @@ object OutboxEventTypes {
     const val REVIEW_REQUESTED = "REVIEW_REQUESTED"
     const val REVIEW_RE_REQUESTED = "REVIEW_RE_REQUESTED"
     const val QUESTION_OUTDATED = "QUESTION_OUTDATED"
+    const val NEW_COMMENT = "NEW_COMMENT"
 }

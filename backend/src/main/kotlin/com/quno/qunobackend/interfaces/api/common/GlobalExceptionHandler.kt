@@ -7,6 +7,8 @@ import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
 import com.quno.qunobackend.domain.cluster.ClustersAlreadyDistinctException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
+import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
+import com.quno.qunobackend.domain.comment.CommentNotFoundException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -60,11 +62,17 @@ class GlobalExceptionHandler {
         ReviewRequestNotFoundException::class,
         ClusterNotFoundException::class,
         QuestionNotInAnyClusterException::class,
+        CommentNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
-    @ExceptionHandler(QuestionAccessDeniedException::class, SelfReviewRequestException::class, SelfVoteException::class)
+    @ExceptionHandler(
+        QuestionAccessDeniedException::class,
+        SelfReviewRequestException::class,
+        SelfVoteException::class,
+        CommentAccessDeniedException::class,
+    )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
 
