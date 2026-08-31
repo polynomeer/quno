@@ -6,6 +6,12 @@ data class WriteAnswerCommand(
     val body: String,
 )
 
+data class ReviseAnswerCommand(
+    val answerId: Long,
+    val actorId: Long,
+    val body: String,
+)
+
 data class AcceptAnswerCommand(
     val answerId: Long,
     val actorId: Long,

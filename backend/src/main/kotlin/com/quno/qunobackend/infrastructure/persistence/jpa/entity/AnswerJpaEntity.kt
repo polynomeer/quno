@@ -30,6 +30,9 @@ class AnswerJpaEntity(
     @Column(name = "target_version_number", nullable = false)
     val targetVersionNumber: Int,
 
+    @Column(name = "latest_version_id")
+    val latestVersionId: Long?,
+
     @Column(name = "deleted_at")
     val deletedAt: Instant?,
 

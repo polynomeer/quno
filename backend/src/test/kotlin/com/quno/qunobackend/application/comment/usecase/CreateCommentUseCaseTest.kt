@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.comment.usecase
 
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerVersionRepository
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
 import com.quno.qunobackend.application.comment.dto.CreateCommentCommand
 import com.quno.qunobackend.application.common.AnswerResultAssembler
@@ -34,7 +35,7 @@ class CreateCommentUseCaseTest {
         questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, outboxEventRepository,
+        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(), outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val useCase = CreateCommentUseCase(questionRepository, answerRepository, commentRepository, outboxEventRepository)

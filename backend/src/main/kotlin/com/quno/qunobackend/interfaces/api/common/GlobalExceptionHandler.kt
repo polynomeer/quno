@@ -1,6 +1,8 @@
 package com.quno.qunobackend.interfaces.api.common
 
+import com.quno.qunobackend.domain.answer.AnswerAccessDeniedException
 import com.quno.qunobackend.domain.answer.AnswerNotFoundException
+import com.quno.qunobackend.domain.answer.AnswerVersionNotFoundException
 import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
 import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
@@ -69,6 +71,7 @@ class GlobalExceptionHandler {
         QuestionNotInAnyClusterException::class,
         CommentNotFoundException::class,
         ReportNotFoundException::class,
+        AnswerVersionNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -80,6 +83,7 @@ class GlobalExceptionHandler {
         CommentAccessDeniedException::class,
         SelfFollowException::class,
         ModeratorAccessDeniedException::class,
+        AnswerAccessDeniedException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))

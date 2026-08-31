@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.answer.dto.AcceptAnswerCommand
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.answer.usecase.AcceptAnswerUseCase
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerVersionRepository
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
 import com.quno.qunobackend.application.cluster.usecase.InMemoryQuestionClusterRepository
 import com.quno.qunobackend.application.cluster.usecase.MarkQuestionsAsSameProblemUseCase
@@ -39,7 +40,7 @@ class GetActivityFeedUseCaseTest {
         questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, outboxEventRepository,
+        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(), outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)

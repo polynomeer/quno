@@ -54,6 +54,8 @@ class QuestionLifecycleE2ETest {
             jdbcTemplate.update("DELETE FROM outbox_events WHERE aggregate_id = ?", id)
             jdbcTemplate.update("DELETE FROM watches WHERE question_id = ?", id)
             jdbcTemplate.update("UPDATE questions SET latest_version_id = NULL, accepted_answer_id = NULL WHERE id = ?", id)
+            jdbcTemplate.update("UPDATE answers SET latest_version_id = NULL WHERE question_id = ?", id)
+            jdbcTemplate.update("DELETE FROM answer_versions WHERE answer_id IN (SELECT id FROM answers WHERE question_id = ?)", id)
             jdbcTemplate.update("DELETE FROM answers WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM question_tags WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM question_versions WHERE question_id = ?", id)

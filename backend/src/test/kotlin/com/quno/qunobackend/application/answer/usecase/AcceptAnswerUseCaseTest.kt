@@ -33,6 +33,7 @@ class AcceptAnswerUseCaseTest {
         questionRepository,
         questionVersionRepository,
         answerRepository,
+        InMemoryAnswerVersionRepository(),
         outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )

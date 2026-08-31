@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.user.usecase
 
 import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerVersionRepository
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
 import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
@@ -37,7 +38,8 @@ class GetUserProfileUseCaseTest {
         questionRepository, questionVersionRepository, tagRepository, questionTagRepository,
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, InMemoryOutboxEventRepository(), answerResultAssembler,
+        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(),
+        InMemoryOutboxEventRepository(), answerResultAssembler,
     )
     private val followTagUseCase = FollowTagUseCase(tagRepository, userTagFollowRepository)
     private val useCase = GetUserProfileUseCase(

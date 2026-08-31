@@ -32,6 +32,10 @@ import org.springframework.transaction.annotation.Transactional
  *     is an administrative notice about one person's content, not an activity signal the rest of
  *     the subscribers care about (see ADR-0028). The only event type that skips the base
  *     watcher fan-out entirely.
+ *   - ANSWER_REVISION: watchers + the question's author, same recipients as NEW_ANSWER — editing
+ *     an answer's content is exactly the kind of change a Ward subscriber signed up for
+ *     (Phase 17, ADR-0029). `questionAuthorId` is simply absent from the payload when the
+ *     question itself is gone (e.g. hidden by moderation), so extractLong naturally skips it.
  * The actor who caused the event is never notified about their own action.
  */
 @Service
@@ -68,6 +72,7 @@ class DispatchOutboxEventsUseCase(
                 extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
             }
             OutboxEventTypes.CONTENT_HIDDEN -> extractLong(event.payload, "contentAuthorId")?.let(recipients::add)
+            OutboxEventTypes.ANSWER_REVISION -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 

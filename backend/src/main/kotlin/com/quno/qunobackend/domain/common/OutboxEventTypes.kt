@@ -10,4 +10,5 @@ object OutboxEventTypes {
     const val QUESTION_OUTDATED = "QUESTION_OUTDATED"
     const val NEW_COMMENT = "NEW_COMMENT"
     const val CONTENT_HIDDEN = "CONTENT_HIDDEN"
+    const val ANSWER_REVISION = "ANSWER_REVISION"
 }

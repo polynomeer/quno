@@ -27,10 +27,12 @@ class WriteAnswerUseCaseTest {
     private val createQuestionUseCase = CreateQuestionUseCase(
         questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
     )
+    private val answerVersionRepository = InMemoryAnswerVersionRepository()
     private val useCase = WriteAnswerUseCase(
         questionRepository,
         questionVersionRepository,
         answerRepository,
+        answerVersionRepository,
         outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )

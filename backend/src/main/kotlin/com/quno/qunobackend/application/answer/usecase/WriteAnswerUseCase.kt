@@ -5,6 +5,8 @@ import com.quno.qunobackend.application.answer.dto.WriteAnswerCommand
 import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.domain.answer.Answer
 import com.quno.qunobackend.domain.answer.AnswerRepository
+import com.quno.qunobackend.domain.answer.AnswerVersion
+import com.quno.qunobackend.domain.answer.AnswerVersionRepository
 import com.quno.qunobackend.domain.common.OutboxEvent
 import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
@@ -19,6 +21,7 @@ class WriteAnswerUseCase(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
     private val answerRepository: AnswerRepository,
+    private val answerVersionRepository: AnswerVersionRepository,
     private val outboxEventRepository: OutboxEventRepository,
     private val answerResultAssembler: AnswerResultAssembler,
 ) {
@@ -30,7 +33,7 @@ class WriteAnswerUseCase(
             requireNotNull(it).versionNumber
         }
 
-        val saved = answerRepository.save(
+        val answer = answerRepository.save(
             Answer.write(
                 questionId = command.questionId,
                 authorId = command.authorId,
@@ -38,6 +41,14 @@ class WriteAnswerUseCase(
                 targetVersionNumber = targetVersionNumber,
             ),
         )
+        val answerId = requireNotNull(answer.id)
+
+        // Same two-insert-then-update flow as CreateQuestionUseCase/Qv1 (Phase 17, ADR-0029) —
+        // the first AnswerVersion (Av1) can only be inserted once the answer row exists.
+        val version = answerVersionRepository.save(
+            AnswerVersion.create(answerId = answerId, versionNumber = 1, bodyMarkdown = command.body, createdBy = command.authorId),
+        )
+        val saved = answerRepository.save(answer.withLatestVersion(requireNotNull(version.id)))
 
         // questionAuthorId: the question's author is always notified, even if they never
         // explicitly watched their own question — see DispatchOutboxEventsUseCase's kdoc.

@@ -1,6 +1,8 @@
 package com.quno.qunobackend.interfaces.api.answer
 
+import com.quno.qunobackend.application.answer.dto.AnswerMutationResult
 import com.quno.qunobackend.application.answer.dto.AnswerResult
+import com.quno.qunobackend.domain.question.DiffLineType
 import com.quno.qunobackend.domain.question.QuestionStatus
 import java.time.Instant
 
@@ -34,4 +36,34 @@ data class AcceptAnswerResponse(
     val questionId: Long,
     val answerId: Long,
     val questionStatus: QuestionStatus,
+)
+
+data class AnswerMutationResponse(
+    val id: Long,
+    val questionId: Long,
+    val versionNumber: Int,
+)
+
+fun AnswerMutationResult.toResponse() = AnswerMutationResponse(id = id, questionId = questionId, versionNumber = versionNumber)
+
+data class AnswerVersionResponse(
+    val answerId: Long,
+    val versionNumber: Int,
+    val body: String,
+    val createdBy: Long,
+    val createdAt: Instant,
+)
+
+data class AnswerVersionSummaryResponse(
+    val versionNumber: Int,
+    val createdBy: Long,
+    val createdAt: Instant,
+)
+
+data class AnswerDiffLineResponse(val type: DiffLineType, val text: String)
+
+data class AnswerVersionDiffResponse(
+    val fromVersion: Int,
+    val toVersion: Int,
+    val lines: List<AnswerDiffLineResponse>,
 )

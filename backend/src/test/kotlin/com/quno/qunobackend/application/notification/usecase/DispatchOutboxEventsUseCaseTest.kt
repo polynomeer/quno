@@ -90,6 +90,25 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `ANSWER_REVISION also notifies the question author, same as NEW_ANSWER`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.ANSWER_REVISION,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"answerId":5,"versionNumber":2,"actorId":30,"questionAuthorId":99}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(99L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(30L).isEmpty())
+    }
+
+    @Test
     fun `marks the event published so it is not dispatched twice`() {
         outboxEventRepository.save(
             OutboxEvent.create(
