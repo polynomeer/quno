@@ -70,3 +70,15 @@ export interface QuestionMutationResult {
   status: QuestionStatus;
   versionNumber: number;
 }
+
+/** Composed by the backend from Cluster/Fork/Related lookups it already had (Phase 18,
+ * ADR-0030) — a data view, not a graph visualization. `clusterMembers`/`relatedQuestions` are
+ * intentionally unused by `ForkPanel`, which only reads the Fork lineage fields — Cluster and
+ * Related Questions already have their own dedicated UI elsewhere on the page. */
+export interface QuestionGraph {
+  questionId: number;
+  clusterMembers: QuestionSummary[];
+  forkedFrom: QuestionSummary | null;
+  forks: QuestionSummary[];
+  relatedQuestions: QuestionSummary[];
+}

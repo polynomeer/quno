@@ -2,6 +2,7 @@ import { httpClient } from "@/shared/api/http-client";
 import type {
   CreateQuestionInput,
   QuestionDetail,
+  QuestionGraph,
   QuestionMutationResult,
   QuestionSummary,
   QuestionVersionDetail,
@@ -23,4 +24,6 @@ export const questionApi = {
     httpClient.get<QuestionSummary[]>(`/api/v1/questions/${id}/related?limit=${limit}`),
   markOutdated: (id: number, reason: string) =>
     httpClient.post<QuestionMutationResult>(`/api/v1/questions/${id}/outdated`, { reason }),
+  fork: (id: number) => httpClient.post<QuestionMutationResult>(`/api/v1/questions/${id}/fork`),
+  getGraph: (id: number) => httpClient.get<QuestionGraph>(`/api/v1/questions/${id}/graph`),
 };

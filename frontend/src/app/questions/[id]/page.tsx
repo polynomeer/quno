@@ -17,6 +17,7 @@ import { CommentSection } from "@/features/comment/ui/CommentSection";
 import { ReportButton } from "@/features/report/ui/ReportButton";
 import { ReviewRequestPanel } from "@/features/review/ui/ReviewRequestPanel";
 import { ClusterPanel } from "@/features/cluster/ui/ClusterPanel";
+import { ForkPanel } from "@/features/question/ui/ForkPanel";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
 import { TagChip } from "@/shared/ui/TagChip";
@@ -179,6 +180,8 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
         <AnswerComposer questionId={questionId} />
 
         <ClusterPanel questionId={question.id} acceptedAnswerId={acceptedAnswerId} />
+
+        <ForkPanel questionId={question.id} />
       </div>
 
       <aside className="space-y-3">
