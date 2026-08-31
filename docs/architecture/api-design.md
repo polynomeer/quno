@@ -266,6 +266,16 @@
 - `GET /me/following`: 내가 팔로우하는 사용자 목록(`{userId, nickname}[]`).
 - **범위 밖**(모두 [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)에서 의도적으로 보류): 팔로워/팔로잉 수를 프로필에 노출하는 것, 팔로우한 사용자의 활동을 모으는 피드(Quno Flow 재설계 필요), 팔로우 대상의 활동에 대한 알림. 실제 사용 패턴이 확인되면 각각 별도로 설계한다.
 
+## Badge (Phase 15)
+
+[ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)에서 결정한 대로, Badge는 Reputation(Phase 9)과 동일하게 영속화 없는 계산형 읽기 모델이다 — "언제 처음 획득했는지"는 저장하지 않는다.
+
+- `GET /users/{id}/badges`: 고정 6종 배지(`domain/badge/BadgeType`) 중 지금 시점의 활동 집계로 조건을 만족하는 것만 `{type, tier}[]`로 반환한다. 존재하지 않는 사용자는 404.
+- 조건 판정에 쓰는 집계치 중 질문/답변/채택 답변/Super Answer 수는 기존 `ReputationRepository.compute(userId)`를 그대로 재사용하고, 사용자가 작성한 질문+답변에 대한 투표 점수 합만 새 쿼리(`BadgeRepository.sumVoteScoreReceived`)로 추가한다 — `votes`를 `target_type`별로 `questions`/`answers`의 `author_id`와 조인.
+- 배지 카탈로그: `FIRST_QUESTION`/`FIRST_ANSWER`(Bronze, 질문·답변 1개 이상), `PROBLEM_SOLVER`(Silver, 채택 답변 5개 이상)/`WELL_RECEIVED`(Silver, 받은 투표 점수 합 50점 이상), `TRUSTED_ANSWERER`(Gold, 채택 답변 20개 이상)/`SUPER_ANSWER`(Gold, Super Answer 지정 1회 이상). 임계값은 Reputation 점수 공식과 같은 방식으로 하드코딩돼 있다.
+- 응답은 `type`(enum 식별자)과 `tier`만 담는다 — 배지 이름/설명 같은 표시 문구는 `NotificationType`/`describeNotification`과 같은 원칙으로 프론트가 갖는다.
+- **범위 밖**(모두 [ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)에서 의도적으로 보류): 배지 획득 시점 영속화, 획득 시 토스트/알림, 카탈로그를 운영자가 직접 추가/조정하는 기능.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
