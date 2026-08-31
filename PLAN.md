@@ -169,7 +169,8 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
 - [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
 - [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
-- [ ] Frontend Phase ? — 모더레이션/답변 리비전 (번호 미정, 아래 Phase 16~17 백엔드가 준비된 뒤 착수). Vote/Comment는 Phase 11~12로, Save/Follow User/Badge는 Phase 13~15로, 모더레이션/답변 리비전은 Phase 16~17로 백엔드 설계를 시작해 이 목록에서 전부 분리함([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)) — 완료된 프론트엔드 작업은 아래 Frontend Phase 6~7 참고
+
+[ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)이 후속으로 미뤄둔 원래 갭 목록(Vote/Comment/Save/Follow User/Badge/모더레이션/답변 리비전)은 Phase 11~17 백엔드 설계·구현과 Frontend Phase 6~8 프론트엔드 연동으로 전부 완료됐다.
 
 ## Frontend Phase 6 — Vote/Comment UI
 
@@ -187,6 +188,16 @@ Phase 13(Save)·14(Follow User)·15(Badge) 백엔드가 준비되어 프론트�
 - [x] F7.2 Follow User — `features/follow`(api/hooks/ui): `useMyFollowing`/`useToggleFollow`, `FollowUserButton`(본인 프로필에서는 `SelfFollowException`을 피해 컴포넌트 스스로 렌더링하지 않음 — `VoteControl`의 자기 콘텐츠 숨김과 같은 패턴), `FollowingList`(닉네임 pill 목록, 각 항목은 해당 사용자 프로필로 링크). 전용 `/following` 페이지나 AppHeader 링크는 만들지 않음(design.md 자체가 "후속 버전 기능"으로 표시했고, ADR-0026이 활동 피드를 이번 범위에서 뺐으므로 상단 네비게이션에 넣을 만큼 무게가 없다고 판단) — Profile 헤더의 Follow 버튼과 본인 Profile의 "Following" 섹션에서만 노출. 브라우저로 팔로우→"Following"으로 버튼 전환→상대방 프로필에는 버튼이 없음(자기 자신)→팔로워 쪽 Profile의 Following 섹션에 반영→언팔로우까지 확인
 - [x] F7.3 Badge — `features/badge`(api/hooks/ui): `useBadges(userId)`, `describe-badge.ts`(백엔드는 `{type, tier}` 식별자만 보내므로 이름/설명은 `describe-notification.ts`와 같은 원칙으로 프론트가 조립), `BadgeChip`/`BadgeList`(tier별 색상 — Bronze/Silver/Gold는 별도 디자인 토큰이 없어 기존 warning/text-secondary/brand 토큰을 재사용). Profile 헤더 아래 배치(본인·타인 프로필 모두 노출 — Badge는 공개 성취 표시라 Watching/Saved/Following과 달리 `isOwnProfile` 제한 없음). 획득 시 토스트는 ADR-0027에 따라 만들지 않음. 브라우저로 질문 1개+셀프 답변 1개 작성 후 "첫 질문"·"첫 답변" 배지가 실제로 나타나는 것까지 확인
 - [x] F7.4 검증 — 로컬 Postgres 포트가 다른 프로젝트와 충돌해 임시로 8091 포트에 별도 인스턴스를 띄우고 프론트엔드 `.env.local`로 `NEXT_PUBLIC_API_BASE_URL`을 그쪽으로 돌려 두 사용자 계정으로 Save/Follow/Badge 전체 흐름을 검증(검증 후 `.env.local` 삭제, 테스트 데이터 정리)
+
+## Frontend Phase 8 — Moderation + Answer Revision UI
+
+Phase 16(Moderation)·17(Answer Revision) 백엔드가 준비되어 프론트엔드에 붙인다. Moderation은 ADR-0028이 신고→검토→Dismiss/Hide로 좁혀둔 범위를 그대로 따르고, 역할 관리 UI가 없다는 것과 짝을 맞춰 모더레이션 큐 페이지에도 별도 nav 링크를 두지 않는다(모더레이터는 URL을 직접 알아야 함). Answer Revision은 Question의 리비전 히스토리/diff UI 패턴을 그대로 재사용한다.
+
+- [x] F8.1 Report — `features/report`(api/hooks/ui): `useFileReport`(성공 여부만 로컬 상태로 추적 — "이미 신고했는지" 조회 API가 없어 서버 캐시 무효화 대상도 없음), `ReportButton`(클릭 시 사유 선택+선택적 메시지 입력창이 펼쳐지는 CommentSection과 같은 reveal-on-click 패턴, 제출 후 "Reported"로 고정). 자기 글 신고 제한이 백엔드에 없는 것과 대칭으로 프론트도 별도 제한을 두지 않되, UX상 자연스럽게 작성자 본인에게는 Report 대신 Edit(답변)/아무것도 없음(질문)을 보여줌. Question Detail 메타 줄과 각 `AnswerCard`(작성자 본인이 아닐 때)에 배치
+- [x] F8.2 Moderation Queue — `features/moderation`(api/hooks/ui): `useReports`/`useDismissReport`/`useHideReport`, `ReportQueueItem`(사유·대상·신고자·메시지 + Keep(Dismiss)/Hide 버튼). `/moderation` 페이지는 인증만 요구하고 모더레이터 여부는 백엔드의 403 응답에 그대로 기대 — 403이면 "모더레이터만 접근할 수 있습니다" 안내로 대체(별도 role 조회 API를 만들지 않음). Answer 대상 신고는 단건 조회 API가 없어 질문으로 딥링크하지 못하고 "Answer #id" 평문으로만 표시(알려진 제한). design.md가 요구하는 액션 confirmation 모달은 만들지 않음 — 이 앱의 다른 토글형 액션(Vote/Watch/Save 등)도 전부 확인 없이 즉시 실행되는 것과 일관성을 맞춤
+- [x] F8.3 Answer Revision — `features/answer`에 `useReviseAnswer`/`useAnswerVersions`/`useAnswerDiff` 추가. `AnswerCard`에 작성자 본인만 보이는 인라인 Edit 토글(`MarkdownEditor` 재사용, `AnswerComposer`와 동일한 컴포넌트) — 저장하면 본문이 즉시 갱신되고 QuestionMeta의 "edited · revision N" 패턴과 동일한 링크가 나타남. 새 `/answers/[answerId]/versions` 페이지 — `/questions/[id]/versions`를 그대로 미러링(버전 목록 + From/To 선택 + diff), `DiffView` 컴포넌트를 Question 쪽에서 그대로 재사용(백엔드가 `TextDiffer`를 재사용한 것과 대칭). 질문으로 돌아가는 링크는 `?questionId=` 쿼리 파라미터로 전달(Answer 버전 응답에는 questionId가 없어 백엔드 변경 없이 프론트에서 넘겨줌)
+- [x] F8.4 알림 연동 — `describe-notification.ts`에 `ANSWER_REVISION`("답변이 수정되었습니다")·`CONTENT_HIDDEN`("모더레이터에 의해 콘텐츠가 숨겨졌습니다") 메시지 매핑 추가, `NotificationType` 유니온에도 추가
+- [x] F8.5 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 답변 작성자 본인 Edit→revision 2 링크 등장→히스토리 페이지에서 diff 확인까지, 신고 접수(질문)→모더레이터 아닌 사용자는 큐 403→DB로 모더레이터 승격 후 큐에 노출→Hide 클릭→질문 404+작성자에게 `CONTENT_HIDDEN` 알림 확인까지 전체 흐름을 브라우저로 확인. 검증 중 이번 Phase 자체의 프론트 버그는 없었음(백엔드 Phase 16/17에서 이미 발견해 고친 문제들과 별개)
 
 ## Phase 11 — Vote (mvp-scope.md 로드맵에 없던 새 범위)
 
