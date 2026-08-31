@@ -321,12 +321,23 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 21.5 테스트 — 단위 테스트(`ApplyTechnologyReleaseUseCase`: 베이스라인 시딩·버전 불변·버전 변경 시 알림·payload 내용, `ScanTechnologyReleasesUseCase`: 추적 기술 전원 조회·피드 실패 시 나머지 계속, `DispatchOutboxEventsUseCase`: TECH_VERSION_IMPACT_DETECTED 수신자)와 실제 서버 검증(질문을 의도적으로 백데이트하고 저장된 버전을 가짜 값으로 바꾼 뒤 재기동으로 재스캔을 유도해, endoflife.date 실제 데이터로 변경 감지→outbox 이벤트→알림→`GET /qunobot/version-impacts` 노출→`OUTDATED` 표시 후 목록에서 제외까지 전 구간을 실제 HTTP로 확인). native SQL 자체는 기존 관례대로(Spike/Flow) curl로만 검증
 - [x] 21.6 문서화 — `domain-model.md`(QunoBot 이벤트 체인 구현 상태, Bounded Context, ERD, Domain Events)와 `api-design.md`("기술 버전 영향 감지 (Phase 21)" 섹션)에 반영, [ADR-0033](docs/architecture/decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)으로 스코프 결정 기록. 프론트엔드는 `TECH_VERSION_IMPACT_DETECTED` 알림 타입 설명 문구만 추가(전용 화면은 Spike Detection이 처음엔 백엔드만 있었던 것과 같은 이유로 범위 밖)
 
-## Phase 22+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 22 — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지)
+
+원본 기획서([docs/archive/Quno 서비스 통합 기획서](docs/archive/README.md) 24~29장)의 Organization/Direct Ask는 각각 여러 하위 개념(Verified/Virtual Organization, 무료/유료 Direct Ask)을 묶고 있다. 이 프로젝트에 결제 연동이 전혀 없고 외부 신원 인증 인프라도 없어, 사용자 확인을 거쳐 범위를 좁혔다(2026-08-31, [ADR-0034](docs/architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)): **Organization은 Virtual/Community만**(사용자가 직접 만들고 가입, 외부 인증 없음), **Direct Ask는 결제 없이 요청/수락만**(실제 카드·계좌 정보를 다루는 PG 연동은 안전상 이유로 제외).
+
+- [x] 22.1 Organization 도메인 — 새 Aggregate `Organization`(id, name, slug, description, createdBy, createdAt, V17 마이그레이션: `organizations` + `organization_memberships`)과 `OrganizationRepository`/`OrganizationMembershipRepository`. `Organization.slugify`는 `Tag.slugify`와 달리 대소문자 정규화만 하고 비-ASCII 문자를 제거하지 않음(한글 조직명이 전부 빈 문자열로 충돌하는 것을 방지). `POST /organizations`(이름 중복 시 409 `DuplicateOrganizationNameException`, 생성자 자동 첫 멤버), `GET /organizations?q=`(검색), `GET /organizations/{id}`(memberCount 포함), `POST/DELETE /organizations/{id}/join`(멱등). `GetUserProfileUseCase`에 `organizations` 필드 추가(followedTags와 같은 조립 패턴)
+- [x] 22.2 Direct Ask 도메인 — `users.accepts_direct_ask`(V18, 기본 false, `PUT /me/direct-ask-settings`로 self-service 변경 — role과 달리 순수 개인 설정이라 self-service가 적절하다고 판단). 새 Aggregate `DirectAskRequest`(id, questionId, requesterId, targetUserId, message, status: PENDING/ACCEPTED/DECLINED, createdAt, respondedAt)와 `DirectAskRequestRepository`. `POST /questions/{id}/direct-asks`(자기 자신 요청 403, 대상이 옵트아웃이면 409, 같은 질문+대상에 열린 요청 중복 시 409 — V18의 부분 유니크 인덱스로 DB 레벨에서도 보장), `POST /direct-asks/{id}/accept`/`decline`(대상자만 가능, 이미 응답된 요청 재응답 409), `GET /me/direct-asks?role=sent|received`. 수락 후 실제 답변은 기존 `POST /questions/{id}/answers`를 그대로 재사용 — `DirectAskRequest`는 어떤 `Answer`와도 직접 연결하지 않음
+- [x] 22.3 알림 통합 — `DIRECT_ASK_REQUESTED`(대상 사용자에게만), `DIRECT_ASK_ACCEPTED`/`DIRECT_ASK_DECLINED`(원 요청자에게만)를 `DispatchOutboxEventsUseCase`에 추가 — `CONTENT_HIDDEN`/`MENTIONED_IN_COMMENT`와 같은 "당사자 전용"(Ward 구독자 기본 fan-out 스킵) 부류로 분류
+- [x] 22.4 테스트 — 단위 테스트(Organization: 생성/중복 이름/한글 이름 slug 충돌 없음/가입·탈퇴 멱등/존재하지 않는 조직 404, Direct Ask: 생성 성공/자기요청 거부/옵트아웃 거부/중복 거부/응답 권한·상태 invariant, `DispatchOutboxEventsUseCase`: DIRECT_ASK_* 수신자)와 실제 서버 검증(한글 조직명 생성→중복 거부→검색→가입/탈퇴→프로필 반영, Direct Ask 옵트아웃 거부→옵트인→요청→자기요청 거부→중복 거부→비대상자 수락 거부→대상자 수락→재응답 거부→sent/received 목록→알림 도착→수락 후 실제 답변 작성까지 curl로 전 구간 확인)
+- [x] 22.5 문서화 — `domain-model.md`(새 Trust Network 컨텍스트, Aggregate, ERD, 테이블별 책임, Domain Events)와 `api-design.md`("Organization & Direct Ask (Phase 22)" 섹션)에 반영, [ADR-0034](docs/architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)로 스코프 결정 기록. 프론트엔드는 이번 범위에 포함하지 않음(백엔드 API만 우선 구현 — Spike Detection/기술 버전 감지와 같은 순서)
+
+## Phase 23+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
+- [ ] Phase ? — Verified Organization (mvp-scope.md 로드맵 Phase 5, 나머지) — 실제 회사·학교 소속을 검증하는 방식(이메일 도메인 매칭 등)을 정할 수 있을 때 착수
+- [ ] Phase ? — 유료 Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — PG 연동, 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 
 ## 진행 방식
 
