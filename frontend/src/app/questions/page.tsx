@@ -10,6 +10,7 @@ import { Input } from "@/shared/ui/Input";
 import { Button } from "@/shared/ui/Button";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import type { QuestionStatus } from "@/shared/ui/StatusBadge";
+import type { SearchSort } from "@/features/search/api/search.types";
 
 function QuestionsSearchContent() {
   const { isLoading: authLoading } = useRequireAuth();
@@ -17,7 +18,8 @@ function QuestionsSearchContent() {
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
   const [draft, setDraft] = useState(q);
-  const { data: results, isLoading, isError } = useSearch(q);
+  const sort: SearchSort = searchParams.get("sort") === "score" ? "score" : "relevance";
+  const { data: results, isLoading, isError } = useSearch(q, sort);
 
   const selectedTags = useMemo(
     () => (searchParams.get("tags") ?? "").split(",").filter(Boolean),
@@ -47,6 +49,16 @@ function QuestionsSearchContent() {
       "status",
       selectedStatuses.includes(status) ? selectedStatuses.filter((s) => s !== status) : [...selectedStatuses, status],
     );
+  }
+
+  function handleSortChange(nextSort: SearchSort) {
+    const params = new URLSearchParams(searchParams);
+    if (nextSort === "score") {
+      params.set("sort", nextSort);
+    } else {
+      params.delete("sort");
+    }
+    router.push(`/questions?${params.toString()}`);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -112,7 +124,20 @@ function QuestionsSearchContent() {
             selectedStatuses={selectedStatuses}
             onToggleStatus={toggleStatus}
           />
-          <p className="text-sm text-text-secondary">{filteredResults.length}개 결과</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-secondary">{filteredResults.length}개 결과</p>
+            <label className="flex items-center gap-1 text-sm text-text-secondary">
+              sort:
+              <select
+                className="rounded-md border border-border bg-surface px-2 py-1"
+                value={sort}
+                onChange={(event) => handleSortChange(event.target.value as SearchSort)}
+              >
+                <option value="relevance">Relevance</option>
+                <option value="score">Score</option>
+              </select>
+            </label>
+          </div>
           <QuestionList
             questions={filteredResults}
             emptyMessage="검색 결과가 없습니다. 검색어를 완화하거나 필터를 줄여 보세요."
