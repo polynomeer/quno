@@ -12,7 +12,7 @@
 | Engagement | 질문에 대한 개인 관계(구독·보관)와 알림 | Watch, Save, Notification |
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
 | Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster(+Merge), Question의 Fork 계보(`originQuestionId`), 지식 그래프 데이터 조회(Phase 18, [ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)) |
-| Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
+| Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike, VersionImpact), Question 상태(OUTDATED), TechnologyRelease(외부 릴리스 스냅샷, Phase 21 [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)) |
 | Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation, Badge — Phase 15, [ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)). `UserReputation.score`는 Phase 20([ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md))부터 Voting 컨텍스트의 순 투표 점수(자신의 질문/답변이 받은 것)도 최저 가중치로 반영 |
 | Flow | 기존 신호를 묶은 활동 스트림 | Read model 중심(FlowCard), 새 이벤트 없음 |
 | Voting | 질문/답변에 대한 품질 신호(up/down) | Vote — Watch와 같은 독립 side-aggregate (Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 검색 정렬·Dashboard 인기순위·평판 점수에 순 투표 점수를 반영하는 것은 Phase 20([ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md)) |
@@ -59,9 +59,10 @@ CommentCreated (NEW_COMMENT)
 ContentHidden (CONTENT_HIDDEN)
 AnswerRevised (ANSWER_REVISION)
 UserMentionedInComment (MENTIONED_IN_COMMENT)
+TechnologyVersionImpactDetected (TECH_VERSION_IMPACT_DETECTED)
 ```
 
-Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). Answer Revision(Phase 17)의 `ANSWER_REVISION`은 `NEW_ANSWER`와 완전히 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓴다 — 답변 본문이 바뀌는 것도 구독 이유가 되는 변화로 보기 때문([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)). Comment 확장(Phase 19)에서 `NEW_COMMENT`는 답글일 때 부모 댓글 작성자(`parentCommentAuthorId`)도 기본 fan-out에 추가로 얹는다. 반면 `MENTIONED_IN_COMMENT`는 `CONTENT_HIDDEN`과 같은 예외 부류다 — Ward 구독자 기본 fan-out을 건너뛰고 `mentionedUserIds`(JSON 배열, 전용 `extractLongList` 파서로 추출)에 담긴 사용자에게만 통보한다("당신이 언급됐다"는 개별 통지이지 활동 신호가 아니기 때문). 댓글 수정(edit) 자체는 어떤 이벤트도 발행하지 않는다 — 오탈자 교정 수준으로 보고 재통보하지 않기로 했다([ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)).
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). Answer Revision(Phase 17)의 `ANSWER_REVISION`은 `NEW_ANSWER`와 완전히 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓴다 — 답변 본문이 바뀌는 것도 구독 이유가 되는 변화로 보기 때문([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)). Comment 확장(Phase 19)에서 `NEW_COMMENT`는 답글일 때 부모 댓글 작성자(`parentCommentAuthorId`)도 기본 fan-out에 추가로 얹는다. 반면 `MENTIONED_IN_COMMENT`는 `CONTENT_HIDDEN`과 같은 예외 부류다 — Ward 구독자 기본 fan-out을 건너뛰고 `mentionedUserIds`(JSON 배열, 전용 `extractLongList` 파서로 추출)에 담긴 사용자에게만 통보한다("당신이 언급됐다"는 개별 통지이지 활동 신호가 아니기 때문). 댓글 수정(edit) 자체는 어떤 이벤트도 발행하지 않는다 — 오탈자 교정 수준으로 보고 재통보하지 않기로 했다([ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). Phase 21의 `TECH_VERSION_IMPACT_DETECTED`는 `QUESTION_OUTDATED`와 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓰지만, 이 프로젝트의 다른 모든 이벤트와 달리 발행자가 사람이 아니라 스케줄러다 — payload에 `actorId`가 아예 없어 아무도 제외되지 않는다([ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)).
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -94,6 +95,7 @@ comments.target_id ──> questions.id 또는 answers.id (target_type으로 구
 comments.parent_comment_id ──> comments.id (자기 참조, 1단계 답글만 허용, Phase 19)
 comment_versions.comment_id ──> comments.id (Phase 19)
 reports.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 16)
+technology_releases.tag_slug ──> tags.slug (느슨한 참조, FK 없음, Phase 21)
 ```
 
 ### 테이블별 책임과 삭제 정책
@@ -118,6 +120,7 @@ reports.target_id ──> questions.id 또는 answers.id (target_type으로 구�
 | comment_versions | id, comment_id, version_number, body, created_at | append-only, 보존 우선. `edit()` 직전 상태만 archive — answer_versions와 달리 생성 시점 v1 backfill/insert가 없음(Phase 19, [ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)) |
 | user_follows | follower_id, followee_id | 관계 데이터, hard delete 허용. PK가 (follower_id, followee_id) — users에 대한 자기 참조(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
 | reports | id, reporter_id, target_type, target_id, reason, message, status, resolved_by, resolved_at | append형, hard delete 불필요(review_requests와 동일하게 상태만 전이). `resolved_by`/`resolved_at`/`status`가 곧 audit trail이라 별도 로그 테이블을 두지 않음(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
+| technology_releases | id, tag_slug(unique), product_slug, latest_version, latest_release_date, checked_at, updated_at | 이력이 아니라 태그당 1행 스냅샷 — 매 스캔마다 덮어쓴다. `tags`/`questions`에 대한 FK가 없다(`tag_slug`로 느슨하게 조인) — 아직 태그가 실제로 생성되기 전에도 추적을 시작할 수 있어야 하기 때문(Phase 21, [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)) |
 
 ### 삭제/FK 운영 원칙
 
@@ -356,6 +359,8 @@ TechnologyVersionReleased → ImpactScanRequested → AffectedKnowledgeDetected
   → NotificationCreated → QuestionRevisionSuggested
 ```
 
-**구현 상태 (PLAN.md Phase 8)**: `TechnologyVersionReleased → ImpactScanRequested → AffectedKnowledgeDetected`는 구현하지 않았다 — 외부 기술 버전 릴리스 데이터 피드가 없어 진짜 자동 감지가 불가능하다([ADR-0017](decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)). 대신 `QuestionOutdatedDetected`에 해당하는 결과(`QUESTION_OUTDATED`)는 사용자가 `POST /questions/{id}/outdated`로 직접 표시하면 즉시 발생하고 `NotificationCreated`(기존 Watch fan-out)로 이어진다. `AnswerRegressionDetected`와 `QuestionRevisionSuggested`는 구현하지 않았다.
+**구현 상태 (PLAN.md Phase 8)**: `QuestionOutdatedDetected`에 해당하는 결과(`QUESTION_OUTDATED`)는 사용자가 `POST /questions/{id}/outdated`로 직접 표시하면 즉시 발생하고 `NotificationCreated`(기존 Watch fan-out)로 이어진다. `AnswerRegressionDetected`는 구현하지 않았다.
+
+**구현 상태 (PLAN.md Phase 21, [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md))**: `TechnologyVersionReleased → ImpactScanRequested → AffectedKnowledgeDetected`는 Phase 8 시점엔 외부 데이터 피드가 없어 구현하지 않았지만, 이번 Phase에서 endoflife.date v1 API를 연동해 실제로 자동화했다. `TechnologyVersionScanScheduler`가 하루 1회 `domain/qunobot/TrackedTechnologies`에 큐레이션된 기술의 최신 릴리스를 조회하고(`TechnologyReleaseFeed`), 저장된 스냅샷(`technology_releases`)과 달라졌을 때만 "새 릴리스"로 취급해 `AffectedKnowledgeDetected`에 해당하는 질문(해당 태그 + 비RESOLVED/비OUTDATED + 콘텐츠가 릴리스일보다 오래됨)을 찾는다. 여기서 이벤트 체인이 갈라진다: `QuestionOutdatedDetected`로 자동 전환하지 않고, 대신 `NotificationCreated`에 해당하는 `TECH_VERSION_IMPACT_DETECTED` outbox 이벤트로 곧장 `QuestionRevisionSuggested`(사람이 읽고 판단하도록 유도하는 알림) 역할을 겸한다 — 사람의 최종 판단 없이 시스템이 `OUTDATED` 상태를 스스로 바꾸는 것은 검증되지 않은 휴리스틱에 너무 큰 권한을 주는 것이라고 판단했다(ADR-0033). `GET /qunobot/version-impacts`로 현재 영향권 질문을 언제든 조회할 수 있다.
 
 이 체인과 별개로, Spike Detection(태그별 질문량 급증 감지)은 진짜 자동화가 가능해 별도로 구현했다 — `SpikeDetectionRepository`가 태그별 최근 1일 질문 수와 직전 14일 일평균을 비교해 급증 비율을 계산한다(`GET /qunobot/spikes`). 이는 QunoBot 이벤트 체인의 일부가 아니라 독립된 읽기 전용 신호다 — "무엇이 심상치 않은지"만 알려주고 원인(기술 버전 변화인지 다른 이유인지)은 사람이 판단한다.

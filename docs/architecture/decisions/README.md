@@ -57,3 +57,4 @@
 | [0030](0030-cluster-merge-question-fork-graph-data-only.md) | Merge는 클러스터 병합으로 한정, Fork는 리비전 인프라 재사용, 지식 그래프는 데이터 API까지만 | 승인됨 |
 | [0031](0031-comment-thread-mention-edit-history.md) | Comment에 1단계 대댓글, @mention 알림(생성 시점만), 수정 이력(diff 없이) 추가 | 승인됨 |
 | [0032](0032-vote-score-search-sort-dashboard-reputation.md) | 검색 Score 정렬, Dashboard 인기순위, 평판 점수에 Vote 반영(모두 가중치 1) | 승인됨 |
+| [0033](0033-technology-version-scan-detection-only-no-auto-outdated.md) | endoflife.date로 기술 버전 릴리스 실제 자동 감지, OUTDATED 자동 전환은 하지 않고 알림까지만 | 승인됨 |

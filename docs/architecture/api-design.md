@@ -319,6 +319,15 @@
 - 셋 다 조회 시점 집계일 뿐 스키마 변경이나 새 이벤트가 없다 — `votes` 테이블은 Phase 11에서 이미 있었다.
 - 어뷰징 방지(투표 속도 제한, 봇 탐지 등)는 이번 범위에 포함하지 않는다 — 자기 투표 금지(`SelfVoteException`)만 여전히 유일한 방어다.
 
+## 기술 버전 영향 감지 (Phase 21)
+
+[ADR-0017](decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)이 외부 데이터 피드가 없다는 이유로 범위 밖에 뒀던 "기술 버전 영향 감지"의 진짜 자동화를 [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)으로 시작했다. endoflife.date를 연동해 실제 릴리스 데이터를 얻지만, 질문을 자동으로 `OUTDATED`로 전환하지는 않는다 — 감지 결과를 알림으로만 전달하고 최종 판단은 여전히 사람이 `POST /questions/{id}/outdated`로 내린다.
+
+- **스캐너(외부 API 없음)**: `TechnologyVersionScanScheduler`가 하루 1회 `domain/qunobot/TrackedTechnologies`(태그 slug → endoflife.date 제품 slug, 하드코딩된 큐레이션: kotlin, spring-boot, redis, kafka→apache-kafka, postgresql, mongodb, docker→docker-engine)의 각 제품 최신 릴리스를 조회한다. `technology_releases`에 태그당 1행(이력 아님)으로 저장하고, 저장된 버전과 실제로 달라졌을 때만 "새 릴리스"로 취급한다(처음 보는 태그는 베이스라인만 저장, 알림 없음 — 롤아웃 시점에 기존 태그 전부가 "새 릴리스"로 오탐되는 것을 막기 위해).
+- 새 릴리스가 감지되면 해당 태그가 달리고 `RESOLVED`/`OUTDATED`가 아니며 콘텐츠(question_versions 최신 `created_at`)가 릴리스일보다 오래된 질문을 찾아 `TECH_VERSION_IMPACT_DETECTED` outbox 이벤트를 발행한다(Ward 구독자 + 질문 작성자, `QUESTION_OUTDATED`와 동일한 수신자 규칙). 이 이벤트에는 다른 모든 이벤트와 달리 `actorId`가 없다 — 발행자가 사람이 아니라 스케줄러이기 때문이다.
+- `GET /qunobot/version-impacts?limit=`: 현재 영향권에 있는 질문을 릴리스일 내림차순으로 반환한다. `VersionImpact`(`domain/qunobot`)는 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 API 응답까지 그대로 재사용한다. Spike Detection과 달리 **Redis 캐싱은 하지 않는다** — 이 모델에 Instant/LocalDate가 섞여 있어 기존 JSON 캐시 직렬화 전례가 없고, 추적 기술 수가 작아 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
+- 한 제품의 외부 API 호출이 실패해도(알 수 없는 slug, 타임아웃, 장애) 그 제품만 건너뛰고 나머지 스캔은 계속된다 — `TechnologyReleaseFeed.fetchLatest`가 예외 대신 null을 반환한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
