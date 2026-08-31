@@ -9,16 +9,21 @@ const val MAX_COMMENT_BODY_LENGTH = 600
 
 /**
  * Independent side-aggregate, same pattern as Watch/Vote — Question/Answer never hold a
- * reference to this. Flat (no threading), no edit; soft-delete via [deletedAt] tombstones the
- * row instead of removing it, matching Question/Answer/Tag's own delete convention
- * (see docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md).
+ * reference to this. Up to one level of reply nesting via [parentCommentId] (a reply cannot
+ * itself be replied to), editable (append-only history in CommentVersion), no diff endpoint;
+ * soft-delete via [deletedAt] tombstones the row instead of removing it, matching
+ * Question/Answer/Tag's own delete convention
+ * (see docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md and
+ * docs/architecture/decisions/0031-comment-thread-mention-edit-history.md).
  */
 class Comment private constructor(
     val id: Long?,
     val targetType: CommentTargetType,
     val targetId: Long,
     val authorId: Long,
+    val parentCommentId: Long?,
     val body: String,
+    val versionNumber: Int,
     val deletedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -26,11 +31,27 @@ class Comment private constructor(
     /** Idempotent — deleting an already-deleted comment is a no-op, not an error. */
     fun softDelete(): Comment {
         if (deletedAt != null) return this
-        return Comment(id, targetType, targetId, authorId, body, Instant.now(), createdAt, Instant.now())
+        return Comment(id, targetType, targetId, authorId, parentCommentId, body, versionNumber, Instant.now(), createdAt, Instant.now())
+    }
+
+    /** Author-only, enforced by the caller. Deleted comments cannot be edited — see
+     * CommentAlreadyDeletedException. Bumps [versionNumber]; the caller is responsible for
+     * persisting the superseded body into a CommentVersion row (ADR-0031 #2). */
+    fun edit(newBody: String): Comment {
+        check(deletedAt == null) { "cannot edit a deleted comment" }
+        require(newBody.isNotBlank()) { "body must not be blank" }
+        require(newBody.length <= MAX_COMMENT_BODY_LENGTH) { "body must be at most $MAX_COMMENT_BODY_LENGTH characters" }
+        return Comment(id, targetType, targetId, authorId, parentCommentId, newBody, versionNumber + 1, deletedAt, createdAt, Instant.now())
     }
 
     companion object {
-        fun write(targetType: CommentTargetType, targetId: Long, authorId: Long, body: String): Comment {
+        fun write(
+            targetType: CommentTargetType,
+            targetId: Long,
+            authorId: Long,
+            body: String,
+            parentCommentId: Long? = null,
+        ): Comment {
             require(body.isNotBlank()) { "body must not be blank" }
             require(body.length <= MAX_COMMENT_BODY_LENGTH) { "body must be at most $MAX_COMMENT_BODY_LENGTH characters" }
             val now = Instant.now()
@@ -39,7 +60,9 @@ class Comment private constructor(
                 targetType = targetType,
                 targetId = targetId,
                 authorId = authorId,
+                parentCommentId = parentCommentId,
                 body = body,
+                versionNumber = 1,
                 deletedAt = null,
                 createdAt = now,
                 updatedAt = now,
@@ -51,10 +74,12 @@ class Comment private constructor(
             targetType: CommentTargetType,
             targetId: Long,
             authorId: Long,
+            parentCommentId: Long?,
             body: String,
+            versionNumber: Int,
             deletedAt: Instant?,
             createdAt: Instant,
             updatedAt: Instant,
-        ) = Comment(id, targetType, targetId, authorId, body, deletedAt, createdAt, updatedAt)
+        ) = Comment(id, targetType, targetId, authorId, parentCommentId, body, versionNumber, deletedAt, createdAt, updatedAt)
     }
 }

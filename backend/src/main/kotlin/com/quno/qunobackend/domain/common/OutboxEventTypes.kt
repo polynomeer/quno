@@ -11,4 +11,5 @@ object OutboxEventTypes {
     const val NEW_COMMENT = "NEW_COMMENT"
     const val CONTENT_HIDDEN = "CONTENT_HIDDEN"
     const val ANSWER_REVISION = "ANSWER_REVISION"
+    const val MENTIONED_IN_COMMENT = "MENTIONED_IN_COMMENT"
 }

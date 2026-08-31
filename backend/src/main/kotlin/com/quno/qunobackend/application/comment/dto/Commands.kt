@@ -7,4 +7,11 @@ data class CreateCommentCommand(
     val targetId: Long,
     val authorId: Long,
     val body: String,
+    val parentCommentId: Long? = null,
+)
+
+data class EditCommentCommand(
+    val commentId: Long,
+    val editorId: Long,
+    val body: String,
 )

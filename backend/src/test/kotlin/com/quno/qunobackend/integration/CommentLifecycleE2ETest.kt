@@ -12,15 +12,18 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 /**
- * Real HTTP walk through Comment (PLAN.md Phase 12, ADR-0024): commenting on a question and on
- * an answer notifies the right people via the existing outbox fan-out, and deleting a comment
- * tombstones it (body goes null, but it stays in the list) rather than removing it.
+ * Real HTTP walk through Comment (PLAN.md Phase 12/19, ADR-0024/ADR-0031): commenting on a
+ * question and on an answer notifies the right people via the existing outbox fan-out, deleting a
+ * comment tombstones it (body goes null, but it stays in the list) rather than removing it,
+ * replies notify their parent's author and cannot themselves be replied to, editing archives the
+ * prior body and is blocked once deleted, and @mentioning a real nickname notifies that user.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -44,6 +47,11 @@ class CommentLifecycleE2ETest {
     @AfterEach
     fun cleanUp() {
         questionId?.let { id ->
+            jdbcTemplate.update(
+                "DELETE FROM comment_versions WHERE comment_id IN (SELECT id FROM comments WHERE target_id = ? OR target_id IN (SELECT id FROM answers WHERE question_id = ?))",
+                id,
+                id,
+            )
             jdbcTemplate.update("DELETE FROM comments WHERE target_id = ? OR target_id IN (SELECT id FROM answers WHERE question_id = ?)", id, id)
             jdbcTemplate.update("DELETE FROM notifications WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM outbox_events WHERE aggregate_id = ?", id)
@@ -195,6 +203,137 @@ class CommentLifecycleE2ETest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"body":"$tooLong"}"""),
         ).andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+    }
+
+    @Test
+    fun `replying to a comment notifies the parent's author, and replying to a reply is rejected`() {
+        val (authorId, authorToken) = signUpAndLogin("comment-reply-author")
+        val (parentCommenterId, parentCommenterToken) = signUpAndLogin("comment-reply-parent")
+        val (replierId, replierToken) = signUpAndLogin("comment-reply-replier")
+        userIds += authorId
+        userIds += parentCommenterId
+        userIds += replierId
+
+        val createJson = mockMvc.perform(
+            post("/api/v1/questions")
+                .header("Authorization", "Bearer $authorToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"title":"Reply question","body":"body"}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val questionId = (readMap(createJson)["id"] as Number).toLong()
+        this.questionId = questionId
+
+        val parentJson = mockMvc.perform(
+            post("/api/v1/questions/$questionId/comments")
+                .header("Authorization", "Bearer $parentCommenterToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"parent comment"}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val parentId = (readMap(parentJson)["id"] as Number).toLong()
+
+        val replyJson = mockMvc.perform(
+            post("/api/v1/questions/$questionId/comments")
+                .header("Authorization", "Bearer $replierToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"a reply","parentCommentId":$parentId}"""),
+        ).andExpect(status().isCreated)
+            .andExpect(jsonPath("$.parentCommentId").value(parentId))
+            .andReturn().response.contentAsString
+        val replyId = (readMap(replyJson)["id"] as Number).toLong()
+
+        dispatchOutboxEventsUseCase.execute()
+        assertHasNotification(parentCommenterToken, "NEW_COMMENT")
+
+        mockMvc.perform(
+            post("/api/v1/questions/$questionId/comments")
+                .header("Authorization", "Bearer $authorToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"reply to a reply","parentCommentId":$replyId}"""),
+        ).andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `editing a comment updates its body and records history, but editing after delete is rejected`() {
+        val (authorId, authorToken) = signUpAndLogin("comment-edit-author")
+        val (commenterId, commenterToken) = signUpAndLogin("comment-edit-commenter")
+        userIds += authorId
+        userIds += commenterId
+
+        val createJson = mockMvc.perform(
+            post("/api/v1/questions")
+                .header("Authorization", "Bearer $authorToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"title":"Edit question","body":"body"}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val questionId = (readMap(createJson)["id"] as Number).toLong()
+        this.questionId = questionId
+
+        val commentJson = mockMvc.perform(
+            post("/api/v1/questions/$questionId/comments")
+                .header("Authorization", "Bearer $commenterToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"oiginal typo"}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val commentId = (readMap(commentJson)["id"] as Number).toLong()
+
+        mockMvc.perform(
+            put("/api/v1/comments/$commentId")
+                .header("Authorization", "Bearer $commenterToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"original, fixed"}"""),
+        ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.body").value("original, fixed"))
+            .andExpect(jsonPath("$.versionNumber").value(2))
+
+        val versionsJson = mockMvc.perform(
+            get("/api/v1/comments/$commentId/versions").header("Authorization", "Bearer $commenterToken"),
+        ).andExpect(status().isOk).andReturn().response.contentAsString
+        @Suppress("UNCHECKED_CAST")
+        val versions = objectMapper.readValue(versionsJson, List::class.java) as List<Map<*, *>>
+        assert(versions.size == 1 && versions[0]["body"] == "oiginal typo") { "expected the pre-edit body archived, got: $versions" }
+
+        mockMvc.perform(delete("/api/v1/comments/$commentId").header("Authorization", "Bearer $commenterToken"))
+            .andExpect(status().isNoContent)
+
+        mockMvc.perform(
+            put("/api/v1/comments/$commentId")
+                .header("Authorization", "Bearer $commenterToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"too late"}"""),
+        ).andExpect(status().isConflict).andExpect(jsonPath("$.code").value("CONFLICT"))
+    }
+
+    @Test
+    fun `mentioning a real user's nickname sends them a notification`() {
+        val (authorId, authorToken) = signUpAndLogin("comment-mention-author")
+        val (mentionedId, mentionedToken) = signUpAndLogin("comment-mention-target")
+        val (commenterId, commenterToken) = signUpAndLogin("comment-mention-commenter")
+        userIds += authorId
+        userIds += mentionedId
+        userIds += commenterId
+        val mentionedNickname = readMap(
+            mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer $mentionedToken"))
+                .andExpect(status().isOk).andReturn().response.contentAsString,
+        )["nickname"] as String
+
+        val createJson = mockMvc.perform(
+            post("/api/v1/questions")
+                .header("Authorization", "Bearer $authorToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"title":"Mention question","body":"body"}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val questionId = (readMap(createJson)["id"] as Number).toLong()
+        this.questionId = questionId
+
+        mockMvc.perform(
+            post("/api/v1/questions/$questionId/comments")
+                .header("Authorization", "Bearer $commenterToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"body":"hey @$mentionedNickname take a look"}"""),
+        ).andExpect(status().isCreated)
+
+        dispatchOutboxEventsUseCase.execute()
+        assertHasNotification(mentionedToken, "MENTIONED_IN_COMMENT")
     }
 
     private fun assertHasNotification(bearerToken: String, expectedType: String) {

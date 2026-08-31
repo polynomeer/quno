@@ -8,4 +8,11 @@ data class CreateCommentRequest(
     @field:NotBlank
     @field:Size(max = MAX_COMMENT_BODY_LENGTH)
     val body: String,
+    val parentCommentId: Long? = null,
+)
+
+data class EditCommentRequest(
+    @field:NotBlank
+    @field:Size(max = MAX_COMMENT_BODY_LENGTH)
+    val body: String,
 )

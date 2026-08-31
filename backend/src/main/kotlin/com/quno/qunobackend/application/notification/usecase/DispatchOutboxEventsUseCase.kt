@@ -25,18 +25,21 @@ import org.springframework.transaction.annotation.Transactional
  *   - QUESTION_OUTDATED: watchers + the question's author (the actor marking it outdated can be
  *     anyone, including the author themselves — see MarkQuestionOutdatedUseCase)
  *   - NEW_COMMENT: watchers + the question's author, plus the answer's author too when the
- *     comment is on an answer (both extracted the same way; `answerAuthorId` is simply absent
- *     from the payload for a question comment, so extractLong naturally skips it — see
+ *     comment is on an answer, plus the parent comment's author when this is a reply (all
+ *     extracted the same way; absent payload fields are simply skipped by extractLong — see
  *     CreateCommentUseCase)
  *   - CONTENT_HIDDEN: **only** the hidden content's author, never the question's watchers — this
  *     is an administrative notice about one person's content, not an activity signal the rest of
- *     the subscribers care about (see ADR-0028). The only event type that skips the base
- *     watcher fan-out entirely.
+ *     the subscribers care about (see ADR-0028).
  *   - ANSWER_REVISION: watchers + the question's author, same recipients as NEW_ANSWER — editing
  *     an answer's content is exactly the kind of change a Ward subscriber signed up for
  *     (Phase 17, ADR-0029). `questionAuthorId` is simply absent from the payload when the
  *     question itself is gone (e.g. hidden by moderation), so extractLong naturally skips it.
- * The actor who caused the event is never notified about their own action.
+ *   - MENTIONED_IN_COMMENT: **only** the mentioned users, never the question's watchers — this is
+ *     a targeted "you were named" notice, not a general activity signal (Phase 19, ADR-0031).
+ *     `mentionedUserIds` is a JSON array, parsed by extractLongList rather than extractLong.
+ * CONTENT_HIDDEN and MENTIONED_IN_COMMENT are the only event types that skip the base watcher
+ * fan-out entirely. The actor who caused the event is never notified about their own action.
  */
 @Service
 class DispatchOutboxEventsUseCase(
@@ -56,7 +59,7 @@ class DispatchOutboxEventsUseCase(
         val actorId = extractLong(event.payload, "actorId")
         val answerId = extractLong(event.payload, "answerId")
 
-        val recipients = if (event.eventType == OutboxEventTypes.CONTENT_HIDDEN) {
+        val recipients = if (event.eventType == OutboxEventTypes.CONTENT_HIDDEN || event.eventType == OutboxEventTypes.MENTIONED_IN_COMMENT) {
             mutableSetOf()
         } else {
             watchRepository.findWatcherIds(questionId).toMutableSet()
@@ -70,9 +73,11 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.NEW_COMMENT -> {
                 extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
                 extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
+                extractLong(event.payload, "parentCommentAuthorId")?.let(recipients::add)
             }
             OutboxEventTypes.CONTENT_HIDDEN -> extractLong(event.payload, "contentAuthorId")?.let(recipients::add)
             OutboxEventTypes.ANSWER_REVISION -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.MENTIONED_IN_COMMENT -> extractLongList(event.payload, "mentionedUserIds").forEach(recipients::add)
         }
         actorId?.let(recipients::remove)
 
@@ -93,4 +98,11 @@ class DispatchOutboxEventsUseCase(
 
     private fun extractLong(json: String, field: String): Long? =
         Regex(""""$field"\s*:\s*(\d+)""").find(json)?.groupValues?.get(1)?.toLong()
+
+    private fun extractLongList(json: String, field: String): List<Long> =
+        Regex(""""$field"\s*:\s*\[([^\]]*)]""").find(json)
+            ?.groupValues?.get(1)
+            ?.split(",")
+            ?.mapNotNull { it.trim().toLongOrNull() }
+            ?: emptyList()
 }

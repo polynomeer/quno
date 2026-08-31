@@ -243,11 +243,14 @@
 
 [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)에서 결정한 대로, Comment는 QPR `ReviewRequest`와 다른 별개 개념이다 — "정보 요청 → 리비전 → 재요청" 워크플로가 아니라 그냥 짧은 clarification이다.
 
-- `POST /questions/{id}/comments`, `POST /answers/{id}/comments`(body: `{"body": "..."}`, 최대 600자 — Stack Overflow와 동일한 제한): 대댓글 없이 평면 목록에 추가된다. 어떤 Question.status에서도(RESOLVED 포함) 작성 가능하고, 자기 자신의 질문/답변에도 댓글을 달 수 있다(Vote/QPR과 달리 권한 제한 없음).
-- `GET /questions/{id}/comments`, `GET /answers/{id}/comments`: 대상의 댓글을 오래된 순으로 전부 반환한다. 삭제된 댓글도 목록에서 사라지지 않는다 — `isDeleted: true`와 함께 `body: null`로 나온다(tombstone).
+- `POST /questions/{id}/comments`, `POST /answers/{id}/comments`(body: `{"body": "...", "parentCommentId"?: number}`, 최대 600자 — Stack Overflow와 동일한 제한): `parentCommentId`를 생략하면 평면 목록의 최상위 댓글, 지정하면 그 댓글에 대한 답글이 된다. **답글은 1단계까지만 허용** — 이미 답글인 댓글을 부모로 지정하면 `CommentReplyDepthExceededException`(400, Phase 19, [ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). 어떤 Question.status에서도(RESOLVED 포함) 작성 가능하고, 자기 자신의 질문/답변에도 댓글을 달 수 있다(Vote/QPR과 달리 권한 제한 없음).
+- `GET /questions/{id}/comments`, `GET /answers/{id}/comments`: 대상의 댓글을 오래된 순으로 평면 목록으로 전부 반환한다(응답에 `parentCommentId`가 포함되므로 트리 조립은 클라이언트 책임). 삭제된 댓글도 목록에서 사라지지 않는다 — `isDeleted: true`와 함께 `body: null`로 나온다(tombstone).
+- `PUT /comments/{id}`(body: `{"body": "..."}`, Phase 19): 작성자 본인만 가능(403). 이미 삭제된 댓글은 수정할 수 없다(`CommentAlreadyDeletedException`, 409). 응답에 갱신된 `body`와 증가한 `versionNumber`가 담긴다. **알림을 발생시키지 않는다** — 오탈자 수준의 변경으로 보고 Ward 구독자에게 재통보하지 않는다.
+- `GET /comments/{id}/versions`(Phase 19): 수정 이전의 본문들을 `[{versionNumber, body, createdAt}]`로 오래된 순 반환한다. 한 번도 수정되지 않은 댓글은 빈 배열 — `diff` 파라미터는 없다(Answer/Question 리비전과 달리 diff 엔드포인트를 만들지 않기로 결정, [ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)).
 - `DELETE /comments/{id}`: 작성자 본인만 가능(`CommentAccessDeniedException`, 403). 이미 삭제된 댓글을 다시 삭제해도 idempotent하게 그대로 둔다(에러 아님). soft-delete는 `deleted_at`만 세우고 원문은 DB에 남지만, **API 응답에서는 어떤 경로로도 삭제된 댓글의 원문을 다시 노출하지 않는다.**
-- **새 댓글은 알림을 발생시킨다** — `NEW_ANSWER`와 동일한 `DispatchOutboxEventsUseCase` fan-out을 재사용한다. 질문 댓글은 Ward 구독자 + 질문 작성자, 답변 댓글은 Ward 구독자 + 질문 작성자 + 그 답변의 작성자(둘 다 payload에 담아 기존 `extractLong` 추출 로직을 그대로 재사용 — 답변 댓글이 아니면 `answerAuthorId`가 없어 자연히 스킵된다).
-- **범위 밖**(모두 [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)에서 의도적으로 보류): 대댓글(스레드), 댓글 수정, `@mention` 파싱과 멘션 알림. 실제 수요가 확인되면 각각 별도로 재설계한다.
+- **새 댓글은 알림을 발생시킨다** — `NEW_ANSWER`와 동일한 `DispatchOutboxEventsUseCase` fan-out을 재사용한다. 질문 댓글은 Ward 구독자 + 질문 작성자, 답변 댓글은 Ward 구독자 + 질문 작성자 + 그 답변의 작성자, 답글이면 그 부모 댓글의 작성자도 추가된다(모두 payload에 담아 기존 `extractLong` 추출 로직을 재사용 — 해당하지 않는 필드는 자연히 스킵된다).
+- **`@mention` 알림**(Phase 19): 댓글 **생성 시점에만** 본문에서 `@([\w-]+)` 패턴을 파싱해 정확히 일치하는 닉네임의 사용자를 찾아 `MENTIONED_IN_COMMENT` 이벤트로 통보한다. `CONTENT_HIDDEN`과 같은 예외 부류로 Ward 구독자 기본 fan-out을 건너뛰고 멘션된 사용자에게만 간다. 수정 시에는 멘션을 재계산하지 않는다. 자동완성 UI는 없다(닉네임 검색 API 부재) — 프론트는 `@단어` 토큰을 스타일링만 하고 실제 사용자로 링크하지 않는다. 공백이 포함된 닉네임은 이 패턴으로 멘션할 수 없다는 알려진 한계가 있다([ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)).
+- **여전히 범위 밖**: 2단계 이상의 답글 depth, 멘션 자동완성. 실제 수요가 확인되면 각각 별도로 재설계한다.
 
 ## Save (Phase 13)
 

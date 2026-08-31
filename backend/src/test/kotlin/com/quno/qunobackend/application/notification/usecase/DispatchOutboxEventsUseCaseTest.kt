@@ -109,6 +109,46 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `NEW_COMMENT also notifies the parent comment's author when it is a reply`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.NEW_COMMENT,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"commentId":5,"actorId":30,"questionAuthorId":99,"answerAuthorId":null,"parentCommentAuthorId":40}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(99L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(40L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(30L).isEmpty())
+    }
+
+    @Test
+    fun `MENTIONED_IN_COMMENT notifies only the mentioned users, not watchers`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.MENTIONED_IN_COMMENT,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"commentId":5,"actorId":30,"mentionedUserIds":[40,41]}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertEquals(1, notificationRepository.findAllByUserId(40L).size)
+        assertEquals(1, notificationRepository.findAllByUserId(41L).size)
+        assertTrue(notificationRepository.findAllByUserId(30L).isEmpty())
+    }
+
+    @Test
     fun `marks the event published so it is not dispatched twice`() {
         outboxEventRepository.save(
             OutboxEvent.create(

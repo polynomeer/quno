@@ -9,6 +9,7 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
+import com.quno.qunobackend.application.user.usecase.InMemoryUserRepository
 import com.quno.qunobackend.domain.comment.CommentTargetType
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -22,7 +23,7 @@ class ListCommentsUseCaseTest {
     )
     private val commentRepository = InMemoryCommentRepository()
     private val createCommentUseCase = CreateCommentUseCase(
-        questionRepository, InMemoryAnswerRepository(), commentRepository, InMemoryOutboxEventRepository(),
+        questionRepository, InMemoryAnswerRepository(), commentRepository, InMemoryUserRepository(), InMemoryOutboxEventRepository(),
     )
     private val deleteCommentUseCase = DeleteCommentUseCase(commentRepository)
     private val listCommentsUseCase = ListCommentsUseCase(commentRepository)

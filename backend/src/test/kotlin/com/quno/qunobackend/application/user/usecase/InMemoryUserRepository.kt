@@ -29,6 +29,7 @@ class InMemoryUserRepository : UserRepository {
 
     override fun findById(id: Long): User? = usersById[id]
     override fun findByEmail(email: String): User? = usersById.values.find { it.email == email }
+    override fun findByNickname(nickname: String): User? = usersById.values.find { it.nickname == nickname }
     override fun existsByEmail(email: String): Boolean = usersById.values.any { it.email == email }
     override fun existsByNickname(nickname: String): Boolean = usersById.values.any { it.nickname == nickname }
 

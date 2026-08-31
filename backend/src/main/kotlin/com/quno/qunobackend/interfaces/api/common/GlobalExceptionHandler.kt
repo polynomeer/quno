@@ -9,7 +9,9 @@ import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
+import com.quno.qunobackend.domain.comment.CommentAlreadyDeletedException
 import com.quno.qunobackend.domain.comment.CommentNotFoundException
+import com.quno.qunobackend.domain.comment.CommentReplyDepthExceededException
 import com.quno.qunobackend.domain.follow.SelfFollowException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
@@ -50,6 +52,7 @@ class GlobalExceptionHandler {
         AnswerNotInClusterException::class,
         AnswerNotAcceptedException::class,
         ReportAlreadyResolvedException::class,
+        CommentAlreadyDeletedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -92,7 +95,7 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("VALIDATION_ERROR", message))
     }
 
-    @ExceptionHandler(CannotClusterWithSelfException::class, InvalidVoteValueException::class)
+    @ExceptionHandler(CannotClusterWithSelfException::class, InvalidVoteValueException::class, CommentReplyDepthExceededException::class)
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 }

@@ -29,6 +29,8 @@ class UserRepositoryAdapter(
 
     override fun findByEmail(email: String): User? = jpaRepository.findByEmail(email)?.toDomain()
 
+    override fun findByNickname(nickname: String): User? = jpaRepository.findByNickname(nickname)?.toDomain()
+
     override fun existsByEmail(email: String): Boolean = jpaRepository.existsByEmail(email)
 
     override fun existsByNickname(nickname: String): Boolean = jpaRepository.existsByNickname(nickname)

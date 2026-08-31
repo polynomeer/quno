@@ -28,8 +28,14 @@ class CommentJpaEntity(
     @Column(name = "author_id", nullable = false)
     val authorId: Long,
 
+    @Column(name = "parent_comment_id")
+    val parentCommentId: Long?,
+
     @Column(name = "body", nullable = false)
     val body: String,
+
+    @Column(name = "version_number", nullable = false)
+    val versionNumber: Int,
 
     @Column(name = "deleted_at")
     val deletedAt: Instant?,
