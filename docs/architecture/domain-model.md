@@ -11,7 +11,7 @@
 | Tagging | 분류·관심 주제 관계 | Tag, UserTagFollow |
 | Engagement | 질문에 대한 개인 관계(구독·보관)와 알림 | Watch, Save, Notification |
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
-| Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster |
+| Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster(+Merge), Question의 Fork 계보(`originQuestionId`), 지식 그래프 데이터 조회(Phase 18, [ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)) |
 | Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
 | Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation, Badge — Phase 15, [ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)) |
 | Flow | 기존 신호를 묶은 활동 스트림 | Read model 중심(FlowCard), 새 이벤트 없음 |
@@ -27,7 +27,7 @@
 
 | 모델 | 주요 행위/규칙 |
 |---|---|
-| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, markOutdated, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1). `revise()`가 이미 RESOLVED가 아니면 UPDATED로 전이하므로 OUTDATED도 리비전 한 번으로 자연히 벗어남(Phase 8.1) |
+| Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, markOutdated, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1). `revise()`가 이미 RESOLVED가 아니면 UPDATED로 전이하므로 OUTDATED도 리비전 한 번으로 자연히 벗어남(Phase 8.1). `originQuestionId`는 생성 시점에만 설정되는 Fork 계보 포인터(Phase 18) — `clusterId`와 독립적이라 포크된 질문이 원본과 같은 Cluster에 자동으로 들어가지 않음([ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)) |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
 | Answer | create, accept/unaccept, softDelete, withLatestVersion(리비전, Phase 17). accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) — 이건 "이 답변이 질문의 어떤 버전을 보고 작성됐는가"이고 `latestVersionId`(AnswerVersion 포인터)는 "이 답변 자체의 버전 이력"이라 서로 다른 축임. `bodyMarkdown`은 최신 `AnswerVersion`의 캐시 값(`questions.title`과 같은 패턴, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
 | AnswerVersion | immutable revision(Av1, Av2, ...). `version_number` 단조 증가. 과거 버전 보존(append-only). `QuestionVersion`과 동일한 구조를 그대로 적용했지만 Pessimistic Locking은 채택하지 않음 — 답변은 작성자 본인만 수정할 수 있어 Question만큼의 동시 편집 압력이 없다고 판단(Phase 17, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
@@ -36,7 +36,7 @@
 | Save | save/unsave. user-question 중복 금지. Watch와 데이터 모양은 같지만 별도 테이블·독립 side-aggregate로 분리 — 알림도, "누가 저장했는지" 조회도 없음(Phase 13, [ADR-0025](decisions/0025-save-as-separate-side-aggregate-from-watch.md)) |
 | Notification | create, markRead |
 | Tag | create/rename/softDelete. 활성 name/slug 유일성 |
-| QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음. `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
+| QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). **서로 다른 두 클러스터를 합치는 것(Merge)이 Phase 18에서 가능해졌다** — "같은 문제로 표시" 액션이 이미 서로 다른 클러스터에 속한 두 질문을 만나면 한쪽 클러스터가 다른 쪽에 흡수되고(멤버 재배정 후 흡수된 클러스터 행 삭제), 흡수되는 쪽의 Super Answer 지정은 이전되지 않는다([ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)). `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
 | Vote | cast(값 변경 포함)/retract. voter+targetType+targetId 유일(다른 값으로 다시 cast하면 upsert). 자기 자신의 질문/답변에는 투표 불가(`SelfVoteException`). `score`는 저장하지 않고 항상 `SUM(value)`로 집계 — Question/Answer는 Vote의 존재를 모름(Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
 | Comment | write, softDelete(작성자 본인만, 권한 검사는 use case에서 — `AcceptAnswerUseCase`와 같은 패턴). 대댓글 없이 대상(Question\|Answer)당 평면 목록. 수정 API 없음. soft-delete는 idempotent하며 행을 지우지 않고 `deleted_at`만 세운다 — 목록에는 계속 나타나지만 응답의 `body`는 null로 tombstone 처리(Phase 12, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)) |
 | Report | file, dismiss(모더레이터), action(모더레이터 — 실제 대상 soft-delete는 use case 책임, `Report`는 상태 전이만 담당). 이미 처리된 신고를 다시 처리하려 하면 `ReportAlreadyResolvedException`(409). 같은 대상에 대한 중복 신고는 병합하지 않음(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
@@ -84,6 +84,7 @@ questions.latest_version_id       ──> question_versions.id
 questions.accepted_answer_id      ──> answers.id
 answers.latest_version_id         ──> answer_versions.id (Phase 17, questions.latest_version_id와 동일한 패턴)
 questions.cluster_id              ──> question_clusters.id
+questions.origin_question_id      ──> questions.id (자기 참조, Fork 계보, Phase 18)
 question_clusters.representative_answer_id ──> answers.id (Super Answer)
 notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 votes.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 11)
@@ -96,7 +97,7 @@ reports.target_id ──> questions.id 또는 answers.id (target_type으로 구�
 | 테이블 | 핵심 컬럼 | 삭제 정책 |
 |---|---|---|
 | users | id, email, nickname, is_active, role | 비활성화 + 필요 시 익명화 (물리 삭제 지양). `role`(USER\|MODERATOR)은 Phase 16에서 추가 — 부여/회수 API 없이 DB에서 직접 변경([ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
-| questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, cluster_id, deleted_at | soft delete, 핵심 FK 유지 |
+| questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, cluster_id, origin_question_id, deleted_at | soft delete, 핵심 FK 유지. `origin_question_id`는 Phase 18에서 추가된 Fork 계보 포인터([ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)) |
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
 | answers | id, question_id, author_id, body_markdown(최신 버전 캐시), is_accepted, target_version_number, latest_version_id, deleted_at | soft delete. `latest_version_id`는 Phase 17에서 추가([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
 | answer_versions | id, answer_id, version_number, body_markdown, created_by | append-only, 보존 우선(soft delete는 예외적) — question_versions와 동일한 패턴(Phase 17, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
@@ -340,7 +341,7 @@ QuestionCreated/VersionCreated → SimilarityAnalyzed → QuestionClustered
   → SuperAnswerCreated/Updated → RelatedQuestionsUpdated → WatchersNotified
 ```
 
-**구현 상태 (PLAN.md Phase 6.1~6.3)**: `SimilarityAnalyzed → QuestionClustered`와 `ClusterThresholdReached → SuperAnswerCandidateDetected`는 자동화하지 않았다 — 임베딩/벡터 유사도 인프라 없이, 사용자가 `POST /questions/{id}/cluster`로 명시적으로 "같은 문제"를 표시하면 `QuestionClustered`에 해당하는 결과(클러스터 생성/합류)가 즉시 일어난다([ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). `SuperAnswerCreated`도 마찬가지로 자동 후보 탐지 없이 `POST /clusters/{id}/super-answer`로 사용자가 직접 지정한다. `RelatedQuestionsUpdated → WatchersNotified`는 만들지 않았다 — Cluster/Super Answer 액션은 outbox 이벤트로 발행하지 않고 API 응답으로 결과를 즉시 반환한다(비동기 알림이 필요한 시나리오가 아니라고 판단). Merge/Fork는 아직 착수하지 않았다(PLAN.md Phase 9+에서 번호 미정으로 대기).
+**구현 상태 (PLAN.md Phase 6.1~6.3)**: `SimilarityAnalyzed → QuestionClustered`와 `ClusterThresholdReached → SuperAnswerCandidateDetected`는 자동화하지 않았다 — 임베딩/벡터 유사도 인프라 없이, 사용자가 `POST /questions/{id}/cluster`로 명시적으로 "같은 문제"를 표시하면 `QuestionClustered`에 해당하는 결과(클러스터 생성/합류)가 즉시 일어난다([ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). `SuperAnswerCreated`도 마찬가지로 자동 후보 탐지 없이 `POST /clusters/{id}/super-answer`로 사용자가 직접 지정한다. `RelatedQuestionsUpdated → WatchersNotified`는 만들지 않았다 — Cluster/Super Answer 액션은 outbox 이벤트로 발행하지 않고 API 응답으로 결과를 즉시 반환한다(비동기 알림이 필요한 시나리오가 아니라고 판단). Merge(클러스터 병합)와 Fork는 Phase 18([ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md))에서 구현됐다 — 둘 다 새 outbox 이벤트를 만들지 않고 API 응답으로 즉시 결과를 반환하는 같은 원칙을 따른다. "지식 그래프"는 `GET /questions/{id}/graph`가 기존 조각들을 조합해 반환하는 데이터 API까지만이고, 실제 시각화 UI는 별도 프론트엔드 투자로 여전히 범위 밖이다.
 
 ### QunoBot 이벤트 체인 (Phase 4)
 

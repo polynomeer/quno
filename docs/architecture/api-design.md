@@ -161,7 +161,7 @@
 - `POST /questions/{id}/cluster` (body: `relatedQuestionId`): 두 질문을 같은 문제로 표시한다. 권한 제한은 없다(작성자가 아니어도, 심지어 두 질문의 작성자가 서로 달라도 누구나 표시 가능 — 커뮤니티 모더레이션 성격).
   - 자기 자신을 지정하면 400(`CannotClusterWithSelfException`).
   - 둘 다 클러스터가 없으면 새로 만들어 함께 합류시키고, 하나만 있으면 다른 쪽이 그 클러스터에 합류하고, 이미 같은 클러스터면 아무 것도 바뀌지 않는다(no-op, 200 응답은 동일).
-  - **이미 서로 다른 클러스터에 속해 있으면 409(`ClustersAlreadyDistinctException`)** — 두 기존 클러스터를 하나로 합치는 것은 Merge 기능의 영역이라 지원하지 않는다.
+  - **이미 서로 다른 클러스터에 속해 있으면 Phase 18부터 두 클러스터를 병합한다**(더 이상 409를 던지지 않음) — 자세한 내용은 아래 "Cluster Merge & Question Fork (Phase 18)" 참고.
   - 응답은 `{clusterId, memberQuestionIds, representativeAnswerId}` — 멤버는 id만 반환한다(요약 정보가 필요하면 아래 조회 API를 쓴다).
 - `GET /questions/{id}/cluster`: 이 질문이 속한 클러스터를 조회한다. 클러스터가 없으면 404(`QuestionNotInAnyClusterException`).
 - `GET /clusters/{id}`: 클러스터를 직접 조회한다(북마크된 클러스터 링크 등에서 사용). 없으면 404(`ClusterNotFoundException`).
@@ -171,7 +171,7 @@
   - 그 답변이 채택(accepted)되지 않았으면 409(`AnswerNotAcceptedException`) — Super Answer는 검증된 해결책이어야 한다는 취지.
   - 지정 권한 제한은 없다(현재 역할/평판 시스템이 없어 ReviewRequest와 동일하게 인증된 사용자 누구나 가능).
 - Cluster/Super Answer 액션은 outbox 이벤트를 발행하지 않는다 — 호출자가 API 응답으로 결과를 바로 확인하므로 Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다.
-- **범위 밖**: Merge(두 클러스터/질문 병합), Fork(질문 파생), 지식 그래프 시각화는 이번 Phase에 포함하지 않았다 — 사용 패턴을 관찰한 뒤 별도 Phase로 설계한다([PLAN.md](../../PLAN.md) Phase 9+).
+- **범위 밖(Phase 6 시점)**: Merge(두 클러스터/질문 병합), Fork(질문 파생), 지식 그래프 시각화는 이 Phase에 포함하지 않았었다 — Phase 18에서 Merge와 Fork를 구현했다(아래 섹션 참고). 지식 그래프 시각화는 여전히 데이터 API까지만이다.
 
 ## Outdated 표시 & Spike Detection (Phase 8)
 
@@ -296,6 +296,17 @@
 - **동시성 잠금이 없다** — Question 리비전과 달리 `findByIdForUpdate` 류의 `SELECT ... FOR UPDATE`를 쓰지 않는다. 답변은 작성자 본인만 고칠 수 있어 QPR처럼 여러 참여자가 동시에 리비전을 만드는 경합이 없다고 판단했기 때문이다.
 - **리비전은 알림을 발생시킨다**(`ANSWER_REVISION`) — `NEW_ANSWER`와 완전히 같은 수신자(Ward 구독자 + 질문 작성자)에게 통보한다. 질문 자체가 이미 사라진 경우(예: 모더레이션 Hide)에는 `questionAuthorId`가 payload에서 자연히 빠져 그 필드만 스킵된다 — 본인 답변을 고치는 것 자체는 막지 않는다.
 - 기존 `targetVersionNumber`/`isStale`(Phase 5.1, "이 답변이 질문의 어떤 버전을 보고 작성됐는가")과 이번에 추가한 `latestVersionId`("이 답변 자체의 버전 이력")는 서로 다른 축이라 이번 변경으로 건드리지 않는다.
+
+## Cluster Merge & Question Fork (Phase 18)
+
+[ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)에서 결정한 대로, Merge는 클러스터 병합으로만 한정하고, Fork는 완전히 새로 설계했다. 지식 그래프는 데이터 API까지만 제공한다.
+
+- **Merge**: 새 엔드포인트 없이 기존 `POST /questions/{id}/cluster`가 그대로 처리한다. 두 질문이 이미 서로 다른 클러스터에 속해 있으면(과거엔 409였던 경우), `questionId` 쪽 클러스터가 살아남고 `relatedQuestionId` 쪽 클러스터의 멤버 전원이 그리로 재배정된 뒤 흡수된 클러스터 행은 삭제된다. 흡수되는 쪽에 이미 지정된 Super Answer는 자동으로 이전되지 않는다(살아남은 쪽에 없었다면 병합 후에도 없는 채로 남는다) — 필요하면 `POST /clusters/{id}/super-answer`로 다시 지정한다. 응답 모양은 기존과 동일한 `ClusterResponse`.
+- `POST /questions/{id}/fork`(201, 인증만 필요, 별도 body 없음): origin 질문의 **현재 최신 제목·본문·환경·로그·태그를 그대로 복사**해 실행자 명의의 새 질문(+Qv1)을 만든다. 응답은 `POST /questions`/`POST /questions/{id}/versions`와 같은 `QuestionMutationResponse`. 자기 자신의 질문을 포크하는 것도 허용한다. 포크된 질문은 origin과 **같은 Cluster에 자동으로 들어가지 않는다** — Cluster는 "같은 문제(같은 해결책 공유)", Fork는 "다른 조건의 변형(다른 해결책이 필요할 수 있음)"이라 성격이 다르다. 포크 직후 내용을 바꾸고 싶으면 이미 있는 `POST /questions/{id}/versions`(질문 리비전)를 그대로 쓴다 — Fork 자체에는 "내용을 바꿔 포크"하는 기능이 없다.
+- `GET /questions/{id}/forks`: 이 질문에서 파생된 포크 목록. 응답은 `QuestionSearchResultResponse[]`(Related/Cluster 멤버와 동일한 요약 형태).
+- `GET /questions/{id}/graph`: Cluster 멤버, Fork 계보(`forkedFrom`+`forks`), Related Questions을 한 응답으로 조합한 읽기 전용 뷰 — `{questionId, clusterMembers, forkedFrom, forks, relatedQuestions}`. 새 계산이나 저장 없이 기존 `GetClusterUseCase`/`QuestionSearchUseCase.related`/`GET .../forks`가 이미 하던 조회를 한 번에 묶은 것뿐이다. **"지식 그래프"라는 이름과 달리 실제 그래프 시각화(노드-엣지 다이어그램) UI는 아니다** — 그건 별도 프론트엔드 투자로 이번 범위 밖이다.
+- Merge/Fork 모두 outbox 이벤트를 발행하지 않는다 — Cluster/Super Answer(Phase 6)와 같은 이유로, API 응답이 즉시 결과를 알려주는 동기 액션이라 비동기 알림이 필요 없다고 판단했다.
+- Merge/Fork에 별도 권한 제한은 없다 — 기존 "같은 문제로 표시"가 누구나 가능한 것과 동일한 커뮤니티 모더레이션 성격을 유지한다.
 
 ## 입력 검증 공통 원칙
 
