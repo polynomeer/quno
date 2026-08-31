@@ -328,6 +328,31 @@
 - `GET /qunobot/version-impacts?limit=`: 현재 영향권에 있는 질문을 릴리스일 내림차순으로 반환한다. `VersionImpact`(`domain/qunobot`)는 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 API 응답까지 그대로 재사용한다. Spike Detection과 달리 **Redis 캐싱은 하지 않는다** — 이 모델에 Instant/LocalDate가 섞여 있어 기존 JSON 캐시 직렬화 전례가 없고, 추적 기술 수가 작아 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
 - 한 제품의 외부 API 호출이 실패해도(알 수 없는 slug, 타임아웃, 장애) 그 제품만 건너뛰고 나머지 스캔은 계속된다 — `TechnologyReleaseFeed.fetchLatest`가 예외 대신 null을 반환한다.
 
+## Organization & Direct Ask (Phase 22)
+
+mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)로 착수했다. 실제 회사·학교 인증(Verified Organization)과 결제(유료 Direct Ask)는 이번 범위에 포함하지 않는다.
+
+### Organization
+
+- `POST /organizations`(body: `name`, `description?`, 201): 생성자가 자동으로 첫 멤버가 된다. 이름이 `Organization.slugify`(대소문자 정규화만, Tag와 달리 비-ASCII 문자를 보존)로 기존 조직과 충돌하면 409.
+- `GET /organizations?q=`: 이름 부분 일치 검색(대소문자 무시), 없으면 전체 목록.
+- `GET /organizations/{id}`: 상세(`memberCount` 포함). 없으면 404.
+- `POST /organizations/{id}/join` / `DELETE /organizations/{id}/join`: 가입/탈퇴, 둘 다 멱등.
+- `GET /users/{id}/profile`이 이제 `organizations` 필드로 그 사용자가 속한 조직 목록을 함께 반환한다(followedTags와 같은 조립 패턴).
+- 조직 기반 추천/피드("같은 조직 개발자들이 자주 질문한 Topic")는 이번 범위에 없다 — 실제 조직 데이터가 쌓이기 전에는 검증할 방법이 없다고 판단했다.
+
+### Direct Ask
+
+- `PUT /me/direct-ask-settings`(body: `accepts`): Direct Ask 수신 여부를 직접 켜고 끈다. 기본값은 `false`(스팸 방지) — `GET /me`의 `acceptsDirectAsk` 필드로 현재 값을 확인할 수 있다.
+- `POST /questions/{id}/direct-asks`(body: `targetUserId`, `message?`, 201): 특정 사용자에게 이 질문에 답해달라고 요청한다.
+  - 자기 자신에게 요청하면 403(`SelfDirectAskException`).
+  - 대상이 `acceptsDirectAsk=false`면 409(`DirectAskNotAcceptedException`) — 옵트아웃한 사용자에게는 요청 자체가 생성되지 않는다.
+  - 같은 (질문, 대상)에 이미 열린(PENDING) 요청이 있으면 409(`DuplicateDirectAskException`, 스팸 방지 — V18의 부분 유니크 인덱스로 DB 레벨에서도 보장).
+  - `DIRECT_ASK_REQUESTED` outbox 이벤트가 대상 사용자에게만 통보된다(Ward 구독자 기본 fan-out을 건너뛰는 `CONTENT_HIDDEN`/`MENTIONED_IN_COMMENT`와 같은 부류).
+- `POST /direct-asks/{id}/accept` / `POST /direct-asks/{id}/decline`: 요청의 대상만 응답할 수 있다(아니면 403 `DirectAskAccessDeniedException`). 이미 응답된 요청을 다시 응답하면 409(`DirectAskRequestAlreadyRespondedException`). `DIRECT_ASK_ACCEPTED`/`DIRECT_ASK_DECLINED` 이벤트가 원 요청자에게만 통보된다.
+- `GET /me/direct-asks?role=sent|received`(기본 `received`): 내가 보낸/받은 요청 목록, 최신순.
+- **답변과의 직접 연결은 없다**: 요청을 수락한 뒤에는 기존 `POST /questions/{id}/answers`로 평범하게 답변을 작성한다 — `DirectAskRequest`는 특정 `Answer`를 가리키지 않는다. "이 답변이 Direct Ask에서 나왔다"는 표시나 전문가 추천(원본 기획의 Topic Expert 등)은 이번 범위 밖이다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
