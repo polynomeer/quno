@@ -149,6 +149,24 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `TECH_VERSION_IMPACT_DETECTED notifies watchers and the question author, with no actor to exclude`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.TECH_VERSION_IMPACT_DETECTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"questionAuthorId":99,"tagSlug":"kotlin","productSlug":"kotlin","latestVersion":"2.5.0","latestReleaseDate":"2026-08-20"}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(99L).isNotEmpty())
+    }
+
+    @Test
     fun `marks the event published so it is not dispatched twice`() {
         outboxEventRepository.save(
             OutboxEvent.create(

@@ -38,6 +38,9 @@ import org.springframework.transaction.annotation.Transactional
  *   - MENTIONED_IN_COMMENT: **only** the mentioned users, never the question's watchers — this is
  *     a targeted "you were named" notice, not a general activity signal (Phase 19, ADR-0031).
  *     `mentionedUserIds` is a JSON array, parsed by extractLongList rather than extractLong.
+ *   - TECH_VERSION_IMPACT_DETECTED: watchers + the question's author, same recipients as
+ *     QUESTION_OUTDATED. Unlike every other event type, the actor here is the scheduler, not a
+ *     user — the payload has no `actorId`, so nobody is excluded (Phase 21, ADR-0033).
  * CONTENT_HIDDEN and MENTIONED_IN_COMMENT are the only event types that skip the base watcher
  * fan-out entirely. The actor who caused the event is never notified about their own action.
  */
@@ -78,6 +81,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.CONTENT_HIDDEN -> extractLong(event.payload, "contentAuthorId")?.let(recipients::add)
             OutboxEventTypes.ANSWER_REVISION -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.MENTIONED_IN_COMMENT -> extractLongList(event.payload, "mentionedUserIds").forEach(recipients::add)
+            OutboxEventTypes.TECH_VERSION_IMPACT_DETECTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 
