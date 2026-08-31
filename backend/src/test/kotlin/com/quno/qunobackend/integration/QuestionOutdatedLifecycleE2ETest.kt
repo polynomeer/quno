@@ -55,6 +55,10 @@ class QuestionOutdatedLifecycleE2ETest {
             jdbcTemplate.update("DELETE FROM question_versions WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM questions WHERE id = ?", id)
         }
+        // The outbox dispatch scheduler polls independently of this test's transactions, so a
+        // notification for one of these users can still land after the question_id-scoped
+        // deletes above ran. Catch it by user_id right before deleting the users themselves.
+        userIds.forEach { id -> jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", id) }
         userIds.forEach { id -> jdbcTemplate.update("DELETE FROM users WHERE id = ?", id) }
     }
 
