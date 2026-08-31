@@ -287,6 +287,16 @@
 - **Hide는 콘텐츠 작성자에게만 알린다**(`CONTENT_HIDDEN`) — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본으로 깔지 않는 유일한 이벤트 타입이다. 계단식으로 전파하지도 않는다 — 질문을 Hide해도 그 질문의 답변들은 자동으로 숨겨지지 않는다.
 - **범위 밖**(모두 [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)에서 의도적으로 보류): 역할 부여/회수 API, 사용자 정지, "사용자 노출 사유"와 "내부 운영 메모"의 분리, Hide의 계단식 전파. 실제 필요해지면 각각 별도로 설계한다.
 
+## Answer Revision (Phase 17)
+
+[ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)에서 결정한 대로, Question/QuestionVersion 분리를 그대로 적용하되 Pessimistic Locking은 채택하지 않는다.
+
+- `POST /answers/{id}/versions`(body: `{"body": "..."}`, 작성자 본인만 — 아니면 403 `AnswerAccessDeniedException`): 새 `AnswerVersion`을 append하고 `answers.body_markdown`(캐시)을 최신 내용으로 갱신한다. `GET /questions/{id}/answers` 등 기존 응답은 코드 변경 없이 항상 최신 본문을 보여준다.
+- `GET /answers/{id}/versions`, `GET /answers/{id}/versions/{version}`, `GET /answers/{id}/versions/{version}/diff?from=` — Question의 동일 API(`GET /questions/{id}/versions...`)를 그대로 미러링한다. `diff`는 `from`을 생략하면 바로 이전 버전과 비교한다. 두 엔드포인트 모두 같은 `TextDiffer.diffLines` 유틸을 재사용한다.
+- **동시성 잠금이 없다** — Question 리비전과 달리 `findByIdForUpdate` 류의 `SELECT ... FOR UPDATE`를 쓰지 않는다. 답변은 작성자 본인만 고칠 수 있어 QPR처럼 여러 참여자가 동시에 리비전을 만드는 경합이 없다고 판단했기 때문이다.
+- **리비전은 알림을 발생시킨다**(`ANSWER_REVISION`) — `NEW_ANSWER`와 완전히 같은 수신자(Ward 구독자 + 질문 작성자)에게 통보한다. 질문 자체가 이미 사라진 경우(예: 모더레이션 Hide)에는 `questionAuthorId`가 payload에서 자연히 빠져 그 필드만 스킵된다 — 본인 답변을 고치는 것 자체는 막지 않는다.
+- 기존 `targetVersionNumber`/`isStale`(Phase 5.1, "이 답변이 질문의 어떤 버전을 보고 작성됐는가")과 이번에 추가한 `latestVersionId`("이 답변 자체의 버전 이력")는 서로 다른 축이라 이번 변경으로 건드리지 않는다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

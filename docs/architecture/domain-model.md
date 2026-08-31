@@ -29,7 +29,8 @@
 |---|---|
 | Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, markOutdated, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1). `revise()`가 이미 RESOLVED가 아니면 UPDATED로 전이하므로 OUTDATED도 리비전 한 번으로 자연히 벗어남(Phase 8.1) |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
-| Answer | create, accept/unaccept, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1). **edit(수정 이력)은 아직 없음** — Phase 16 구현 중 이 표의 "edit" 표기가 착오였음을 코드로 확인(고쳐서 처음으로 실제 `softDelete()`를 추가한 것과 같은 조사에서 발견), Answer Revision(Phase 17)에서 추가 예정 |
+| Answer | create, accept/unaccept, softDelete, withLatestVersion(리비전, Phase 17). accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) — 이건 "이 답변이 질문의 어떤 버전을 보고 작성됐는가"이고 `latestVersionId`(AnswerVersion 포인터)는 "이 답변 자체의 버전 이력"이라 서로 다른 축임. `bodyMarkdown`은 최신 `AnswerVersion`의 캐시 값(`questions.title`과 같은 패턴, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
+| AnswerVersion | immutable revision(Av1, Av2, ...). `version_number` 단조 증가. 과거 버전 보존(append-only). `QuestionVersion`과 동일한 구조를 그대로 적용했지만 Pessimistic Locking은 채택하지 않음 — 답변은 작성자 본인만 수정할 수 있어 Question만큼의 동시 편집 압력이 없다고 판단(Phase 17, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
 | ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). status는 Question.status를 다시 게이팅하지 않는 독립 부기 정보(Phase 5.3, [ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)) |
 | Watch | watch/unwatch. user-question 중복 금지 |
 | Save | save/unsave. user-question 중복 금지. Watch와 데이터 모양은 같지만 별도 테이블·독립 side-aggregate로 분리 — 알림도, "누가 저장했는지" 조회도 없음(Phase 13, [ADR-0025](decisions/0025-save-as-separate-side-aggregate-from-watch.md)) |
@@ -55,9 +56,10 @@ ReviewReRequested (REVIEW_RE_REQUESTED)
 QuestionMarkedOutdated (QUESTION_OUTDATED)
 CommentCreated (NEW_COMMENT)
 ContentHidden (CONTENT_HIDDEN)
+AnswerRevised (ANSWER_REVISION)
 ```
 
-Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)).
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). Answer Revision(Phase 17)의 `ANSWER_REVISION`은 `NEW_ANSWER`와 완전히 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓴다 — 답변 본문이 바뀌는 것도 구독 이유가 되는 변화로 보기 때문([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)).
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -66,7 +68,7 @@ Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는�
 ```text
 users
   ├──< questions ──< question_versions
-  │       ├──< answers
+  │       ├──< answers ──< answer_versions
   │       ├──< watches >── users
   │       ├──< saves >── users
   │       ├──< question_tags >── tags
@@ -80,6 +82,7 @@ question_clusters ──< questions (questions.cluster_id, 질문 1개당 최대
 
 questions.latest_version_id       ──> question_versions.id
 questions.accepted_answer_id      ──> answers.id
+answers.latest_version_id         ──> answer_versions.id (Phase 17, questions.latest_version_id와 동일한 패턴)
 questions.cluster_id              ──> question_clusters.id
 question_clusters.representative_answer_id ──> answers.id (Super Answer)
 notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
@@ -95,7 +98,8 @@ reports.target_id ──> questions.id 또는 answers.id (target_type으로 구�
 | users | id, email, nickname, is_active, role | 비활성화 + 필요 시 익명화 (물리 삭제 지양). `role`(USER\|MODERATOR)은 Phase 16에서 추가 — 부여/회수 API 없이 DB에서 직접 변경([ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
 | questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, cluster_id, deleted_at | soft delete, 핵심 FK 유지 |
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
-| answers | id, question_id, author_id, body_markdown, is_accepted, target_version_number, deleted_at | soft delete |
+| answers | id, question_id, author_id, body_markdown(최신 버전 캐시), is_accepted, target_version_number, latest_version_id, deleted_at | soft delete. `latest_version_id`는 Phase 17에서 추가([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
+| answer_versions | id, answer_id, version_number, body_markdown, created_by | append-only, 보존 우선(soft delete는 예외적) — question_versions와 동일한 패턴(Phase 17, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
 | tags | name, slug, deleted_at | soft delete + active partial unique index |
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
