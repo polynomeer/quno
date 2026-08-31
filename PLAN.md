@@ -317,7 +317,6 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [ ] Phase ? — 기술 버전 영향 감지 실제 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지) — 외부 기술 버전 릴리스 데이터 소스 연동이 실제로 필요해지고 그 소스를 정할 수 있을 때 착수
 - [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
-- [ ] Phase ? — 검색 Score 정렬/Dashboard 인기순위·평판 점수에 Vote 반영 — Phase 11에서 의도적으로 보류([ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md) 5~7번). Vote 실사용 패턴을 관찰한 뒤 가중치를 다시 설계한다
 
 ## 진행 방식
 
