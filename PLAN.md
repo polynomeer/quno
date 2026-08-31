@@ -169,7 +169,7 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
 - [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
 - [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
-- [ ] Frontend Phase ? — 모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로, Save/Follow User/Badge는 Phase 13~15로 백엔드 설계를 시작해 이 목록에서 분리함 — 완료된 프론트엔드 작업은 아래 Frontend Phase 6 참고, Save/Follow User/Badge 프론트엔드는 해당 백엔드 Phase 완료 후 착수
+- [ ] Frontend Phase ? — 모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로, Save/Follow User/Badge는 Phase 13~15로 백엔드 설계를 시작해 이 목록에서 분리함 — 완료된 프론트엔드 작업은 아래 Frontend Phase 6~7 참고
 
 ## Frontend Phase 6 — Vote/Comment UI
 
@@ -178,6 +178,15 @@ Phase 11(Vote)·Phase 12(Comment) 백엔드가 준비되어 Action Rail 투표 �
 - [x] F6.1 Vote — `features/vote`(api/hooks/ui): `useMyVotes`(`GET /me/votes` 전체 조회 후 클라이언트에서 targetType+targetId로 매칭, `useMyWatches`와 동일 패턴), `useCastVote`/`useRetractVote`(같은 방향 재클릭 시 철회), `VoteControl`(▲ score ▼, 이미 투표한 방향 강조). 본인 질문/답변에는 백엔드가 `SelfVoteException`(403)을 던지므로 작성자 본인에게는 컨트롤 대신 점수만 표시. Question Detail 헤더 옆과 각 `AnswerCard`에 배치, 목록 카드(`QuestionCard`)에는 상호작용 없는 점수 텍스트만 노출(투표 UI를 목록에 넣는 것은 이번 범위 밖). 브라우저로 서로 다른 두 사용자 간 질문/답변 투표(본인 것은 숨김, 타인 것은 클릭 시 점수 반영)까지 확인
 - [x] F6.2 Comment — `features/comment`(api/hooks/ui): `useComments`/`useCreateComment`/`useDeleteComment`, `CommentSection`(목록 + "Add a comment" 클릭 시 나타나는 입력창, 600자 제한, 삭제는 작성자 본인만). 마크다운 렌더링 없이 평문 표시(ADR-0024와 일치). Question Detail의 질문 본문 아래와 각 `AnswerCard` 하단에 배치. 브라우저로 댓글 작성→다른 사용자에게는 삭제 버튼 미노출→작성자 삭제 시 tombstone("삭제된 댓글입니다")까지 확인
 - [x] F6.3 알림 연동 — `describe-notification.ts`에 `NEW_COMMENT` 메시지 매핑 추가(Phase 12.3에서 프론트 작업으로 남겨둔 항목), `NotificationType` 유니온에도 추가. 브라우저로 댓글 작성 시 알림 센터에 "새 댓글이 달렸습니다"가 뜨는 것까지 확인
+
+## Frontend Phase 7 — Save/Follow User/Badge UI
+
+Phase 13(Save)·14(Follow User)·15(Badge) 백엔드가 준비되어 프론트엔드에 붙인다. Save는 design.md #18이 Watch와 나란히 놓는 개인 북마크라 Watching과 동일한 대우(전용 페이지+Profile 섹션+헤더 링크)를 준다. Follow User는 ADR-0026이 관계 기록·조회로 범위를 좁혀둔 만큼 전용 페이지 없이 Profile 화면 안에서만 노출한다. Badge는 ADR-0027에 따라 영속화가 없어 "지금 시점의 배지 목록"만 표시하고 획득 토스트는 만들지 않는다.
+
+- [x] F7.1 Save — `features/save`(api/hooks/ui): `useMySaves`/`useToggleSave`(Watch 쪽 훅과 완전히 동일한 패턴), `SaveButton`(Question Detail에서 `WatchButton` 옆에 배치), `SavedQuestionList`+`/saved` 페이지(`WatchedQuestionList`/`/watching`을 그대로 미러링 — `SavedQuestionResponse`에도 태그가 없어 `QuestionCard` 재사용 안 함), Profile의 "Saved" 섹션(본인 프로필에만), AppHeader에 `Saved` 링크 추가. 브라우저로 저장→"Saved"로 버튼 상태 전환→`/saved`와 Profile 양쪽에 반영까지 확인
+- [x] F7.2 Follow User — `features/follow`(api/hooks/ui): `useMyFollowing`/`useToggleFollow`, `FollowUserButton`(본인 프로필에서는 `SelfFollowException`을 피해 컴포넌트 스스로 렌더링하지 않음 — `VoteControl`의 자기 콘텐츠 숨김과 같은 패턴), `FollowingList`(닉네임 pill 목록, 각 항목은 해당 사용자 프로필로 링크). 전용 `/following` 페이지나 AppHeader 링크는 만들지 않음(design.md 자체가 "후속 버전 기능"으로 표시했고, ADR-0026이 활동 피드를 이번 범위에서 뺐으므로 상단 네비게이션에 넣을 만큼 무게가 없다고 판단) — Profile 헤더의 Follow 버튼과 본인 Profile의 "Following" 섹션에서만 노출. 브라우저로 팔로우→"Following"으로 버튼 전환→상대방 프로필에는 버튼이 없음(자기 자신)→팔로워 쪽 Profile의 Following 섹션에 반영→언팔로우까지 확인
+- [x] F7.3 Badge — `features/badge`(api/hooks/ui): `useBadges(userId)`, `describe-badge.ts`(백엔드는 `{type, tier}` 식별자만 보내므로 이름/설명은 `describe-notification.ts`와 같은 원칙으로 프론트가 조립), `BadgeChip`/`BadgeList`(tier별 색상 — Bronze/Silver/Gold는 별도 디자인 토큰이 없어 기존 warning/text-secondary/brand 토큰을 재사용). Profile 헤더 아래 배치(본인·타인 프로필 모두 노출 — Badge는 공개 성취 표시라 Watching/Saved/Following과 달리 `isOwnProfile` 제한 없음). 획득 시 토스트는 ADR-0027에 따라 만들지 않음. 브라우저로 질문 1개+셀프 답변 1개 작성 후 "첫 질문"·"첫 답변" 배지가 실제로 나타나는 것까지 확인
+- [x] F7.4 검증 — 로컬 Postgres 포트가 다른 프로젝트와 충돌해 임시로 8091 포트에 별도 인스턴스를 띄우고 프론트엔드 `.env.local`로 `NEXT_PUBLIC_API_BASE_URL`을 그쪽으로 돌려 두 사용자 계정으로 Save/Follow/Badge 전체 흐름을 검증(검증 후 `.env.local` 삭제, 테스트 데이터 정리)
 
 ## Phase 11 — Vote (mvp-scope.md 로드맵에 없던 새 범위)
 
