@@ -290,11 +290,11 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 
 [ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md)가 "필요해지면 새 ADR로 재설계"라고 남겨둔 세 가지(대댓글·수정·멘션)를 [ADR-0031](docs/architecture/decisions/0031-comment-thread-mention-edit-history.md)로 한 번에 착수한다. 대댓글은 1단계로 제한, 수정은 diff 없이 이력만, 멘션은 생성 시점에만 파싱해 알림 목적으로만 쓴다.
 
-- [ ] 19.1 대댓글 — `comments.parent_comment_id`(nullable, 자기 참조) 추가. `CreateCommentCommand`에 `parentCommentId: Long?` 추가, 부모가 이미 답글이면 `CommentReplyDepthExceededException`(400)으로 거부(1단계 제한). `ListCommentsUseCase`는 여전히 평면 목록 반환(트리 조립은 프론트 책임)
-- [ ] 19.2 수정 이력 — 새 `comment_versions` 테이블(append-only, diff 없음) + `comments.version_number` 컬럼. `PUT /api/v1/comments/{id}`(작성자 본인만, 이미 삭제된 댓글은 `CommentAlreadyDeletedException` 409로 거부) + `GET /api/v1/comments/{id}/versions`. 수정은 알림을 발생시키지 않음
-- [ ] 19.3 @mention — 생성 시점 본문에서 `@([\w-]+)` 파싱 → `UserRepository.findByNickname` 정확 일치 → 새 `OutboxEventTypes.MENTIONED_IN_COMMENT`(Ward 구독자 fan-out 건너뛰고 멘션 대상에게만). 답글은 기존 `NEW_COMMENT`에 `parentCommentAuthorId` 추가해 부모 작성자에게도 통보
-- [ ] 19.4 테스트 — 단위 테스트(대댓글 생성/depth 제한/수정/이미 삭제된 댓글 수정 거부/버전 이력 조회/멘션 파싱·알림·자기 자신 언급 시 알림 없음)와 실제 서버+curl 검증
-- [ ] 19.5 문서화 — `domain-model.md`/`api-design.md`에 반영(이미 [ADR-0031](docs/architecture/decisions/0031-comment-thread-mention-edit-history.md)로 결정 기록됨)
+- [x] 19.1 대댓글 — `comments.parent_comment_id`(nullable, 자기 참조) 추가. `CreateCommentCommand`에 `parentCommentId: Long?` 추가, 부모가 이미 답글이면 `CommentReplyDepthExceededException`(400)으로 거부(1단계 제한). `ListCommentsUseCase`는 여전히 평면 목록 반환(트리 조립은 프론트 책임)
+- [x] 19.2 수정 이력 — 새 `comment_versions` 테이블(append-only, diff 없음) + `comments.version_number` 컬럼. `PUT /api/v1/comments/{id}`(작성자 본인만, 이미 삭제된 댓글은 `CommentAlreadyDeletedException` 409로 거부) + `GET /api/v1/comments/{id}/versions`. `edit()` 직전 상태(수정 전 본문)를 archive하므로 한 번도 수정 안 된 댓글은 이력이 비어있음. 수정은 알림을 발생시키지 않음
+- [x] 19.3 @mention — 생성 시점 본문에서 `@([\w-]+)` 파싱 → `UserRepository.findByNickname` 정확 일치 → 새 `OutboxEventTypes.MENTIONED_IN_COMMENT`(Ward 구독자 fan-out 건너뛰고 멘션 대상에게만, 자기 자신 언급은 제외). 답글은 기존 `NEW_COMMENT`에 `parentCommentAuthorId` 추가해 부모 작성자에게도 통보
+- [x] 19.4 테스트 — 단위 테스트 27개 추가(`CreateCommentUseCaseTest`에 답글/depth 제한/멘션 케이스, 신규 `EditCommentUseCaseTest`/`ListCommentVersionsUseCaseTest`, `DispatchOutboxEventsUseCaseTest`에 `NEW_COMMENT` parentCommentAuthorId·`MENTIONED_IN_COMMENT` 케이스)와 `CommentLifecycleE2ETest`에 답글/수정/멘션 시나리오 3개 추가(실제 HTTP+Postgres). 로컬 DB에 V15 마이그레이션을 두 번 다른 내용으로 적용해 생긴 Flyway 체크섬 불일치는 `flyway_schema_history` 체크섬을 새 파일 값으로 직접 갱신해 해결(로컬 개발 DB이므로 `repair` 대신 직접 UPDATE). 전체 스위트 259개 통과 확인. 검증 중 별개로 발견한 `QuestionClusterLifecycleE2ETest`의 정리(cleanup) FK 위반 버그는 이번 Phase와 무관해 별도 태스크로 분리해둠(스스로 안정적으로 재현되지 않아 백로그로 flag만)
+- [x] 19.5 문서화 — `domain-model.md`/`api-design.md`에 반영(이미 [ADR-0031](docs/architecture/decisions/0031-comment-thread-mention-edit-history.md)로 결정 기록됨)
 - [ ] F10.1 프론트엔드 — `CommentSection`에 답글(1단계, 들여쓰기)·인라인 수정 토글·인라인 버전 이력 펼치기(별도 페이지 없음)·멘션 스타일링(링크 없음) 추가
 - [ ] F10.2 검증 — 브라우저로 대댓글/수정/멘션 알림 전체 흐름 확인
 
