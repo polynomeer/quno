@@ -17,6 +17,7 @@
 | Flow | 기존 신호를 묶은 활동 스트림 | Read model 중심(FlowCard), 새 이벤트 없음 |
 | Voting | 질문/답변에 대한 품질 신호(up/down) | Vote — Watch와 같은 독립 side-aggregate (Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
 | Discussion | 질문/답변에 대한 짧은 clarification | Comment — 스레드 없는 평면 목록, 수정 불가, soft-delete는 tombstone(Phase 12, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)). QPR `ReviewRequest`(QnA Core 컨텍스트)와는 성격이 다른 별개 개념 |
+| Moderation | 신고와 그 처리 | Report — 신고→모더레이터 검토→Dismiss/Hide 두 액션까지만(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). `User.role`(USER\|MODERATOR)도 이 컨텍스트의 권한 판단에 쓰이지만 필드 자체는 Identity의 User가 들고 있음 |
 
 `Organization`, `Direct Ask`, `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고).
 
@@ -28,7 +29,7 @@
 |---|---|
 | Question | create, revise, resolve/acceptAnswer, requestMoreInfo, joinCluster, markOutdated, softDelete. 삭제된 질문 수정 금지. 질문자만 채택 가능. 최대 하나의 Cluster에만 속함(Phase 6.1). `revise()`가 이미 RESOLVED가 아니면 UPDATED로 전이하므로 OUTDATED도 리비전 한 번으로 자연히 벗어남(Phase 8.1) |
 | QuestionVersion | immutable revision. `version_number` 단조 증가. 과거 버전 보존(append-only) |
-| Answer | create, edit, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1) |
+| Answer | create, accept/unaccept, softDelete. accepted 상태 보유. `target_version_number`로 작성 시점 질문 버전을 명시(Phase 5.1). **edit(수정 이력)은 아직 없음** — Phase 16 구현 중 이 표의 "edit" 표기가 착오였음을 코드로 확인(고쳐서 처음으로 실제 `softDelete()`를 추가한 것과 같은 조사에서 발견), Answer Revision(Phase 17)에서 추가 예정 |
 | ReviewRequest | request(open), addressed. 하나의 질문에 여러 리뷰어의 요청이 독립적으로 동시에 열릴 수 있음(Phase 5.2, [ADR-0012](decisions/0012-qpr-multi-reviewer-thread-model.md)). status는 Question.status를 다시 게이팅하지 않는 독립 부기 정보(Phase 5.3, [ADR-0015](decisions/0015-review-request-status-independent-of-question-status.md)) |
 | Watch | watch/unwatch. user-question 중복 금지 |
 | Save | save/unsave. user-question 중복 금지. Watch와 데이터 모양은 같지만 별도 테이블·독립 side-aggregate로 분리 — 알림도, "누가 저장했는지" 조회도 없음(Phase 13, [ADR-0025](decisions/0025-save-as-separate-side-aggregate-from-watch.md)) |
@@ -37,6 +38,7 @@
 | QuestionCluster | create, designateSuperAnswer. 자동 유사도 분석이 아니라 사용자의 명시적 "같은 문제" 표시로만 생성/합류됨(Phase 6.1, [ADR-0016](decisions/0016-manual-duplicate-marking-cluster.md)). 서로 다른 두 클러스터를 합치는 것(병합)은 지원하지 않음. `updated_at`은 "최근에 Super Answer가 지정됐는지"를 도출하기 위한 용도로 Phase 10.1에서 추가됨 |
 | Vote | cast(값 변경 포함)/retract. voter+targetType+targetId 유일(다른 값으로 다시 cast하면 upsert). 자기 자신의 질문/답변에는 투표 불가(`SelfVoteException`). `score`는 저장하지 않고 항상 `SUM(value)`로 집계 — Question/Answer는 Vote의 존재를 모름(Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
 | Comment | write, softDelete(작성자 본인만, 권한 검사는 use case에서 — `AcceptAnswerUseCase`와 같은 패턴). 대댓글 없이 대상(Question\|Answer)당 평면 목록. 수정 API 없음. soft-delete는 idempotent하며 행을 지우지 않고 `deleted_at`만 세운다 — 목록에는 계속 나타나지만 응답의 `body`는 null로 tombstone 처리(Phase 12, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)) |
+| Report | file, dismiss(모더레이터), action(모더레이터 — 실제 대상 soft-delete는 use case 책임, `Report`는 상태 전이만 담당). 이미 처리된 신고를 다시 처리하려 하면 `ReportAlreadyResolvedException`(409). 같은 대상에 대한 중복 신고는 병합하지 않음(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
 | UserFollow | follow/unfollow. follower-followee 중복 금지. 자기 자신 팔로우 불가(`SelfFollowException`). Watch/Save와 같은 순수 관계 데이터지만 대상이 Question이 아니라 User라 Engagement가 아닌 Identity 컨텍스트에 둠. 활동 피드·알림은 만들지 않음(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
 
 ## Domain Events
@@ -52,9 +54,10 @@ ReviewRequested (REVIEW_REQUESTED)
 ReviewReRequested (REVIEW_RE_REQUESTED)
 QuestionMarkedOutdated (QUESTION_OUTDATED)
 CommentCreated (NEW_COMMENT)
+ContentHidden (CONTENT_HIDDEN)
 ```
 
-Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다).
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)).
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -82,13 +85,14 @@ question_clusters.representative_answer_id ──> answers.id (Super Answer)
 notifications.question_id / answer_id ──> 느슨한 참조 (선택적 FK)
 votes.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 11)
 comments.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 12)
+reports.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 16)
 ```
 
 ### 테이블별 책임과 삭제 정책
 
 | 테이블 | 핵심 컬럼 | 삭제 정책 |
 |---|---|---|
-| users | id, email, nickname, is_active | 비활성화 + 필요 시 익명화 (물리 삭제 지양) |
+| users | id, email, nickname, is_active, role | 비활성화 + 필요 시 익명화 (물리 삭제 지양). `role`(USER\|MODERATOR)은 Phase 16에서 추가 — 부여/회수 API 없이 DB에서 직접 변경([ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
 | questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, cluster_id, deleted_at | soft delete, 핵심 FK 유지 |
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
 | answers | id, question_id, author_id, body_markdown, is_accepted, target_version_number, deleted_at | soft delete |
@@ -103,6 +107,7 @@ comments.target_id ──> questions.id 또는 answers.id (target_type으로 구
 | votes | voter_id, target_type, target_id, value | 관계 데이터, hard delete 허용(retract). PK가 (voter_id, target_type, target_id) — watches와 같은 구조 |
 | comments | id, target_type, target_id, author_id, body, deleted_at | soft delete(tombstone) — questions/answers와 같은 정책. 행은 남기고 응답의 body만 null 처리 |
 | user_follows | follower_id, followee_id | 관계 데이터, hard delete 허용. PK가 (follower_id, followee_id) — users에 대한 자기 참조(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
+| reports | id, reporter_id, target_type, target_id, reason, message, status, resolved_by, resolved_at | append형, hard delete 불필요(review_requests와 동일하게 상태만 전이). `resolved_by`/`resolved_at`/`status`가 곧 audit trail이라 별도 로그 테이블을 두지 않음(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
 
 ### 삭제/FK 운영 원칙
 

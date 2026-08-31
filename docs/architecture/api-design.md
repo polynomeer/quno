@@ -62,7 +62,7 @@
 - Access Token은 짧은 만료 시간(예: 15~30분), Refresh Token은 별도 저장소/만료 정책으로 관리한다.
 - 비밀번호는 BCrypt로 단방향 해시한다.
 - 요청에서 `authorId`/`userId`를 클라이언트가 직접 지정하지 않는다. 인증 Principal(SecurityContext)에서 사용자 식별자를 얻는다.
-- 관리자/모더레이터 API가 추가되면 Role과 세부 권한을 분리한다.
+- Role(`USER`\|`MODERATOR`, Phase 16)은 이 stateless 구조를 그대로 둔 채로 추가했다 — JWT에 role을 싣지 않고, 모더레이터 전용 use case가 매 호출마다 `UserRepository`로 최신 role을 조회한다("Moderation (Phase 16)" 섹션 참고, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)).
 - 기본 필터 체인(`SecurityConfig`)은 `/error`, `/actuator/health`, `/actuator/info`, `/api/v1/auth/**`만 공개하고 나머지는 인증을 요구한다. `JwtAuthenticationFilter`가 `Authorization: Bearer <token>`을 검증해 SecurityContext에 사용자 id를 principal로 설정한다 (Phase 2.1에서 구현 완료).
   - `/error`를 막아두면 컨트롤러에서 uncaught exception이 발생했을 때 Boot의 내부 forward가 이 필터 체인에서 다시 미인증 처리되어, 실제 원인(예: 500)이 아니라 **401로 위장**되어 클라이언트에 보인다 (Phase 2.6에서 `uq_tags_slug_active` 제약 위반이 401로 보이는 문제로 실제 발견함). 새 예외 타입을 추가할 때 GlobalExceptionHandler에 매핑을 빠뜨리면 이 문제가 재현되니 주의.
 - Refresh Token은 서버 측 저장/revocation 목록 없이 서명·만료만 검증하는 순수 stateless 방식이다. 탈취 대응(조기 폐기 등)이 필요해지면 Redis 기반 revocation을 후속 단계에서 추가한다.
@@ -275,6 +275,17 @@
 - 배지 카탈로그: `FIRST_QUESTION`/`FIRST_ANSWER`(Bronze, 질문·답변 1개 이상), `PROBLEM_SOLVER`(Silver, 채택 답변 5개 이상)/`WELL_RECEIVED`(Silver, 받은 투표 점수 합 50점 이상), `TRUSTED_ANSWERER`(Gold, 채택 답변 20개 이상)/`SUPER_ANSWER`(Gold, Super Answer 지정 1회 이상). 임계값은 Reputation 점수 공식과 같은 방식으로 하드코딩돼 있다.
 - 응답은 `type`(enum 식별자)과 `tier`만 담는다 — 배지 이름/설명 같은 표시 문구는 `NotificationType`/`describeNotification`과 같은 원칙으로 프론트가 갖는다.
 - **범위 밖**(모두 [ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)에서 의도적으로 보류): 배지 획득 시점 영속화, 획득 시 토스트/알림, 카탈로그를 운영자가 직접 추가/조정하는 기능.
+
+## Moderation (Phase 16)
+
+[ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)에서 결정한 대로, 이번 범위는 신고→모더레이터 검토 큐→Dismiss/Hide 두 액션까지다.
+
+- `POST /questions/{id}/reports`, `POST /answers/{id}/reports`(body: `{"reason": "SPAM"|"DUPLICATE"|"LOW_QUALITY"|"OTHER", "message"?: string}`, 201 + 생성된 신고 반환): 로그인한 사용자라면 누구나, 자기 자신의 글도 신고 제한 없이 가능하다. 같은 대상에 대한 중복 신고는 병합되지 않고 각각 별개 행으로 쌓인다.
+- `GET /moderation/reports?status=`(기본 `PENDING`), `POST /moderation/reports/{id}/dismiss`(204), `POST /moderation/reports/{id}/hide`(204) — 셋 다 모더레이터 전용. 모더레이터가 아니면 403(`ModeratorAccessDeniedException`). Role은 매 호출마다 `UserRepository`로 조회하고 JWT에는 담지 않는다.
+- `dismiss`는 design.md의 `Keep`과 같은 취급이다 — 콘텐츠는 그대로 두고 신고만 `DISMISSED`로 닫는다. `hide`는 대상 Question/Answer에 실제 `softDelete()`를 호출하고(이번에 처음 구현 — 이전에는 `deleted_at` 컬럼만 있고 호출하는 코드가 전혀 없었다) 신고를 `ACTIONED`로 닫는다. 이미 처리된 신고를 다시 처리하려 하면 409(`ReportAlreadyResolvedException`) — 대상이 이미 지워져 404가 먼저 뜨지 않도록 신고 자신의 상태 전이를 콘텐츠 조회보다 먼저 검증한다.
+- `Close as duplicate`는 새 상태를 만들지 않는다 — 이미 있는 Cluster 기능(Phase 6, "같은 문제로 표시")이 정확히 이 개념을 담당하므로 그걸 쓰라고 안내할 뿐 모더레이션 액션에 넣지 않았다. `Edit`(모더레이터가 남의 글을 직접 수정)도 이번 범위에 없다.
+- **Hide는 콘텐츠 작성자에게만 알린다**(`CONTENT_HIDDEN`) — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본으로 깔지 않는 유일한 이벤트 타입이다. 계단식으로 전파하지도 않는다 — 질문을 Hide해도 그 질문의 답변들은 자동으로 숨겨지지 않는다.
+- **범위 밖**(모두 [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)에서 의도적으로 보류): 역할 부여/회수 API, 사용자 정지, "사용자 노출 사유"와 "내부 운영 메모"의 분리, Hide의 계단식 전파. 실제 필요해지면 각각 별도로 설계한다.
 
 ## 입력 검증 공통 원칙
 
