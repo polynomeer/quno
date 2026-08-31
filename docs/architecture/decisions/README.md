@@ -52,3 +52,5 @@
 | [0025](0025-save-as-separate-side-aggregate-from-watch.md) | Save(북마크)는 Watch와 구조는 같지만 별도 테이블·독립 side-aggregate로 분리 | 승인됨 |
 | [0026](0026-follow-user-relationship-only-no-activity-feed.md) | Follow User는 관계 기록·조회만, 활동 피드·알림은 후속 Phase로 이연 | 승인됨 |
 | [0027](0027-badge-as-computed-read-model-no-award-events.md) | Badge는 Reputation처럼 영속화 없는 계산형 읽기 모델, 획득 이벤트·알림은 미도입 | 승인됨 |
+| [0028](0028-moderation-mvp-report-dismiss-hide-only.md) | 모더레이션은 신고→검토 큐→Dismiss/Hide까지만, 역할 관리·Edit·정지는 후속으로 이연 | 승인됨 |
+| [0029](0029-answer-revision-mirrors-question-version-no-locking.md) | Answer Revision은 Question/QuestionVersion 분리를 그대로 적용하되 동시성 잠금은 미도입 | 승인됨 |

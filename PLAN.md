@@ -169,7 +169,7 @@ design.md에는 없는(백엔드 전용) 기능들을 이번에 화면으로 처
 - [x] F5.1 Notifications — `features/notification`으로 `/notifications` 구현: `GET /me/notifications` 목록(최신순 정렬은 프론트에서), `describe-notification.ts`가 6종 `payload`(각기 다른 JSON 필드)를 사람이 읽는 메시지로 조립, 읽지 않음은 행 전체 강조 대신 작은 dot으로만 표시(design.md #17), `POST /me/notifications/mark-read`로 전체 읽음 처리(백엔드가 개별 읽음 처리를 지원하지 않아 "Mark all as read" 하나만 제공). 답변 관련 알림은 `/questions/{id}#answer-{answerId}`로 이동(`AnswerCard`에 `id`+`scroll-mt-20` 추가). 동일 질문의 반복 이벤트 그룹핑은 이번 범위에서 하지 않음(design.md도 "할 수 있다" 수준의 선택 사항). 브라우저로 두 사용자 간 리비전/답변/채택/Outdated 4종 알림이 실제로 쌓이고, 읽지 않음 배지→앵커 이동→전체 읽음 처리까지 전체 흐름을 검증
 - [x] F5.2 Watching 목록 — `features/watch/ui/WatchedQuestionList` + `/watching`: `GET /me/watches` 목록 전용 화면(요약 응답에 태그가 없어 `QuestionSummary` 기반 `QuestionCard`는 재사용하지 않고 전용 리스트 컴포넌트를 둠)
 - [x] F5.3 Profile 확장 — `/users/{id}`가 본인 프로필일 때만(`me.id === userId`) "Watching" 섹션을 추가로 보여준다 — `GET /me/watches`는 URL의 `id`와 무관하게 항상 요청자 본인의 목록만 반환하므로 타인 프로필에는 표시할 수 없음(브라우저로 본인/타인 프로필 각각에서 섹션 노출 여부를 확인). AppHeader에 Watching/Notifications(안 읽음 개수 배지) 링크 추가
-- [ ] Frontend Phase ? — 모더레이션/답변 리비전 ([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)에 따라 대응 백엔드 기능부터 먼저 설계해야 함, 번호 미정). Vote/Comment는 Phase 11~12로, Save/Follow User/Badge는 Phase 13~15로 백엔드 설계를 시작해 이 목록에서 분리함 — 완료된 프론트엔드 작업은 아래 Frontend Phase 6~7 참고
+- [ ] Frontend Phase ? — 모더레이션/답변 리비전 (번호 미정, 아래 Phase 16~17 백엔드가 준비된 뒤 착수). Vote/Comment는 Phase 11~12로, Save/Follow User/Badge는 Phase 13~15로, 모더레이션/답변 리비전은 Phase 16~17로 백엔드 설계를 시작해 이 목록에서 전부 분리함([ADR-0020](docs/architecture/decisions/0020-frontend-scoped-to-backend-support.md)) — 완료된 프론트엔드 작업은 아래 Frontend Phase 6~7 참고
 
 ## Frontend Phase 6 — Vote/Comment UI
 
@@ -235,7 +235,30 @@ design.md #19가 전제하는 배지 시스템을 Reputation(Phase 9, [ADR-0018]
 - [x] 15.3 테스트 — 단위 테스트 9개(`GetUserBadgesUseCaseTest` — 활동 없음/6종 각각의 경계값(4개 vs 5개 채택 답변, 49점 vs 50점 투표 등)/여러 배지 동시 충족/대상 없음 404, `ReputationRepository`·`BadgeRepository`는 익명 객체로 스텁)와 실제 서버+curl 검증(회원가입→질문 작성→FIRST_QUESTION 등장→셀프 답변→FIRST_ANSWER 등장→26명이 질문+답변에 각각 업보트해 점수 52점 도달→WELL_RECEIVED 등장까지 실제 HTTP로 확인 — 질문/답변 양쪽 타겟에 걸친 `OR` 조인이 실제로 맞게 합산되는지가 가장 위험한 지점이라 직접 검증). 이번 검증 중 로컬 Docker(Postgres/Mongo/Redis)가 내려가 있던 것을 발견해 재기동 후 전체 테스트(206개) 통과 확인
 - [x] 15.4 문서화 — `domain-model.md`의 Reputation Bounded Context에 Badge 반영(Reputation과 같은 "활동 기반 신뢰 신호" 성격이라 새 컨텍스트 없이 편입 — Watch/Save/Vote/Comment와 달리 Aggregate 표에는 올리지 않음, `UserReputation`도 같은 이유로 그 표에 없는 순수 read model이라 동일하게 취급). `api-design.md`에 "Badge (Phase 15)" 섹션 추가. 획득 알림/영속화를 만들지 않은 이유는 이미 [ADR-0027](docs/architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md)로 기록됨
 
-## Phase 16+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 16 — Moderation (mvp-scope.md 로드맵에 없던 새 범위)
+
+design.md #20이 전제하는 모더레이션을 신고→모더레이터 검토 큐→Dismiss/Hide 두 액션까지로 좁혀 추가한다([ADR-0028](docs/architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). 역할 관리 API, Edit 액션, 사용자 정지는 후속으로 미룬다.
+
+- [ ] 16.1 Role — `users` 테이블에 `role`(`USER`\|`MODERATOR`, 기본값 `USER`) 컬럼 추가(새 마이그레이션, 번호는 착수 시점의 최신 버전 다음으로 정함). `User` 도메인에 `role` 필드 추가. 역할 부여/회수 API는 만들지 않음(운영자가 DB에서 직접 변경) — JWT에는 담지 않고 매 요청 `UserRepository.findById(userId).role`로 확인(ADR-0003의 stateless JWT 구조를 건드리지 않음)
+- [ ] 16.2 Report 도메인 모델 — 새 `domain/report` 패키지: `Report`(reporterId, targetType: `ReportTargetType`(QUESTION\|ANSWER), targetId, reason: `ReportReason`(SPAM\|DUPLICATE\|LOW_QUALITY\|OTHER), message, status: `ReportStatus`(PENDING\|DISMISSED\|ACTIONED), resolvedBy, resolvedAt) — Vote/Comment와 같은 독립 side-aggregate. `ReportRepository` 포트(`save`, `findById`, `listByStatus(status)`, `countByTarget(targetType, targetId)` — "N reports" 표시는 별도 카운터 없이 이걸로 집계). 같은 대상에 대한 중복 신고는 병합하지 않음. `ReportNotFoundException`(404), `ReportAlreadyResolvedException`(409, 이미 처리된 신고 재처리 시도), `ModeratorAccessDeniedException`(403, 모더레이터 아닌 사용자가 큐/액션 접근)
+- [ ] 16.3 softDelete — `Question`/`Answer`에 처음으로 실제 `softDelete()` 도메인 메서드 추가(`deletedAt` 설정, idempotent) — 지금까지는 컬럼만 있고 호출하는 곳이 전혀 없었음(domain-model.md Aggregate 표의 착오였음, 코드가 근거). `AnswerJpaRepository`에 빠져 있던 `deletedAt IS NULL` 조회 필터를 `QuestionJpaRepository`와 동일하게 보강 — Hide 이후에도 숨겨진 답변이 계속 노출되지 않도록 함
+- [ ] 16.4 API — `POST /api/v1/questions/{id}/reports`, `POST /api/v1/answers/{id}/reports`(body: `{reason, message?}`, 아무 로그인 사용자나 가능, 자기 자신의 글 신고도 막지 않음). `GET /api/v1/moderation/reports?status=`(기본 PENDING, 모더레이터 전용). `POST /api/v1/moderation/reports/{id}/dismiss`(204, 콘텐츠는 그대로 두고 신고만 닫음), `POST /api/v1/moderation/reports/{id}/hide`(204, 대상 soft-delete + `ACTIONED` 처리). `Close as duplicate`는 새 상태를 만들지 않고 기존 Cluster 기능(Phase 6) 재사용을 권장 — 모더레이션 액션에는 포함하지 않음
+- [ ] 16.5 알림 연동 — `OutboxEventTypes.CONTENT_HIDDEN` 추가, `DispatchOutboxEventsUseCase`에 분기 추가(콘텐츠 작성자 1명에게만 통보, Ward 구독자에게는 보내지 않음 — "활동"이 아니라 본인에게 온 조치 통보이므로). Hide는 계단식으로 전파하지 않음(질문을 Hide해도 답변은 자동으로 숨겨지지 않음)
+- [ ] 16.6 테스트 — 단위 테스트(신고 생성/중복 신고 허용/모더레이터 아닌 사용자 403/이미 처리된 신고 재처리 409/dismiss·hide 각각의 상태 전이/hide 시 실제 soft-delete와 알림 발행 확인)와 실제 서버+curl 검증(모더레이터 역할은 테스트에서 DB로 직접 부여)
+- [ ] 16.7 문서화 — `domain-model.md`에 Report Aggregate·Role·`CONTENT_HIDDEN` Domain Event 반영(Question/Answer의 실제 `softDelete()` 구현도 함께 갱신), `api-design.md`에 "Moderation (Phase 16)" 섹션 추가. 이번 결정은 이미 [ADR-0028](docs/architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md)로 기록됨
+
+## Phase 17 — Answer Revision (mvp-scope.md 로드맵에 없던 새 범위)
+
+design.md #13.1이 "질문과 동일한 revision UI 패턴을 재사용한다"고 전제하는 답변 수정 이력을 추가한다. `Question`/`QuestionVersion` 분리(ADR-0004)를 그대로 적용하되, Pessimistic Locking(ADR-0005)은 채택하지 않는다([ADR-0029](docs/architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md)).
+
+- [ ] 17.1 도메인 모델 — `Answer`를 식별자·authorId·isAccepted·targetVersionNumber·**`latestVersionId` 포인터**·`bodyMarkdown`(최신 버전 캐시)로 재구성(`questions.title`이 `question_versions`를 캐시하는 것과 동일한 패턴 — 지금까지는 `Answer`에 편집 기능 자체가 아예 없었음, domain-model.md의 "edit" 표기는 착오였음, 코드가 근거). 새 `AnswerVersion`(id, answerId, versionNumber, bodyMarkdown, createdBy, createdAt)과 `AnswerVersionRepository` 포트(`save`, `findByAnswerIdAndVersionNumber`, `listByAnswerId`). `answer_versions` 테이블 마이그레이션(+ 기존 `answers.body_markdown`을 각 답변의 v1으로 백필, 번호는 착수 시점의 최신 버전 다음으로 정함). `AnswerAccessDeniedException`(403, 작성자 아닌 사용자의 리비전 시도)
+- [ ] 17.2 API — `POST /api/v1/answers/{id}/versions`(작성자 본인만), `GET /api/v1/answers/{id}/versions`, `GET /api/v1/answers/{id}/versions/{version}`, `GET /api/v1/answers/{id}/versions/{version}/diff?from=`(기존 `TextDiffer.diffLines`를 그대로 재사용 — Question 전용 로직이 아니라 마크다운 두 문자열을 비교하는 순수 유틸이었음) — Question의 동일 API를 그대로 미러링
+- [ ] 17.3 동시성 — Pessimistic Locking을 적용하지 않음([ADR-0029](docs/architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md) — 작성자 본인만 수정 가능해 QPR 흐름 같은 동시 편집 압력이 없다고 판단)
+- [ ] 17.4 알림 연동 — `OutboxEventTypes.ANSWER_REVISION` 추가, `NEW_ANSWER`와 동일한 수신자 집합(Ward 구독자 + 질문 작성자)에게 통보
+- [ ] 17.5 테스트 — 단위 테스트(리비전 생성/버전 번호 증가/작성자 아닌 리비전 시도 403/diff 조회/`Answer.bodyMarkdown` 캐시 갱신 확인)와 실제 서버+curl 검증
+- [ ] 17.6 문서화 — `domain-model.md`의 Answer Aggregate 항목을 `AnswerVersion` 분리 구조로 갱신, `api-design.md`에 "Answer Revision (Phase 17)" 섹션 추가. 이번 결정은 이미 [ADR-0029](docs/architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md)로 기록됨
+
+## Phase 18+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
