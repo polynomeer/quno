@@ -298,7 +298,19 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] F10.1 프론트엔드 — `CommentSection`이 평면 목록을 `parentCommentId` 기준으로 그룹핑해 답글을 부모 아래 들여쓰기로 렌더링. `CommentItem`에 인라인 수정 토글(작성자 본인만, `AnswerCard`의 Edit 패턴과 동일), "edited (vN)" 클릭 시 펼쳐지는 인라인 버전 이력(별도 페이지 없음, 수정 안 된 댓글은 이력 없음), `@단어` 토큰 스타일링(링크 없음), 답글 버튼(최상위 댓글에만 노출). `httpClient`에 없던 `put` 메서드 추가. `notification.types.ts`/`describe-notification.ts`에 `MENTIONED_IN_COMMENT`("댓글에서 언급되었습니다") 추가
 - [x] F10.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 멘션 포함 댓글 작성→하이라이트 렌더링 확인→답글 작성(부모 아래 들여쓰기, 답글 자신은 답글 버튼 없음 확인)→답글 수정→"edited (v2)" 클릭 시 수정 전 원문("v1: ...")이 정확히 보이는지 확인→멘션 대상 계정으로 전환해 알림 센터에 "댓글에서 언급되었습니다" 표시 확인까지 전체 흐름을 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음(백엔드 버전 이력 아카이브 순서 버그는 F10.2 이전, 백엔드 구현 단계에서 이미 발견해 수정함)
 
-## Phase 20+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 20 — Vote 반영: 검색 Score 정렬, Dashboard 인기순위, 평판 점수 (mvp-scope.md 로드맵에 없던 새 범위)
+
+[ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md) 5~7번이 보류했던 세 가지를 [ADR-0032](docs/architecture/decisions/0032-vote-score-search-sort-dashboard-reputation.md)로 한 번에 착수한다. 실사용 데이터가 없어 가중치는 모두 1로 시작(추측성 판단이며 실사용 후 재조정 가능하도록 공식을 한 곳에 모아둠).
+
+- [ ] 20.1 검색 Score 정렬 — `GET /search`에 `sort=relevance|score` 파라미터 추가(기본 relevance = 기존 `id DESC` 동작 그대로). `score`는 질문이 받은 순 투표 점수 내림차순(동점이면 id 내림차순). 후보 집합(텍스트/태그 매칭)은 두 모드 동일, 정렬 기준만 다름
+- [ ] 20.2 Dashboard 인기 질문 순위 공식 개정 — `watch_count*3 + answer_count*2 + vote_score*1`(순 투표점수, 음수 허용)
+- [ ] 20.3 평판 점수 공식 개정 — 기존 공식에 `voteScoreReceived*1` 추가. Badge(Phase 15)의 `BadgeRepository.sumVoteScoreReceived`를 재사용(새 쿼리 만들지 않음)
+- [ ] 20.4 테스트 — 단위 테스트(검색 score 정렬 순서, Dashboard 공식에 투표 반영, 평판 점수에 투표 반영 — 경계값 포함)와 실제 서버+curl 검증
+- [ ] 20.5 문서화 — `domain-model.md`/`api-design.md`에 반영(이미 [ADR-0032](docs/architecture/decisions/0032-vote-score-search-sort-dashboard-reputation.md)로 결정 기록됨)
+- [ ] F11.1 프론트엔드 — 검색 결과 화면에 "Sort: Relevance/Score" 드롭다운 추가(서버에 `sort` 파라미터로 반영, [ADR-0022](docs/architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)가 데이터 부재로 보류했던 것을 이제 채움)
+- [ ] F11.2 검증 — 브라우저로 Score 정렬 전환 시 실제 순서가 바뀌는지 확인
+
+## Phase 21+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
@@ -306,7 +318,6 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
 - [ ] Phase ? — 검색 Score 정렬/Dashboard 인기순위·평판 점수에 Vote 반영 — Phase 11에서 의도적으로 보류([ADR-0023](docs/architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md) 5~7번). Vote 실사용 패턴을 관찰한 뒤 가중치를 다시 설계한다
-- [ ] Phase ? — Comment 대댓글/`@mention`/수정 이력 — Phase 12에서 의도적으로 보류([ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md) 2~3, 5번). 실사용 후 수요가 확인되면 착수
 
 ## 진행 방식
 

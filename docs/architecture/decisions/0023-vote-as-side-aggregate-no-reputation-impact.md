@@ -1,7 +1,7 @@
 # ADR-0023: Vote는 Watch와 같은 독립 side-aggregate로, 이번 범위에서 평판 점수·인기순위에는 반영하지 않는다
 
 - 날짜: 2026-08-30
-- 상태: 승인됨
+- 상태: 일부 대체됨(5~7번은 [ADR-0032](0032-vote-score-search-sort-dashboard-reputation.md)로) — 나머지 결정(side-aggregate 구조, 자기 투표 금지, 알림 미발생 등)은 유효
 
 ## 배경 (Context)
 
