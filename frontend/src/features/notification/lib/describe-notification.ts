@@ -45,6 +45,8 @@ export function describeNotification(notification: Notification): DescribedNotif
       return { message: "답변이 수정되었습니다", href };
     case "CONTENT_HIDDEN":
       return { message: "모더레이터에 의해 콘텐츠가 숨겨졌습니다", href };
+    case "MENTIONED_IN_COMMENT":
+      return { message: "댓글에서 언급되었습니다", href };
     default:
       return { message: notification.type, href };
   }

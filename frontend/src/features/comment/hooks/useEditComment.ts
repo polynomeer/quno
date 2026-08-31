@@ -5,14 +5,14 @@ import { commentApi } from "../api/comment.api";
 import { commentKeys } from "../api/comment.keys";
 import type { CommentTargetType } from "../api/comment.types";
 
-export function useCreateComment(targetType: CommentTargetType, targetId: number) {
+export function useEditComment(targetType: CommentTargetType, targetId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ body, parentCommentId }: { body: string; parentCommentId?: number }) =>
-      commentApi.create(targetType, targetId, body, parentCommentId),
-    onSuccess: () => {
+    mutationFn: ({ commentId, body }: { commentId: number; body: string }) => commentApi.edit(commentId, body),
+    onSuccess: (_result, { commentId }) => {
       queryClient.invalidateQueries({ queryKey: commentKeys.list(targetType, targetId) });
+      queryClient.invalidateQueries({ queryKey: commentKeys.versions(commentId) });
     },
   });
 }

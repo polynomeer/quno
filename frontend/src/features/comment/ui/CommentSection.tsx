@@ -10,8 +10,9 @@ import { Button } from "@/shared/ui/Button";
 import { ApiError } from "@/shared/api/api-error";
 import { MAX_COMMENT_BODY_LENGTH, type CommentTargetType } from "../api/comment.types";
 
-/** Flat, no-edit comment thread (ADR-0024) — plain text, no markdown rendering. Composer is
- * hidden behind an "Add a comment" toggle so every card doesn't show an input by default. */
+/** Up to one level of reply nesting, editable with inline history, @mention highlighting
+ * (ADR-0024, ADR-0031) — plain text, no markdown rendering. Composer is hidden behind an
+ * "Add a comment" toggle so every card doesn't show an input by default. */
 export function CommentSection({ targetType, targetId }: { targetType: CommentTargetType; targetId: number }) {
   const { data: me } = useSession();
   const { data: comments } = useComments(targetType, targetId);
@@ -22,20 +23,31 @@ export function CommentSection({ targetType, targetId }: { targetType: CommentTa
   function handleSubmit() {
     const body = draft.trim();
     if (!body) return;
-    createComment.mutate(body, {
-      onSuccess: () => {
-        setDraft("");
-        setShowComposer(false);
+    createComment.mutate(
+      { body },
+      {
+        onSuccess: () => {
+          setDraft("");
+          setShowComposer(false);
+        },
       },
-    });
+    );
+  }
+
+  const topLevel = comments?.filter((c) => c.parentCommentId == null) ?? [];
+  const repliesByParent = new Map<number, typeof topLevel>();
+  for (const c of comments ?? []) {
+    if (c.parentCommentId != null) {
+      repliesByParent.set(c.parentCommentId, [...(repliesByParent.get(c.parentCommentId) ?? []), c]);
+    }
   }
 
   return (
     <div className="mt-3 space-y-2 border-t border-border pt-2 text-sm">
-      {comments && comments.length > 0 && (
+      {topLevel.length > 0 && (
         <ul className="space-y-1.5">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} currentUserId={me?.id} />
+          {topLevel.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} currentUserId={me?.id} replies={repliesByParent.get(comment.id)} />
           ))}
         </ul>
       )}
