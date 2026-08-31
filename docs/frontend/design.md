@@ -2,7 +2,7 @@
 
 > 원본: [docs/archive/Quno_프론트엔드_상세_설계서.docx](../archive/Quno_프론트엔드_상세_설계서.docx) (2026-08-26 작성, v1.0). 기술 아키텍처는 [architecture.md](architecture.md), 단계별 로드맵은 [roadmap.md](roadmap.md) 참고. 실제 화면 목업은 [quno-design-sample.png](quno-design-sample.png).
 >
-> 백엔드는 [../architecture/](../architecture/system-architecture.md) 문서 참고. **이 문서가 가정하는 화면 중 일부(투표/댓글/배지/모더레이션)는 현재 백엔드에 대응하는 기능이 없다** — 착수 전 반드시 격차를 확인할 것(README 또는 최신 ADR 참고).
+> 백엔드는 [../architecture/](../architecture/system-architecture.md) 문서 참고. **2026-08-26 작성 당시 이 문서가 가정한 화면 중 투표/댓글/저장/사용자 팔로우/배지/모더레이션/답변 수정 이력은 이후 Phase 11~20에서 모두 백엔드+프론트엔드로 구현되었다** — 각 절의 "백엔드 연동 메모"가 최신 상태를 반영한다. 여전히 남은 격차(태그 상세 정보, 태그별 Expertise, `@mention` 자동완성, Organization/Direct Ask, 실시간 질문방)는 [roadmap.md 7절](roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고.
 
 ## 1. 설계 목표
 
@@ -42,10 +42,10 @@ Quno의 질문 카드는 등록 시점의 정적인 문서가 아니라, 답변�
 | ANSWERED | 답변 수 표시 | 답변은 있으나 수락되지 않음 | 답변 수 > 0, `acceptedAnswerId` 없음 |
 | SOLVED | 체크 아이콘 + 해결됨 | 수락 답변이 존재 | `QuestionStatus.RESOLVED` |
 | UPDATED | Revision n · updated | 질문이 의미 있게 수정됨 | `QuestionStatus.UPDATED` |
-| DUPLICATE | 중복 대상 링크 | 기존 질문으로 지식 흐름을 연결 | **없음** — Cluster(`questions.cluster_id`)로 근사 가능하나 "중복 대상 링크" UI 자체는 미구현 |
-| CLOSED/HIDDEN | 읽기 전용 상태 | 모더레이션 또는 정책상 추가 참여 제한 | **없음** — 모더레이션 기능 자체가 백엔드에 없음 |
+| DUPLICATE | 중복 대상 링크 | 기존 질문으로 지식 흐름을 연결 | `ClusterPanel`("같은 문제로 표시")로 구현됨(Phase 6/18, [ADR-0016](../architecture/decisions/0016-manual-duplicate-marking-cluster.md)/[ADR-0030](../architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md)) — 다만 "중복 대상 링크" 배지가 아니라 클러스터 멤버 목록 UI로 표현되어 원래 목업과 형태는 다름 |
+| CLOSED/HIDDEN | 읽기 전용 상태 | 모더레이션 또는 정책상 추가 참여 제한 | 모더레이션(Phase 16/F8, [ADR-0028](../architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md))의 Hide는 "읽기 전용으로 전환"이 아니라 **soft-delete(404)**로 구현됨 — 원래 목업이 가정한 "표시는 되지만 참여만 막힌 상태"와는 다르다 |
 
-백엔드에는 이 외에 `NEEDS_INFO`(QPR 정보 요청 중)와 `OUTDATED`(수동 표시) 상태도 있다 — 이 문서 작성 시점에는 반영되지 않았으므로 화면 설계 시 함께 다뤄야 한다.
+백엔드에는 이 외에 `NEEDS_INFO`(QPR 정보 요청 중)와 `OUTDATED`(수동 표시) 상태도 있다 — 둘 다 `StatusBadge` 컴포넌트에 이미 반영되어 구현돼 있다.
 
 ### 3.2 Living Question Card 구성
 
@@ -265,7 +265,7 @@ MVP는 자유 텍스트 + UI 필터를 우선한다. 이후 숙련 사용자를 
 - Loading: 결과 리스트와 동일한 형태의 skeleton
 - Error: 기존 결과가 있으면 유지하고 재시도 배너만 표시
 
-**백엔드 연동 메모**: `GET /search?q=&limit=`([api-design.md](../architecture/api-design.md#검색·관련-질문-구현-phase-29))가 PostgreSQL 전문검색 기반으로 이미 존재한다. `score`(추천/투표 점수) 정렬 옵션은 투표 기능이 없어 현재 구현 불가 — Filters/Sort UI에서 이 옵션은 보류하거나 place holder로 둔다.
+**백엔드 연동 메모**: `GET /search?q=&limit=&sort=`([api-design.md](../architecture/api-design.md#검색·관련-질문-구현-phase-29))가 PostgreSQL 전문검색 기반으로 존재하고, `sort=relevance|score`(Phase 20/F11, [ADR-0032](../architecture/decisions/0032-vote-score-search-sort-dashboard-reputation.md))로 Score 정렬도 구현되어 있다 — `/questions` 검색 결과 화면의 Sort 드롭다운이 이를 그대로 쓴다. **Answered/Date 필터는 여전히 없다**([ADR-0022](../architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)) — 응답에 `answerCount`/`createdAt`이 없어 클라이언트 근사도 불가능하다.
 
 ## 11. 질문 작성 플로우
 
@@ -339,7 +339,7 @@ MVP는 자유 텍스트 + UI 필터를 우선한다. 이후 숙련 사용자를 
 
 질문이 수정되었으면 `edited 18m ago · revision 4`를 표시하고 클릭 시 revision history로 이동한다. History에서는 전체 버전 목록과 작성자·시간·변경 설명을 제공하고, 두 버전을 선택해 diff를 볼 수 있게 설계한다.
 
-**백엔드 연동 메모**: `GET /questions/{id}`, `GET /questions/{id}/versions`, `GET /questions/{id}/versions/{version}/diff`가 이미 이 전체 흐름(리비전 히스토리 + diff)을 지원한다. 다만 **Upvote/score/Downvote는 백엔드에 없다** — Action Rail의 투표 UI는 보류하거나 목업으로만 둬야 한다. Watch(`POST/DELETE /questions/{id}/watch`)는 있지만 Save(북마크)는 없다.
+**백엔드 연동 메모**: `GET /questions/{id}`, `GET /questions/{id}/versions`, `GET /questions/{id}/versions/{version}/diff`가 이 전체 흐름(리비전 히스토리 + diff)을 지원한다. Upvote/score/Downvote는 Vote(Phase 11/F6, [ADR-0023](../architecture/decisions/0023-vote-as-side-aggregate-no-reputation-impact.md))의 `VoteControl`로 구현되어 있다. Watch(`POST/DELETE /questions/{id}/watch`)와 Save(Phase 13/F7, [ADR-0025](../architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)) 모두 구현되어 있다.
 
 ## 13. 답변 경험
 
@@ -363,7 +363,7 @@ MVP는 자유 텍스트 + UI 필터를 우선한다. 이후 숙련 사용자를 
 
 질문 본문 하단에 답변 에디터를 배치한다. 질문 작성 에디터와 같은 MarkdownEditor를 재사용하되 제목·태그가 없고 답변 품질 가이드만 다르게 제공한다. 긴 답변 작성 중에는 draft를 자동 저장한다.
 
-**백엔드 연동 메모**: `POST /questions/{id}/answers`, `GET /questions/{id}/answers`, `POST /answers/{id}/accept`가 이미 있다. 답변에는 `targetVersionNumber`/`isStale`([api-design.md](../architecture/api-design.md#답변–질문버전-연결-phase-51))도 있어 "이 답변은 이전 버전을 대상으로 작성됨" 배지를 추가로 보여줄 수 있다. **답변 수정 이력(revision)은 백엔드에 없다** — Answer는 단일 본문만 가지고 있어 "질문과 동일한 revision UI 패턴 재사용"은 현재 불가능하다. **Score 정렬도 투표 기능이 없어 구현 불가**(Best/Newest/Oldest만 가능).
+**백엔드 연동 메모**: `POST /questions/{id}/answers`, `GET /questions/{id}/answers`, `POST /answers/{id}/accept`가 있다. 답변에는 `targetVersionNumber`/`isStale`([api-design.md](../architecture/api-design.md#답변–질문버전-연결-phase-51))이 있어 "이 답변은 이전 버전을 대상으로 작성됨" 배지를 보여준다. **답변 수정 이력(revision)은 Phase 17/F8([ADR-0029](../architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md))로 구현됐다** — `/answers/{answerId}/versions` 페이지가 질문의 revision UI 패턴을 그대로 재사용한다. 투표(`score`)도 Phase 11/F6로 구현되어 각 `AnswerCard`에 표시된다 — 다만 **답변 목록의 Sort UI는 아직 Best/Newest/Oldest 3종뿐이고 "Score" 옵션은 없다**(`AnswerSort` 타입 참고) — 순수 점수 내림차순 정렬이 필요해지면 프론트에서 추가 구현이 필요하다(백엔드는 이미 각 답변의 `score`를 응답에 담고 있어 데이터 자체는 있음).
 
 ## 14. 댓글·토론 UX
 
@@ -373,7 +373,7 @@ MVP는 자유 텍스트 + UI 필터를 우선한다. 이후 숙련 사용자를 
 - 댓글 투표가 필요하다면 본문 답변 점수와 혼동되지 않도록 작은 reaction 형태로 분리한다.
 - 삭제된 댓글은 스레드 맥락을 깨지 않는 수준에서 tombstone 표시를 고려한다.
 
-**백엔드 연동 메모**: **댓글(Comment) 도메인 자체가 백엔드에 없다.** Quno는 지금까지 "질문에 대한 추가 정보 요청"을 QPR ReviewRequest([api-design.md](../architecture/api-design.md#qpr-review--정보-요청과-재요청-phase-52~53))로 모델링했는데, 이는 이 문서가 말하는 범용 clarification 댓글과 성격이 다르다(ReviewRequest는 "정보 요청 → 리비전 → 재요청" 워크플로만 표현). 이 섹션 전체는 새 백엔드 기능이 필요하다.
+**백엔드 연동 메모**: Comment는 Phase 12(평면 목록·soft-delete tombstone, [ADR-0024](../architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md))에 이어 Phase 19([ADR-0031](../architecture/decisions/0031-comment-thread-mention-edit-history.md))에서 1단계 답글·수정 이력·`@mention` 알림까지 구현됐다(Frontend Phase 6/10, `CommentSection`/`CommentItem`). QPR `ReviewRequest`는 여전히 별개 워크플로("정보 요청 → 리비전 → 재요청")로 남아 있다. 이 문서가 원했던 것과 실제 구현이 다른 지점: **"Show N more comments" 접기/펼치기는 없다**(전부 표시), **`@mention` 자동완성은 없다**(닉네임 정확 일치 파싱만, 사용자 검색 API가 없어서), **댓글 투표(reaction)는 없다**, **답글은 최대 1단계까지만**(무한 스레드 아님).
 
 ## 15. 태그 경험
 
@@ -414,7 +414,7 @@ Redis       7.9k questions    ...
 
 태그 Expertise 시각화는 레이더 차트보다 정렬된 bar/list를 권장한다. 예: `Kotlin · 42 answers · 18 accepted · +320 score`. 정확한 수치와 클릭 가능한 태그가 시각적 장식보다 유용하다.
 
-**백엔드 연동 메모**: `GET /users/{id}/profile`(작성 질문/답변/팔로우 태그)과 `GET /users/{id}/reputation`(활동 기반 평판 점수, [api-design.md](../architecture/api-design.md#전문가-평판-phase-9))이 있다. **태그별 세분화된 Expertise(태그별 답변 수/수락률/vote)와 Badges는 백엔드에 없다** — 현재 평판은 사용자 전체 합산 점수 하나뿐이다.
+**백엔드 연동 메모**: `GET /users/{id}/profile`(작성 질문/답변/팔로우 태그)과 `GET /users/{id}/reputation`(활동 기반 평판 점수, [api-design.md](../architecture/api-design.md#전문가-평판-phase-9))이 있다. Badge는 Phase 15/F7([ADR-0027](../architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md))로 구현되어 프로필에 노출된다(획득 시점은 저장하지 않는 계산형 읽기 모델). **태그별 세분화된 Expertise(태그별 답변 수/수락률/vote)는 여전히 없다** — 평판은 사용자 전체 합산 점수 하나뿐이다.
 
 ## 17. 알림 센터
 
@@ -427,7 +427,7 @@ Redis       7.9k questions    ...
 - 알림 클릭은 단순 질문 페이지가 아니라 해당 답변/댓글 anchor로 이동한다.
 - Mark all as read와 유형별 설정을 제공한다.
 
-**백엔드 연동 메모**: `GET /me/notifications`, `POST /me/notifications/mark-read`가 있다. 알림 타입은 `QUESTION_REVISION`/`NEW_ANSWER`/`ANSWER_ACCEPTED`/`REVIEW_REQUESTED`/`REVIEW_RE_REQUESTED`/`QUESTION_OUTDATED` 6종([domain-model.md](../architecture/domain-model.md#domain-events)) — Mentions/Reputation(배지)/Moderation 타입은 없다. "묶어서 표시"할 그룹핑 로직은 프론트가 직접 구현해야 한다(백엔드는 개별 알림만 반환).
+**백엔드 연동 메모**: `GET /me/notifications`, `POST /me/notifications/mark-read`가 있다. 알림 타입은 이제 10종이다([domain-model.md](../architecture/domain-model.md#domain-events)) — 원래 6종(`QUESTION_REVISION`/`NEW_ANSWER`/`ANSWER_ACCEPTED`/`REVIEW_REQUESTED`/`REVIEW_RE_REQUESTED`/`QUESTION_OUTDATED`)에 `NEW_COMMENT`/`CONTENT_HIDDEN`(모더레이션 통보)/`ANSWER_REVISION`/`MENTIONED_IN_COMMENT`(Phase 19의 실제 `@mention` 알림)가 추가됐다. **Reputation 타입(배지 획득 알림)은 여전히 없다** — Badge는 계산형 읽기 모델이라 획득 이벤트 자체를 발행하지 않는다([ADR-0027](../architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md)). "묶어서 표시"할 그룹핑 로직은 여전히 프론트 책임이다(백엔드는 개별 알림만 반환).
 
 ## 18. Watch·북마크·팔로우
 
@@ -440,7 +440,7 @@ Redis       7.9k questions    ...
 
 > **Watch와 Save를 분리**: Watch는 "변화를 추적"하는 행동이고 Save는 "다시 읽기 위해 보관"하는 행동이다. 하나의 북마크 기능으로 합치면 알림 기대가 모호해지므로 UI와 데이터 모델을 분리하는 편이 좋다.
 
-**백엔드 연동 메모**: Watch Question(`POST/DELETE /questions/{id}/watch`)과 Follow Tag(`POST/DELETE /tags/{id}/follow`)만 있다. **Save(북마크)와 Follow User는 백엔드에 없다.**
+**백엔드 연동 메모**: Watch Question(`POST/DELETE /questions/{id}/watch`), Follow Tag(`POST/DELETE /tags/{id}/follow`), Save(Phase 13/F7, [ADR-0025](../architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)), Follow User(Phase 14/F7, [ADR-0026](../architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)) 모두 구현되어 있다. **Follow User는 관계 기록·조회만 지원한다** — "특정 사용자의 공개 활동 관심"이 뜻하는 활동 피드/알림은 의도적으로 범위 밖이라 팔로우해도 피드에 아무 변화가 없다.
 
 ## 19. 명성·배지·기여도
 
@@ -449,7 +449,7 @@ Redis       7.9k questions    ...
 - 배지 획득은 작은 toast/notification으로 알려주며 질문 읽기 흐름을 막는 modal은 사용하지 않는다.
 - 태그별 contribution은 프로필에서 전문성을 보여주는 주요 요소로 사용한다.
 
-**백엔드 연동 메모**: `GET /users/{id}/reputation`의 점수 산식은 [ADR-0018](../architecture/decisions/0018-simple-reputation-score-only.md) 참고(질문 수·답변 수·채택 답변 수·Super Answer 지정 횟수 가중합). **배지(Badge) 시스템은 없다.**
+**백엔드 연동 메모**: `GET /users/{id}/reputation`의 점수 산식은 [ADR-0018](../architecture/decisions/0018-simple-reputation-score-only.md)(질문 수·답변 수·채택 답변 수·Super Answer 지정 횟수 가중합)에 Phase 20에서 순 투표 점수 항이 추가됐다([ADR-0032](../architecture/decisions/0032-vote-score-search-sort-dashboard-reputation.md)). Badge(`GET /users/{id}/badges`)는 Phase 15로 구현됐다 — 6종(Bronze/Silver/Gold) 고정 카탈로그, 영속화 없는 계산형 읽기 모델이라 "획득 시점"은 없다([ADR-0027](../architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md)) — 위 문단의 "toast로 알려준다"는 UX는 획득 이벤트가 없어 구현 불가하다(매 조회 시 조건 재계산만 가능).
 
 ## 20. 모더레이션 UI
 
@@ -472,7 +472,7 @@ Filters: [Spam] [Duplicate] [Low quality] [All]
 - 모더레이션 결정의 근거와 처리자를 audit trail로 확인할 수 있게 한다.
 - 사용자에게 표시되는 사유와 내부 운영 메모를 구분한다.
 
-**백엔드 연동 메모**: **신고(report)/모더레이션 큐/역할 기반 권한이 백엔드에 전혀 없다**([api-design.md](../architecture/api-design.md#인증-확정--2026-08-24)도 "관리자/모더레이터 API가 추가되면 Role과 세부 권한을 분리한다"고 명시 — 아직 미착수). 이 섹션 전체가 새 백엔드 기능을 필요로 한다.
+**백엔드 연동 메모**: 신고/모더레이션 큐/역할 기반 권한은 Phase 16/F8([ADR-0028](../architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md))로 구현됐지만, 위 목업과 실제 구현은 상당히 다르다 — 실제로 존재하는 액션은 **Keep(Dismiss)과 Hide 두 가지뿐**이다. **"Close as duplicate"/"Edit" 액션은 없다**(중복 처리는 기존 Cluster 기능 재사용을 권장하되 모더레이션 액션에 통합되지 않았고, 콘텐츠를 모더레이터가 직접 수정하는 기능 자체가 없다). **Suggested duplicate 검색, confirmation 다이얼로그, 신고 사유별 필터([Spam]/[Duplicate]/[Low quality] 탭)도 없다** — 실제 큐는 사유를 텍스트로만 보여주고 필터 없이 전체 PENDING 목록만 반환한다. Role 부여/회수 API도 없어 모더레이터 지정은 DB에서 직접 해야 한다. `/moderation` 페이지 자체에도 별도 nav 링크가 없다(모더레이터가 URL을 직접 알아야 함, 의도적 설계).
 
 ## 21. 빈 상태·오류·로딩 UX
 
