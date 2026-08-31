@@ -269,11 +269,20 @@ design.md #13.1이 "질문과 동일한 revision UI 패턴을 재사용한다"�
 - [x] 17.5 테스트 — 단위 테스트 14개(`ReviseAnswerUseCaseTest`/`ListAnswerVersionsUseCaseTest`/`GetAnswerVersionUseCaseTest`/`GetAnswerVersionDiffUseCaseTest` — 리비전 생성/버전 번호 증가/작성자 아닌 리비전 시도 403/diff 조회/캐시 갱신 확인)와 `AnswerTest`에 `withLatestVersion` 케이스 2개, `DispatchOutboxEventsUseCaseTest`에 `ANSWER_REVISION` 케이스 추가. `Answer.reconstitute()` 시그니처 변경으로 깨진 기존 호출부(테스트 7개 파일의 `WriteAnswerUseCase` 생성자 — `answerVersionRepository` 인자 추가) 전부 수정. 실제 서버+curl 검증 중 **버그 두 개를 발견해 수정**: (1) `answers`가 새로 `answer_versions`의 부모가 되면서 기존 6개 E2E 테스트의 `@AfterEach` 정리 SQL이 FK 위반으로 실패 — `answer_versions` 삭제 구문 추가; (2) `answers.latest_version_id`가 `answer_versions.id`를 참조하는 순환 참조라 `answer_versions`를 지우기 전에 `UPDATE answers SET latest_version_id = NULL`이 먼저 필요했음(`questions`/`question_versions` 정리 순서와 동일한 원리인데 처음엔 놓쳤음) — 6개 E2E 테스트 파일 전부 수정. 실제 서버+curl로 작성자 리비전 성공/타인 리비전 403/버전 목록·단건·diff 조회/캐시된 body 갱신/`ANSWER_REVISION` 알림 수신까지 확인
 - [x] 17.6 문서화 — `domain-model.md`의 Answer Aggregate 항목을 `AnswerVersion` 분리 구조로 갱신(새 `AnswerVersion` 행 추가), ERD와 테이블 삭제 정책에 `answer_versions`/`answers.latest_version_id` 반영. `api-design.md`에 "Answer Revision (Phase 17)" 섹션 추가. 이번 결정은 이미 [ADR-0029](docs/architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md)로 기록됨
 
-## Phase 18+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 18 — 질문 네트워크 잔여: Merge, Fork, 지식 그래프 (mvp-scope.md 로드맵 Phase 3, 나머지)
+
+Cluster+Super Answer(Phase 6, [ADR-0016](docs/architecture/decisions/0016-manual-duplicate-marking-cluster.md))에 이어 Merge/Fork/지식 그래프를 추가한다. 사용 패턴 관찰 없이 착수하는 대신, 코드에 이미 새겨진 신호(`ClustersAlreadyDistinctException`의 "merging clusters is not supported yet" 메시지, 409 발생을 Merge 착수 신호로 보겠다는 ADR-0016의 언급)를 근거로 삼는다([ADR-0030](docs/architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md)). Merge는 클러스터 병합으로만 한정하고(질문을 MERGED 상태로 닫는 것은 별도 결정), 지식 그래프는 데이터 API까지만 제공한다(실제 시각화 UI는 범위 밖).
+
+- [ ] 18.1 Cluster Merge — `MarkQuestionsAsSameProblemUseCase`가 서로 다른 두 클러스터를 만났을 때 `ClustersAlreadyDistinctException`(409)을 던지는 대신 실제로 병합하도록 변경(새 엔드포인트 없이 기존 `POST /questions/{id}/cluster`를 그대로 사용) — `relatedQuestionId` 쪽 클러스터의 멤버 전원을 `questionId` 쪽 클러스터로 재배정하고 흡수된 클러스터 행을 삭제. `QuestionClusterRepository`에 `delete` 메서드 추가(현재 없음). 흡수되는 쪽에 지정된 Super Answer는 자동 이전하지 않음(사람이 재지정). `ClustersAlreadyDistinctException`은 제거 — 이 동작을 검증하던 기존 단위 테스트(Phase 6.4)는 "병합됨" 기대치로 교체 필요(새 기능이 아니라 기존 동작 변경임을 명시)
+- [ ] 18.2 Question Fork — `questions`에 `origin_question_id`(nullable, 자기 자신 제외 다른 질문 참조) 컬럼 추가(새 마이그레이션, 번호는 착수 시점의 최신 버전 다음으로 정함). `Question.open()`에 선택적 `originQuestionId` 파라미터 추가(새 팩토리 메서드 없이). `POST /api/v1/questions/{id}/fork`(id=origin) — origin의 현재 최신 본문+태그를 그대로 복사해 실행자 명의의 새 질문(+Qv1)을 생성, 응답은 기존 `QuestionMutationResult` 재사용. 내용을 바꿔 포크하는 기능은 없음 — 포크 직후 기존 `POST /questions/{id}/versions`(리비전)로 수정. 자기 자신의 질문 포크 허용, 별도 권한 제한 없음, 같은 Cluster에 자동 가입시키지 않음(Cluster=같은 문제, Fork=다른 조건의 변형이라 성격이 다름). `GET /api/v1/questions/{id}/forks` — 이 질문에서 파생된 포크 목록(`QuestionRepository.findAllByOriginQuestionId` 추가)
+- [ ] 18.3 지식 그래프 데이터 API — `GET /api/v1/questions/{id}/graph` — 기존 `GetClusterUseCase`(클러스터 멤버)·`QuestionSearchUseCase.related`(관련 질문)·신규 Fork 조회(계보: 어디서 포크됐는지 + 무엇이 포크됐는지)를 한 응답으로 조합. 새 계산·저장소 없음. 실제 노드-엣지 그래프 시각화 UI는 별도 프론트엔드 투자로 이번 범위 밖([ADR-0030](docs/architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md))
+- [ ] 18.4 테스트 — 단위 테스트(클러스터 병합 — 멤버 재배정/흡수된 클러스터 삭제/Super Answer 미이전 확인, 포크 — 본문·태그 복사/자기 포크 허용/포크 목록 조회, 그래프 API 조합 확인)와 실제 서버+curl 검증
+- [ ] 18.5 문서화 — `domain-model.md`에 Fork 관련 필드·`GET .../graph` 반영, Merge로 인한 `ClustersAlreadyDistinctException` 제거를 Knowledge 컨텍스트 설명에 반영. `api-design.md`에 "Cluster Merge & Question Fork (Phase 18)" 섹션 추가. 이번 결정은 이미 [ADR-0030](docs/architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md)로 기록됨
+
+## Phase 19+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- [ ] Phase ? — 질문 네트워크 잔여: Merge, Fork, 지식 그래프 시각화 (mvp-scope.md 로드맵 Phase 3, 나머지) — Cluster/Super Answer 사용 패턴을 관찰한 뒤 착수 시점과 번호를 정한다
 - [ ] Phase ? — 기술 버전 영향 감지 실제 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지) — 외부 기술 버전 릴리스 데이터 소스 연동이 실제로 필요해지고 그 소스를 정할 수 있을 때 착수
 - [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다

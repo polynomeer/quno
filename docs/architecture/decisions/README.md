@@ -54,3 +54,4 @@
 | [0027](0027-badge-as-computed-read-model-no-award-events.md) | Badge는 Reputation처럼 영속화 없는 계산형 읽기 모델, 획득 이벤트·알림은 미도입 | 승인됨 |
 | [0028](0028-moderation-mvp-report-dismiss-hide-only.md) | 모더레이션은 신고→검토 큐→Dismiss/Hide까지만, 역할 관리·Edit·정지는 후속으로 이연 | 승인됨 |
 | [0029](0029-answer-revision-mirrors-question-version-no-locking.md) | Answer Revision은 Question/QuestionVersion 분리를 그대로 적용하되 동시성 잠금은 미도입 | 승인됨 |
+| [0030](0030-cluster-merge-question-fork-graph-data-only.md) | Merge는 클러스터 병합으로 한정, Fork는 리비전 인프라 재사용, 지식 그래프는 데이터 API까지만 | 승인됨 |
