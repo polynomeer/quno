@@ -14,6 +14,7 @@ import { WatchButton } from "@/features/watch/ui/WatchButton";
 import { SaveButton } from "@/features/save/ui/SaveButton";
 import { VoteControl } from "@/features/vote/ui/VoteControl";
 import { CommentSection } from "@/features/comment/ui/CommentSection";
+import { ReportButton } from "@/features/report/ui/ReportButton";
 import { ReviewRequestPanel } from "@/features/review/ui/ReviewRequestPanel";
 import { ClusterPanel } from "@/features/cluster/ui/ClusterPanel";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
@@ -77,12 +78,15 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
             ))}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <QuestionMeta
-              questionId={question.id}
-              createdAt={question.createdAt}
-              updatedAt={question.updatedAt}
-              versionNumber={question.versionNumber}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <QuestionMeta
+                questionId={question.id}
+                createdAt={question.createdAt}
+                updatedAt={question.updatedAt}
+                versionNumber={question.versionNumber}
+              />
+              {me && me.id !== question.authorId && <ReportButton targetType="QUESTION" targetId={question.id} />}
+            </div>
             <OutdatedAction questionId={question.id} status={question.status} />
           </div>
         </header>

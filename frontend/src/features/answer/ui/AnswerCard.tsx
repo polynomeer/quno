@@ -1,10 +1,19 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
+import { MarkdownEditor } from "@/shared/ui/MarkdownEditor";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
 import { cn } from "@/shared/lib/cn";
 import { VoteControl } from "@/features/vote/ui/VoteControl";
 import { CommentSection } from "@/features/comment/ui/CommentSection";
+import { ReportButton } from "@/features/report/ui/ReportButton";
+import { useSession } from "@/features/auth/hooks/useSession";
+import { useAnswerVersions } from "../hooks/useAnswerVersions";
+import { useReviseAnswer } from "../hooks/useReviseAnswer";
+import { ApiError } from "@/shared/api/api-error";
 import type { Answer } from "../api/answer.types";
 
 export function AnswerCard({
@@ -22,10 +31,26 @@ export function AnswerCard({
   isAccepting?: boolean;
   /** Shown above the body when this card is listed outside its question's own page (e.g. a profile). */
   questionHref?: string;
-  /** Vote/Comment need the card's own question page context (score invalidation, comment target) —
-   * off by default so profile-page answer lists stay read-only. */
+  /** Vote/Comment/Edit/Report need the card's own question page context — off by default so
+   * profile-page answer lists stay read-only. */
   showEngagement?: boolean;
 }) {
+  const { data: me } = useSession();
+  const { data: versions } = useAnswerVersions(answer.id, Boolean(showEngagement));
+  const reviseAnswer = useReviseAnswer(answer.id, answer.questionId);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(answer.body);
+
+  const isAuthor = Boolean(showEngagement && me && me.id === answer.authorId);
+  const latestVersionNumber = versions && versions.length > 0 ? Math.max(...versions.map((v) => v.versionNumber)) : null;
+  const isEdited = latestVersionNumber !== null && latestVersionNumber > 1;
+
+  async function handleSave() {
+    if (!draft.trim()) return;
+    await reviseAnswer.mutateAsync(draft.trim());
+    setIsEditing(false);
+  }
+
   return (
     <li
       id={`answer-${answer.id}`}
@@ -52,6 +77,20 @@ export function AnswerCard({
         )}
         <span>사용자 #{answer.authorId}</span>
         <span>· {relativeTime(answer.createdAt)}</span>
+        {isEdited && (
+          <Link
+            href={`/answers/${answer.id}/versions?questionId=${answer.questionId}`}
+            className="underline hover:text-text-primary"
+          >
+            edited · revision {latestVersionNumber}
+          </Link>
+        )}
+        {isAuthor && !isEditing && (
+          <button type="button" onClick={() => { setDraft(answer.body); setIsEditing(true); }} className="hover:text-text-primary">
+            Edit
+          </button>
+        )}
+        {showEngagement && !isAuthor && <ReportButton targetType="ANSWER" targetId={answer.id} />}
         {canAccept && !answer.isAccepted && (
           <Button variant="secondary" className="ml-auto px-2 py-1 text-xs" onClick={onAccept} disabled={isAccepting}>
             {isAccepting ? "채택 중..." : "Accept"}
@@ -71,7 +110,26 @@ export function AnswerCard({
           <span className="text-sm font-semibold text-text-secondary">{answer.score}</span>
         )}
         <div className="flex-1">
-          <MarkdownContent>{answer.body}</MarkdownContent>
+          {isEditing ? (
+            <div className="space-y-2">
+              <MarkdownEditor value={draft} onChange={setDraft} rows={6} />
+              {reviseAnswer.isError && (
+                <p className="text-sm text-danger">
+                  {reviseAnswer.error instanceof ApiError ? reviseAnswer.error.message : "수정하지 못했습니다."}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button className="px-2 py-1 text-xs" onClick={handleSave} disabled={reviseAnswer.isPending || !draft.trim()}>
+                  {reviseAnswer.isPending ? "저장 중..." : "Save"}
+                </Button>
+                <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <MarkdownContent>{answer.body}</MarkdownContent>
+          )}
           {showEngagement && <CommentSection targetType="ANSWER" targetId={answer.id} />}
         </div>
       </div>
