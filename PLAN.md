@@ -279,6 +279,13 @@ Cluster+Super Answer(Phase 6, [ADR-0016](docs/architecture/decisions/0016-manual
 - [x] 18.4 테스트 — 단위 테스트 33개(`MarkQuestionsAsSameProblemUseCaseTest`에 병합/Super Answer 미이전 케이스 추가, `QuestionTest`에 Fork 관련 케이스 추가, `ForkQuestionUseCaseTest`/`ListQuestionForksUseCaseTest`/`GetQuestionGraphUseCaseTest` 신규)와 실제 서버+curl 검증(클러스터 A+B, C+D 각각 생성 → A·C를 같은 문제로 표시 시 실제 병합되고 200 반환 → 흡수된 클러스터 404 확인 → 포크 생성 → 포크가 원본 클러스터에 안 들어감 확인 → 포크 목록·그래프 API 양방향 확인)
 - [x] 18.5 문서화 — `domain-model.md`의 Question/QuestionCluster Aggregate 행·ERD·테이블 삭제 정책·"지식 진화 체인" 절에 Merge/Fork/그래프 반영(Merge/Fork가 "아직 착수 안 함"이라던 기존 문장을 정정). `api-design.md`의 Phase 6 섹션에서 이제 틀린 "409로 거부" 서술을 수정하고 "Cluster Merge & Question Fork (Phase 18)" 섹션 신규 추가. 이번 결정은 이미 [ADR-0030](docs/architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md)로 기록됨
 
+## Frontend Phase 9 — Fork UI
+
+Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(기존 "같은 문제로 표시" UI를 그대로 통해 투명하게 동작 — `useCluster.ts`가 404를 이미 `null`로 처리하고 있어 손댈 곳이 없음). Fork와 지식 그래프 데이터 API 중 지식 그래프는 ADR-0030이 명시한 대로 시각화 UI를 이번 범위에서 만들지 않으므로, `/graph` 응답 중 Fork 계보(`forkedFrom`/`forks`)만 소비한다.
+
+- [x] F9.1 Fork — `features/question`에 `useQuestionGraph`(단순 `GET /questions/{id}/graph` 조회)와 `useForkQuestion`(포크 성공 시 그래프 쿼리 무효화) 훅 추가, `question.types.ts`/`question.api.ts`/`question.keys.ts`에 대응 타입·엔드포인트·쿼리 키 추가. 새 `ForkPanel` 컴포넌트 — "Fork this question" 버튼(성공 시 새 질문 페이지로 즉시 이동), origin이 있으면 "Forked from {title}" 링크, 파생된 포크가 있으면 "Forks (N)" 목록. `graph.clusterMembers`/`graph.relatedQuestions`는 각각 `ClusterPanel`·Related Questions 사이드바가 이미 같은 페이지에서 표시하므로 `ForkPanel`에서는 의도적으로 다시 렌더링하지 않음(중복 방지). Question Detail 페이지의 `ClusterPanel` 바로 아래에 배치
+- [x] F9.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 새 질문 생성→Fork 클릭→새 질문(id+1)으로 즉시 이동→"Forked from" 링크가 원본을 정확히 가리키는지 확인→원본 페이지로 돌아가 "Forks (1)" 목록에 포크가 나타나는지 확인→DB에서 `origin_question_id`는 채워지고 `cluster_id`는 비어있는지(Cluster 자동 가입 안 함) 직접 확인까지 전체 흐름을 브라우저+DB로 확인. 이번 Phase 자체의 프론트 버그는 없었음
+
 ## Phase 19+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
