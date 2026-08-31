@@ -307,8 +307,8 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 20.3 평판 점수 공식 개정 — 기존 공식에 `voteScoreReceived*1` 추가. Badge(Phase 15)의 `BadgeRepository.sumVoteScoreReceived`를 재사용(새 쿼리 만들지 않음)
 - [x] 20.4 테스트 — 단위 테스트(검색 use case가 sort를 그대로 전달하는지, 평판 점수 공식의 투표 항·음수 케이스)와 실제 서버+curl 검증(질문 2개에 각각 다른 순 투표 점수를 만들어 `sort=score`가 relevance와 다른 순서를 내는지, Dashboard 랭킹 SQL이 vote_score를 포함해 정확히 계산되는지 직접 쿼리로 재현, 평판 API가 `voteScoreReceived`를 반영한 `score`를 반환하는지 확인). Dashboard/검색 native 쿼리 자체는 기존 관례대로 단위 테스트 대상이 아니라 curl로만 검증
 - [x] 20.5 문서화 — `domain-model.md`/`api-design.md`에 반영(이미 [ADR-0032](docs/architecture/decisions/0032-vote-score-search-sort-dashboard-reputation.md)로 결정 기록됨)
-- [ ] F11.1 프론트엔드 — 검색 결과 화면에 "Sort: Relevance/Score" 드롭다운 추가(서버에 `sort` 파라미터로 반영, [ADR-0022](docs/architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)가 데이터 부재로 보류했던 것을 이제 채움)
-- [ ] F11.2 검증 — 브라우저로 Score 정렬 전환 시 실제 순서가 바뀌는지 확인
+- [x] F11.1 프론트엔드 — `/questions` 검색 결과 화면에 "sort: Relevance/Score" 드롭다운 추가(Question Detail의 Answers sort `<select>`와 동일한 패턴). `sort` 상태는 URL 쿼리(`?sort=score`)에 반영해 공유·뒤로가기 보장(Tags/Status 필터와 동일한 원칙, [ADR-0022](docs/architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)가 데이터 부재로 보류했던 것을 이제 채움). `useSearch`/`searchApi.search`에 `sort` 파라미터 추가 — 기존 `useAutocomplete`의 위치 인자 호출이 깨지지 않도록 `sort`는 `limit` 뒤 세 번째 인자로 배치
+- [x] F11.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 순 투표 점수가 다른 질문 두 개를 만들어 Relevance(기존 id DESC)와 Score 정렬의 순서가 실제로 다른지, sort 드롭다운 전환 시 URL과 목록 순서가 함께 바뀌는지 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음(빌드 중 `useAutocomplete`의 위치 인자 충돌 하나를 발견해 즉시 수정)
 
 ## Phase 21+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
