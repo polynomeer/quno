@@ -1,7 +1,7 @@
 # ADR-0024: Comment는 스레드 없는 평면 목록, 수정 불가, soft-delete로 tombstone 처리
 
 - 날짜: 2026-08-30
-- 상태: 승인됨
+- 상태: 일부 대체됨(대댓글/수정/멘션은 [ADR-0031](0031-comment-thread-mention-edit-history.md)로) — 나머지 결정(대상 범위, tombstone 삭제, 600자 제한, 평판 미반영)은 유효
 
 ## 배경 (Context)
 

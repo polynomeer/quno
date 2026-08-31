@@ -48,10 +48,11 @@
 | [0021](0021-tag-detail-via-search-approximation.md) | Tag Detail은 검색 결과 근사로 구현, 태그 통계/탭/Follow 상태는 후속으로 이연 | 승인됨 |
 | [0022](0022-search-filters-client-side-tag-and-status-only.md) | 고급 검색 필터는 클라이언트 사이드 Tags/Status만, Score/Date/Sort는 보류 | 승인됨 |
 | [0023](0023-vote-as-side-aggregate-no-reputation-impact.md) | Vote는 Watch와 같은 독립 side-aggregate, 평판 점수·인기순위엔 미반영 | 승인됨 |
-| [0024](0024-comment-flat-no-edit-tombstone-delete.md) | Comment는 스레드 없는 평면 목록, 수정 불가, soft-delete tombstone | 승인됨 |
+| [0024](0024-comment-flat-no-edit-tombstone-delete.md) | Comment는 스레드 없는 평면 목록, 수정 불가, soft-delete tombstone | 일부 대체됨(ADR-0031) |
 | [0025](0025-save-as-separate-side-aggregate-from-watch.md) | Save(북마크)는 Watch와 구조는 같지만 별도 테이블·독립 side-aggregate로 분리 | 승인됨 |
 | [0026](0026-follow-user-relationship-only-no-activity-feed.md) | Follow User는 관계 기록·조회만, 활동 피드·알림은 후속 Phase로 이연 | 승인됨 |
 | [0027](0027-badge-as-computed-read-model-no-award-events.md) | Badge는 Reputation처럼 영속화 없는 계산형 읽기 모델, 획득 이벤트·알림은 미도입 | 승인됨 |
 | [0028](0028-moderation-mvp-report-dismiss-hide-only.md) | 모더레이션은 신고→검토 큐→Dismiss/Hide까지만, 역할 관리·Edit·정지는 후속으로 이연 | 승인됨 |
 | [0029](0029-answer-revision-mirrors-question-version-no-locking.md) | Answer Revision은 Question/QuestionVersion 분리를 그대로 적용하되 동시성 잠금은 미도입 | 승인됨 |
 | [0030](0030-cluster-merge-question-fork-graph-data-only.md) | Merge는 클러스터 병합으로 한정, Fork는 리비전 인프라 재사용, 지식 그래프는 데이터 API까지만 | 승인됨 |
+| [0031](0031-comment-thread-mention-edit-history.md) | Comment에 1단계 대댓글, @mention 알림(생성 시점만), 수정 이력(diff 없이) 추가 | 승인됨 |

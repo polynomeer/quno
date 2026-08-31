@@ -286,7 +286,19 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] F9.1 Fork — `features/question`에 `useQuestionGraph`(단순 `GET /questions/{id}/graph` 조회)와 `useForkQuestion`(포크 성공 시 그래프 쿼리 무효화) 훅 추가, `question.types.ts`/`question.api.ts`/`question.keys.ts`에 대응 타입·엔드포인트·쿼리 키 추가. 새 `ForkPanel` 컴포넌트 — "Fork this question" 버튼(성공 시 새 질문 페이지로 즉시 이동), origin이 있으면 "Forked from {title}" 링크, 파생된 포크가 있으면 "Forks (N)" 목록. `graph.clusterMembers`/`graph.relatedQuestions`는 각각 `ClusterPanel`·Related Questions 사이드바가 이미 같은 페이지에서 표시하므로 `ForkPanel`에서는 의도적으로 다시 렌더링하지 않음(중복 방지). Question Detail 페이지의 `ClusterPanel` 바로 아래에 배치
 - [x] F9.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 새 질문 생성→Fork 클릭→새 질문(id+1)으로 즉시 이동→"Forked from" 링크가 원본을 정확히 가리키는지 확인→원본 페이지로 돌아가 "Forks (1)" 목록에 포크가 나타나는지 확인→DB에서 `origin_question_id`는 채워지고 `cluster_id`는 비어있는지(Cluster 자동 가입 안 함) 직접 확인까지 전체 흐름을 브라우저+DB로 확인. 이번 Phase 자체의 프론트 버그는 없었음
 
-## Phase 19+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 19 — Comment 확장: 대댓글, @mention, 수정 이력 (mvp-scope.md 로드맵에 없던 새 범위)
+
+[ADR-0024](docs/architecture/decisions/0024-comment-flat-no-edit-tombstone-delete.md)가 "필요해지면 새 ADR로 재설계"라고 남겨둔 세 가지(대댓글·수정·멘션)를 [ADR-0031](docs/architecture/decisions/0031-comment-thread-mention-edit-history.md)로 한 번에 착수한다. 대댓글은 1단계로 제한, 수정은 diff 없이 이력만, 멘션은 생성 시점에만 파싱해 알림 목적으로만 쓴다.
+
+- [ ] 19.1 대댓글 — `comments.parent_comment_id`(nullable, 자기 참조) 추가. `CreateCommentCommand`에 `parentCommentId: Long?` 추가, 부모가 이미 답글이면 `CommentReplyDepthExceededException`(400)으로 거부(1단계 제한). `ListCommentsUseCase`는 여전히 평면 목록 반환(트리 조립은 프론트 책임)
+- [ ] 19.2 수정 이력 — 새 `comment_versions` 테이블(append-only, diff 없음) + `comments.version_number` 컬럼. `PUT /api/v1/comments/{id}`(작성자 본인만, 이미 삭제된 댓글은 `CommentAlreadyDeletedException` 409로 거부) + `GET /api/v1/comments/{id}/versions`. 수정은 알림을 발생시키지 않음
+- [ ] 19.3 @mention — 생성 시점 본문에서 `@([\w-]+)` 파싱 → `UserRepository.findByNickname` 정확 일치 → 새 `OutboxEventTypes.MENTIONED_IN_COMMENT`(Ward 구독자 fan-out 건너뛰고 멘션 대상에게만). 답글은 기존 `NEW_COMMENT`에 `parentCommentAuthorId` 추가해 부모 작성자에게도 통보
+- [ ] 19.4 테스트 — 단위 테스트(대댓글 생성/depth 제한/수정/이미 삭제된 댓글 수정 거부/버전 이력 조회/멘션 파싱·알림·자기 자신 언급 시 알림 없음)와 실제 서버+curl 검증
+- [ ] 19.5 문서화 — `domain-model.md`/`api-design.md`에 반영(이미 [ADR-0031](docs/architecture/decisions/0031-comment-thread-mention-edit-history.md)로 결정 기록됨)
+- [ ] F10.1 프론트엔드 — `CommentSection`에 답글(1단계, 들여쓰기)·인라인 수정 토글·인라인 버전 이력 펼치기(별도 페이지 없음)·멘션 스타일링(링크 없음) 추가
+- [ ] F10.2 검증 — 브라우저로 대댓글/수정/멘션 알림 전체 흐름 확인
+
+## Phase 20+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
