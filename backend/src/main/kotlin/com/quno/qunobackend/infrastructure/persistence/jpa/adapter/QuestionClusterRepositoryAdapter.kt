@@ -23,6 +23,8 @@ class QuestionClusterRepositoryAdapter(
 
     override fun findById(id: Long): QuestionCluster? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
+    override fun delete(id: Long) = jpaRepository.deleteById(id)
+
     private fun QuestionClusterJpaEntity.toDomain(): QuestionCluster = QuestionCluster.reconstitute(
         id = requireNotNull(id),
         representativeAnswerId = representativeAnswerId,

@@ -23,4 +23,8 @@ class InMemoryQuestionClusterRepository : QuestionClusterRepository {
     }
 
     override fun findById(id: Long): QuestionCluster? = byId[id]
+
+    override fun delete(id: Long) {
+        byId.remove(id)
+    }
 }

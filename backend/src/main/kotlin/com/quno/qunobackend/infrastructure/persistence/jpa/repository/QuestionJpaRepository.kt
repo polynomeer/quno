@@ -17,4 +17,6 @@ interface QuestionJpaRepository : JpaRepository<QuestionJpaEntity, Long> {
     fun findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId: Long): List<QuestionJpaEntity>
 
     fun findAllByClusterIdAndDeletedAtIsNull(clusterId: Long): List<QuestionJpaEntity>
+
+    fun findAllByOriginQuestionIdAndDeletedAtIsNull(originQuestionId: Long): List<QuestionJpaEntity>
 }

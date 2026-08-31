@@ -23,3 +23,8 @@ data class MarkQuestionOutdatedCommand(
     val actorId: Long,
     val reason: String,
 )
+
+data class ForkQuestionCommand(
+    val originQuestionId: Long,
+    val actorId: Long,
+)

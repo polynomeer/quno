@@ -1,13 +1,17 @@
 package com.quno.qunobackend.interfaces.api.question
 
+import com.quno.qunobackend.application.cluster.usecase.GetQuestionGraphUseCase
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
+import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
 import com.quno.qunobackend.application.question.dto.MarkQuestionOutdatedCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
+import com.quno.qunobackend.application.question.usecase.ForkQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionDiffUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionUseCase
+import com.quno.qunobackend.application.question.usecase.ListQuestionForksUseCase
 import com.quno.qunobackend.application.question.usecase.ListQuestionVersionsUseCase
 import com.quno.qunobackend.application.question.usecase.MarkQuestionOutdatedUseCase
 import com.quno.qunobackend.application.question.usecase.ReviseQuestionUseCase
@@ -37,6 +41,9 @@ class QuestionController(
     private val getQuestionVersionDiffUseCase: GetQuestionVersionDiffUseCase,
     private val questionSearchUseCase: QuestionSearchUseCase,
     private val markQuestionOutdatedUseCase: MarkQuestionOutdatedUseCase,
+    private val forkQuestionUseCase: ForkQuestionUseCase,
+    private val listQuestionForksUseCase: ListQuestionForksUseCase,
+    private val getQuestionGraphUseCase: GetQuestionGraphUseCase,
 ) {
 
     @PostMapping
@@ -155,6 +162,18 @@ class QuestionController(
         )
         return result.toResponse()
     }
+
+    @PostMapping("/{id}/fork")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun fork(@AuthenticationPrincipal actorId: Long, @PathVariable id: Long): QuestionMutationResponse =
+        forkQuestionUseCase.execute(ForkQuestionCommand(originQuestionId = id, actorId = actorId)).toResponse()
+
+    @GetMapping("/{id}/forks")
+    fun forks(@PathVariable id: Long): List<QuestionSearchResultResponse> =
+        listQuestionForksUseCase.execute(id).map { it.toResponse() }
+
+    @GetMapping("/{id}/graph")
+    fun graph(@PathVariable id: Long): QuestionGraphResponse = getQuestionGraphUseCase.execute(id).toResponse()
 
     private fun QuestionMutationResult.toResponse() =
         QuestionMutationResponse(id = id, title = title, status = status, versionNumber = versionNumber)

@@ -7,7 +7,6 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersion
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
-import com.quno.qunobackend.domain.cluster.ClustersAlreadyDistinctException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -69,15 +68,38 @@ class MarkQuestionsAsSameProblemUseCaseTest {
     }
 
     @Test
-    fun `rejects marking two questions that already belong to different clusters`() {
+    fun `marking two questions that already belong to different clusters merges them, keeping the first question's cluster`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
         val c = questionAskedBy(3L)
         val d = questionAskedBy(4L)
-        useCase.execute(a, b)
+        val firstCluster = useCase.execute(a, b)
+        val secondCluster = useCase.execute(c, d)
+
+        val result = useCase.execute(a, c)
+
+        assertEquals(firstCluster.clusterId, result.clusterId)
+        assertEquals(setOf(a, b, c, d), result.memberQuestionIds.toSet())
+        assertEquals(firstCluster.clusterId, questionRepository.findById(d)!!.clusterId)
+        assertNull(questionClusterRepository.findById(secondCluster.clusterId))
+    }
+
+    @Test
+    fun `merging does not carry over the absorbed cluster's Super Answer`() {
+        val a = questionAskedBy(1L)
+        val b = questionAskedBy(2L)
+        val absorbed = useCase.execute(a, b)
+        questionClusterRepository.save(
+            requireNotNull(questionClusterRepository.findById(absorbed.clusterId)).designateSuperAnswer(999L),
+        )
+        val c = questionAskedBy(3L)
+        val d = questionAskedBy(4L)
         useCase.execute(c, d)
 
-        assertFailsWith<ClustersAlreadyDistinctException> { useCase.execute(a, c) }
+        // c is the surviving cluster here — a's cluster (with the Super Answer) is the one absorbed.
+        val result = useCase.execute(c, a)
+
+        assertNull(result.representativeAnswerId)
     }
 
     @Test

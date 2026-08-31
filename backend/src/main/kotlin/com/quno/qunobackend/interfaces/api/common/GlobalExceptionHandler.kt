@@ -7,7 +7,6 @@ import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
 import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
-import com.quno.qunobackend.domain.cluster.ClustersAlreadyDistinctException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
 import com.quno.qunobackend.domain.comment.CommentNotFoundException
@@ -48,7 +47,6 @@ class GlobalExceptionHandler {
         QuestionAlreadyResolvedException::class,
         ReviewRequestAlreadyAddressedException::class,
         QuestionNotRevisedSinceRequestException::class,
-        ClustersAlreadyDistinctException::class,
         AnswerNotInClusterException::class,
         AnswerNotAcceptedException::class,
         ReportAlreadyResolvedException::class,

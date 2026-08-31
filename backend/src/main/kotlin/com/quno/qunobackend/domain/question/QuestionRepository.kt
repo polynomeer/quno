@@ -15,4 +15,7 @@ interface QuestionRepository {
 
     /** Members of a Cluster (PLAN.md 6.1) — order is not significant. */
     fun findAllByClusterId(clusterId: Long): List<Question>
+
+    /** Questions forked from this one (Phase 18, ADR-0030) — order is not significant. */
+    fun findAllByOriginQuestionId(originQuestionId: Long): List<Question>
 }

@@ -18,6 +18,20 @@ class QuestionTest {
     }
 
     @Test
+    fun `open records the origin question id when forked`() {
+        val question = Question.open(authorId = 1L, title = "Redis timeout (Redis 8 variant)", originQuestionId = 5L)
+
+        assertEquals(5L, question.originQuestionId)
+    }
+
+    @Test
+    fun `open leaves origin question id null by default`() {
+        val question = Question.open(authorId = 1L, title = "Redis timeout")
+
+        assertNull(question.originQuestionId)
+    }
+
+    @Test
     fun `open rejects a blank title`() {
         assertFailsWith<IllegalArgumentException> {
             Question.open(authorId = 1L, title = " ")
@@ -35,6 +49,7 @@ class QuestionTest {
             latestVersionId = null,
             acceptedAnswerId = null,
             clusterId = null,
+            originQuestionId = null,
             deletedAt = null,
             createdAt = now,
             updatedAt = now,
@@ -139,6 +154,7 @@ class QuestionTest {
             latestVersionId = 1L,
             acceptedAnswerId = null,
             clusterId = null,
+            originQuestionId = null,
             deletedAt = null,
             createdAt = now,
             updatedAt = now,

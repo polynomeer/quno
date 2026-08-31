@@ -20,6 +20,7 @@ class QuestionRepositoryAdapter(
             latestVersionId = question.latestVersionId,
             acceptedAnswerId = question.acceptedAnswerId,
             clusterId = question.clusterId,
+            originQuestionId = question.originQuestionId,
             deletedAt = question.deletedAt,
             createdAt = question.createdAt,
             updatedAt = question.updatedAt,
@@ -37,6 +38,9 @@ class QuestionRepositoryAdapter(
     override fun findAllByClusterId(clusterId: Long): List<Question> =
         jpaRepository.findAllByClusterIdAndDeletedAtIsNull(clusterId).map { it.toDomain() }
 
+    override fun findAllByOriginQuestionId(originQuestionId: Long): List<Question> =
+        jpaRepository.findAllByOriginQuestionIdAndDeletedAtIsNull(originQuestionId).map { it.toDomain() }
+
     private fun QuestionJpaEntity.toDomain(): Question = Question.reconstitute(
         id = requireNotNull(id),
         authorId = authorId,
@@ -45,6 +49,7 @@ class QuestionRepositoryAdapter(
         latestVersionId = latestVersionId,
         acceptedAnswerId = acceptedAnswerId,
         clusterId = clusterId,
+        originQuestionId = originQuestionId,
         deletedAt = deletedAt,
         createdAt = createdAt,
         updatedAt = updatedAt,

@@ -19,6 +19,7 @@ class InMemoryQuestionRepository : QuestionRepository {
                 latestVersionId = question.latestVersionId,
                 acceptedAnswerId = question.acceptedAnswerId,
                 clusterId = question.clusterId,
+                originQuestionId = question.originQuestionId,
                 deletedAt = question.deletedAt,
                 createdAt = question.createdAt,
                 updatedAt = question.updatedAt,
@@ -40,6 +41,9 @@ class InMemoryQuestionRepository : QuestionRepository {
 
     override fun findAllByClusterId(clusterId: Long): List<Question> =
         byId.values.filter { it.clusterId == clusterId }
+
+    override fun findAllByOriginQuestionId(originQuestionId: Long): List<Question> =
+        byId.values.filter { it.originQuestionId == originQuestionId }
 }
 
 class InMemoryQuestionVersionRepository : QuestionVersionRepository {
