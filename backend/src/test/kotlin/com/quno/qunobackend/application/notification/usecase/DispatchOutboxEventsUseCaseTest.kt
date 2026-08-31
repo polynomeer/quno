@@ -167,6 +167,44 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `DIRECT_ASK_REQUESTED notifies only the target, not watchers`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.DIRECT_ASK_REQUESTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"directAskRequestId":5,"actorId":30,"targetUserId":40}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertEquals(1, notificationRepository.findAllByUserId(40L).size)
+        assertTrue(notificationRepository.findAllByUserId(30L).isEmpty())
+    }
+
+    @Test
+    fun `DIRECT_ASK_ACCEPTED notifies only the original requester, not watchers`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.DIRECT_ASK_ACCEPTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"directAskRequestId":5,"actorId":40,"requesterId":30}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertEquals(1, notificationRepository.findAllByUserId(30L).size)
+        assertTrue(notificationRepository.findAllByUserId(40L).isEmpty())
+    }
+
+    @Test
     fun `marks the event published so it is not dispatched twice`() {
         outboxEventRepository.save(
             OutboxEvent.create(

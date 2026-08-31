@@ -17,6 +17,7 @@ class InMemoryUserRepository : UserRepository {
                 passwordHash = user.passwordHash,
                 isActive = user.isActive,
                 role = user.role,
+                acceptsDirectAsk = user.acceptsDirectAsk,
                 createdAt = user.createdAt,
                 updatedAt = user.updatedAt,
             )
@@ -43,6 +44,7 @@ class InMemoryUserRepository : UserRepository {
             passwordHash = user.passwordHash,
             isActive = user.isActive,
             role = Role.MODERATOR,
+            acceptsDirectAsk = user.acceptsDirectAsk,
             createdAt = user.createdAt,
             updatedAt = user.updatedAt,
         )

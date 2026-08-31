@@ -15,6 +15,7 @@ class GetMyProfileUseCase(
             id = requireNotNull(user.id),
             email = user.email,
             nickname = user.nickname,
+            acceptsDirectAsk = user.acceptsDirectAsk,
             createdAt = user.createdAt,
         )
     }

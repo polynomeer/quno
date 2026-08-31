@@ -34,6 +34,9 @@ class UserJpaEntity(
     @Enumerated(EnumType.STRING)
     val role: Role,
 
+    @Column(name = "accepts_direct_ask", nullable = false)
+    val acceptsDirectAsk: Boolean,
+
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant,
 

@@ -12,7 +12,15 @@ import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
 import com.quno.qunobackend.domain.comment.CommentAlreadyDeletedException
 import com.quno.qunobackend.domain.comment.CommentNotFoundException
 import com.quno.qunobackend.domain.comment.CommentReplyDepthExceededException
+import com.quno.qunobackend.domain.directask.DirectAskAccessDeniedException
+import com.quno.qunobackend.domain.directask.DirectAskNotAcceptedException
+import com.quno.qunobackend.domain.directask.DirectAskRequestAlreadyRespondedException
+import com.quno.qunobackend.domain.directask.DirectAskRequestNotFoundException
+import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
+import com.quno.qunobackend.domain.directask.SelfDirectAskException
 import com.quno.qunobackend.domain.follow.SelfFollowException
+import com.quno.qunobackend.domain.organization.DuplicateOrganizationNameException
+import com.quno.qunobackend.domain.organization.OrganizationNotFoundException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -53,6 +61,10 @@ class GlobalExceptionHandler {
         AnswerNotAcceptedException::class,
         ReportAlreadyResolvedException::class,
         CommentAlreadyDeletedException::class,
+        DuplicateOrganizationNameException::class,
+        DuplicateDirectAskException::class,
+        DirectAskRequestAlreadyRespondedException::class,
+        DirectAskNotAcceptedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -73,6 +85,8 @@ class GlobalExceptionHandler {
         CommentNotFoundException::class,
         ReportNotFoundException::class,
         AnswerVersionNotFoundException::class,
+        OrganizationNotFoundException::class,
+        DirectAskRequestNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -85,6 +99,8 @@ class GlobalExceptionHandler {
         SelfFollowException::class,
         ModeratorAccessDeniedException::class,
         AnswerAccessDeniedException::class,
+        SelfDirectAskException::class,
+        DirectAskAccessDeniedException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))

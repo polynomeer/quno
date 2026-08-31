@@ -13,9 +13,16 @@ class User private constructor(
     val passwordHash: String,
     val isActive: Boolean,
     val role: Role,
+    /** Opt-in, defaults to false (Phase 22, ADR-0034) — a request is refused rather than merely
+     * hidden when this is false, matching the original brainstorm's "expert sets whether they
+     * accept Direct Ask". */
+    val acceptsDirectAsk: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
+    fun updateDirectAskSettings(accepts: Boolean): User =
+        User(id, email, nickname, passwordHash, isActive, role, accepts, createdAt, Instant.now())
+
     companion object {
         fun register(email: String, nickname: String, passwordHash: String): User {
             require(email.isNotBlank()) { "email must not be blank" }
@@ -29,6 +36,7 @@ class User private constructor(
                 passwordHash = passwordHash,
                 isActive = true,
                 role = Role.USER,
+                acceptsDirectAsk = false,
                 createdAt = now,
                 updatedAt = now,
             )
@@ -41,8 +49,9 @@ class User private constructor(
             passwordHash: String,
             isActive: Boolean,
             role: Role,
+            acceptsDirectAsk: Boolean,
             createdAt: Instant,
             updatedAt: Instant,
-        ): User = User(id, email, nickname, passwordHash, isActive, role, createdAt, updatedAt)
+        ): User = User(id, email, nickname, passwordHash, isActive, role, acceptsDirectAsk, createdAt, updatedAt)
     }
 }
