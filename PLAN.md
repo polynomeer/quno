@@ -310,11 +310,21 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] F11.1 프론트엔드 — `/questions` 검색 결과 화면에 "sort: Relevance/Score" 드롭다운 추가(Question Detail의 Answers sort `<select>`와 동일한 패턴). `sort` 상태는 URL 쿼리(`?sort=score`)에 반영해 공유·뒤로가기 보장(Tags/Status 필터와 동일한 원칙, [ADR-0022](docs/architecture/decisions/0022-search-filters-client-side-tag-and-status-only.md)가 데이터 부재로 보류했던 것을 이제 채움). `useSearch`/`searchApi.search`에 `sort` 파라미터 추가 — 기존 `useAutocomplete`의 위치 인자 호출이 깨지지 않도록 `sort`는 `limit` 뒤 세 번째 인자로 배치
 - [x] F11.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 순 투표 점수가 다른 질문 두 개를 만들어 Relevance(기존 id DESC)와 Score 정렬의 순서가 실제로 다른지, sort 드롭다운 전환 시 URL과 목록 순서가 함께 바뀌는지 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음(빌드 중 `useAutocomplete`의 위치 인자 충돌 하나를 발견해 즉시 수정)
 
-## Phase 21+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 21 — 기술 버전 영향 감지 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지)
+
+[ADR-0017](docs/architecture/decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)이 외부 릴리스 데이터 피드가 없다는 이유로 범위 밖에 뒀던 "기술 버전 영향 감지"의 진짜 자동화를 [ADR-0033](docs/architecture/decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)으로 시작한다. 무료·무인증인 endoflife.date v1 API가 이 프로젝트 태그 대부분(kotlin, spring-boot, redis, kafka, postgresql, mongodb, docker)을 제품 단위로 커버하는 것을 확인했다. 다만 감지가 자동화됐다고 질문을 자동으로 `OUTDATED`로 전환하지는 않는다 — 태그 일치 + 콘텐츠가 릴리스보다 오래됐다는 휴리스틱은 그 릴리스가 실제로 질문에 영향을 주는지 검증하지 않으므로, ADR-0017이 이미 사람의 판단에 맡긴 자리에 검증되지 않은 자동 판단을 추가하지 않기로 했다. 감지 결과는 알림까지만 가고, 최종 판단은 여전히 `POST /questions/{id}/outdated`를 사람이 직접 호출하는 것이다.
+
+- [x] 21.1 외부 데이터 피드 연동 — `domain/qunobot/TechnologyReleaseFeed` 포트 + `infrastructure/external/EndOfLifeDateTechnologyReleaseFeed`(Spring `RestClient`, 타임아웃 5초, 실패 시 예외 대신 null 반환). `domain/qunobot/TrackedTechnologies`에 태그 slug → endoflife.date 제품 slug 매핑을 하드코딩(Cluster와 동일한 "자동 탐색 대신 명시적 큐레이션" 철학) — "java"처럼 벤더별 빌드로만 존재해 하나의 제품으로 특정할 수 없는 기술은 넣지 않았다
+- [x] 21.2 릴리스 스냅샷 + 변경 감지 — `technology_releases` 테이블(V16 마이그레이션, 태그당 1행 스냅샷·이력 아님). `ApplyTechnologyReleaseUseCase`가 스캔 결과를 저장하고, 처음 보는 태그는 베이스라인만 저장(알림 없음 — 롤아웃 시점 오탐 방지), 저장된 버전과 실제로 달라졌을 때만 "새 릴리스"로 취급. `ScanTechnologyReleasesUseCase`(스케줄러 진입점, `@Transactional` 아님 — 외부 HTTP 호출이 DB 트랜잭션과 겹치지 않도록 분리)가 하루 1회(`TechnologyVersionScanScheduler`) 추적 기술 전체를 순회하며 한 제품의 호출 실패가 나머지를 막지 않게 함
+- [x] 21.3 영향받은 질문 감지 + 알림 — `VersionImpactRepository`(native SQL)가 해당 태그가 달리고 `RESOLVED`/`OUTDATED`가 아니며 콘텐츠(question_versions 최신 `created_at` — `questions.updated_at`은 클러스터 합류 등에도 움직여 신뢰 불가)가 릴리스일보다 오래된 질문을 찾는다. `TECH_VERSION_IMPACT_DETECTED` outbox 이벤트(`QUESTION_OUTDATED`와 동일한 수신자 규칙: Ward 구독자 + 질문 작성자, `actorId` 없음 — 발행자가 사람이 아니라 스케줄러이므로)를 `DispatchOutboxEventsUseCase`의 기존 fan-out에 추가
+- [x] 21.4 읽기 API — `GET /qunobot/version-impacts?limit=`(현재 영향권 질문을 릴리스일 내림차순으로 반환, `VersionImpact`를 ADR-0010과 동일하게 DTO 복제 없이 그대로 응답). Spike Detection과 달리 Redis 캐싱은 하지 않음(Instant/LocalDate 포함 모델의 JSON 캐시 왕복 전례가 없고, 추적 기술 수가 작아 비용이 크지 않음)
+- [x] 21.5 테스트 — 단위 테스트(`ApplyTechnologyReleaseUseCase`: 베이스라인 시딩·버전 불변·버전 변경 시 알림·payload 내용, `ScanTechnologyReleasesUseCase`: 추적 기술 전원 조회·피드 실패 시 나머지 계속, `DispatchOutboxEventsUseCase`: TECH_VERSION_IMPACT_DETECTED 수신자)와 실제 서버 검증(질문을 의도적으로 백데이트하고 저장된 버전을 가짜 값으로 바꾼 뒤 재기동으로 재스캔을 유도해, endoflife.date 실제 데이터로 변경 감지→outbox 이벤트→알림→`GET /qunobot/version-impacts` 노출→`OUTDATED` 표시 후 목록에서 제외까지 전 구간을 실제 HTTP로 확인). native SQL 자체는 기존 관례대로(Spike/Flow) curl로만 검증
+- [x] 21.6 문서화 — `domain-model.md`(QunoBot 이벤트 체인 구현 상태, Bounded Context, ERD, Domain Events)와 `api-design.md`("기술 버전 영향 감지 (Phase 21)" 섹션)에 반영, [ADR-0033](docs/architecture/decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)으로 스코프 결정 기록. 프론트엔드는 `TECH_VERSION_IMPACT_DETECTED` 알림 타입 설명 문구만 추가(전용 화면은 Spike Detection이 처음엔 백엔드만 있었던 것과 같은 이유로 범위 밖)
+
+## Phase 22+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- [ ] Phase ? — 기술 버전 영향 감지 실제 자동화 (mvp-scope.md 로드맵 Phase 4, 나머지) — 외부 기술 버전 릴리스 데이터 소스 연동이 실제로 필요해지고 그 소스를 정할 수 있을 때 착수
 - [ ] Phase ? — 신뢰 네트워크 잔여: Organization, Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — 조직 인증 방식, Direct Ask의 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
 
