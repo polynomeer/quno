@@ -28,6 +28,10 @@ import org.springframework.transaction.annotation.Transactional
  *     comment is on an answer (both extracted the same way; `answerAuthorId` is simply absent
  *     from the payload for a question comment, so extractLong naturally skips it — see
  *     CreateCommentUseCase)
+ *   - CONTENT_HIDDEN: **only** the hidden content's author, never the question's watchers — this
+ *     is an administrative notice about one person's content, not an activity signal the rest of
+ *     the subscribers care about (see ADR-0028). The only event type that skips the base
+ *     watcher fan-out entirely.
  * The actor who caused the event is never notified about their own action.
  */
 @Service
@@ -48,7 +52,11 @@ class DispatchOutboxEventsUseCase(
         val actorId = extractLong(event.payload, "actorId")
         val answerId = extractLong(event.payload, "answerId")
 
-        val recipients = watchRepository.findWatcherIds(questionId).toMutableSet()
+        val recipients = if (event.eventType == OutboxEventTypes.CONTENT_HIDDEN) {
+            mutableSetOf()
+        } else {
+            watchRepository.findWatcherIds(questionId).toMutableSet()
+        }
         when (event.eventType) {
             OutboxEventTypes.NEW_ANSWER -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.ANSWER_ACCEPTED -> extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
@@ -59,6 +67,7 @@ class DispatchOutboxEventsUseCase(
                 extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
                 extractLong(event.payload, "answerAuthorId")?.let(recipients::add)
             }
+            OutboxEventTypes.CONTENT_HIDDEN -> extractLong(event.payload, "contentAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 

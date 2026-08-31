@@ -1,7 +1,10 @@
 package com.quno.qunobackend.infrastructure.persistence.jpa.entity
 
+import com.quno.qunobackend.domain.user.Role
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -26,6 +29,10 @@ class UserJpaEntity(
 
     @Column(name = "is_active", nullable = false)
     val isActive: Boolean,
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    val role: Role,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant,

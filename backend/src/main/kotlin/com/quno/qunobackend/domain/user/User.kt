@@ -12,6 +12,7 @@ class User private constructor(
     val nickname: String,
     val passwordHash: String,
     val isActive: Boolean,
+    val role: Role,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
@@ -27,6 +28,7 @@ class User private constructor(
                 nickname = nickname,
                 passwordHash = passwordHash,
                 isActive = true,
+                role = Role.USER,
                 createdAt = now,
                 updatedAt = now,
             )
@@ -38,8 +40,9 @@ class User private constructor(
             nickname: String,
             passwordHash: String,
             isActive: Boolean,
+            role: Role,
             createdAt: Instant,
             updatedAt: Instant,
-        ): User = User(id, email, nickname, passwordHash, isActive, createdAt, updatedAt)
+        ): User = User(id, email, nickname, passwordHash, isActive, role, createdAt, updatedAt)
     }
 }

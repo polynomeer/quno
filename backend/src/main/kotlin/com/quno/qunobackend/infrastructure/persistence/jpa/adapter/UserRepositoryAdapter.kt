@@ -18,6 +18,7 @@ class UserRepositoryAdapter(
             nickname = user.nickname,
             passwordHash = user.passwordHash,
             isActive = user.isActive,
+            role = user.role,
             createdAt = user.createdAt,
             updatedAt = user.updatedAt,
         )
@@ -38,6 +39,7 @@ class UserRepositoryAdapter(
         nickname = nickname,
         passwordHash = passwordHash,
         isActive = isActive,
+        role = role,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )

@@ -72,6 +72,24 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `CONTENT_HIDDEN notifies only the hidden content's author, not watchers`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.CONTENT_HIDDEN,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"actorId":99,"contentAuthorId":30}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertEquals(1, notificationRepository.findAllByUserId(30L).size)
+    }
+
+    @Test
     fun `marks the event published so it is not dispatched twice`() {
         outboxEventRepository.save(
             OutboxEvent.create(

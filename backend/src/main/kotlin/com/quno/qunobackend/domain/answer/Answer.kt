@@ -22,6 +22,12 @@ class Answer private constructor(
     fun unaccept(): Answer =
         Answer(id, questionId, authorId, bodyMarkdown, false, targetVersionNumber, deletedAt, createdAt, Instant.now())
 
+    /** Used by moderation Hide (Phase 16, ADR-0028). Idempotent. */
+    fun softDelete(): Answer {
+        if (deletedAt != null) return this
+        return Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, Instant.now(), createdAt, Instant.now())
+    }
+
     companion object {
         /** [targetVersionNumber] is the question's latest version number at write time (see PLAN.md 5.1). */
         fun write(questionId: Long, authorId: Long, bodyMarkdown: String, targetVersionNumber: Int): Answer {

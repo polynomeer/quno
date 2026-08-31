@@ -14,6 +14,9 @@ import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
+import com.quno.qunobackend.domain.report.ModeratorAccessDeniedException
+import com.quno.qunobackend.domain.report.ReportAlreadyResolvedException
+import com.quno.qunobackend.domain.report.ReportNotFoundException
 import com.quno.qunobackend.domain.review.QuestionNotRevisedSinceRequestException
 import com.quno.qunobackend.domain.review.ReviewRequestAlreadyAddressedException
 import com.quno.qunobackend.domain.review.ReviewRequestNotFoundException
@@ -46,6 +49,7 @@ class GlobalExceptionHandler {
         ClustersAlreadyDistinctException::class,
         AnswerNotInClusterException::class,
         AnswerNotAcceptedException::class,
+        ReportAlreadyResolvedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -64,6 +68,7 @@ class GlobalExceptionHandler {
         ClusterNotFoundException::class,
         QuestionNotInAnyClusterException::class,
         CommentNotFoundException::class,
+        ReportNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -74,6 +79,7 @@ class GlobalExceptionHandler {
         SelfVoteException::class,
         CommentAccessDeniedException::class,
         SelfFollowException::class,
+        ModeratorAccessDeniedException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))

@@ -65,6 +65,12 @@ class Question private constructor(
         return Question(id, authorId, title, QuestionStatus.OUTDATED, latestVersionId, acceptedAnswerId, clusterId, deletedAt, createdAt, Instant.now())
     }
 
+    /** Used by moderation Hide (Phase 16, ADR-0028). Idempotent. */
+    fun softDelete(): Question {
+        if (deletedAt != null) return this
+        return Question(id, authorId, title, status, latestVersionId, acceptedAnswerId, clusterId, Instant.now(), createdAt, Instant.now())
+    }
+
     companion object {
         fun open(authorId: Long, title: String): Question {
             require(title.isNotBlank()) { "title must not be blank" }
