@@ -11,6 +11,7 @@ import { OutdatedAction } from "@/features/question/ui/OutdatedAction";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
 import { AnswerComposer } from "@/features/answer/ui/AnswerComposer";
 import { WatchButton } from "@/features/watch/ui/WatchButton";
+import { SaveButton } from "@/features/save/ui/SaveButton";
 import { VoteControl } from "@/features/vote/ui/VoteControl";
 import { CommentSection } from "@/features/comment/ui/CommentSection";
 import { ReviewRequestPanel } from "@/features/review/ui/ReviewRequestPanel";
@@ -65,7 +66,10 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
               <StatusBadge status={question.status} />
               <h1 className="text-2xl font-semibold">{question.title}</h1>
             </div>
-            <WatchButton questionId={question.id} />
+            <div className="flex items-center gap-2">
+              <WatchButton questionId={question.id} />
+              <SaveButton questionId={question.id} />
+            </div>
           </div>
           <div className="flex flex-wrap gap-1">
             {question.tags.map((tag) => (

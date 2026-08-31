@@ -7,6 +7,13 @@ import { useUserReputation } from "@/entities/user/hooks/useUserReputation";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
 import { useMyWatches } from "@/features/watch/hooks/useMyWatches";
 import { WatchedQuestionList } from "@/features/watch/ui/WatchedQuestionList";
+import { useMySaves } from "@/features/save/hooks/useMySaves";
+import { SavedQuestionList } from "@/features/save/ui/SavedQuestionList";
+import { useMyFollowing } from "@/features/follow/hooks/useMyFollowing";
+import { FollowUserButton } from "@/features/follow/ui/FollowUserButton";
+import { FollowingList } from "@/features/follow/ui/FollowingList";
+import { useBadges } from "@/features/badge/hooks/useBadges";
+import { BadgeList } from "@/features/badge/ui/BadgeList";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { TagChip } from "@/shared/ui/TagChip";
 import { Skeleton } from "@/shared/ui/Skeleton";
@@ -19,6 +26,9 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
   const { data: reputation } = useUserReputation(userId);
   const isOwnProfile = Boolean(me && me.id === userId);
   const { data: watches } = useMyWatches(isOwnProfile);
+  const { data: saves } = useMySaves(isOwnProfile);
+  const { data: following } = useMyFollowing(isOwnProfile);
+  const { data: badges } = useBadges(userId);
 
   if (authLoading || profileLoading) {
     return (
@@ -36,7 +46,10 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">{profile.nickname}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold">{profile.nickname}</h1>
+          <FollowUserButton userId={userId} />
+        </div>
         {reputation && (
           <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
             <span className="text-lg font-semibold text-text-primary">{reputation.score} 평판</span>
@@ -46,6 +59,7 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
             <span>Super Answer {reputation.superAnswerCount}</span>
           </div>
         )}
+        <BadgeList badges={badges ?? []} emptyMessage="아직 획득한 배지가 없습니다." />
       </header>
 
       {isOwnProfile && (
@@ -53,6 +67,22 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
           <h2 className="text-lg font-semibold">Watching ({watches?.length ?? 0})</h2>
           <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
           <WatchedQuestionList questions={watches ?? []} emptyMessage="아직 Watch 중인 질문이 없습니다." />
+        </section>
+      )}
+
+      {isOwnProfile && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Saved ({saves?.length ?? 0})</h2>
+          <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
+          <SavedQuestionList questions={saves ?? []} emptyMessage="아직 저장한 질문이 없습니다." />
+        </section>
+      )}
+
+      {isOwnProfile && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Following ({following?.length ?? 0})</h2>
+          <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
+          <FollowingList users={following ?? []} emptyMessage="아직 팔로우하는 사용자가 없습니다." />
         </section>
       )}
 

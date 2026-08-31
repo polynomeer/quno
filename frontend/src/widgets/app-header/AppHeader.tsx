@@ -29,6 +29,9 @@ export function AppHeader() {
             <Link href="/watching" className="text-sm font-medium text-text-secondary hover:text-text-primary">
               Watching
             </Link>
+            <Link href="/saved" className="text-sm font-medium text-text-secondary hover:text-text-primary">
+              Saved
+            </Link>
             <Link
               href="/notifications"
               className="relative text-sm font-medium text-text-secondary hover:text-text-primary"
