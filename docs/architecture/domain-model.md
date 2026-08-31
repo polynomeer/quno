@@ -13,9 +13,9 @@
 | Search/Discovery | 검색·관련 질문·추천 | Read model / index 중심 |
 | Knowledge | 질문 간 연결과 대표 지식 | QuestionCluster(+Merge), Question의 Fork 계보(`originQuestionId`), 지식 그래프 데이터 조회(Phase 18, [ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)) |
 | Maintenance | 오래된 지식 표시, 이상 신호 감지 | Read model 중심(TagSpike), Question 상태(OUTDATED) |
-| Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation, Badge — Phase 15, [ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)) |
+| Reputation | 활동 기반 신뢰 신호 | Read model 중심(UserReputation, Badge — Phase 15, [ADR-0027](decisions/0027-badge-as-computed-read-model-no-award-events.md)). `UserReputation.score`는 Phase 20([ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md))부터 Voting 컨텍스트의 순 투표 점수(자신의 질문/답변이 받은 것)도 최저 가중치로 반영 |
 | Flow | 기존 신호를 묶은 활동 스트림 | Read model 중심(FlowCard), 새 이벤트 없음 |
-| Voting | 질문/답변에 대한 품질 신호(up/down) | Vote — Watch와 같은 독립 side-aggregate (Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)) |
+| Voting | 질문/답변에 대한 품질 신호(up/down) | Vote — Watch와 같은 독립 side-aggregate (Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 검색 정렬·Dashboard 인기순위·평판 점수에 순 투표 점수를 반영하는 것은 Phase 20([ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md)) |
 | Discussion | 질문/답변에 대한 짧은 clarification | Comment — 1단계 대댓글, 수정 이력(diff 없음), 생성 시점 `@mention` 알림, soft-delete는 tombstone(Phase 12/19, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)/[ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). QPR `ReviewRequest`(QnA Core 컨텍스트)와는 성격이 다른 별개 개념 |
 | Moderation | 신고와 그 처리 | Report — 신고→모더레이터 검토→Dismiss/Hide 두 액션까지만(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). `User.role`(USER\|MODERATOR)도 이 컨텍스트의 권한 판단에 쓰이지만 필드 자체는 Identity의 User가 들고 있음 |
 

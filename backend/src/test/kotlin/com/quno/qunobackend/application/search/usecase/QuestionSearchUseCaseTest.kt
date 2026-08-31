@@ -9,6 +9,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.search.SearchSort
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -40,6 +41,20 @@ class QuestionSearchUseCaseTest {
 
         assertEquals(listOf(kafka, redis), result.map { it.id })
         assertEquals(listOf("redis"), result.last().tags)
+    }
+
+    @Test
+    fun `search defaults to relevance sort`() {
+        useCase.search("anything")
+
+        assertEquals(SearchSort.RELEVANCE, searchRepository.lastSort)
+    }
+
+    @Test
+    fun `search passes an explicit score sort through to the repository`() {
+        useCase.search("anything", sort = SearchSort.SCORE)
+
+        assertEquals(SearchSort.SCORE, searchRepository.lastSort)
     }
 
     @Test

@@ -75,7 +75,7 @@
 
 전용 검색엔진(OpenSearch/Elasticsearch, [system-architecture.md](system-architecture.md#확정-기술-스택) "이후 검토") 도입 전 단계로, PostgreSQL 네이티브 기능만으로 구현한다.
 
-- `GET /search`: `to_tsvector('simple', title || body_markdown || logs) @@ plainto_tsquery('simple', q)`로 최신 버전의 제목/본문/에러로그를 전문검색하고, `tags.name ILIKE '%q%'`를 OR로 결합한다. 형태소 분석기는 `simple`(토큰화만, 어간 추출 없음) — 한국어 등 비영어 검색 품질이 필요해지면 `pg_bigm`/외부 검색엔진으로 교체한다.
+- `GET /search`: `to_tsvector('simple', title || body_markdown || logs) @@ plainto_tsquery('simple', q)`로 최신 버전의 제목/본문/에러로그를 전문검색하고, `tags.name ILIKE '%q%'`를 OR로 결합한다. 형태소 분석기는 `simple`(토큰화만, 어간 추출 없음) — 한국어 등 비영어 검색 품질이 필요해지면 `pg_bigm`/외부 검색엔진으로 교체한다. `sort=relevance|score` 파라미터 지원(Phase 20, [ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md)) — `relevance`가 기본값이며 **실제로는 `ts_rank` 없이 `id DESC`(최신순 근사)다**, `score`는 질문이 받은 순 투표 점수 내림차순(동점이면 id 내림차순). 후보 질문 집합은 두 모드 동일, 정렬 기준만 다르다. 인식하지 못하는 값은 조용히 `relevance`로 처리한다.
 - `GET /questions/{id}/related`: `question_tags` 자기 조인으로 공유 태그 수를 계산해 내림차순 정렬한다 (mvp-scope.md "태그 매칭 우선"). 태그가 없는 질문은 관련 질문이 비어 있을 수 있다 — 본문 유사도 기반 추천은 MVP 이후 확장.
 - 두 기능 모두 soft-delete된 질문/태그는 제외한다.
 
@@ -94,7 +94,7 @@
 
 | 섹션 | 소스 |
 |---|---|
-| `popularQuestions` (Top 5) | `DashboardRepository.findPopularQuestionIds` — `watch_count*3 + answer_count*2` 내림차순, 최신순 tiebreak |
+| `popularQuestions` (Top 5) | `DashboardRepository.findPopularQuestionIds` — `watch_count*3 + answer_count*2 + vote_score*1` 내림차순(투표 항은 Phase 20, [ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md) — 순 투표 점수, 음수 허용), 최신순 tiebreak |
 | `wardUpdates` (최근 5건) | `ListMyNotificationsUseCase` 재사용 |
 | `followingTagsFeed` (최대 10건) | `RecommendQuestionsUseCase` 재사용 (Phase 3.1과 동일 로직) |
 | `trendingTags` (최대 10건) | `DashboardRepository.findTrendingTags` — 최근 7일 내 생성된 질문에 달린 태그를 질문 수 기준 집계 |
@@ -191,7 +191,7 @@
 
 [ADR-0018](decisions/0018-simple-reputation-score-only.md)에서 결정한 대로, Organization·Direct Ask는 핵심 설계가 없어 미루고 활동 기반 평판 점수만 구현했다.
 
-- `GET /users/{id}/reputation`: 질문 수·답변 수·채택된 답변 수·Super Answer 지정 횟수를 집계해 `score = questionCount*1 + answerCount*2 + acceptedAnswerCount*15 + superAnswerCount*10`으로 계산한다. 존재하지 않는 사용자는 404.
+- `GET /users/{id}/reputation`: 질문 수·답변 수·채택된 답변 수·Super Answer 지정 횟수·**자신의 질문/답변이 받은 순 투표 점수**를 집계해 `score = questionCount*1 + answerCount*2 + acceptedAnswerCount*15 + superAnswerCount*10 + voteScoreReceived*1`로 계산한다(투표 항은 Phase 20, [ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md) — Badge의 `BadgeRepository.sumVoteScoreReceived`를 재사용, 새 쿼리 없음). 존재하지 않는 사용자는 404.
 - `UserReputation`(`domain/reputation`)은 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 별도 DTO로 복제하지 않고 API 응답까지 그대로 재사용한다.
 - Metrics와 동일하게 native SQL 서브쿼리 4개를 한 번에 집계한다. Dashboard/Spike Detection과 달리 **캐시하지 않는다** — 결과가 사용자마다 다르고(모두에게 같은 결과가 아님) 개별 조회 비용이 이미 작아, 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
 - 채택 답변과 Super Answer 지정에 가중치를 크게 둬(각각 15점, 10점) 단순 활동량보다 "실제로 검증된 기여"를 더 반영한다 — 다만 동료 평가나 악용 방지 장치는 없는 순수 근사치다.
@@ -237,7 +237,7 @@
 - `GET /me/votes`: 내가 투표한 전체 목록(`{targetType, targetId, value}[]`) — `GET /me/watches`와 같은 패턴으로, 프론트엔드가 "이 질문/답변에 내가 투표했는지"를 N+1 요청 없이 판단할 수 있게 한다.
 - **점수는 저장하지 않고 항상 집계한다.** `votes` 테이블에 개별 투표만 두고, `score`는 `SUM(value)`를 그때그때 계산한다. `QuestionSummaryHydrator`/`AnswerResultAssembler`에 통합했기 때문에 `GET /questions/{id}`, `GET /questions/{id}/answers`, `GET /search`, `GET /dashboard`, `GET /questions/{id}/related`, 추천, Cluster 멤버 목록까지 응답에 `score` 필드가 함께 나온다.
 - **투표는 알림을 발생시키지 않는다** — 매 투표마다 Notification이 쌓이면 스팸이 되므로 `outbox_events`에 새 이벤트 타입을 추가하지 않았다.
-- **범위 밖**(모두 [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)에서 의도적으로 보류): 평판 점수(`UserReputation`)에 투표 반영, Dashboard 인기 질문 순위 공식에 투표 반영, `GET /search`의 Score 정렬. 필요해지면 각각 별도로 재설계한다.
+- 평판 점수·Dashboard 인기 질문 순위·`GET /search`의 Score 정렬 반영은 ADR-0023이 처음에 보류했지만, Phase 20([ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md))에서 모두 가중치 1로 반영했다 — 각 절 참고.
 
 ## Comment (Phase 12)
 
@@ -310,6 +310,14 @@
 - `GET /questions/{id}/graph`: Cluster 멤버, Fork 계보(`forkedFrom`+`forks`), Related Questions을 한 응답으로 조합한 읽기 전용 뷰 — `{questionId, clusterMembers, forkedFrom, forks, relatedQuestions}`. 새 계산이나 저장 없이 기존 `GetClusterUseCase`/`QuestionSearchUseCase.related`/`GET .../forks`가 이미 하던 조회를 한 번에 묶은 것뿐이다. **"지식 그래프"라는 이름과 달리 실제 그래프 시각화(노드-엣지 다이어그램) UI는 아니다** — 그건 별도 프론트엔드 투자로 이번 범위 밖이다.
 - Merge/Fork 모두 outbox 이벤트를 발행하지 않는다 — Cluster/Super Answer(Phase 6)와 같은 이유로, API 응답이 즉시 결과를 알려주는 동기 액션이라 비동기 알림이 필요 없다고 판단했다.
 - Merge/Fork에 별도 권한 제한은 없다 — 기존 "같은 문제로 표시"가 누구나 가능한 것과 동일한 커뮤니티 모더레이션 성격을 유지한다.
+
+## Vote 반영: 검색 Score 정렬, Dashboard 인기순위, 평판 점수 (Phase 20)
+
+[ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md) 5~7번이 보류했던 세 가지를 [ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md)로 재검토했다. 실사용 데이터 없이 정한 판단이라 세 공식 모두 투표 가중치를 1로 시작한다.
+
+- 검색 정렬(`GET /search?sort=`), Dashboard 인기순위, 평판 점수 각각의 구체적인 변경 내용은 위 해당 절(검색·관련 질문 구현, 고급 Dashboard, 전문가 평판) 참고.
+- 셋 다 조회 시점 집계일 뿐 스키마 변경이나 새 이벤트가 없다 — `votes` 테이블은 Phase 11에서 이미 있었다.
+- 어뷰징 방지(투표 속도 제한, 봇 탐지 등)는 이번 범위에 포함하지 않는다 — 자기 투표 금지(`SelfVoteException`)만 여전히 유일한 방어다.
 
 ## 입력 검증 공통 원칙
 

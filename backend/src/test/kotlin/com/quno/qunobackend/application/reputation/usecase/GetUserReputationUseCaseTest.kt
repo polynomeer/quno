@@ -20,20 +20,20 @@ class GetUserReputationUseCaseTest {
         val userId = signUpUseCase.execute(SignUpCommand("a@b.com", "alice", "password123")).userId
         val reputationRepository = object : ReputationRepository {
             override fun compute(userId: Long): UserReputation =
-                UserReputation(userId, questionCount = 3, answerCount = 4, acceptedAnswerCount = 2, superAnswerCount = 1)
+                UserReputation(userId, questionCount = 3, answerCount = 4, acceptedAnswerCount = 2, superAnswerCount = 1, voteScoreReceived = 5)
         }
         val useCase = GetUserReputationUseCase(userRepository, reputationRepository)
 
         val result = useCase.execute(userId)
 
-        // 3*1 + 4*2 + 2*15 + 1*10 = 3 + 8 + 30 + 10 = 51
-        assertEquals(51, result.score)
+        // 3*1 + 4*2 + 2*15 + 1*10 + 5*1 = 3 + 8 + 30 + 10 + 5 = 56
+        assertEquals(56, result.score)
     }
 
     @Test
     fun `rejects a user that does not exist`() {
         val reputationRepository = object : ReputationRepository {
-            override fun compute(userId: Long): UserReputation = UserReputation(userId, 0, 0, 0, 0)
+            override fun compute(userId: Long): UserReputation = UserReputation(userId, 0, 0, 0, 0, 0)
         }
         val useCase = GetUserReputationUseCase(userRepository, reputationRepository)
 

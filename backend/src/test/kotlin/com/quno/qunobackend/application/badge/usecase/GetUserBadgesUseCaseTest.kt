@@ -28,7 +28,7 @@ class GetUserBadgesUseCaseTest {
     ): GetUserBadgesUseCase {
         val reputationRepository = object : ReputationRepository {
             override fun compute(userId: Long): UserReputation =
-                UserReputation(userId, questionCount, answerCount, acceptedAnswerCount, superAnswerCount)
+                UserReputation(userId, questionCount, answerCount, acceptedAnswerCount, superAnswerCount, voteScoreReceived = 0)
         }
         val badgeRepository = object : BadgeRepository {
             override fun sumVoteScoreReceived(userId: Long): Long = voteScoreReceived

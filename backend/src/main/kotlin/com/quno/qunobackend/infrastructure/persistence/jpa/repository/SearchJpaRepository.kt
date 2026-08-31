@@ -29,7 +29,33 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
         """,
         nativeQuery = true,
     )
-    fun searchQuestionIds(@Param("query") query: String, @Param("limit") limit: Int): List<Long>
+    fun searchQuestionIdsByRelevance(@Param("query") query: String, @Param("limit") limit: Int): List<Long>
+
+    /** Same candidate set as [searchQuestionIdsByRelevance], ordered by net vote score instead
+     * (Phase 20, ADR-0032). */
+    @Query(
+        value = """
+            SELECT q.id
+            FROM questions q
+            JOIN question_versions v ON v.id = q.latest_version_id
+            LEFT JOIN question_tags qt ON qt.question_id = q.id
+            LEFT JOIN tags t ON t.id = qt.tag_id AND t.deleted_at IS NULL
+            LEFT JOIN (
+                SELECT target_id, SUM(value) AS vote_score FROM votes WHERE target_type = 'QUESTION' GROUP BY target_id
+            ) sv ON sv.target_id = q.id
+            WHERE q.deleted_at IS NULL
+              AND (
+                to_tsvector('simple', v.title || ' ' || v.body_markdown || ' ' || coalesce(v.logs, ''))
+                  @@ plainto_tsquery('simple', :query)
+                OR t.name ILIKE CONCAT('%', :query, '%')
+              )
+            GROUP BY q.id, sv.vote_score
+            ORDER BY COALESCE(sv.vote_score, 0) DESC, q.id DESC
+            LIMIT :limit
+        """,
+        nativeQuery = true,
+    )
+    fun searchQuestionIdsByScore(@Param("query") query: String, @Param("limit") limit: Int): List<Long>
 
     @Query(
         value = """

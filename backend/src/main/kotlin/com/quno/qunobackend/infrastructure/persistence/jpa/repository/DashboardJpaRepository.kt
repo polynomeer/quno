@@ -18,8 +18,11 @@ interface DashboardJpaRepository : Repository<QuestionJpaEntity, Long> {
             LEFT JOIN (
                 SELECT question_id, COUNT(*) AS answer_count FROM answers WHERE deleted_at IS NULL GROUP BY question_id
             ) a ON a.question_id = q.id
+            LEFT JOIN (
+                SELECT target_id, SUM(value) AS vote_score FROM votes WHERE target_type = 'QUESTION' GROUP BY target_id
+            ) v ON v.target_id = q.id
             WHERE q.deleted_at IS NULL
-            ORDER BY (COALESCE(w.watch_count, 0) * 3 + COALESCE(a.answer_count, 0) * 2) DESC, q.created_at DESC
+            ORDER BY (COALESCE(w.watch_count, 0) * 3 + COALESCE(a.answer_count, 0) * 2 + COALESCE(v.vote_score, 0) * 1) DESC, q.created_at DESC
             LIMIT :limit
         """,
         nativeQuery = true,
