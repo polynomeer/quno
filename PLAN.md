@@ -295,8 +295,8 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 19.3 @mention — 생성 시점 본문에서 `@([\w-]+)` 파싱 → `UserRepository.findByNickname` 정확 일치 → 새 `OutboxEventTypes.MENTIONED_IN_COMMENT`(Ward 구독자 fan-out 건너뛰고 멘션 대상에게만, 자기 자신 언급은 제외). 답글은 기존 `NEW_COMMENT`에 `parentCommentAuthorId` 추가해 부모 작성자에게도 통보
 - [x] 19.4 테스트 — 단위 테스트 27개 추가(`CreateCommentUseCaseTest`에 답글/depth 제한/멘션 케이스, 신규 `EditCommentUseCaseTest`/`ListCommentVersionsUseCaseTest`, `DispatchOutboxEventsUseCaseTest`에 `NEW_COMMENT` parentCommentAuthorId·`MENTIONED_IN_COMMENT` 케이스)와 `CommentLifecycleE2ETest`에 답글/수정/멘션 시나리오 3개 추가(실제 HTTP+Postgres). 로컬 DB에 V15 마이그레이션을 두 번 다른 내용으로 적용해 생긴 Flyway 체크섬 불일치는 `flyway_schema_history` 체크섬을 새 파일 값으로 직접 갱신해 해결(로컬 개발 DB이므로 `repair` 대신 직접 UPDATE). 전체 스위트 259개 통과 확인. 검증 중 별개로 발견한 `QuestionClusterLifecycleE2ETest`의 정리(cleanup) FK 위반 버그는 이번 Phase와 무관해 별도 태스크로 분리해둠(스스로 안정적으로 재현되지 않아 백로그로 flag만)
 - [x] 19.5 문서화 — `domain-model.md`/`api-design.md`에 반영(이미 [ADR-0031](docs/architecture/decisions/0031-comment-thread-mention-edit-history.md)로 결정 기록됨)
-- [ ] F10.1 프론트엔드 — `CommentSection`에 답글(1단계, 들여쓰기)·인라인 수정 토글·인라인 버전 이력 펼치기(별도 페이지 없음)·멘션 스타일링(링크 없음) 추가
-- [ ] F10.2 검증 — 브라우저로 대댓글/수정/멘션 알림 전체 흐름 확인
+- [x] F10.1 프론트엔드 — `CommentSection`이 평면 목록을 `parentCommentId` 기준으로 그룹핑해 답글을 부모 아래 들여쓰기로 렌더링. `CommentItem`에 인라인 수정 토글(작성자 본인만, `AnswerCard`의 Edit 패턴과 동일), "edited (vN)" 클릭 시 펼쳐지는 인라인 버전 이력(별도 페이지 없음, 수정 안 된 댓글은 이력 없음), `@단어` 토큰 스타일링(링크 없음), 답글 버튼(최상위 댓글에만 노출). `httpClient`에 없던 `put` 메서드 추가. `notification.types.ts`/`describe-notification.ts`에 `MENTIONED_IN_COMMENT`("댓글에서 언급되었습니다") 추가
+- [x] F10.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 멘션 포함 댓글 작성→하이라이트 렌더링 확인→답글 작성(부모 아래 들여쓰기, 답글 자신은 답글 버튼 없음 확인)→답글 수정→"edited (v2)" 클릭 시 수정 전 원문("v1: ...")이 정확히 보이는지 확인→멘션 대상 계정으로 전환해 알림 센터에 "댓글에서 언급되었습니다" 표시 확인까지 전체 흐름을 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음(백엔드 버전 이력 아카이브 순서 버그는 F10.2 이전, 백엔드 구현 단계에서 이미 발견해 수정함)
 
 ## Phase 20+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
