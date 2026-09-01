@@ -1,7 +1,7 @@
 # ADR-0041: 비로그인 공개 열람은 질문 상세/목록/검색으로 좁혀서 시작한다
 
 - 날짜: 2026-09-01
-- 상태: 승인됨 (ADR-0013을 재검토하고 좁은 범위로 확정) — 태그·조직·프로필 확대는 [ADR-0042](0042-expand-public-read-access-tags-orgs-profiles.md)로 이어짐
+- 상태: 승인됨 (ADR-0013을 재검토하고 좁은 범위로 확정) — 태그·조직·프로필 확대는 [ADR-0042](0042-expand-public-read-access-tags-orgs-profiles.md), SEO는 [ADR-0043](0043-seo-metadata-question-og-and-sitemap.md)로 이어짐
 
 ## 배경 (Context)
 

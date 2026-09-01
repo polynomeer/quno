@@ -1,7 +1,7 @@
 # ADR-0042: 비로그인 공개 열람을 태그·조직 상세·사용자 프로필까지 확대한다
 
 - 날짜: 2026-09-02
-- 상태: 승인됨
+- 상태: 승인됨 — SEO는 [ADR-0043](0043-seo-metadata-question-og-and-sitemap.md)로 이어짐
 
 ## 배경 (Context)
 

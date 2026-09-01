@@ -415,8 +415,16 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - 같은 경로의 `POST`/`PUT`/`DELETE`(답변 작성, 질문/답변 리비전, 댓글 작성, 태그 편집, Organization 생성/가입/탈퇴, Follow 등)는 그대로 인증이 필요하다 — Spring Security 6.x `PathPatternRequestMatcher`가 `{id}` 같은 컨트롤러 매핑 플레이스홀더 문법을 그대로 보안 패턴에 쓸 수 있어서 메서드+경로 조합으로 정확히 좁힐 수 있었다.
 - Direct Ask/실시간 질문방/Dashboard/모더레이션/알림/`/me/*`는 여전히 인증이 필요하다(이번 두 Phase 모두 대상이 아님).
 - 투표·Watch·Save·Report·Outdated 표시·댓글 작성·QPR·Cluster·Fork·Live Chat·Follow·태그 편집·Organization 생성/가입/이메일 인증은 백엔드를 추가로 열지 않고, 프론트엔드가 익명 방문자에게 해당 버튼/패널 자체를 숨긴다(ADR-0041/ADR-0042). Phase 30에서 검토 중 기존에 빠져 있던 방문자 가드 두 건(`FollowUserButton`의 로그인 여부 체크, `EmailDomainVerificationPanel`의 `viewerId` 체크)도 함께 발견해 고쳤다 — 두 페이지가 지금까지 항상 `useRequireAuth` 뒤에 있어 잠재해 있던 결함이었다.
-- SEO 메타데이터(Open Graph, `sitemap.xml`)는 범위 밖이다 — 접근 제어만 먼저 검증한다. ADR-0041/0042가 남긴 마지막 후속 후보다.
 - `PublicReadAccessE2ETest`가 실제 필터 체인으로 공개/비공개 양쪽을 확인한다(Phase 30에서 태그/조직/프로필 케이스 추가) — 새 공개 엔드포인트를 추가할 때는 이 테스트에도 케이스를 추가한다.
+
+## SEO 메타데이터 (Phase 31)
+
+접근 제어(Phase 29~30)가 검증된 뒤 [ADR-0043](decisions/0043-seo-metadata-question-og-and-sitemap.md)로 SEO를 착수했다 — 질문 상세의 동적 Open Graph와 태그·조직 sitemap까지만.
+
+- `GET /tags`, `GET /organizations`에 `limit` 쿼리 파라미터를 추가했다(기본값 20, 기존과 동일 — 이전엔 아예 받지 않아 use case의 하드코딩된 기본값에 묶여 있었다). 다른 목록형 GET들과 동일한 시그니처로 맞춘 것뿐, 새 동작은 아니다.
+- 프론트엔드 `/questions/[id]`가 Server Component(`page.tsx`, `generateMetadata`) + Client Component(`QuestionDetailContent.tsx`, 기존 상호작용 전부)로 나뉘었다. `generateMetadata`는 이제 공개된 `GET /questions/{id}`를 인증 없이 `fetch`해 제목/본문 요약으로 title·description·Open Graph·Twitter Card를 채운다. 실패(404/네트워크 오류)는 조용히 기본 제목으로 대체 — 메타데이터 생성 실패가 페이지를 깨뜨리지 않는다.
+- 루트 레이아웃에 사이트 전역 `openGraph`/`twitter` 기본값과 `metadataBase`(`NEXT_PUBLIC_SITE_URL`, 기본값 `http://localhost:3000` — 배포 시 실제 도메인으로 오버라이드 필요, JWT secret/Toss 키와 같은 패턴)를 추가했다. `title.template`이 `%s - Quno`라 질문 상세는 원본 제목만 반환하고 접미사는 템플릿이 붙인다.
+- `app/sitemap.ts`: 정적 라우트(`/`, `/tags`, `/organizations`) + `GET /tags`/`GET /organizations`를 `limit=1000`으로 호출해 얻은 전체 태그·조직 상세 URL. 질문/사용자 프로필은 **포함하지 않는다** — 전체 목록을 열거할 API가 없다(검색은 `q` 필수, 프로필은 목록 자체가 없음). `app/robots.ts`: 전체 허용 + sitemap 위치.
 
 ## 입력 검증 공통 원칙
 

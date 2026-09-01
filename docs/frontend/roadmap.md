@@ -130,4 +130,4 @@ Profile ────────────→ Contributions ─→ Question De
 
 반대로 이 설계서에 없지만 백엔드에는 이미 있는 기능도 있다 — QPR Review(정보 요청/재요청), Cluster/Super Answer/Merge, Question Fork, 지식 그래프 데이터 API, Outdated 표시, Spike Detection, Quno Flow 활동 스트림. 프론트엔드 설계 시 이들을 어느 화면에 어떻게 노출할지도 함께 정해야 한다.
 
-남은 프론트엔드 격차는 없다 — 이 표의 모든 항목이 백엔드/프론트엔드 모두 구현됐다. SEO 메타데이터(Open Graph, sitemap)만 ADR-0041/0042가 의도적으로 남겨둔 마지막 후속 후보다.
+남은 프론트엔드 격차는 없다 — 이 표의 모든 항목이 백엔드/프론트엔드 모두 구현됐다. SEO 메타데이터(질문 상세 Open Graph, sitemap/robots)도 Phase 31([ADR-0043](../architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md))로 구현됐다 — 다만 sitemap은 태그·조직 상세까지만 열거하고 질문/사용자 프로필은 전체 목록 API가 없어 빠져 있다.
