@@ -66,7 +66,10 @@ class DirectAskController(
     }
 
     @GetMapping("/me/direct-asks")
-    fun listMine(@AuthenticationPrincipal userId: Long, @RequestParam(defaultValue = "received") role: String): List<DirectAskRequestResponse> {
+    fun listMine(
+        @AuthenticationPrincipal userId: Long,
+        @RequestParam(defaultValue = "received") role: String,
+    ): List<DirectAskRequestListItemResponse> {
         val results = if (role == "sent") listMyDirectAsksUseCase.executeSent(userId) else listMyDirectAsksUseCase.executeReceived(userId)
         return results.map { it.toResponse() }
     }
