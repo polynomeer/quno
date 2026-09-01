@@ -60,3 +60,4 @@
 | [0033](0033-technology-version-scan-detection-only-no-auto-outdated.md) | endoflife.date로 기술 버전 릴리스 실제 자동 감지, OUTDATED 자동 전환은 하지 않고 알림까지만 | 승인됨 |
 | [0034](0034-organization-virtual-only-direct-ask-no-payment.md) | Organization은 Virtual/Community만, Direct Ask는 결제 없이 요청/수락만 구현 | 승인됨 |
 | [0035](0035-verified-organization-email-domain-mailpit.md) | Verified Organization을 업무/학교 이메일 도메인 인증으로 구현, 로컬은 Mailpit으로 검증 | 승인됨 |
+| [0036](0036-live-chat-websocket-mongodb-redis-presence.md) | 실시간 질문방을 STOMP/WebSocket + MongoDB(메시지) + Redis(접속자)로 구현, Spring Boot 4 Mongo prefix 변경 발견 | 승인됨 |

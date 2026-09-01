@@ -363,6 +363,28 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - `OrganizationResponse`에 `emailDomain`(nullable)과 `verified`(계산값)가 추가됐다 — Virtual/Community 조직은 둘 다 `null`/`false`.
 - **로컬 개발은 Mailpit으로 검증한다**: `docker-compose`에 추가한 `mailpit` 서비스(SMTP 1026, 웹 UI http://localhost:8026)가 실제 SMTP 프로토콜로 발송된 이메일을 받는다. 프로덕션 SMTP 자격증명은 이 코드베이스가 구성하지 않는다 — 배포 시점에 `spring.mail.*`를 환경변수로 오버라이드해야 한다(JWT secret과 같은 패턴).
 
+## Live Chat (Phase 24)
+
+[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. REST는 방을 열고/조회하고 과거 메시지를 읽는 역할만 하고, 실제 메시징과 접속자 현황은 STOMP-over-WebSocket으로 이뤄진다.
+
+### REST
+
+- `POST /questions/{id}/live-chat`(201): find-or-create — 이미 방이 있으면 그 방을 그대로 반환한다. 새로 만들어졌을 때만 `LIVE_CHAT_STARTED` outbox 이벤트(Ward 구독자 + 질문 작성자)가 발행된다.
+- `GET /questions/{id}/live-chat`: 방 조회. 없으면 404.
+- `GET /live-chat/{roomId}/messages?limit=`(기본 50): 가장 최근 메시지를 오래된 순으로 반환 — WebSocket 구독이 시작되기 전, 화면에 스크롤백을 채우는 용도.
+
+### WebSocket (STOMP, endpoint `/ws`)
+
+- **인증**: HTTP 핸드셰이크 자체는 인증하지 않는다(SecurityConfig가 `/ws/**`를 permitAll) — 실제 인증은 STOMP `CONNECT` 프레임의 `Authorization: Bearer <token>` 네이티브 헤더에서 이뤄진다(`StompAuthChannelInterceptor`, 기존 `TokenProvider` 재사용). 토큰이 없거나 무효하면 연결이 거부된다 — REST의 401과는 다른 실패 모양이라는 걸 클라이언트가 알아야 한다.
+- `SUBSCRIBE /topic/live-chat/{roomId}`: 그 방에 새로 올라오는 메시지를 실시간으로 받는다(자신이 보낸 메시지도 포함해서 다시 받는다 — 낙관적 UI 업데이트가 필요 없다).
+- `SEND /app/live-chat/{roomId}/send`(body: `{"body": "..."}`): 메시지를 MongoDB에 저장하고 그 방 구독자 전원에게 브로드캐스트한다. 메시지 하나하나는 outbox 이벤트를 발행하지 않는다(Vote와 같은 이유 — 스팸 방지).
+- `SUBSCRIBE /topic/questions/{questionId}/presence`: 구독 자체가 "이 질문을 보고 있다"는 신호다. 구독 시 Redis Set에 세션이 추가되고 즉시 갱신된 `{"viewerCount": N}`이 그 질문의 모든 presence 구독자에게 브로드캐스트된다. `UNSUBSCRIBE`나 WebSocket 연결 종료 시 자동으로 빠지고 다시 브로드캐스트된다 — 클라이언트가 별도로 "나감"을 알릴 필요가 없다.
+
+### 알려진 한계
+
+- Presence의 세션→구독 매핑은 단일 인스턴스에서만 정확하다(ADR-0036 참고) — 수평 확장 시 재검토 필요.
+- "실시간 대화 → 구조화된 지식"(원본 기획)은 자동 변환이 아니다. 사람이 채팅을 읽고 기존 `POST /questions/{id}/versions`나 `POST /questions/{id}/answers`를 직접 호출한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

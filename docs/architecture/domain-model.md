@@ -19,6 +19,7 @@
 | Discussion | 질문/답변에 대한 짧은 clarification | Comment — 1단계 대댓글, 수정 이력(diff 없음), 생성 시점 `@mention` 알림, soft-delete는 tombstone(Phase 12/19, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)/[ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). QPR `ReviewRequest`(QnA Core 컨텍스트)와는 성격이 다른 별개 개념 |
 | Moderation | 신고와 그 처리 | Report — 신고→모더레이터 검토→Dismiss/Hide 두 액션까지만(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). `User.role`(USER\|MODERATOR)도 이 컨텍스트의 권한 판단에 쓰이지만 필드 자체는 Identity의 User가 들고 있음 |
 | Trust Network | 자기 신고형/이메일 인증형 소속 그룹과 전문가 직접 요청 | Organization(+OrganizationMembership), DirectAskRequest — Phase 22([ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md))의 Virtual/Community(외부 인증 없음)에 더해, Phase 23([ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md))에서 업무/학교 이메일 도메인 인증 기반 Verified Organization(EmailDomainVerification)이 추가됨. Direct Ask는 여전히 결제 없음 |
+| Live Chat | 질문별 실시간 논의 공간과 접속자 현황 | LiveChatRoom(PostgreSQL, 질문당 최대 1개)+LiveChatMessage(MongoDB, 이 프로젝트의 첫 실제 MongoDB 사용), presence는 Redis(영속 도메인 모델 없음). STOMP/WebSocket 기반, 메시지 자체는 outbox 이벤트를 발행하지 않음(Phase 24, [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)) |
 
 `Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고). 유료 Direct Ask(보상/결제)는 여전히 명시적으로 범위 밖이다([ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)).
 
@@ -47,6 +48,10 @@
 | OrganizationMembership | join/leave(idempotent). organization-user 중복 금지. Watch/Save와 같은 순수 관계 데이터. Verified 조직은 `JoinOrganizationUseCase`가 직접 join을 거부(`VerifiedOrganizationJoinRequiresEmailException`) — 멤버십은 오직 이메일 인증을 통해서만 생김 |
 | EmailDomainVerification | request(PENDING), verify. 업무/학교 이메일로 발송된 6자리 코드와 상태를 담는다. 만료는 배경 작업 없이 `expiresAt`을 조회 시점에 비교해 계산(`isExpired`). 공개 웹메일 도메인(`PublicEmailDomains`)은 애초에 요청 단계에서 거부됨. 재요청은 이전 코드를 명시적으로 무효화하지 않음 — `findLatestByUserId`가 항상 최신만 보므로 옛 코드는 자연히 도달 불가(Phase 23, [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
 | DirectAskRequest | request(PENDING), accept, decline. 대상이 `User.acceptsDirectAsk=false`면 요청 자체가 거부됨(`DirectAskNotAcceptedException`). 자기 자신에게 요청 불가(`SelfDirectAskException`). 같은 (질문, 대상)에 열린 요청은 하나만(`DuplicateDirectAskException`). 어떤 `Answer`와도 직접 연결되지 않음 — 수락 후 답변은 기존 `POST /questions/{id}/answers`를 그대로 씀 |
+| LiveChatRoom | open(find-or-create). 질문당 최대 1개(`uq_live_chat_rooms_question_id`). close/archive 없음 — 질문이 RESOLVED가 돼도 논의 이력은 그대로 남음(Phase 24, [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)) |
+| LiveChatMessage | post. 본문 공백/2000자 초과 거부. MongoDB 문서 — 관계형 불변조건 없음, 이 프로젝트의 첫 실제 MongoDB 사용(§MongoDB 문서 모델 참고). 저장만 하고 outbox 이벤트는 발행하지 않음(메시지 하나하나에 알림 가치가 없음, Vote와 같은 이유) |
+
+Presence(접속자 수)는 영속 도메인 모델이 아니다 — `LiveChatPresenceTracker` 포트가 Redis Set(질문당 1개, 멤버=세션 id)으로 직접 관리하며, 이 표에 싣지 않는다.
 
 ## Domain Events
 
@@ -68,9 +73,10 @@ TechnologyVersionImpactDetected (TECH_VERSION_IMPACT_DETECTED)
 DirectAskRequested (DIRECT_ASK_REQUESTED)
 DirectAskAccepted (DIRECT_ASK_ACCEPTED)
 DirectAskDeclined (DIRECT_ASK_DECLINED)
+LiveChatStarted (LIVE_CHAT_STARTED)
 ```
 
-Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). Answer Revision(Phase 17)의 `ANSWER_REVISION`은 `NEW_ANSWER`와 완전히 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓴다 — 답변 본문이 바뀌는 것도 구독 이유가 되는 변화로 보기 때문([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)). Comment 확장(Phase 19)에서 `NEW_COMMENT`는 답글일 때 부모 댓글 작성자(`parentCommentAuthorId`)도 기본 fan-out에 추가로 얹는다. 반면 `MENTIONED_IN_COMMENT`는 `CONTENT_HIDDEN`과 같은 예외 부류다 — Ward 구독자 기본 fan-out을 건너뛰고 `mentionedUserIds`(JSON 배열, 전용 `extractLongList` 파서로 추출)에 담긴 사용자에게만 통보한다("당신이 언급됐다"는 개별 통지이지 활동 신호가 아니기 때문). 댓글 수정(edit) 자체는 어떤 이벤트도 발행하지 않는다 — 오탈자 교정 수준으로 보고 재통보하지 않기로 했다([ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). Phase 21의 `TECH_VERSION_IMPACT_DETECTED`는 `QUESTION_OUTDATED`와 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓰지만, 이 프로젝트의 다른 모든 이벤트와 달리 발행자가 사람이 아니라 스케줄러다 — payload에 `actorId`가 아예 없어 아무도 제외되지 않는다([ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)). Phase 22의 `DIRECT_ASK_REQUESTED`/`DIRECT_ASK_ACCEPTED`/`DIRECT_ASK_DECLINED`은 `CONTENT_HIDDEN`/`MENTIONED_IN_COMMENT`와 같은 "당사자 전용" 부류다 — 요청은 대상 사용자에게만, 수락/거절 결과는 원 요청자에게만 통보하고 Ward 구독자는 아예 관여하지 않는다(둘 다 한 사람이 다른 한 사람에게 직접 건 사적인 상호작용이지, 질문 전체에 대한 활동 신호가 아니기 때문, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)). Organization의 생성/가입/탈퇴는 outbox 이벤트를 발행하지 않는다 — Cluster/Super Answer(Phase 6)와 같은 이유로, 조인/탈퇴는 API 응답이 즉시 결과를 보여주는 동기 액션이라 비동기 알림이 필요 없다고 판단했다.
+Cluster/Super Answer(Phase 6.1~6.3)는 outbox 이벤트로 발행하지 않는다 — 사용자가 명시적으로 호출한 API 응답으로 즉시 결과를 확인할 수 있어, Ward 알림처럼 비동기 fan-out이 필요한 시나리오가 아니라고 판단했다. Quno Flow/고급 Dashboard(Phase 10)도 같은 이유로 새 이벤트를 만들지 않는다 — 조회 시점에 기존 `outbox_events`/`question_versions`/`question_clusters` 타임스탬프를 읽어 신호를 그때그때 도출한다. Vote(Phase 11)도 이벤트를 발행하지 않는다 — 투표 하나하나에는 알림 가치가 없고(매 투표마다 알림이 생기면 스팸이 된다), score는 조회 시점에 그냥 집계하면 되기 때문이다([ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 반대로 Comment(Phase 12)는 `NEW_COMMENT` 이벤트를 발행한다 — `NEW_ANSWER`와 동일하게 `DispatchOutboxEventsUseCase`의 기존 fan-out(Ward 구독자 + "항상 알림받는 당사자")에 그대로 얹었다. 답변에 달린 댓글은 질문 작성자와 답변 작성자 둘 다를 "항상 알림받는 당사자"로 payload에 담아(`questionAuthorId`/`answerAuthorId`) 둘 다 알림을 받는다(질문 댓글은 `answerAuthorId`가 없어 자연히 스킵된다). Moderation(Phase 16)의 `CONTENT_HIDDEN`은 다른 이벤트와 반대 방향으로 예외적이다 — `DispatchOutboxEventsUseCase`가 Ward 구독자를 기본 수신자로 깔지 **않는** 유일한 이벤트 타입이고, 오직 숨겨진 콘텐츠의 작성자에게만 통보한다("활동"이 아니라 그 사람에게 온 행정 조치 통보이기 때문, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). Answer Revision(Phase 17)의 `ANSWER_REVISION`은 `NEW_ANSWER`와 완전히 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓴다 — 답변 본문이 바뀌는 것도 구독 이유가 되는 변화로 보기 때문([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)). Comment 확장(Phase 19)에서 `NEW_COMMENT`는 답글일 때 부모 댓글 작성자(`parentCommentAuthorId`)도 기본 fan-out에 추가로 얹는다. 반면 `MENTIONED_IN_COMMENT`는 `CONTENT_HIDDEN`과 같은 예외 부류다 — Ward 구독자 기본 fan-out을 건너뛰고 `mentionedUserIds`(JSON 배열, 전용 `extractLongList` 파서로 추출)에 담긴 사용자에게만 통보한다("당신이 언급됐다"는 개별 통지이지 활동 신호가 아니기 때문). 댓글 수정(edit) 자체는 어떤 이벤트도 발행하지 않는다 — 오탈자 교정 수준으로 보고 재통보하지 않기로 했다([ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). Phase 21의 `TECH_VERSION_IMPACT_DETECTED`는 `QUESTION_OUTDATED`와 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓰지만, 이 프로젝트의 다른 모든 이벤트와 달리 발행자가 사람이 아니라 스케줄러다 — payload에 `actorId`가 아예 없어 아무도 제외되지 않는다([ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)). Phase 22의 `DIRECT_ASK_REQUESTED`/`DIRECT_ASK_ACCEPTED`/`DIRECT_ASK_DECLINED`은 `CONTENT_HIDDEN`/`MENTIONED_IN_COMMENT`와 같은 "당사자 전용" 부류다 — 요청은 대상 사용자에게만, 수락/거절 결과는 원 요청자에게만 통보하고 Ward 구독자는 아예 관여하지 않는다(둘 다 한 사람이 다른 한 사람에게 직접 건 사적인 상호작용이지, 질문 전체에 대한 활동 신호가 아니기 때문, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)). Organization의 생성/가입/탈퇴는 outbox 이벤트를 발행하지 않는다 — Cluster/Super Answer(Phase 6)와 같은 이유로, 조인/탈퇴는 API 응답이 즉시 결과를 보여주는 동기 액션이라 비동기 알림이 필요 없다고 판단했다. Phase 24의 `LIVE_CHAT_STARTED`는 `QUESTION_OUTDATED`와 동일한 수신자 규칙(Ward 구독자 + 질문 작성자)을 쓰지만, 방을 새로 여는 경우에만 발행되고 이미 열려있는 방을 재사용할 땐 발행되지 않는다. 채팅 메시지 하나하나는 outbox 이벤트를 만들지 않는다 — Vote가 매 투표마다 이벤트를 안 만드는 것과 같은 이유로, 메시지 단위 알림은 스팸이 된다([ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)).
 
 도메인 이벤트는 "DB 트랜잭션이 성공한 사실"을 외부 부수효과(Search indexing, Mongo timeline 반영, Ward 알림 fan-out)와 분리하는 경계다. Question 트랜잭션 안에서 직접 수행하지 않고 Outbox → Worker로 연결한다 ([system-architecture.md](system-architecture.md#비동기-이벤트-처리--transactional-outbox) 참고).
 
@@ -83,7 +89,8 @@ users
   │       ├──< watches >── users
   │       ├──< saves >── users
   │       ├──< question_tags >── tags
-  │       └──< review_requests >── users
+  │       ├──< review_requests >── users
+  │       └──< live_chat_rooms (질문 1개당 최대 1개, Phase 24)
   ├──< answers
   ├──< user_tag_follows >── tags
   ├──< user_follows >── users (자기 참조, Phase 14)
@@ -109,6 +116,7 @@ comment_versions.comment_id ──> comments.id (Phase 19)
 reports.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 16)
 technology_releases.tag_slug ──> tags.slug (느슨한 참조, FK 없음, Phase 21)
 direct_ask_requests.question_id ──> questions.id (Phase 22)
+live_chat_rooms.question_id ──> questions.id (unique, Phase 24)
 organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK 없음(외부 값)(Phase 23)
 ```
 
@@ -139,6 +147,7 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 | organization_memberships | organization_id, user_id, joined_at | 관계 데이터, hard delete 허용. PK가 (organization_id, user_id) — watches와 같은 구조(Phase 22) |
 | direct_ask_requests | id, question_id, requester_id, target_user_id, message, status, created_at, responded_at | append형, hard delete 불필요(상태만 전이 — review_requests와 동일). (question_id, target_user_id)에 status='PENDING' 부분 유니크 인덱스로 중복 요청 방지(Phase 22, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)) |
 | email_domain_verifications | id, user_id, email, domain, code, status, created_at, expires_at, verified_at | append형, hard delete 불필요. 만료 정리 배치 없음 — 조회 시점에 `expires_at`을 비교해 계산(Phase 23, [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
+| live_chat_rooms | id, question_id(unique), created_by, created_at | hard delete 불필요(close/archive 없음 — 논의 이력이 질문과 함께 영구 보존됨). 메시지 자체는 여기 없다 — MongoDB `live_chat_messages`에 있음(Phase 24, [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)) |
 
 ### 삭제/FK 운영 원칙
 
@@ -152,7 +161,25 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 
 코어 도메인의 Source of Truth는 PostgreSQL이며, MongoDB는 구조가 자주 바뀌는 문서에 제한적으로 사용한다.
 
-### Question Timeline
+> **연결 프로퍼티 prefix 주의**: Spring Boot 4는 MongoDB 연결 설정(host/port/uri/database/username/password)을 `spring.data.mongodb.*`에서 `spring.mongodb.*`로 옮겼다(`org.springframework.boot.mongodb.autoconfigure.MongoProperties`) — `spring.data.mongodb.*`에 남은 건 gridfs/representation 같은 매핑 설정뿐이다. 존재하지 않는 키에 값을 써도 조용히 무시되므로(에러 없음), 실제로 어느 DB에 쓰였는지 확인해야만(`GET /actuator/configprops` 또는 직접 조회) 드러난다 — Phase 24([ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md))에서 이 프로젝트가 MongoDB를 처음 실사용하며 발견했다. `backend/src/main/resources/application-local.yml`은 이미 올바른 prefix로 되어 있다.
+
+### Live Chat Message (Phase 24 — 실제 구현됨)
+
+이 프로젝트에서 처음 실사용된 MongoDB 컬렉션이다. `LiveChatMessage`(고빈도 append-only, 관계형 불변조건 없음)가 정확히 아래 섹션들이 애초에 상정했던 "구조가 자주 바뀌거나 대량 쓰기가 발생하는" 용도다.
+
+```json
+{
+  "_id": "ObjectId(...)",
+  "roomId": 1,
+  "senderId": 10,
+  "body": "이 스택트레이스가 이상한데요",
+  "createdAt": "2026-09-01T02:55:11.859Z"
+}
+```
+
+컬렉션명 `live_chat_messages`, `roomId`에 인덱스. 방 메타데이터(`LiveChatRoom`)는 저빈도·고정 스키마라 PostgreSQL `live_chat_rooms`에 남아있다 — 메시지만 분리했다.
+
+### Question Timeline (미구현 — 계획만 있음)
 
 ```json
 {
