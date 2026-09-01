@@ -37,7 +37,7 @@
 | [0010](0010-metrics-read-model-skip-dto.md) | 성공 지표 스냅샷은 순수 읽기 모델로 취급해 DTO 복제 생략 | 승인됨 |
 | [0011](0011-mockmvc-e2e-testing.md) | 유스케이스 직접 호출 통합 테스트에 더해 MockMvc 기반 E2E 테스트 추가 | 승인됨 |
 | [0012](0012-qpr-multi-reviewer-thread-model.md) | QPR Review의 정보 요청은 다중 리뷰 요청 스레드 모델로 구현 | 승인됨 |
-| [0013](0013-defer-public-read-access.md) | 질문/프로필 조회의 비로그인 공개 여부는 보류 | 승인됨 (재검토 예정) |
+| [0013](0013-defer-public-read-access.md) | 질문/프로필 조회의 비로그인 공개 여부는 보류 | 일부 대체됨(ADR-0041) |
 | [0014](0014-answer-target-version-auto-recorded.md) | 답변의 대상 버전은 작성 시점 최신 버전으로 자동 기록, 명시적 선택 UI는 미도입 | 승인됨 |
 | [0015](0015-review-request-status-independent-of-question-status.md) | ReviewRequest.status는 Question.status를 다시 게이팅하지 않음 | 승인됨 |
 | [0016](0016-manual-duplicate-marking-cluster.md) | Cluster는 자동 유사도 분석 대신 사용자 명시적 표시로 형성, 이번 Phase는 Cluster+Super Answer로 한정 | 승인됨 |
@@ -65,3 +65,4 @@
 | [0038](0038-organization-direct-ask-frontend-no-user-search.md) | Organization/Direct Ask 프론트엔드는 사용자 검색 없이 프로필 페이지를 진입점으로, 결제는 Toss 호스팅 체크아웃으로 구현 | 승인됨 |
 | [0039](0039-live-chat-frontend-stompjs-connect-on-demand.md) | 실시간 질문방 프론트엔드는 `@stomp/stompjs`로, 연결은 "채팅 참여하기"를 누른 뒤에만 열도록 구현 | 승인됨 |
 | [0040](0040-tag-detail-wiki-editable-and-real-stats.md) | 태그 상세 정보(설명/문서 링크/기여자/관련 태그)는 위키 스타일 편집과 실제 통계 쿼리로 구현, 30일 활동 요약은 범위 밖 | 승인됨 |
+| [0041](0041-narrow-public-read-access.md) | 비로그인 공개 열람은 질문 상세/목록/검색으로 좁혀서 시작(ADR-0013 재검토), SEO 메타데이터는 범위 밖 | 승인됨 |
