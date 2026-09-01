@@ -53,6 +53,8 @@ export function describeNotification(notification: Notification): DescribedNotif
       return { message: "Direct Ask 요청이 수락되었습니다", href: "/direct-asks?role=sent" };
     case "DIRECT_ASK_DECLINED":
       return { message: "Direct Ask 요청이 거절되었습니다 (환불 처리됨)", href: "/direct-asks?role=sent" };
+    case "LIVE_CHAT_STARTED":
+      return { message: "실시간 질문방이 열렸습니다", href: `${href}#live-chat` };
     case "TECH_VERSION_IMPACT_DETECTED": {
       const tagSlug = typeof payload.tagSlug === "string" ? payload.tagSlug : null;
       const latestVersion = typeof payload.latestVersion === "string" ? payload.latestVersion : null;
