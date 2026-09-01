@@ -9,6 +9,7 @@ export interface MyProfile {
   id: number;
   email: string;
   nickname: string;
+  acceptsDirectAsk: boolean;
   createdAt: string;
 }
 

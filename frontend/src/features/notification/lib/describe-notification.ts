@@ -47,6 +47,12 @@ export function describeNotification(notification: Notification): DescribedNotif
       return { message: "모더레이터에 의해 콘텐츠가 숨겨졌습니다", href };
     case "MENTIONED_IN_COMMENT":
       return { message: "댓글에서 언급되었습니다", href };
+    case "DIRECT_ASK_REQUESTED":
+      return { message: "Direct Ask 요청이 도착했습니다", href: "/direct-asks?role=received" };
+    case "DIRECT_ASK_ACCEPTED":
+      return { message: "Direct Ask 요청이 수락되었습니다", href: "/direct-asks?role=sent" };
+    case "DIRECT_ASK_DECLINED":
+      return { message: "Direct Ask 요청이 거절되었습니다 (환불 처리됨)", href: "/direct-asks?role=sent" };
     case "TECH_VERSION_IMPACT_DETECTED": {
       const tagSlug = typeof payload.tagSlug === "string" ? payload.tagSlug : null;
       const latestVersion = typeof payload.latestVersion === "string" ? payload.latestVersion : null;
