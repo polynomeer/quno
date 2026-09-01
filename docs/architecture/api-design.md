@@ -375,7 +375,7 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 
 ## Live Chat (Phase 24)
 
-[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. REST는 방을 열고/조회하고 과거 메시지를 읽는 역할만 하고, 실제 메시징과 접속자 현황은 STOMP-over-WebSocket으로 이뤄진다.
+[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. REST는 방을 열고/조회하고 과거 메시지를 읽는 역할만 하고, 실제 메시징과 접속자 현황은 STOMP-over-WebSocket으로 이뤄진다. 처음엔 백엔드만 구현했고([ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)), Phase 27에서 프론트엔드(`@stomp/stompjs`, 연결은 "채팅 참여하기"를 누른 뒤에만)를 붙였다([ADR-0039](decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)).
 
 ### REST
 
