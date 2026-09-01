@@ -64,12 +64,13 @@ class SecurityConfig(
                 // The WebSocket handshake itself stays unauthenticated — real auth happens one
                 // level up, inside the STOMP CONNECT frame (see StompAuthChannelInterceptor).
                 authorize("/ws/**", permitAll)
-                // Public read access (Phase 29, ADR-0041) — question/answer/comment content and
-                // search, so an anonymous visitor can actually read what a shared link points to.
-                // Deliberately narrow: only these GETs, method-scoped so the POST/PUT/DELETE on
-                // the very same paths (revise, comment, etc.) still require auth. Everything else
-                // (tags, organizations, direct-asks, live-chat, dashboard, profiles, moderation,
-                // notifications) stays behind the anyRequest/authenticated fallback below.
+                // Public read access, part 1 (Phase 29, ADR-0041) — question/answer/comment
+                // content and search, so an anonymous visitor can actually read what a shared
+                // link points to. Deliberately narrow: only these GETs, method-scoped so the
+                // POST/PUT/DELETE on the very same paths (revise, comment, etc.) still require
+                // auth. Part 2 (tags/organizations/profiles) is the next block down. Direct-asks,
+                // live-chat, dashboard, moderation, and notifications still stay behind the
+                // anyRequest/authenticated fallback below — not opened by either part.
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions/{version}", permitAll)
@@ -83,6 +84,19 @@ class SecurityConfig(
                 authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/comments", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/comments/{commentId}/versions", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/search", permitAll)
+                // Public read access, part 2 (Phase 30, ADR-0042) — tags, organizations, user
+                // profiles. Same method-scoped principle: the write verbs on these same paths
+                // (tag edit, org create/join/leave, follow) still require auth.
+                authorize(HttpMethod.GET, "/api/v1/tags", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/tags/{id}", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/tags/{id}/questions", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/tags/{id}/contributors", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/tags/{id}/related", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/organizations", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/organizations/{id}", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/users/{id}/profile", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/users/{id}/reputation", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/users/{id}/badges", permitAll)
                 authorize(anyRequest, authenticated)
             }
         }

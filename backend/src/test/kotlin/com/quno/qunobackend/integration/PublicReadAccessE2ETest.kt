@@ -10,18 +10,20 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 /**
- * Real HTTP proof that Phase 29's public read access (ADR-0041) is scoped exactly as decided:
- * question/answer/comment reads and search work with no Authorization header at all, while every
- * write on those same paths — and every other resource (tags, organizations, direct-asks,
- * live-chat, dashboard, profiles) — still 401s without one. Goes through MockMvc + the real
- * JwtAuthenticationFilter/SecurityConfig chain, same reasoning as QuestionLifecycleE2ETest: a
- * unit test with fakes can't catch a SecurityConfig pattern mistake, only the real filter chain can.
+ * Real HTTP proof that public read access (Phase 29/30, ADR-0041/ADR-0042) is scoped exactly as
+ * decided: question/answer/comment reads, search, tag/organization detail, and user profiles all
+ * work with no Authorization header at all, while every write on those same paths — and every
+ * other resource (direct-asks, live-chat, dashboard) — still 401s without one. Goes through
+ * MockMvc + the real JwtAuthenticationFilter/SecurityConfig chain, same reasoning as
+ * QuestionLifecycleE2ETest: a unit test with fakes can't catch a SecurityConfig pattern mistake,
+ * only the real filter chain can.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,10 +39,16 @@ class PublicReadAccessE2ETest {
     lateinit var jdbcTemplate: JdbcTemplate
 
     private var questionId: Long? = null
+    private var tagId: Long? = null
+    private var organizationId: Long? = null
     private val userIds = mutableListOf<Long>()
 
     @AfterEach
     fun cleanUp() {
+        organizationId?.let { id ->
+            jdbcTemplate.update("DELETE FROM organization_memberships WHERE organization_id = ?", id)
+            jdbcTemplate.update("DELETE FROM organizations WHERE id = ?", id)
+        }
         questionId?.let { id ->
             jdbcTemplate.update(
                 "DELETE FROM comment_versions WHERE comment_id IN (SELECT id FROM comments WHERE target_id = ? OR target_id IN (SELECT id FROM answers WHERE question_id = ?))",
@@ -58,6 +66,7 @@ class PublicReadAccessE2ETest {
             jdbcTemplate.update("DELETE FROM question_versions WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM questions WHERE id = ?", id)
         }
+        tagId?.let { id -> jdbcTemplate.update("DELETE FROM tags WHERE id = ?", id) }
         userIds.forEach { id -> jdbcTemplate.update("DELETE FROM users WHERE id = ?", id) }
     }
 
@@ -125,10 +134,67 @@ class PublicReadAccessE2ETest {
                 .content("""{"body":"anonymous comment attempt"}"""),
         ).andExpect(status().isUnauthorized)
 
-        // Resources outside this Phase's scope still require auth even for reads.
-        mockMvc.perform(get("/api/v1/tags")).andExpect(status().isUnauthorized)
+        // Resources outside either Phase's scope still require auth even for reads.
         mockMvc.perform(get("/api/v1/me")).andExpect(status().isUnauthorized)
         mockMvc.perform(get("/api/v1/dashboard")).andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `an anonymous request can read tags, organizations, and user profiles, but cannot write`() {
+        val (userId, userToken) = signUpAndLogin("public-read-tags")
+        userIds += userId
+
+        val createJson = mockMvc.perform(
+            post("/api/v1/questions")
+                .header("Authorization", "Bearer $userToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"title":"Public tag read E2E question","body":"body","tags":["public-read-e2e-tag"]}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val questionId = (readMap(createJson)["id"] as Number).toLong()
+        this.questionId = questionId
+
+        val tagJson = mockMvc.perform(get("/api/v1/tags?q=public-read-e2e-tag").header("Authorization", "Bearer $userToken"))
+            .andReturn().response.contentAsString
+        @Suppress("UNCHECKED_CAST")
+        val tagId = (((objectMapper.readValue(tagJson, List::class.java) as List<Map<*, *>>).first())["id"] as Number).toLong()
+        this.tagId = tagId
+
+        val orgJson = mockMvc.perform(
+            post("/api/v1/organizations")
+                .header("Authorization", "Bearer $userToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Public Read E2E Org"}"""),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        val organizationId = (readMap(orgJson)["id"] as Number).toLong()
+        this.organizationId = organizationId
+
+        // No Authorization header on any of these — an anonymous visitor.
+        mockMvc.perform(get("/api/v1/tags")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/tags/$tagId")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/tags/$tagId/questions")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/tags/$tagId/contributors")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/tags/$tagId/related")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/organizations")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/organizations/$organizationId"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value("Public Read E2E Org"))
+        mockMvc.perform(get("/api/v1/users/$userId/profile")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/users/$userId/reputation")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/v1/users/$userId/badges")).andExpect(status().isOk)
+
+        // Writes on those same paths still require auth.
+        mockMvc.perform(
+            put("/api/v1/tags/$tagId")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"description":"hijacked","docsUrl":null}"""),
+        ).andExpect(status().isUnauthorized)
+        mockMvc.perform(
+            post("/api/v1/organizations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Anonymous org attempt"}"""),
+        ).andExpect(status().isUnauthorized)
+        mockMvc.perform(post("/api/v1/organizations/$organizationId/join")).andExpect(status().isUnauthorized)
+        mockMvc.perform(post("/api/v1/users/$userId/follow")).andExpect(status().isUnauthorized)
     }
 
     private fun signUpAndLogin(prefix: String): Pair<Long, String> {
