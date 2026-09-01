@@ -390,11 +390,21 @@ Phase 24가 백엔드까지만 구현하고 미뤄둔 실시간 질문방 화면
 - [x] F14.2 검증 — 실제 서버로 두 계정과 태그 두 개(kotlin/spring-boot)가 겹치는 질문 두 개(하나는 미답변)를 만들어 Latest/Unanswered/Top 탭 전환, 상위 기여자·관련 태그 표시, Follow/Unfollow 토글, 설명 인라인 편집·저장까지 브라우저로 전 구간 확인. 이번 Phase 자체의 프론트 버그는 없었음
 - [x] 28.3 문서화 — `api-design.md`("태그 (Phase 28)" 섹션 신설)에 반영, [ADR-0040](docs/architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)으로 스코프 결정 기록, ADR-0021 상태를 "일부 대체됨"으로 갱신
 
-## Phase 29+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 29 — 비로그인 공개 열람: 질문 상세/목록/검색 (mvp-scope.md 로드맵에 없던 새 범위)
+
+[ADR-0013](docs/architecture/decisions/0013-defer-public-read-access.md)이 구체적 요구 없이는 정하지 않겠다고 보류해온 공개 열람을, 남은 마지막 프론트엔드 격차로 다시 꺼냈다. 공개 범위(질문 상세/목록/검색만 vs +태그·조직 vs +프로필까지)와 SEO 메타데이터 포함 여부를 사용자에게 확인해 가장 좁은 범위(질문 상세/목록/검색, 접근 제어만)로 시작했다(2026-09-01, [ADR-0041](docs/architecture/decisions/0041-narrow-public-read-access.md)).
+
+- [x] 29.1 백엔드 — `SecurityConfig`에 질문/답변/댓글 조회 + 검색 GET을 HTTP 메서드 단위로 `permitAll` 추가(같은 경로의 POST/PUT/DELETE는 그대로 인증 필요). Spring Security 6.x `PathPatternRequestMatcher`가 컨트롤러와 동일한 `{id}` 플레이스홀더 문법을 지원해 정확히 메서드+경로로 좁힐 수 있었다. 태그/조직/Direct Ask/실시간 질문방/프로필/Dashboard/모더레이션/알림은 그대로 인증 필요
+- [x] 29.2 테스트 — `PublicReadAccessE2ETest`(신규, MockMvc로 실제 필터 체인 통과) — Authorization 헤더 없이 질문 상세/버전/관련 질문/답변 목록/댓글 목록/검색이 200인지, 같은 경로의 POST(답변/리비전/댓글 작성)는 401인지, 범위 밖 리소스(태그/me/dashboard)는 조회도 401인지 전 구간 확인
+- [x] F15.1 프론트엔드 — Question Detail(`/questions/[id]`)과 검색(`/questions`) 페이지를 리다이렉트하는 `useRequireAuth` 대신 `useSession`(리다이렉트 없음)으로 전환. `WatchButton`/`SaveButton`/`ReportButton`은 `FollowUserButton`과 동일하게 컴포넌트 내부에서 `!me`면 `null` 반환, `VoteControl`은 익명 방문자에게 점수만 읽기 전용으로 표시(글쓴이 본인과 동일 취급), `CommentSection`의 "Add a comment" 토글과 `CommentItem`의 "답글" 버튼은 로그인 시에만 노출(댓글 읽기 자체는 계속 공개). `OutdatedAction`/`ClusterPanel`/`ForkPanel`/`LiveChatPanel`은 페이지에서 `{me && (...)}`로 아예 건너뛴다(백엔드를 추가로 열지 않음). `AnswerComposer`는 숨기는 대신 "로그인하고 답변을 작성하세요" 링크로 대체
+- [x] F15.2 검증 — 실제 서버에 `localStorage`를 비운 완전한 익명 세션으로 질문 상세(답변·댓글·관련 질문 포함)와 검색 결과가 로그인 없이 정상 렌더링되는지, 쓰기 버튼/패널이 전부 숨겨지는지, 로그인 후에는 모든 기능이 회귀 없이 그대로 동작하는지 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음
+- [x] 29.3 문서화 — `api-design.md`("비로그인 공개 열람 (Phase 29)" 섹션 신설)에 반영, [ADR-0041](docs/architecture/decisions/0041-narrow-public-read-access.md)로 스코프 결정 기록, ADR-0013 상태를 "일부 대체됨"으로 갱신
+
+## Phase 30+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보 프론트엔드까지 모두 구현됐다(Phase 28). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다 — 남은 것은 질문/프로필 비로그인 공개 열람([ADR-0013](docs/architecture/decisions/0013-defer-public-read-access.md), 대응 백엔드 자체가 없어 재검토 필요)뿐이다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람까지 모두 구현됐다(Phase 29). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. 태그/조직/사용자 프로필 공개 확대와 SEO 메타데이터(Open Graph, sitemap)는 ADR-0041이 의도적으로 남겨둔 후속 후보다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
 
 ## 진행 방식
 
