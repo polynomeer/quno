@@ -360,11 +360,21 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 25.3 테스트 — 단위 테스트(`CreateDirectAskRequestUseCase`: AWAITING_PAYMENT로 생성, `ConfirmDirectAskPaymentUseCase`: 정상 확인·금액 불일치·미존재 orderId·중복 확인·토스 거부, `RespondToDirectAskRequestUseCase`: 수락 시 결제 유지·거절 시 결제 취소)와 `FakePaymentGateway`. 실제 검증은 두 갈래로 분리했다 — 비즈니스 로직은 위 단위 테스트로, 실제 아웃바운드 HTTP 계약(URL/Basic Auth 헤더/JSON 바디)은 로컬 Python 모크 Toss 서버로 `quno.toss.api-base-url`을 임시 오버라이드해 curl로 전 구간(결제 전 요청 비노출→결제 확인→노출·알림→금액 위조 400→수락 시 결제 유지→거절 시 자동 환불) 확인. **부수 발견**: `RestClient.builder()` 정적 팩토리가 이 프로젝트의 Jackson 3 컨버터 자동구성을 거치지 않아 요청 바디가 조용히 `{}`로 직렬화되던 버그를 모크 서버로 발견, `ObjectMapper` 직접 주입으로 수동 직렬화하도록 수정(ADR-0037 참고). 토스 테스트 모드는 실카드 정보 입력 없이는 진짜 `paymentKey`를 발급하지 않아, 결제위젯을 통한 실제 체크아웃까지는 검증하지 못함 — 사람이 직접 완주해야 하는 갭으로 남김
 - [x] 25.4 문서화 — `domain-model.md`(Trust Network 컨텍스트에 `DirectAskPayment` Aggregate, ERD, 테이블별 책임, Domain Events 갱신)와 `api-design.md`("유료 Direct Ask (Phase 25)" 섹션 신설, 기존 "Direct Ask (Phase 22)" 섹션은 대체됨으로 표시)에 반영, [ADR-0037](docs/architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)로 스코프 결정 기록. 프론트엔드(결제위젯 UI)는 이번 범위에 포함하지 않음(다른 모든 Phase와 동일하게 백엔드까지만)
 
-## Phase 26+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 26 — Organization/Direct Ask 프론트엔드 연동 (mvp-scope.md 로드맵 Phase 5, 나머지)
+
+Phase 22/23/25가 백엔드까지만 구현하고 미뤄둔 Organization/Direct Ask 화면을 붙인다. 남은 프론트엔드 격차(태그 상세 정보/Organization·Direct Ask/실시간 질문방) 중 어느 것을 먼저 할지 사용자에게 확인해 이것을 선택했다(2026-09-01, [ADR-0038](docs/architecture/decisions/0038-organization-direct-ask-frontend-no-user-search.md)).
+
+- [x] F12.1 Organization — `entities/organization`(타입/API/훅) + `features/organization`(생성/가입-탈퇴/이메일 도메인 인증 훅·UI). `/organizations`(검색+생성+이메일 인증 패널), `/organizations/[id]`(상세+가입 버튼) 신설. `JoinOrganizationButton`은 OrganizationResponse에 멤버십 여부가 없어 `useUserProfile(내 id)`의 `organizations` 목록으로 판단(FollowUserButton과 동일 패턴), Verified 조직은 가입 버튼 대신 안내 문구. `UserProfile` 타입에 `organizations` 필드 추가, 프로필 페이지에 "소속 조직" 섹션 추가
+- [x] F12.2 Direct Ask 요청·결제 — `features/direct-ask`(타입/API/훅) + Toss 결제창(호스팅 체크아웃) SDK 로더(`lib/toss.ts`, `<script>` 동적 삽입). `RequestDirectAskPanel`을 대상 사용자의 프로필 페이지에 배치(사용자 검색 API가 없어 "지금 보고 있는 프로필이 대상"으로 스코프를 좁힘, ADR-0038) — 내 질문 목록에서 하나를 골라 요청 생성 후 Toss 결제창으로 리다이렉트. `/direct-asks/checkout`이 Toss의 successUrl/failUrl을 모두 받아 `paymentKey`/`orderId`/`amount`면 confirm 호출, `code`/`message`면 취소 안내
+- [x] F12.3 Direct Ask 목록·수락/거절·설정 — `/direct-asks?role=sent|received`(탭), `DirectAskRequestList`(받은 요청만 PENDING일 때 수락/거절 버튼), `DirectAskSettingsToggle`(내 프로필에 `PUT /me/direct-ask-settings` 토글). `describeNotification`/`NotificationType`에 `DIRECT_ASK_REQUESTED`/`ACCEPTED`/`DECLINED` 추가(각각 받은/보낸 요청 탭으로 링크). AppHeader에 Organizations/Direct Asks 네비게이션 링크 추가
+- [x] F12.4 백엔드 보강 — `GET /me/direct-asks`가 `questionId`/`requesterId`/`targetUserId`만 반환해 프론트가 사람이 읽을 수 있는 목록을 그릴 수 없었다. `SavedQuestionResponse`와 동일한 비정규화 패턴으로 `questionTitle`/`requesterNickname`/`targetUserNickname`을 추가하는 `DirectAskRequestListItemResult`/`Response`를 새로 만들고 `ListMyDirectAsksUseCase`가 `QuestionRepository`/`UserRepository`로 조립하도록 변경(단위 테스트 추가)
+- [x] F12.5 검증 — 두 계정(요청자/대상)으로 실제 서버 전 구간 확인: 대상이 Direct Ask 수신을 켠 뒤 요청 생성(AWAITING_PAYMENT, 결제 전 대상에게 안 보임)→실제 토스 API 계약 검증에 썼던 로컬 모크 Toss 서버로 백엔드의 `quno.toss.api-base-url`을 오버라이드해 `/direct-asks/checkout`에 직접 진입(성공/실패 분기 모두)→확인 후 PENDING 전이·알림 발행→수락 시 결제 유지·거절 시 결제 취소(모크 서버 로그로 `cancelReason` 확인)→양쪽 알림 센터에 올바른 문구와 링크 노출까지 브라우저로 확인. Organization도 생성→탈퇴/재가입→업무 이메일 인증(Mailpit 실제 수신 코드 사용)으로 Verified 조직 자동 가입→Verified 조직에 직접 가입 시도 시 안내 문구로 막히는지까지 확인. **결제창(Toss 실제 호스팅 체크아웃) 자체는 카드 정보 입력이 필요해 사람이 완료해야 한다** — 요청 생성까지는 실제 API로, 확인 이후는 모크 서버로 검증한 것은 ADR-0037의 검증 갭과 동일한 한계
+
+## Phase 27+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위는 모두 구현됐다(Phase 25로 Phase 5 "신뢰 네트워크"까지 완료). 남은 것은 프론트엔드 격차뿐이다 — 태그 상세 정보, Organization/Direct Ask, 실시간 질문방 등([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항-2026-09-01-갱신) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위는 모두 구현됐다(Phase 25로 Phase 5 "신뢰 네트워크"까지 완료). 남은 프론트엔드 격차는 태그 상세 정보 보강과 실시간 질문방(Live Chat)뿐이다([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
 
 ## 진행 방식
 
