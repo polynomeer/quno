@@ -1,19 +1,18 @@
 "use client";
 
 import { use } from "react";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useOrganization } from "@/entities/organization/hooks/useOrganization";
 import { JoinOrganizationButton } from "@/features/organization/ui/JoinOrganizationButton";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { relativeTime } from "@/shared/lib/relative-time";
 
+/** Publicly readable (Phase 30, ADR-0042) — `JoinOrganizationButton` self-guards on `!me`. */
 export default function OrganizationDetailPage({ params }: PageProps<"/organizations/[id]">) {
   const { id } = use(params);
   const organizationId = Number(id);
-  const { isLoading: authLoading } = useRequireAuth();
   const { data: organization, isLoading, isError } = useOrganization(organizationId);
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return <Skeleton className="h-40 w-full" />;
   }
 

@@ -407,16 +407,16 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - Follow 상태는 별도 엔드포인트 없이 `GET /users/{id}/profile`의 `followedTags`로 판단한다(Organization의 `JoinOrganizationButton`과 동일 패턴).
 - 최근 30일 활동 요약과 태그 작성 가이드는 범위 밖이다(ADR-0040).
 
-## 비로그인 공개 열람 (Phase 29)
+## 비로그인 공개 열람 (Phase 29~30)
 
-[ADR-0013](decisions/0013-defer-public-read-access.md)이 보류해온 공개 열람을 [ADR-0041](decisions/0041-narrow-public-read-access.md)로 좁게 시작했다 — 질문 상세/목록/검색만.
+[ADR-0013](decisions/0013-defer-public-read-access.md)이 보류해온 공개 열람을 [ADR-0041](decisions/0041-narrow-public-read-access.md)로 질문 상세/목록/검색만 좁게 시작한 뒤, [ADR-0042](decisions/0042-expand-public-read-access-tags-orgs-profiles.md)로 태그·조직 상세·사용자 프로필까지 넓혔다.
 
-- `SecurityConfig`에 **HTTP 메서드 단위로** 추가된 `permitAll`: `GET /questions/{id}`, `GET /questions/{id}/versions`(+`/{version}`, +`/{version}/diff`), `GET /questions/{id}/related`, `GET /questions/{questionId}/answers`, `GET /questions/{questionId}/comments`, `GET /answers/{answerId}/versions`(+`/{version}`, +`/{version}/diff`), `GET /answers/{answerId}/comments`, `GET /comments/{commentId}/versions`, `GET /search`.
-- 같은 경로의 `POST`/`PUT`/`DELETE`(답변 작성, 질문/답변 리비전, 댓글 작성 등)는 그대로 인증이 필요하다 — Spring Security 6.x `PathPatternRequestMatcher`가 `{id}` 같은 컨트롤러 매핑 플레이스홀더 문법을 그대로 보안 패턴에 쓸 수 있어서 메서드+경로 조합으로 정확히 좁힐 수 있었다.
-- 태그/Organization/Direct Ask/실시간 질문방/사용자 프로필/Dashboard/모더레이션/알림 등 나머지 전부는 여전히 인증이 필요하다.
-- 투표·Watch·Save·Report·Outdated 표시·댓글 작성·QPR·Cluster·Fork·Live Chat은 백엔드를 추가로 열지 않고, 프론트엔드가 익명 방문자에게 해당 버튼/패널 자체를 숨긴다(ADR-0041).
-- SEO 메타데이터(Open Graph, `sitemap.xml`)는 범위 밖이다 — 접근 제어만 먼저 검증한다.
-- `PublicReadAccessE2ETest`가 실제 필터 체인으로 공개/비공개 양쪽을 확인한다 — 새 공개 엔드포인트를 추가할 때는 이 테스트에도 케이스를 추가한다.
+- `SecurityConfig`에 **HTTP 메서드 단위로** 추가된 `permitAll` — Phase 29: `GET /questions/{id}`, `GET /questions/{id}/versions`(+`/{version}`, +`/{version}/diff`), `GET /questions/{id}/related`, `GET /questions/{questionId}/answers`, `GET /questions/{questionId}/comments`, `GET /answers/{answerId}/versions`(+`/{version}`, +`/{version}/diff`), `GET /answers/{answerId}/comments`, `GET /comments/{commentId}/versions`, `GET /search`. Phase 30 추가분: `GET /tags`, `GET /tags/{id}`(+`/questions`, +`/contributors`, +`/related`), `GET /organizations`, `GET /organizations/{id}`, `GET /users/{id}/profile`, `GET /users/{id}/reputation`, `GET /users/{id}/badges`.
+- 같은 경로의 `POST`/`PUT`/`DELETE`(답변 작성, 질문/답변 리비전, 댓글 작성, 태그 편집, Organization 생성/가입/탈퇴, Follow 등)는 그대로 인증이 필요하다 — Spring Security 6.x `PathPatternRequestMatcher`가 `{id}` 같은 컨트롤러 매핑 플레이스홀더 문법을 그대로 보안 패턴에 쓸 수 있어서 메서드+경로 조합으로 정확히 좁힐 수 있었다.
+- Direct Ask/실시간 질문방/Dashboard/모더레이션/알림/`/me/*`는 여전히 인증이 필요하다(이번 두 Phase 모두 대상이 아님).
+- 투표·Watch·Save·Report·Outdated 표시·댓글 작성·QPR·Cluster·Fork·Live Chat·Follow·태그 편집·Organization 생성/가입/이메일 인증은 백엔드를 추가로 열지 않고, 프론트엔드가 익명 방문자에게 해당 버튼/패널 자체를 숨긴다(ADR-0041/ADR-0042). Phase 30에서 검토 중 기존에 빠져 있던 방문자 가드 두 건(`FollowUserButton`의 로그인 여부 체크, `EmailDomainVerificationPanel`의 `viewerId` 체크)도 함께 발견해 고쳤다 — 두 페이지가 지금까지 항상 `useRequireAuth` 뒤에 있어 잠재해 있던 결함이었다.
+- SEO 메타데이터(Open Graph, `sitemap.xml`)는 범위 밖이다 — 접근 제어만 먼저 검증한다. ADR-0041/0042가 남긴 마지막 후속 후보다.
+- `PublicReadAccessE2ETest`가 실제 필터 체인으로 공개/비공개 양쪽을 확인한다(Phase 30에서 태그/조직/프로필 케이스 추가) — 새 공개 엔드포인트를 추가할 때는 이 테스트에도 케이스를 추가한다.
 
 ## 입력 검증 공통 원칙
 

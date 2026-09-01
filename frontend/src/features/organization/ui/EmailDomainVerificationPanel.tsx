@@ -20,6 +20,12 @@ export function EmailDomainVerificationPanel({ viewerId }: { viewerId: number | 
   const requestVerification = useRequestEmailDomainVerification();
   const confirmVerification = useConfirmEmailDomainVerification(viewerId);
 
+  // Organizations list is publicly readable now (Phase 30, ADR-0042) — an anonymous visitor
+  // reaches this component for the first time, and email verification requires being logged in.
+  if (!viewerId) {
+    return null;
+  }
+
   async function handleRequest() {
     if (!email.trim()) return;
     try {

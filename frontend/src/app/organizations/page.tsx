@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useOrganizationSearch } from "@/entities/organization/hooks/useOrganizationSearch";
 import { OrganizationCard } from "@/features/organization/ui/OrganizationCard";
 import { CreateOrganizationForm } from "@/features/organization/ui/CreateOrganizationForm";
@@ -9,14 +9,12 @@ import { EmailDomainVerificationPanel } from "@/features/organization/ui/EmailDo
 import { Input } from "@/shared/ui/Input";
 import { Skeleton } from "@/shared/ui/Skeleton";
 
+/** Publicly readable (Phase 30, ADR-0042) — `CreateOrganizationForm`/`EmailDomainVerificationPanel`
+ * both self-guard on `!me` internally, so this page doesn't need its own auth gate. */
 export default function OrganizationsPage() {
-  const { me, isLoading: authLoading } = useRequireAuth();
+  const { data: me } = useSession();
   const [q, setQ] = useState("");
   const { data: organizations, isLoading } = useOrganizationSearch(q);
-
-  if (authLoading) {
-    return <Skeleton className="h-40 w-full" />;
-  }
 
   return (
     <div className="space-y-6">

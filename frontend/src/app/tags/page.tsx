@@ -2,19 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useTagSearch } from "@/entities/tag/hooks/useTagSearch";
 import { Input } from "@/shared/ui/Input";
 import { Skeleton } from "@/shared/ui/Skeleton";
 
+/** Publicly readable (Phase 30, ADR-0042) — no auth gate, no `useSession` needed at all since
+ * this page has no action-only UI to hide. */
 export default function TagDirectoryPage() {
-  const { isLoading: authLoading } = useRequireAuth();
   const [q, setQ] = useState("");
   const { data: tags, isLoading } = useTagSearch(q);
-
-  if (authLoading) {
-    return <Skeleton className="h-40 w-full" />;
-  }
 
   return (
     <div className="space-y-6">

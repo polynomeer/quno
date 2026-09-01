@@ -2,7 +2,6 @@
 
 import { Suspense, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useTagByName } from "@/entities/tag/hooks/useTagByName";
 import { useTagQuestions } from "@/entities/tag/hooks/useTagQuestions";
 import { useTagContributors } from "@/entities/tag/hooks/useTagContributors";
@@ -27,14 +26,13 @@ function TagDetailContent({ tagName }: { tagName: string }) {
   const sort: TagQuestionSort =
     searchParams.get("sort") === "unanswered" ? "unanswered" : searchParams.get("sort") === "top" ? "top" : "latest";
 
-  const { isLoading: authLoading } = useRequireAuth();
   const { data: tag, isLoading: tagLoading } = useTagByName(tagName);
   const tagId = tag?.id ?? null;
   const { data: questions, isLoading: questionsLoading } = useTagQuestions(tagId, sort);
   const { data: contributors } = useTagContributors(tagId);
   const { data: relatedTags } = useRelatedTags(tagId);
 
-  if (authLoading || tagLoading) {
+  if (tagLoading) {
     return <Skeleton className="h-40 w-full" />;
   }
 

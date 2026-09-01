@@ -123,11 +123,11 @@ Profile ────────────→ Contributions ─→ Question De
 | 태그별 세분화 Expertise | 백엔드·프론트엔드 모두 **구현됨**(Phase 28, [ADR-0040](../architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)) — 설명/공식 문서 링크(위키 스타일 편집), 상위 기여자, 관련 태그, Latest/Unanswered/Top 탭, Follow. 최근 30일 활동 요약은 범위 밖 |
 | 모더레이션(신고, 리뷰 큐, 역할 기반 권한) | **구현됨**(Phase 16, [ADR-0028](../architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) — 단, Keep/Hide 두 액션뿐, Close-as-duplicate/Edit/사유별 필터/역할 부여 API는 없음 |
 | 답변(Answer) 수정 이력 | **구현됨**(Phase 17, [ADR-0029](../architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) — Question과 동일한 revision UI 패턴 재사용 |
-| 질문 비로그인 공개 열람 | 질문 상세/목록/검색은 **구현됨**(Phase 29, [ADR-0041](../architecture/decisions/0041-narrow-public-read-access.md)) — 투표/Watch/Save/Report/댓글 작성/QPR/Cluster/Fork/Live Chat은 익명 방문자에게 숨김. 태그/조직/**프로필**은 여전히 인증 필요(ADR-0013 일부 유효) |
+| 비로그인 공개 열람 | 질문 상세/목록/검색(Phase 29, [ADR-0041](../architecture/decisions/0041-narrow-public-read-access.md))에 이어 태그 상세·조직 상세·사용자 프로필까지 **구현됨**(Phase 30, [ADR-0042](../architecture/decisions/0042-expand-public-read-access-tags-orgs-profiles.md)) — 투표/Watch/Save/Report/댓글 작성/QPR/Cluster/Fork/Live Chat/Follow/태그 편집/Organization 생성·가입·이메일 인증은 여전히 익명 방문자에게 숨김. 남은 건 SEO 메타데이터뿐 |
 | 실시간 질문방(Live Chat) | 백엔드·프론트엔드 모두 **구현됨**(Phase 24/27, [ADR-0036](../architecture/decisions/0036-live-chat-websocket-mongodb-redis-presence.md)/[0039](../architecture/decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)) — `@stomp/stompjs`, 연결은 "채팅 참여하기"를 누른 뒤에만 |
 | Cluster Merge, Question Fork, 지식 그래프 | **구현됨**(Phase 18, [ADR-0030](../architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md)) — 그래프는 데이터 API까지만, 시각화 UI는 없음 |
 | Organization, Direct Ask(유료) | 백엔드·프론트엔드 모두 **구현됨**(Phase 22/23/25/26, [ADR-0034](../architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)/[0035](../architecture/decisions/0035-verified-organization-email-domain-mailpit.md)/[0037](../architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)/[0038](../architecture/decisions/0038-organization-direct-ask-frontend-no-user-search.md)) — Virtual/Community/Verified 조직, 토스페이먼츠 테스트 모드 결제. Direct Ask 요청 대상은 사용자 검색이 아니라 프로필 페이지에서 고른다(ADR-0038) |
 
 반대로 이 설계서에 없지만 백엔드에는 이미 있는 기능도 있다 — QPR Review(정보 요청/재요청), Cluster/Super Answer/Merge, Question Fork, 지식 그래프 데이터 API, Outdated 표시, Spike Detection, Quno Flow 활동 스트림. 프론트엔드 설계 시 이들을 어느 화면에 어떻게 노출할지도 함께 정해야 한다.
 
-남은 프론트엔드 격차는 없다 — 이 표의 모든 항목이 백엔드/프론트엔드 모두 구현됐다. 태그/조직/사용자 프로필의 비로그인 공개 열람과 SEO 메타데이터(Open Graph, sitemap)는 ADR-0041이 의도적으로 다음 단계로 남겨둔 후속 후보다.
+남은 프론트엔드 격차는 없다 — 이 표의 모든 항목이 백엔드/프론트엔드 모두 구현됐다. SEO 메타데이터(Open Graph, sitemap)만 ADR-0041/0042가 의도적으로 남겨둔 마지막 후속 후보다.

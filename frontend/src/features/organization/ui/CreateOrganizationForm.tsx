@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useCreateOrganization } from "../hooks/useCreateOrganization";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
@@ -9,13 +10,20 @@ import { Button } from "@/shared/ui/Button";
 import { ApiError } from "@/shared/api/api-error";
 
 /** Same trust level as creating a Tag (ADR-0034) — no approval step, just a name collision
- * check the backend enforces (DuplicateOrganizationNameException, surfaced via createOrganization.error). */
+ * check the backend enforces (DuplicateOrganizationNameException, surfaced via createOrganization.error).
+ * Organizations list is publicly readable now (Phase 30, ADR-0042) — hides for an anonymous
+ * visitor rather than surfacing a form that 401s on submit. */
 export function CreateOrganizationForm() {
+  const { data: me } = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const createOrganization = useCreateOrganization();
+
+  if (!me) {
+    return null;
+  }
 
   if (!open) {
     return (

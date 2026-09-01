@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useUpdateTagDetails } from "../hooks/useUpdateTagDetails";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Input } from "@/shared/ui/Input";
@@ -9,8 +10,11 @@ import { ApiError } from "@/shared/api/api-error";
 import type { Tag } from "@/entities/tag/model/tag.types";
 
 /** Wiki-style — any logged-in user can edit (ADR-0040), same trust level as CreateOrganizationForm
- * and Tag creation itself (implicit, via tagging a question). */
+ * and Tag creation itself (implicit, via tagging a question). Tag Detail is publicly readable now
+ * (Phase 30, ADR-0042), so an anonymous visitor reaches this component for the first time — the
+ * "편집" entry point hides itself for them rather than surfacing a form that 401s on save. */
 export function TagDetailsEditor({ tag }: { tag: Tag }) {
+  const { data: me } = useSession();
   const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState(tag.description ?? "");
   const [docsUrl, setDocsUrl] = useState(tag.docsUrl ?? "");
@@ -35,11 +39,17 @@ export function TagDetailsEditor({ tag }: { tag: Tag }) {
           </a>
         )}
         {!tag.description && !tag.docsUrl && <p className="text-sm text-text-secondary">아직 설명이 없습니다.</p>}
-        <Button variant="ghost" className="px-0 text-xs" onClick={() => setEditing(true)}>
-          편집
-        </Button>
+        {me && (
+          <Button variant="ghost" className="px-0 text-xs" onClick={() => setEditing(true)}>
+            편집
+          </Button>
+        )}
       </div>
     );
+  }
+
+  if (!me) {
+    return null;
   }
 
   return (

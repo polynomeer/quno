@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useUserProfile } from "@/entities/user/hooks/useUserProfile";
 import { useUserReputation } from "@/entities/user/hooks/useUserReputation";
 import { AnswerCard } from "@/features/answer/ui/AnswerCard";
@@ -21,10 +21,13 @@ import { TagChip } from "@/shared/ui/TagChip";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import Link from "next/link";
 
+/** Publicly readable (Phase 30, ADR-0042) — `RequestDirectAskPanel`/`FollowUserButton` both
+ * self-guard on `!me`, and every private-list section is already gated on `isOwnProfile`
+ * (itself false without `me`), so this page needs no auth gate of its own. */
 export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
   const { id } = use(params);
   const userId = Number(id);
-  const { me, isLoading: authLoading } = useRequireAuth();
+  const { data: me } = useSession();
   const { data: profile, isLoading: profileLoading, isError } = useUserProfile(userId);
   const { data: reputation } = useUserReputation(userId);
   const isOwnProfile = Boolean(me && me.id === userId);
@@ -33,7 +36,7 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
   const { data: following } = useMyFollowing(isOwnProfile);
   const { data: badges } = useBadges(userId);
 
-  if (authLoading || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-16 w-full" />

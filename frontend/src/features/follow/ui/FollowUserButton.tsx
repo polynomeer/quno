@@ -6,13 +6,15 @@ import { useToggleFollow } from "../hooks/useToggleFollow";
 import { Button } from "@/shared/ui/Button";
 
 /** Backend blocks self-follow (`SelfFollowException`, 403) — the button hides itself on your
- * own profile rather than relying on every caller to remember the check (mirrors VoteControl). */
+ * own profile rather than relying on every caller to remember the check (mirrors VoteControl).
+ * Also hides for an anonymous visitor (Phase 30, ADR-0042) — User Profile is publicly readable
+ * now, so `!me` is reachable here for the first time. */
 export function FollowUserButton({ userId }: { userId: number }) {
   const { data: me } = useSession();
   const { data: following, isLoading } = useMyFollowing(Boolean(me));
   const toggleFollow = useToggleFollow(userId);
 
-  if (me && me.id === userId) {
+  if (!me || me.id === userId) {
     return null;
   }
 
