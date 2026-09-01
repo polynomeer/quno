@@ -67,3 +67,4 @@
 | [0040](0040-tag-detail-wiki-editable-and-real-stats.md) | 태그 상세 정보(설명/문서 링크/기여자/관련 태그)는 위키 스타일 편집과 실제 통계 쿼리로 구현, 30일 활동 요약은 범위 밖 | 승인됨 |
 | [0041](0041-narrow-public-read-access.md) | 비로그인 공개 열람은 질문 상세/목록/검색으로 좁혀서 시작(ADR-0013 재검토), SEO 메타데이터는 범위 밖 | 승인됨 |
 | [0042](0042-expand-public-read-access-tags-orgs-profiles.md) | 비로그인 공개 열람을 태그·조직 상세·사용자 프로필까지 확대, SEO 메타데이터는 여전히 범위 밖 | 승인됨 |
+| [0043](0043-seo-metadata-question-og-and-sitemap.md) | SEO 메타데이터는 질문 상세의 동적 Open Graph + 태그·조직 sitemap까지만, 질문/프로필 sitemap 열거는 범위 밖 | 승인됨 |

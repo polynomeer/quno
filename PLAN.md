@@ -412,11 +412,21 @@ ADR-0041이 남겨둔 두 후속 후보(이 확대, SEO 메타데이터) 중 사
 - [x] F16.2 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 완전한 익명 세션(localStorage 비움)으로 태그 상세(질문·기여자·관련 태그 포함)/조직 목록·상세/사용자 프로필(질문·답변·평판·배지·팔로우 태그·소속 조직)이 로그인 없이 그대로 보이면서 Follow/가입/편집/이메일 인증 버튼은 전부 숨겨지는 것을 확인. 같은 사용자로 로그인 시 편집/Follow 버튼이 다시 나타나는 것, 제3자 계정으로 다른 사용자 프로필을 볼 때 Direct Ask 요청/Follow 버튼이 나타나는 것까지 확인해 회귀 없음을 검증
 - [x] 30.3 문서화 — `api-design.md`(Phase 29~30 통합 절로 갱신)/`roadmap.md`에 반영, ADR-0041 상태를 "일부 확장됨(ADR-0042)"으로 갱신(이미 [ADR-0042](docs/architecture/decisions/0042-expand-public-read-access-tags-orgs-profiles.md)로 결정 기록됨)
 
-## Phase 31+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 31 — SEO 메타데이터: 질문 상세 Open Graph + sitemap (mvp-scope.md 로드맵에 없던 새 범위)
+
+ADR-0041/0042가 남겨둔 마지막 후속 후보를 [ADR-0043](docs/architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md)로 착수한다. 질문 상세의 동적 Open Graph와 태그·조직 sitemap까지만 — 질문/프로필 sitemap 열거는 전체 목록 API가 없어 범위 밖.
+
+- [ ] F17.1 질문 상세 동적 OG — `app/questions/[id]/page.tsx`를 얇은 async Server Component로 분리(`generateMetadata` + 기존 내용을 옮긴 `QuestionDetailContent` 클라이언트 컴포넌트 렌더). `generateMetadata`는 인증 없이 공개된 `GET /questions/{id}`를 서버에서 직접 `fetch`해 제목/본문 요약으로 title·description·Open Graph를 채우고, 404/오류는 조용히 기본 제목으로 대체(페이지 자체를 깨뜨리지 않음)
+- [ ] F17.2 사이트 전역 기본 메타데이터 — 루트 레이아웃에 `openGraph`/`twitter` 기본값과 `metadataBase`(`NEXT_PUBLIC_SITE_URL` 환경변수, 기본값 `http://localhost:3000`) 추가
+- [ ] F17.3 sitemap/robots — `app/sitemap.ts`(정적 라우트 + `GET /tags`/`GET /organizations`를 쿼리 없이 호출해 전체 태그·조직 URL 열거)와 `app/robots.ts`(전체 허용 + sitemap 위치) 신규 추가
+- [ ] F17.4 검증 — 프로덕션 빌드로 질문 상세 페이지의 `<meta property="og:*">` 태그가 실제 질문 제목/본문을 반영하는지, 존재하지 않는 질문 ID는 페이지가 깨지지 않고 기본 제목으로 대체되는지, `/sitemap.xml`과 `/robots.txt`가 올바른 URL을 포함해 렌더링되는지 확인
+- [ ] 31.1 문서화 — `api-design.md`/`roadmap.md`에 반영(이미 [ADR-0043](docs/architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md)로 결정 기록됨), ADR-0041/0042 상태를 "SEO는 ADR-0043으로 마무리됨"으로 갱신
+
+## Phase 32+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람까지 모두 구현됐다(Phase 29~30). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. SEO 메타데이터(Open Graph, sitemap)는 ADR-0041/0042가 의도적으로 남겨둔 마지막 후속 후보다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위, Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람/SEO 메타데이터까지 모두 구현됐다(Phase 29~31). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
 
 ## 진행 방식
 
