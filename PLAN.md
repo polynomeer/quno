@@ -8,6 +8,8 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 - 도메인 모델: [docs/architecture/domain-model.md](docs/architecture/domain-model.md)
 - API 설계: [docs/architecture/api-design.md](docs/architecture/api-design.md)
 
+> **PR 현황 (2026-09-01)**: 이 문서에 기록된 작업은 두 개의 PR로 나눠 제출됐다 — Phase 1~25(유료 Direct Ask까지)는 [PR #1](https://github.com/polynomeer/quno/pull/1), Phase 26~29(Organization/Direct Ask·실시간 질문방 프론트엔드, 태그 상세 정보, 비로그인 공개 열람)는 [PR #1] 위에 쌓은 [PR #2](https://github.com/polynomeer/quno/pull/2)다. PR #2는 PR #1이 먼저 `main`에 병합된 뒤 base를 `main`으로 다시 잡아야 한다.
+
 ## Phase 0 — 저장소/환경 설정 (완료)
 
 - [x] `.gitignore`, `CLAUDE.md`, `CONTRIBUTING.md` 작성 및 커밋
