@@ -12,7 +12,8 @@ import { MAX_COMMENT_BODY_LENGTH, type CommentTargetType } from "../api/comment.
 
 /** Up to one level of reply nesting, editable with inline history, @mention highlighting
  * (ADR-0024, ADR-0031) — plain text, no markdown rendering. Composer is hidden behind an
- * "Add a comment" toggle so every card doesn't show an input by default. */
+ * "Add a comment" toggle so every card doesn't show an input by default. Reading comments works
+ * for anonymous viewers too (Phase 29, ADR-0041); the toggle itself only shows when logged in. */
 export function CommentSection({ targetType, targetId }: { targetType: CommentTargetType; targetId: number }) {
   const { data: me } = useSession();
   const { data: comments } = useComments(targetType, targetId);
@@ -52,7 +53,7 @@ export function CommentSection({ targetType, targetId }: { targetType: CommentTa
         </ul>
       )}
 
-      {!showComposer ? (
+      {!me ? null : !showComposer ? (
         <button
           type="button"
           onClick={() => setShowComposer(true)}

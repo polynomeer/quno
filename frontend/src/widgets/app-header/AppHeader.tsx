@@ -24,6 +24,9 @@ export function AppHeader() {
         <Link href="/tags" className="text-sm font-medium text-text-secondary hover:text-text-primary">
           Tags
         </Link>
+        <Link href="/organizations" className="text-sm font-medium text-text-secondary hover:text-text-primary">
+          Organizations
+        </Link>
         {me && (
           <>
             <Link href="/watching" className="text-sm font-medium text-text-secondary hover:text-text-primary">
@@ -31,6 +34,9 @@ export function AppHeader() {
             </Link>
             <Link href="/saved" className="text-sm font-medium text-text-secondary hover:text-text-primary">
               Saved
+            </Link>
+            <Link href="/direct-asks" className="text-sm font-medium text-text-secondary hover:text-text-primary">
+              Direct Asks
             </Link>
             <Link
               href="/notifications"

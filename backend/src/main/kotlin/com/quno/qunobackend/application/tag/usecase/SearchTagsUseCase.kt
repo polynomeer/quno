@@ -9,5 +9,5 @@ class SearchTagsUseCase(
     private val tagRepository: TagRepository,
 ) {
     fun execute(query: String?, limit: Int = 20): List<TagResult> =
-        tagRepository.search(query, limit).map { TagResult(id = requireNotNull(it.id), name = it.name, slug = it.slug) }
+        tagRepository.search(query, limit).map { it.toResult() }
 }

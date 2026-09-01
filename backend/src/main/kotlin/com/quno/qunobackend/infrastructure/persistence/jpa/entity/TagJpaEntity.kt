@@ -21,6 +21,12 @@ class TagJpaEntity(
     @Column(nullable = false)
     val slug: String,
 
+    @Column
+    val description: String?,
+
+    @Column(name = "docs_url")
+    val docsUrl: String?,
+
     @Column(name = "deleted_at")
     val deletedAt: Instant?,
 

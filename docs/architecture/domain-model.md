@@ -131,7 +131,7 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
 | answers | id, question_id, author_id, body_markdown(최신 버전 캐시), is_accepted, target_version_number, latest_version_id, deleted_at | soft delete. `latest_version_id`는 Phase 17에서 추가([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
 | answer_versions | id, answer_id, version_number, body_markdown, created_by | append-only, 보존 우선(soft delete는 예외적) — question_versions와 동일한 패턴(Phase 17, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
-| tags | name, slug, deleted_at | soft delete + active partial unique index |
+| tags | name, slug, description, docs_url, deleted_at | soft delete + active partial unique index. `description`/`docs_url`(Phase 28, [ADR-0040](decisions/0040-tag-detail-wiki-editable-and-real-stats.md))은 위키 스타일 — 소유권 검사 없이 아무 로그인 사용자나 편집 가능 |
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
 | user_tag_follows | user_id, tag_id | 관계 데이터, hard delete 허용 |
 | watches | user_id, question_id | 관계 데이터, hard delete 허용 |

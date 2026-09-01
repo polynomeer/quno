@@ -14,9 +14,12 @@ import { FollowUserButton } from "@/features/follow/ui/FollowUserButton";
 import { FollowingList } from "@/features/follow/ui/FollowingList";
 import { useBadges } from "@/features/badge/hooks/useBadges";
 import { BadgeList } from "@/features/badge/ui/BadgeList";
+import { RequestDirectAskPanel } from "@/features/direct-ask/ui/RequestDirectAskPanel";
+import { DirectAskSettingsToggle } from "@/features/direct-ask/ui/DirectAskSettingsToggle";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { TagChip } from "@/shared/ui/TagChip";
 import { Skeleton } from "@/shared/ui/Skeleton";
+import Link from "next/link";
 
 export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
   const { id } = use(params);
@@ -48,7 +51,14 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
       <header className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">{profile.nickname}</h1>
-          <FollowUserButton userId={userId} />
+          <div className="flex flex-wrap items-center gap-2">
+            {isOwnProfile ? (
+              me && <DirectAskSettingsToggle accepts={me.acceptsDirectAsk} />
+            ) : (
+              <RequestDirectAskPanel targetUserId={userId} />
+            )}
+            <FollowUserButton userId={userId} />
+          </div>
         </div>
         {reputation && (
           <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
@@ -92,6 +102,24 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
           <div className="flex flex-wrap gap-1">
             {profile.followedTags.map((tag) => (
               <TagChip key={tag.id} name={tag.name} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {profile.organizations.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-text-secondary">소속 조직</h2>
+          <div className="flex flex-wrap gap-2">
+            {profile.organizations.map((organization) => (
+              <Link
+                key={organization.id}
+                href={`/organizations/${organization.id}`}
+                className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-medium hover:border-text-secondary/40"
+              >
+                {organization.name}
+                {organization.verified && <span className="text-success">✓</span>}
+              </Link>
             ))}
           </div>
         </section>

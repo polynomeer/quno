@@ -8,4 +8,5 @@ export const authApi = {
     }),
   login: (input: LoginInput) => httpClient.post<TokenResponse>("/api/v1/auth/login", input, { skipAuth: true }),
   me: () => httpClient.get<MyProfile>("/api/v1/me"),
+  updateDirectAskSettings: (accepts: boolean) => httpClient.put<MyProfile>("/api/v1/me/direct-ask-settings", { accepts }),
 };

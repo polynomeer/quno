@@ -6,26 +6,43 @@ class Tag private constructor(
     val id: Long?,
     val name: String,
     val slug: String,
+    /** Wiki-style, like the tag itself — any authenticated user can edit (Phase 28, ADR-0040),
+     * same trust level as creating the tag in the first place. */
+    val description: String?,
+    val docsUrl: String?,
     val deletedAt: Instant?,
     val createdAt: Instant,
 ) {
     fun rename(newName: String): Tag {
         require(newName.isNotBlank()) { "name must not be blank" }
         val normalized = newName.trim()
-        return Tag(id, normalized, slugify(normalized), deletedAt, createdAt)
+        return Tag(id, normalized, slugify(normalized), description, docsUrl, deletedAt, createdAt)
     }
 
-    fun softDelete(): Tag = Tag(id, name, slug, Instant.now(), createdAt)
+    fun updateDetails(description: String?, docsUrl: String?): Tag =
+        Tag(id, name, slug, description?.trim()?.ifBlank { null }, docsUrl?.trim()?.ifBlank { null }, deletedAt, createdAt)
+
+    fun softDelete(): Tag = Tag(id, name, slug, description, docsUrl, Instant.now(), createdAt)
 
     companion object {
         fun create(name: String): Tag {
             require(name.isNotBlank()) { "name must not be blank" }
             val normalized = name.trim()
-            return Tag(id = null, name = normalized, slug = slugify(normalized), deletedAt = null, createdAt = Instant.now())
+            return Tag(
+                id = null, name = normalized, slug = slugify(normalized),
+                description = null, docsUrl = null, deletedAt = null, createdAt = Instant.now(),
+            )
         }
 
-        fun reconstitute(id: Long, name: String, slug: String, deletedAt: Instant?, createdAt: Instant): Tag =
-            Tag(id, name, slug, deletedAt, createdAt)
+        fun reconstitute(
+            id: Long,
+            name: String,
+            slug: String,
+            description: String?,
+            docsUrl: String?,
+            deletedAt: Instant?,
+            createdAt: Instant,
+        ): Tag = Tag(id, name, slug, description, docsUrl, deletedAt, createdAt)
 
         /**
          * Exposed so callers can look up an existing tag by the slug a candidate name would

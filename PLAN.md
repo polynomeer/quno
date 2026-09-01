@@ -8,6 +8,8 @@ Claude Code가 세션을 이어가며 순서대로 진행하기 위한 작업 �
 - 도메인 모델: [docs/architecture/domain-model.md](docs/architecture/domain-model.md)
 - API 설계: [docs/architecture/api-design.md](docs/architecture/api-design.md)
 
+> **PR 현황 (2026-09-01)**: 이 문서에 기록된 작업은 두 개의 PR로 나눠 제출됐다 — Phase 1~25(유료 Direct Ask까지)는 [PR #1](https://github.com/polynomeer/quno/pull/1), Phase 26~29(Organization/Direct Ask·실시간 질문방 프론트엔드, 태그 상세 정보, 비로그인 공개 열람)는 [PR #1] 위에 쌓은 [PR #2](https://github.com/polynomeer/quno/pull/2)다. PR #2는 PR #1이 먼저 `main`에 병합된 뒤 base를 `main`으로 다시 잡아야 한다.
+
 ## Phase 0 — 저장소/환경 설정 (완료)
 
 - [x] `.gitignore`, `CLAUDE.md`, `CONTRIBUTING.md` 작성 및 커밋
@@ -360,11 +362,51 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 25.3 테스트 — 단위 테스트(`CreateDirectAskRequestUseCase`: AWAITING_PAYMENT로 생성, `ConfirmDirectAskPaymentUseCase`: 정상 확인·금액 불일치·미존재 orderId·중복 확인·토스 거부, `RespondToDirectAskRequestUseCase`: 수락 시 결제 유지·거절 시 결제 취소)와 `FakePaymentGateway`. 실제 검증은 두 갈래로 분리했다 — 비즈니스 로직은 위 단위 테스트로, 실제 아웃바운드 HTTP 계약(URL/Basic Auth 헤더/JSON 바디)은 로컬 Python 모크 Toss 서버로 `quno.toss.api-base-url`을 임시 오버라이드해 curl로 전 구간(결제 전 요청 비노출→결제 확인→노출·알림→금액 위조 400→수락 시 결제 유지→거절 시 자동 환불) 확인. **부수 발견**: `RestClient.builder()` 정적 팩토리가 이 프로젝트의 Jackson 3 컨버터 자동구성을 거치지 않아 요청 바디가 조용히 `{}`로 직렬화되던 버그를 모크 서버로 발견, `ObjectMapper` 직접 주입으로 수동 직렬화하도록 수정(ADR-0037 참고). 토스 테스트 모드는 실카드 정보 입력 없이는 진짜 `paymentKey`를 발급하지 않아, 결제위젯을 통한 실제 체크아웃까지는 검증하지 못함 — 사람이 직접 완주해야 하는 갭으로 남김
 - [x] 25.4 문서화 — `domain-model.md`(Trust Network 컨텍스트에 `DirectAskPayment` Aggregate, ERD, 테이블별 책임, Domain Events 갱신)와 `api-design.md`("유료 Direct Ask (Phase 25)" 섹션 신설, 기존 "Direct Ask (Phase 22)" 섹션은 대체됨으로 표시)에 반영, [ADR-0037](docs/architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)로 스코프 결정 기록. 프론트엔드(결제위젯 UI)는 이번 범위에 포함하지 않음(다른 모든 Phase와 동일하게 백엔드까지만)
 
-## Phase 26+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 26 — Organization/Direct Ask 프론트엔드 연동 (mvp-scope.md 로드맵 Phase 5, 나머지)
+
+Phase 22/23/25가 백엔드까지만 구현하고 미뤄둔 Organization/Direct Ask 화면을 붙인다. 남은 프론트엔드 격차(태그 상세 정보/Organization·Direct Ask/실시간 질문방) 중 어느 것을 먼저 할지 사용자에게 확인해 이것을 선택했다(2026-09-01, [ADR-0038](docs/architecture/decisions/0038-organization-direct-ask-frontend-no-user-search.md)).
+
+- [x] F12.1 Organization — `entities/organization`(타입/API/훅) + `features/organization`(생성/가입-탈퇴/이메일 도메인 인증 훅·UI). `/organizations`(검색+생성+이메일 인증 패널), `/organizations/[id]`(상세+가입 버튼) 신설. `JoinOrganizationButton`은 OrganizationResponse에 멤버십 여부가 없어 `useUserProfile(내 id)`의 `organizations` 목록으로 판단(FollowUserButton과 동일 패턴), Verified 조직은 가입 버튼 대신 안내 문구. `UserProfile` 타입에 `organizations` 필드 추가, 프로필 페이지에 "소속 조직" 섹션 추가
+- [x] F12.2 Direct Ask 요청·결제 — `features/direct-ask`(타입/API/훅) + Toss 결제창(호스팅 체크아웃) SDK 로더(`lib/toss.ts`, `<script>` 동적 삽입). `RequestDirectAskPanel`을 대상 사용자의 프로필 페이지에 배치(사용자 검색 API가 없어 "지금 보고 있는 프로필이 대상"으로 스코프를 좁힘, ADR-0038) — 내 질문 목록에서 하나를 골라 요청 생성 후 Toss 결제창으로 리다이렉트. `/direct-asks/checkout`이 Toss의 successUrl/failUrl을 모두 받아 `paymentKey`/`orderId`/`amount`면 confirm 호출, `code`/`message`면 취소 안내
+- [x] F12.3 Direct Ask 목록·수락/거절·설정 — `/direct-asks?role=sent|received`(탭), `DirectAskRequestList`(받은 요청만 PENDING일 때 수락/거절 버튼), `DirectAskSettingsToggle`(내 프로필에 `PUT /me/direct-ask-settings` 토글). `describeNotification`/`NotificationType`에 `DIRECT_ASK_REQUESTED`/`ACCEPTED`/`DECLINED` 추가(각각 받은/보낸 요청 탭으로 링크). AppHeader에 Organizations/Direct Asks 네비게이션 링크 추가
+- [x] F12.4 백엔드 보강 — `GET /me/direct-asks`가 `questionId`/`requesterId`/`targetUserId`만 반환해 프론트가 사람이 읽을 수 있는 목록을 그릴 수 없었다. `SavedQuestionResponse`와 동일한 비정규화 패턴으로 `questionTitle`/`requesterNickname`/`targetUserNickname`을 추가하는 `DirectAskRequestListItemResult`/`Response`를 새로 만들고 `ListMyDirectAsksUseCase`가 `QuestionRepository`/`UserRepository`로 조립하도록 변경(단위 테스트 추가)
+- [x] F12.5 검증 — 두 계정(요청자/대상)으로 실제 서버 전 구간 확인: 대상이 Direct Ask 수신을 켠 뒤 요청 생성(AWAITING_PAYMENT, 결제 전 대상에게 안 보임)→실제 토스 API 계약 검증에 썼던 로컬 모크 Toss 서버로 백엔드의 `quno.toss.api-base-url`을 오버라이드해 `/direct-asks/checkout`에 직접 진입(성공/실패 분기 모두)→확인 후 PENDING 전이·알림 발행→수락 시 결제 유지·거절 시 결제 취소(모크 서버 로그로 `cancelReason` 확인)→양쪽 알림 센터에 올바른 문구와 링크 노출까지 브라우저로 확인. Organization도 생성→탈퇴/재가입→업무 이메일 인증(Mailpit 실제 수신 코드 사용)으로 Verified 조직 자동 가입→Verified 조직에 직접 가입 시도 시 안내 문구로 막히는지까지 확인. **결제창(Toss 실제 호스팅 체크아웃) 자체는 카드 정보 입력이 필요해 사람이 완료해야 한다** — 요청 생성까지는 실제 API로, 확인 이후는 모크 서버로 검증한 것은 ADR-0037의 검증 갭과 동일한 한계
+
+## Phase 27 — 실시간 질문방(Live Chat) 프론트엔드 연동 (mvp-scope.md 로드맵 Phase 6, 나머지)
+
+Phase 24가 백엔드까지만 구현하고 미뤄둔 실시간 질문방 화면을 붙인다. 남은 프론트엔드 격차(태그 상세 정보 보강 / 실시간 질문방) 중 이것을 이어서 진행하기로 사용자가 확인했다(2026-09-01, [ADR-0039](docs/architecture/decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)).
+
+- [x] F13.1 인프라 — 이 프로젝트 최초의 WebSocket 클라이언트 의존성으로 `@stomp/stompjs` 추가(백엔드가 SockJS 폴백 없는 순수 WebSocket으로 STOMP를 노출해 `sockjs-client`는 불필요). `features/live-chat`(타입/API/쿼리키/`lib/websocket-url.ts`) 신설
+- [x] F13.2 훅 — `useLiveChatRoom`(404→null, `useCluster` 패턴), `useOpenLiveChatRoom`(find-or-create 뮤테이션), `useLiveChatMessageHistory`(REST 스크롤백), `useLiveChatSocket`(STOMP 연결 소유 — `/topic/live-chat/{roomId}` 메시지와 `/topic/questions/{id}/presence` 접속자 수 구독, CONNECT 프레임에 `Authorization` 네이티브 헤더로 인증). 연결은 `enabled` 플래그로 게이팅해 "채팅 참여하기"를 누르기 전에는 WebSocket을 열지 않는다(ADR-0039)
+- [x] F13.3 UI — `LiveChatPanel`을 Question Detail 페이지의 Fork 패널 아래 배치(`id="live-chat"`, 알림 anchor 대상). 방이 없으면 "실시간 질문방 시작하기"(열자마자 자동 참여), 있으면 "채팅 참여하기" 버튼. 참여 후 메시지 목록(발신자는 `사용자 #{senderId}`, 본인은 "나", 프로필 링크 제공 — ADR-0039가 닉네임 조회를 hot path 비용 문제로 보류)과 실시간 접속자 수, Enter 전송 지원 입력창. `describeNotification`/`NotificationType`에 `LIVE_CHAT_STARTED`("실시간 질문방이 열렸습니다", `#live-chat`로 링크) 추가
+- [x] F13.4 검증 — 두 계정으로 같은 브라우저의 서로 다른 탭을 열어 실제 서버로 전 구간 확인: 방 없음→시작하기→자동 참여→다른 탭에서 "채팅 참여하기"→접속자 수 1→2 실시간 갱신→한쪽이 보낸 메시지가 다른 쪽에 새로고침 없이 즉시 도착(히스토리 REST 로드 + 실시간 브로드캐스트 병합, id 기준 중복 제거)→탭 종료 시 접속자 수 2→1 갱신까지 확인. `LIVE_CHAT_STARTED` 알림도 실제 서버로 확인(actor가 질문 작성자 자신이면 알림이 가지 않는 기존 규칙 때문에, 검증 중 같은 브라우저의 두 탭이 `localStorage`를 공유해 실수로 같은 계정이 되어버린 첫 시도를 알아채고 계정을 다시 분리해 재검증함 — 코드 버그 아님, 브라우저 저장소 공유가 원인)
+- [x] F13.5 문서화 — `api-design.md`("Live Chat (Phase 24)" 섹션에 프론트엔드 연동 사실 추가)에 반영, [ADR-0039](docs/architecture/decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)로 라이브러리 선택과 연결 시점 스코프 결정 기록
+
+## Phase 28 — 태그 상세 정보 보강 (mvp-scope.md 로드맵에 없던 새 범위)
+
+[ADR-0021](docs/architecture/decisions/0021-tag-detail-via-search-approximation.md)이 `Tag` 도메인이 `id`/`name`/`slug`뿐이라는 이유로 검색 근사로 미뤄뒀던 태그 상세 정보를 [ADR-0040](docs/architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)으로 채운다. 남은 프론트엔드 격차 중 마지막 하나로, 사용자가 이어서 진행을 확인했다(2026-09-01).
+
+- [x] 28.1 백엔드 — `tags`에 `description`/`docs_url` 추가(V22 마이그레이션), 위키 스타일로 아무 로그인 사용자나 `PUT /tags/{id}`로 편집 가능(태그 생성 자체와 같은 신뢰 수준). `GET /tags/{id}` 단건 조회 신설. `TagStatsRepository`(native SQL) + `GET /tags/{id}/questions?sort=latest|unanswered|top`(검색 근사를 대체, `question_tags` 직접 조회), `GET /tags/{id}/contributors`(답변 개수 기준, 채택·투표 가중치는 넣지 않음), `GET /tags/{id}/related`(co-occurrence 기준)
+- [x] 28.2 테스트 — 단위 테스트(`Tag.updateDetails`, `GetTagUseCase`/`UpdateTagDetailsUseCase`/`ListTagQuestionsUseCase`/`ListTagContributorsUseCase`/`ListRelatedTagsUseCase`, 페이크 리포지토리로 오케스트레이션만 검증 — native SQL 자체는 기존 관례대로 curl로만 검증)와 실제 서버 검증(태그 두 개가 겹치는 질문 두 개+답변 하나를 만들어 latest/unanswered/top 정렬·기여자·관련 태그가 실제 데이터로 정확히 나오는지, 설명 수정이 저장되는지 curl로 확인)
+- [x] F14.1 프론트엔드 — `entities/tag`/`features/tag` 신설. `/tags/{name}` 페이지를 검색 근사 대신 `useTagByName`(이름→id 조회 후 새 API 호출)으로 재작성, Latest/Unanswered/Top 탭(URL 쿼리 `?sort=`), 설명/문서 링크 인라인 위키 편집(`TagDetailsEditor`), 상위 기여자·관련 태그 사이드바, `FollowTagButton`(`JoinOrganizationButton`과 동일하게 `useUserProfile(내 id).followedTags`로 팔로우 여부 판단 — ADR-0021이 API 부재로 미뤘던 것을 그 사이 생긴 패턴으로 해소). Tag Directory에도 설명 스니펫 추가
+- [x] F14.2 검증 — 실제 서버로 두 계정과 태그 두 개(kotlin/spring-boot)가 겹치는 질문 두 개(하나는 미답변)를 만들어 Latest/Unanswered/Top 탭 전환, 상위 기여자·관련 태그 표시, Follow/Unfollow 토글, 설명 인라인 편집·저장까지 브라우저로 전 구간 확인. 이번 Phase 자체의 프론트 버그는 없었음
+- [x] 28.3 문서화 — `api-design.md`("태그 (Phase 28)" 섹션 신설)에 반영, [ADR-0040](docs/architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)으로 스코프 결정 기록, ADR-0021 상태를 "일부 대체됨"으로 갱신
+
+## Phase 29 — 비로그인 공개 열람: 질문 상세/목록/검색 (mvp-scope.md 로드맵에 없던 새 범위)
+
+[ADR-0013](docs/architecture/decisions/0013-defer-public-read-access.md)이 구체적 요구 없이는 정하지 않겠다고 보류해온 공개 열람을, 남은 마지막 프론트엔드 격차로 다시 꺼냈다. 공개 범위(질문 상세/목록/검색만 vs +태그·조직 vs +프로필까지)와 SEO 메타데이터 포함 여부를 사용자에게 확인해 가장 좁은 범위(질문 상세/목록/검색, 접근 제어만)로 시작했다(2026-09-01, [ADR-0041](docs/architecture/decisions/0041-narrow-public-read-access.md)).
+
+- [x] 29.1 백엔드 — `SecurityConfig`에 질문/답변/댓글 조회 + 검색 GET을 HTTP 메서드 단위로 `permitAll` 추가(같은 경로의 POST/PUT/DELETE는 그대로 인증 필요). Spring Security 6.x `PathPatternRequestMatcher`가 컨트롤러와 동일한 `{id}` 플레이스홀더 문법을 지원해 정확히 메서드+경로로 좁힐 수 있었다. 태그/조직/Direct Ask/실시간 질문방/프로필/Dashboard/모더레이션/알림은 그대로 인증 필요
+- [x] 29.2 테스트 — `PublicReadAccessE2ETest`(신규, MockMvc로 실제 필터 체인 통과) — Authorization 헤더 없이 질문 상세/버전/관련 질문/답변 목록/댓글 목록/검색이 200인지, 같은 경로의 POST(답변/리비전/댓글 작성)는 401인지, 범위 밖 리소스(태그/me/dashboard)는 조회도 401인지 전 구간 확인
+- [x] F15.1 프론트엔드 — Question Detail(`/questions/[id]`)과 검색(`/questions`) 페이지를 리다이렉트하는 `useRequireAuth` 대신 `useSession`(리다이렉트 없음)으로 전환. `WatchButton`/`SaveButton`/`ReportButton`은 `FollowUserButton`과 동일하게 컴포넌트 내부에서 `!me`면 `null` 반환, `VoteControl`은 익명 방문자에게 점수만 읽기 전용으로 표시(글쓴이 본인과 동일 취급), `CommentSection`의 "Add a comment" 토글과 `CommentItem`의 "답글" 버튼은 로그인 시에만 노출(댓글 읽기 자체는 계속 공개). `OutdatedAction`/`ClusterPanel`/`ForkPanel`/`LiveChatPanel`은 페이지에서 `{me && (...)}`로 아예 건너뛴다(백엔드를 추가로 열지 않음). `AnswerComposer`는 숨기는 대신 "로그인하고 답변을 작성하세요" 링크로 대체
+- [x] F15.2 검증 — 실제 서버에 `localStorage`를 비운 완전한 익명 세션으로 질문 상세(답변·댓글·관련 질문 포함)와 검색 결과가 로그인 없이 정상 렌더링되는지, 쓰기 버튼/패널이 전부 숨겨지는지, 로그인 후에는 모든 기능이 회귀 없이 그대로 동작하는지 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음
+- [x] 29.3 문서화 — `api-design.md`("비로그인 공개 열람 (Phase 29)" 섹션 신설)에 반영, [ADR-0041](docs/architecture/decisions/0041-narrow-public-read-access.md)로 스코프 결정 기록, ADR-0013 상태를 "일부 대체됨"으로 갱신
+
+## Phase 30+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위는 모두 구현됐다(Phase 25로 Phase 5 "신뢰 네트워크"까지 완료). 남은 것은 프론트엔드 격차뿐이다 — 태그 상세 정보, Organization/Direct Ask, 실시간 질문방 등([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항-2026-09-01-갱신) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람까지 모두 구현됐다(Phase 29). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. 태그/조직/사용자 프로필 공개 확대와 SEO 메타데이터(Open Graph, sitemap)는 ADR-0041이 의도적으로 남겨둔 후속 후보다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
 
 ## 진행 방식
 

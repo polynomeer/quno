@@ -3,7 +3,7 @@ package com.quno.qunobackend.application.user.usecase
 import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.organization.usecase.toResult
-import com.quno.qunobackend.application.tag.dto.TagResult
+import com.quno.qunobackend.application.tag.usecase.toResult
 import com.quno.qunobackend.application.user.dto.UserProfileResult
 import com.quno.qunobackend.domain.answer.AnswerRepository
 import com.quno.qunobackend.domain.organization.OrganizationMembershipRepository
@@ -38,7 +38,7 @@ class GetUserProfileUseCase(
 
         val followedTags = userTagFollowRepository.findFollowedTagIds(userId)
             .mapNotNull { tagRepository.findById(it) }
-            .map { TagResult(id = requireNotNull(it.id), name = it.name, slug = it.slug) }
+            .map { it.toResult() }
 
         val organizations = organizationMembershipRepository.findOrganizationIdsByUserId(userId)
             .mapNotNull { organizationRepository.findById(it) }

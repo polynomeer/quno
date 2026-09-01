@@ -11,7 +11,7 @@ class InMemoryTagRepository : TagRepository {
 
     override fun save(tag: Tag): Tag {
         val saved = if (tag.id == null) {
-            Tag.reconstitute(nextId++, tag.name, tag.slug, tag.deletedAt, tag.createdAt)
+            Tag.reconstitute(nextId++, tag.name, tag.slug, tag.description, tag.docsUrl, tag.deletedAt, tag.createdAt)
         } else {
             tag
         }

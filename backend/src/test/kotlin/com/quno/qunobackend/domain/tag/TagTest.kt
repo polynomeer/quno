@@ -33,4 +33,20 @@ class TagTest {
 
         assertNotNull(tag.softDelete().deletedAt)
     }
+
+    @Test
+    fun `updateDetails sets description and docsUrl`() {
+        val tag = Tag.create("Kotlin").updateDetails("A statically typed language", "https://kotlinlang.org/docs")
+
+        assertEquals("A statically typed language", tag.description)
+        assertEquals("https://kotlinlang.org/docs", tag.docsUrl)
+    }
+
+    @Test
+    fun `updateDetails blanks out whitespace-only values`() {
+        val tag = Tag.create("Kotlin").updateDetails("  ", "  ")
+
+        assertEquals(null, tag.description)
+        assertEquals(null, tag.docsUrl)
+    }
 }

@@ -2,7 +2,7 @@
 
 > 원본: [docs/archive/Quno_프론트엔드_상세_설계서.docx](../archive/Quno_프론트엔드_상세_설계서.docx) (2026-08-26 작성, v1.0). 기술 아키텍처는 [architecture.md](architecture.md), 단계별 로드맵은 [roadmap.md](roadmap.md) 참고. 실제 화면 목업은 [quno-design-sample.png](quno-design-sample.png).
 >
-> 백엔드는 [../architecture/](../architecture/system-architecture.md) 문서 참고. **2026-08-26 작성 당시 이 문서가 가정한 화면 중 투표/댓글/저장/사용자 팔로우/배지/모더레이션/답변 수정 이력은 이후 Phase 11~20에서 모두 백엔드+프론트엔드로 구현되었다** — 각 절의 "백엔드 연동 메모"가 최신 상태를 반영한다. 여전히 남은 격차(태그 상세 정보, 태그별 Expertise, `@mention` 자동완성, Organization/Direct Ask, 실시간 질문방)는 [roadmap.md 7절](roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고.
+> 백엔드는 [../architecture/](../architecture/system-architecture.md) 문서 참고. **2026-08-26 작성 당시 이 문서가 가정한 화면 중 투표/댓글/저장/사용자 팔로우/배지/모더레이션/답변 수정 이력은 이후 Phase 11~20에서, Organization/Direct Ask는 Phase 26에서, 실시간 질문방은 Phase 27에서, 태그 상세 정보는 Phase 28에서, 질문 비로그인 공개 열람은 Phase 29에서 모두 백엔드+프론트엔드로 구현되었다** — 각 절의 "백엔드 연동 메모"가 최신 상태를 반영한다. 여전히 남은 격차(`@mention` 자동완성, 태그/조직/프로필의 비로그인 공개 열람)는 [roadmap.md 7절](roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고.
 
 ## 1. 설계 목표
 
@@ -398,7 +398,7 @@ Redis       7.9k questions    ...
 - 관련 태그
 - 태그 작성 가이드
 
-**백엔드 연동 메모**: `GET /tags`(검색), `POST/DELETE /tags/{id}/follow`가 있다. "태그 설명/공식 문서 링크", "태그 상위 기여자", "관련 태그" 같은 풍부한 태그 상세 정보는 `Tag` 도메인이 `name`/`slug`만 가지고 있어 대부분 새로 만들어야 한다.
+**백엔드 연동 메모**: Phase 28([ADR-0040](../architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md))로 대부분 구현됐다 — `GET/PUT /tags/{id}`(설명/공식 문서 링크, 위키 스타일 편집), `GET /tags/{id}/questions?sort=`(Latest/Unanswered/Top), `GET /tags/{id}/contributors`, `GET /tags/{id}/related`, `POST/DELETE /tags/{id}/follow`(팔로우 상태는 `GET /users/{id}/profile`의 `followedTags`로 판단). 최근 30일 활동 요약과 태그 작성 가이드는 범위 밖이다.
 
 ## 16. 사용자 프로필
 

@@ -375,7 +375,7 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 
 ## Live Chat (Phase 24)
 
-[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. REST는 방을 열고/조회하고 과거 메시지를 읽는 역할만 하고, 실제 메시징과 접속자 현황은 STOMP-over-WebSocket으로 이뤄진다.
+[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. REST는 방을 열고/조회하고 과거 메시지를 읽는 역할만 하고, 실제 메시징과 접속자 현황은 STOMP-over-WebSocket으로 이뤄진다. 처음엔 백엔드만 구현했고([ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)), Phase 27에서 프론트엔드(`@stomp/stompjs`, 연결은 "채팅 참여하기"를 누른 뒤에만)를 붙였다([ADR-0039](decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)).
 
 ### REST
 
@@ -394,6 +394,29 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 
 - Presence의 세션→구독 매핑은 단일 인스턴스에서만 정확하다(ADR-0036 참고) — 수평 확장 시 재검토 필요.
 - "실시간 대화 → 구조화된 지식"(원본 기획)은 자동 변환이 아니다. 사람이 채팅을 읽고 기존 `POST /questions/{id}/versions`나 `POST /questions/{id}/answers`를 직접 호출한다.
+
+## 태그 (Phase 28)
+
+[ADR-0021](decisions/0021-tag-detail-via-search-approximation.md)이 `Tag` 도메인이 `id`/`name`/`slug`뿐이라는 이유로 검색 근사로 미뤄뒀던 태그 상세 정보를 [ADR-0040](decisions/0040-tag-detail-wiki-editable-and-real-stats.md)으로 채웠다.
+
+- `GET /tags/{id}`: 태그 단건 조회(`description`/`docsUrl` 포함) — 이전엔 검색(`GET /tags?q=`)만 있었다.
+- `PUT /tags/{id}`(body: `description?`, `docsUrl?`): 위키 스타일 편집. 소유권 검사가 없다 — 태그 생성 자체와 같은 신뢰 수준(ADR-0040).
+- `GET /tags/{id}/questions?sort=latest|unanswered|top&limit=`: `question_tags`를 직접 조회해 랭킹한다(검색 결과를 태그 이름으로 필터링하던 ADR-0021 근사를 대체) — Latest는 최신순, Unanswered는 답변 0개인 것만 최신순, Top은 순 투표점수 내림차순.
+- `GET /tags/{id}/contributors?limit=`(기본 10): 이 태그가 달린 질문에 답변을 많이 남긴 순. 채택 여부·투표 점수는 반영하지 않는다(ADR-0040 — 실사용 데이터 없이 여러 항목을 조합한 공식을 만들지 않기로 함).
+- `GET /tags/{id}/related?limit=`(기본 10): 같은 질문에 함께 달린 횟수가 많은 태그 순 — `SearchJpaRepository.findRelatedQuestionIds`의 질문 단위 co-occurrence를 태그 단위로 옮긴 것.
+- Follow 상태는 별도 엔드포인트 없이 `GET /users/{id}/profile`의 `followedTags`로 판단한다(Organization의 `JoinOrganizationButton`과 동일 패턴).
+- 최근 30일 활동 요약과 태그 작성 가이드는 범위 밖이다(ADR-0040).
+
+## 비로그인 공개 열람 (Phase 29)
+
+[ADR-0013](decisions/0013-defer-public-read-access.md)이 보류해온 공개 열람을 [ADR-0041](decisions/0041-narrow-public-read-access.md)로 좁게 시작했다 — 질문 상세/목록/검색만.
+
+- `SecurityConfig`에 **HTTP 메서드 단위로** 추가된 `permitAll`: `GET /questions/{id}`, `GET /questions/{id}/versions`(+`/{version}`, +`/{version}/diff`), `GET /questions/{id}/related`, `GET /questions/{questionId}/answers`, `GET /questions/{questionId}/comments`, `GET /answers/{answerId}/versions`(+`/{version}`, +`/{version}/diff`), `GET /answers/{answerId}/comments`, `GET /comments/{commentId}/versions`, `GET /search`.
+- 같은 경로의 `POST`/`PUT`/`DELETE`(답변 작성, 질문/답변 리비전, 댓글 작성 등)는 그대로 인증이 필요하다 — Spring Security 6.x `PathPatternRequestMatcher`가 `{id}` 같은 컨트롤러 매핑 플레이스홀더 문법을 그대로 보안 패턴에 쓸 수 있어서 메서드+경로 조합으로 정확히 좁힐 수 있었다.
+- 태그/Organization/Direct Ask/실시간 질문방/사용자 프로필/Dashboard/모더레이션/알림 등 나머지 전부는 여전히 인증이 필요하다.
+- 투표·Watch·Save·Report·Outdated 표시·댓글 작성·QPR·Cluster·Fork·Live Chat은 백엔드를 추가로 열지 않고, 프론트엔드가 익명 방문자에게 해당 버튼/패널 자체를 숨긴다(ADR-0041).
+- SEO 메타데이터(Open Graph, `sitemap.xml`)는 범위 밖이다 — 접근 제어만 먼저 검증한다.
+- `PublicReadAccessE2ETest`가 실제 필터 체인으로 공개/비공개 양쪽을 확인한다 — 새 공개 엔드포인트를 추가할 때는 이 테스트에도 케이스를 추가한다.
 
 ## 입력 검증 공통 원칙
 
