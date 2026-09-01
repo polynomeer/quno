@@ -39,8 +39,8 @@ class TagController(
 ) {
 
     @GetMapping
-    fun search(@RequestParam(required = false) q: String?): List<TagResponse> =
-        searchTagsUseCase.execute(q).map { it.toResponse() }
+    fun search(@RequestParam(required = false) q: String?, @RequestParam(required = false) limit: Int?): List<TagResponse> =
+        searchTagsUseCase.execute(q, limit ?: 20).map { it.toResponse() }
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: Long): TagResponse = getTagUseCase.execute(id).toResponse()
