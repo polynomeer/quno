@@ -107,7 +107,7 @@ Profile ────────────→ Contributions ─→ Question De
 - [ ] Auth guard와 redirectTo
 - [ ] Playwright 핵심 플로우 테스트
 
-## 7. 백엔드 격차 요약과 착수 전 확인 사항 (2026-09-01 갱신, Phase 27)
+## 7. 백엔드 격차 요약과 착수 전 확인 사항 (2026-09-01 갱신, Phase 28)
 
 이 설계서는 Stack Overflow형 서비스를 전제로 투표(Vote)·댓글(Comment)·배지(Badge)·모더레이션을 포함했고, Quno 백엔드([PLAN.md](../../PLAN.md) 참고)는 처음엔 다른 방향(리비전·Ward·QPR·Cluster/Super Answer·평판 점수·Quno Flow)으로 "살아있는 질문" 철학을 구현해왔다. 이후 Phase 11~20에서 아래 표의 항목들을 대부분 채웠다 — 실제 프론트엔드 작업을 시작하기 전에 여전히 남은 격차만 확인하면 된다.
 
@@ -118,7 +118,7 @@ Profile ────────────→ Contributions ─→ Question De
 | Save(북마크, Watch와 별개) | **구현됨**(Phase 13, [ADR-0025](../architecture/decisions/0025-save-as-separate-side-aggregate-from-watch.md)) |
 | Follow User | **구현됨**(Phase 14, [ADR-0026](../architecture/decisions/0026-follow-user-relationship-only-no-activity-feed.md)) — 관계 기록·조회만, 활동 피드/알림은 없음 |
 | Badge(배지) | **구현됨**(Phase 15, [ADR-0027](../architecture/decisions/0027-badge-as-computed-read-model-no-award-events.md)) — 영속화 없는 계산형 읽기 모델, 획득 알림 없음. 평판 점수(`UserReputation`)에도 Phase 20에서 투표 항이 추가됨 |
-| 태그별 세분화 Expertise | 여전히 없음 — 태그 자체에 설명/문서 링크/상위 기여자 개념 없음([ADR-0021](../architecture/decisions/0021-tag-detail-via-search-approximation.md)) |
+| 태그별 세분화 Expertise | 백엔드·프론트엔드 모두 **구현됨**(Phase 28, [ADR-0040](../architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)) — 설명/공식 문서 링크(위키 스타일 편집), 상위 기여자, 관련 태그, Latest/Unanswered/Top 탭, Follow. 최근 30일 활동 요약은 범위 밖 |
 | 모더레이션(신고, 리뷰 큐, 역할 기반 권한) | **구현됨**(Phase 16, [ADR-0028](../architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) — 단, Keep/Hide 두 액션뿐, Close-as-duplicate/Edit/사유별 필터/역할 부여 API는 없음 |
 | 답변(Answer) 수정 이력 | **구현됨**(Phase 17, [ADR-0029](../architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) — Question과 동일한 revision UI 패턴 재사용 |
 | 질문/프로필 비로그인 공개 열람 | 여전히 없음(모두 인증 필요) — [ADR-0013](../architecture/decisions/0013-defer-public-read-access.md)에서 보류 중 |
@@ -128,4 +128,4 @@ Profile ────────────→ Contributions ─→ Question De
 
 반대로 이 설계서에 없지만 백엔드에는 이미 있는 기능도 있다 — QPR Review(정보 요청/재요청), Cluster/Super Answer/Merge, Question Fork, 지식 그래프 데이터 API, Outdated 표시, Spike Detection, Quno Flow 활동 스트림. 프론트엔드 설계 시 이들을 어느 화면에 어떻게 노출할지도 함께 정해야 한다.
 
-남은 프론트엔드 격차: 태그별 세분화 Expertise(대응 백엔드가 없음), 질문·프로필 비로그인 공개 열람(대응 백엔드 자체가 없음, ADR-0013).
+남은 프론트엔드 격차: 질문·프로필 비로그인 공개 열람(대응 백엔드 자체가 없음, ADR-0013)뿐이다.

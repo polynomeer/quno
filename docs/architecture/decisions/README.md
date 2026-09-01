@@ -45,7 +45,7 @@
 | [0018](0018-simple-reputation-score-only.md) | Phase 9는 간단한 평판 점수만, Organization/Direct Ask는 후속 Phase로 이연 | 승인됨 |
 | [0019](0019-quno-flow-and-dashboard-only-no-live-chat.md) | Phase 10은 Quno Flow+고급 Dashboard만, 실시간 질문방(Live Chat)은 후속 Phase로 이연 | 승인됨 |
 | [0020](0020-frontend-scoped-to-backend-support.md) | 프론트엔드는 백엔드 지원 화면부터, Vote/Comment/Badge/모더레이션은 후속으로 이연 | 승인됨 |
-| [0021](0021-tag-detail-via-search-approximation.md) | Tag Detail은 검색 결과 근사로 구현, 태그 통계/탭/Follow 상태는 후속으로 이연 | 승인됨 |
+| [0021](0021-tag-detail-via-search-approximation.md) | Tag Detail은 검색 결과 근사로 구현, 태그 통계/탭/Follow 상태는 후속으로 이연 | 일부 대체됨(ADR-0040) |
 | [0022](0022-search-filters-client-side-tag-and-status-only.md) | 고급 검색 필터는 클라이언트 사이드 Tags/Status만, Score/Date/Sort는 보류 | 승인됨 |
 | [0023](0023-vote-as-side-aggregate-no-reputation-impact.md) | Vote는 Watch와 같은 독립 side-aggregate, 평판 점수·인기순위엔 미반영 | 일부 대체됨(ADR-0032) |
 | [0024](0024-comment-flat-no-edit-tombstone-delete.md) | Comment는 스레드 없는 평면 목록, 수정 불가, soft-delete tombstone | 일부 대체됨(ADR-0031) |
@@ -64,3 +64,4 @@
 | [0037](0037-paid-direct-ask-toss-payments-test-mode.md) | 유료 Direct Ask를 토스페이먼츠 테스트 모드로 구현(무료 Direct Ask 대체), 지급대행은 범위 밖, RestClient 요청 직렬화 함정 발견 | 승인됨 |
 | [0038](0038-organization-direct-ask-frontend-no-user-search.md) | Organization/Direct Ask 프론트엔드는 사용자 검색 없이 프로필 페이지를 진입점으로, 결제는 Toss 호스팅 체크아웃으로 구현 | 승인됨 |
 | [0039](0039-live-chat-frontend-stompjs-connect-on-demand.md) | 실시간 질문방 프론트엔드는 `@stomp/stompjs`로, 연결은 "채팅 참여하기"를 누른 뒤에만 열도록 구현 | 승인됨 |
+| [0040](0040-tag-detail-wiki-editable-and-real-stats.md) | 태그 상세 정보(설명/문서 링크/기여자/관련 태그)는 위키 스타일 편집과 실제 통계 쿼리로 구현, 30일 활동 요약은 범위 밖 | 승인됨 |
