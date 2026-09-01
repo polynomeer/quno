@@ -18,9 +18,9 @@
 | Voting | 질문/답변에 대한 품질 신호(up/down) | Vote — Watch와 같은 독립 side-aggregate (Phase 11, [ADR-0023](decisions/0023-vote-as-side-aggregate-no-reputation-impact.md)). 검색 정렬·Dashboard 인기순위·평판 점수에 순 투표 점수를 반영하는 것은 Phase 20([ADR-0032](decisions/0032-vote-score-search-sort-dashboard-reputation.md)) |
 | Discussion | 질문/답변에 대한 짧은 clarification | Comment — 1단계 대댓글, 수정 이력(diff 없음), 생성 시점 `@mention` 알림, soft-delete는 tombstone(Phase 12/19, [ADR-0024](decisions/0024-comment-flat-no-edit-tombstone-delete.md)/[ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)). QPR `ReviewRequest`(QnA Core 컨텍스트)와는 성격이 다른 별개 개념 |
 | Moderation | 신고와 그 처리 | Report — 신고→모더레이터 검토→Dismiss/Hide 두 액션까지만(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). `User.role`(USER\|MODERATOR)도 이 컨텍스트의 권한 판단에 쓰이지만 필드 자체는 Identity의 User가 들고 있음 |
-| Trust Network | 자기 신고형 소속 그룹과 전문가 직접 요청 | Organization(+OrganizationMembership), DirectAskRequest — 둘 다 외부 인증·결제 없이 사용자 행동만으로 성립(Phase 22, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)) |
+| Trust Network | 자기 신고형/이메일 인증형 소속 그룹과 전문가 직접 요청 | Organization(+OrganizationMembership), DirectAskRequest — Phase 22([ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md))의 Virtual/Community(외부 인증 없음)에 더해, Phase 23([ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md))에서 업무/학교 이메일 도메인 인증 기반 Verified Organization(EmailDomainVerification)이 추가됨. Direct Ask는 여전히 결제 없음 |
 
-`Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고). Trust Network의 Verified Organization(실제 회사·학교 인증)과 유료 Direct Ask(보상/결제)도 Phase 22에서 명시적으로 범위 밖에 뒀다([ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)).
+`Feed` 컨텍스트는 아직 미착수다 ([../product/mvp-scope.md](../product/mvp-scope.md) 로드맵 참고). 유료 Direct Ask(보상/결제)는 여전히 명시적으로 범위 밖이다([ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)).
 
 ## Aggregate
 
@@ -43,8 +43,9 @@
 | CommentVersion | append-only, `edit()` 직전의 (versionNumber, body) 스냅샷만 보관 — 한 번도 수정되지 않은 댓글은 이 테이블에 행이 없다(현재 `comments.body`/`version_number` 자체가 v1). `AnswerVersion`과 달리 diff 조회 없음(Phase 19, [ADR-0031](decisions/0031-comment-thread-mention-edit-history.md)) |
 | Report | file, dismiss(모더레이터), action(모더레이터 — 실제 대상 soft-delete는 use case 책임, `Report`는 상태 전이만 담당). 이미 처리된 신고를 다시 처리하려 하면 `ReportAlreadyResolvedException`(409). 같은 대상에 대한 중복 신고는 병합하지 않음(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
 | UserFollow | follow/unfollow. follower-followee 중복 금지. 자기 자신 팔로우 불가(`SelfFollowException`). Watch/Save와 같은 순수 관계 데이터지만 대상이 Question이 아니라 User라 Engagement가 아닌 Identity 컨텍스트에 둠. 활동 피드·알림은 만들지 않음(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
-| Organization | create. 이름은 `slugify`(대소문자 정규화만, 비-ASCII 보존) 기준 중복 금지 — 생성자는 자동으로 첫 멤버. Verified 인증은 없음(Phase 22, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)) |
-| OrganizationMembership | join/leave(idempotent). organization-user 중복 금지. Watch/Save와 같은 순수 관계 데이터 |
+| Organization | create(Virtual/Community, Phase 22), verifiedFor/verify(Verified, Phase 23). 이름은 `slugify`(대소문자 정규화만, 비-ASCII 보존) 기준 중복 금지 — 생성자는 자동으로 첫 멤버. `emailDomain`이 non-null이면(`verified` 계산 프로퍼티) Verified — 오직 `ConfirmEmailDomainVerificationUseCase`만 이 필드를 설정하며, `create()`(사용자가 직접 호출)는 절대 설정하지 않음. 동일 이름의 기존 Virtual 조직이 있으면 `verify()`로 그 자리에서 승격(같은 id 유지)([ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
+| OrganizationMembership | join/leave(idempotent). organization-user 중복 금지. Watch/Save와 같은 순수 관계 데이터. Verified 조직은 `JoinOrganizationUseCase`가 직접 join을 거부(`VerifiedOrganizationJoinRequiresEmailException`) — 멤버십은 오직 이메일 인증을 통해서만 생김 |
+| EmailDomainVerification | request(PENDING), verify. 업무/학교 이메일로 발송된 6자리 코드와 상태를 담는다. 만료는 배경 작업 없이 `expiresAt`을 조회 시점에 비교해 계산(`isExpired`). 공개 웹메일 도메인(`PublicEmailDomains`)은 애초에 요청 단계에서 거부됨. 재요청은 이전 코드를 명시적으로 무효화하지 않음 — `findLatestByUserId`가 항상 최신만 보므로 옛 코드는 자연히 도달 불가(Phase 23, [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
 | DirectAskRequest | request(PENDING), accept, decline. 대상이 `User.acceptsDirectAsk=false`면 요청 자체가 거부됨(`DirectAskNotAcceptedException`). 자기 자신에게 요청 불가(`SelfDirectAskException`). 같은 (질문, 대상)에 열린 요청은 하나만(`DuplicateDirectAskException`). 어떤 `Answer`와도 직접 연결되지 않음 — 수락 후 답변은 기존 `POST /questions/{id}/answers`를 그대로 씀 |
 
 ## Domain Events
@@ -89,6 +90,7 @@ users
   ├──< organizations ──< organization_memberships >── users (Phase 22)
   ├──< direct_ask_requests (requester_id) (Phase 22)
   ├──< direct_ask_requests (target_user_id) (Phase 22)
+  ├──< email_domain_verifications (Phase 23)
   └──< notifications
 
 question_clusters ──< questions (questions.cluster_id, 질문 1개당 최대 1개 클러스터)
@@ -107,6 +109,7 @@ comment_versions.comment_id ──> comments.id (Phase 19)
 reports.target_id ──> questions.id 또는 answers.id (target_type으로 구분, 다형 연관이라 FK 제약 없음, Phase 16)
 technology_releases.tag_slug ──> tags.slug (느슨한 참조, FK 없음, Phase 21)
 direct_ask_requests.question_id ──> questions.id (Phase 22)
+organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK 없음(외부 값)(Phase 23)
 ```
 
 ### 테이블별 책임과 삭제 정책
@@ -132,9 +135,10 @@ direct_ask_requests.question_id ──> questions.id (Phase 22)
 | user_follows | follower_id, followee_id | 관계 데이터, hard delete 허용. PK가 (follower_id, followee_id) — users에 대한 자기 참조(Phase 14, [ADR-0026](decisions/0026-follow-user-relationship-only-no-activity-feed.md)) |
 | reports | id, reporter_id, target_type, target_id, reason, message, status, resolved_by, resolved_at | append형, hard delete 불필요(review_requests와 동일하게 상태만 전이). `resolved_by`/`resolved_at`/`status`가 곧 audit trail이라 별도 로그 테이블을 두지 않음(Phase 16, [ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) |
 | technology_releases | id, tag_slug(unique), product_slug, latest_version, latest_release_date, checked_at, updated_at | 이력이 아니라 태그당 1행 스냅샷 — 매 스캔마다 덮어쓴다. `tags`/`questions`에 대한 FK가 없다(`tag_slug`로 느슨하게 조인) — 아직 태그가 실제로 생성되기 전에도 추적을 시작할 수 있어야 하기 때문(Phase 21, [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)) |
-| organizations | id, name, slug(unique), description, created_by, created_at | hard delete 불필요(삭제/보관 플로우 미도입). `slug`는 `Organization.slugify`(대소문자 정규화만) 기준 — Tag의 ASCII 전용 slugify와 달리 한글 등 비-ASCII 이름을 보존(Phase 22, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)) |
+| organizations | id, name, slug(unique), description, created_by, email_domain(unique, nullable), created_at | hard delete 불필요(삭제/보관 플로우 미도입). `slug`는 `Organization.slugify`(대소문자 정규화만) 기준 — Tag의 ASCII 전용 slugify와 달리 한글 등 비-ASCII 이름을 보존(Phase 22, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)). `email_domain`은 Phase 23에서 추가 — non-null이면 Verified([ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
 | organization_memberships | organization_id, user_id, joined_at | 관계 데이터, hard delete 허용. PK가 (organization_id, user_id) — watches와 같은 구조(Phase 22) |
 | direct_ask_requests | id, question_id, requester_id, target_user_id, message, status, created_at, responded_at | append형, hard delete 불필요(상태만 전이 — review_requests와 동일). (question_id, target_user_id)에 status='PENDING' 부분 유니크 인덱스로 중복 요청 방지(Phase 22, [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)) |
+| email_domain_verifications | id, user_id, email, domain, code, status, created_at, expires_at, verified_at | append형, hard delete 불필요. 만료 정리 배치 없음 — 조회 시점에 `expires_at`을 비교해 계산(Phase 23, [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
 
 ### 삭제/FK 운영 원칙
 

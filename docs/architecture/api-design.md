@@ -353,6 +353,16 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - `GET /me/direct-asks?role=sent|received`(기본 `received`): 내가 보낸/받은 요청 목록, 최신순.
 - **답변과의 직접 연결은 없다**: 요청을 수락한 뒤에는 기존 `POST /questions/{id}/answers`로 평범하게 답변을 작성한다 — `DirectAskRequest`는 특정 `Answer`를 가리키지 않는다. "이 답변이 Direct Ask에서 나왔다"는 표시나 전문가 추천(원본 기획의 Topic Expert 등)은 이번 범위 밖이다.
 
+## Verified Organization (Phase 23)
+
+[ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)가 범위 밖에 뒀던 실제 회사·학교 인증을 [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)로 업무/학교 이메일 도메인 인증으로 구현했다.
+
+- `PUT /me/direct-ask-settings`와 별개로, `POST /organizations/verify-email`(body: `email`)이 6자리 코드를 생성해 그 주소로 이메일을 발송한다. `gmail.com`/`naver.com` 같은 공개 웹메일 도메인은 `PublicEmailDomains` 차단 목록으로 즉시 거부(400) — 누구나 등록 가능한 도메인은 소속을 증명하지 못한다.
+- `POST /organizations/verify-email/confirm`(body: `code`): 로그인한 사용자의 가장 최근 요청과 코드를 대조한다. 코드가 틀리면 400, 만료(15분)됐으면 409, 애초에 요청이 없거나 이미 확인됐으면 404. 성공하면 해당 도메인의 Organization을 find-or-create해 자동으로 멤버가 된다 — 이미 같은 도메인으로 Verified된 조직이 있으면 그걸 재사용하고, 동일 이름의 기존 Virtual 조직이 있으면 그 자리에서 승격(같은 id 유지)하며, 둘 다 없으면 새로 만든다.
+- `POST /organizations/{id}/join`은 대상이 Verified 조직이면 403(`VerifiedOrganizationJoinRequiresEmailException`)으로 거부한다 — 멤버십은 오직 이메일 인증을 통해서만 부여된다. 이 게이트가 없으면 기존 join 엔드포인트로 검증 전체를 우회할 수 있다.
+- `OrganizationResponse`에 `emailDomain`(nullable)과 `verified`(계산값)가 추가됐다 — Virtual/Community 조직은 둘 다 `null`/`false`.
+- **로컬 개발은 Mailpit으로 검증한다**: `docker-compose`에 추가한 `mailpit` 서비스(SMTP 1026, 웹 UI http://localhost:8026)가 실제 SMTP 프로토콜로 발송된 이메일을 받는다. 프로덕션 SMTP 자격증명은 이 코드베이스가 구성하지 않는다 — 배포 시점에 `spring.mail.*`를 환경변수로 오버라이드해야 한다(JWT secret과 같은 패턴).
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

@@ -59,3 +59,4 @@
 | [0032](0032-vote-score-search-sort-dashboard-reputation.md) | 검색 Score 정렬, Dashboard 인기순위, 평판 점수에 Vote 반영(모두 가중치 1) | 승인됨 |
 | [0033](0033-technology-version-scan-detection-only-no-auto-outdated.md) | endoflife.date로 기술 버전 릴리스 실제 자동 감지, OUTDATED 자동 전환은 하지 않고 알림까지만 | 승인됨 |
 | [0034](0034-organization-virtual-only-direct-ask-no-payment.md) | Organization은 Virtual/Community만, Direct Ask는 결제 없이 요청/수락만 구현 | 승인됨 |
+| [0035](0035-verified-organization-email-domain-mailpit.md) | Verified Organization을 업무/학교 이메일 도메인 인증으로 구현, 로컬은 Mailpit으로 검증 | 승인됨 |
