@@ -1,9 +1,11 @@
 package com.quno.qunobackend.interfaces.api.organization
 
+import com.quno.qunobackend.application.organization.usecase.ConfirmEmailDomainVerificationUseCase
 import com.quno.qunobackend.application.organization.usecase.CreateOrganizationUseCase
 import com.quno.qunobackend.application.organization.usecase.GetOrganizationUseCase
 import com.quno.qunobackend.application.organization.usecase.JoinOrganizationUseCase
 import com.quno.qunobackend.application.organization.usecase.LeaveOrganizationUseCase
+import com.quno.qunobackend.application.organization.usecase.RequestEmailDomainVerificationUseCase
 import com.quno.qunobackend.application.organization.usecase.SearchOrganizationsUseCase
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -18,8 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
-/** Virtual/Community organizations only (Phase 22, ADR-0034) — no external identity
- * verification, same trust level as creating a Tag. */
+/** Virtual/Community organizations (Phase 22, ADR-0034) — no external identity verification,
+ * same trust level as creating a Tag. Verified organizations (Phase 23, ADR-0035) can only be
+ * joined through `/verify-email` + `/verify-email/confirm`, never through `POST /{id}/join`. */
 @RestController
 @RequestMapping("/api/v1/organizations")
 class OrganizationController(
@@ -28,6 +31,8 @@ class OrganizationController(
     private val getOrganizationUseCase: GetOrganizationUseCase,
     private val joinOrganizationUseCase: JoinOrganizationUseCase,
     private val leaveOrganizationUseCase: LeaveOrganizationUseCase,
+    private val requestEmailDomainVerificationUseCase: RequestEmailDomainVerificationUseCase,
+    private val confirmEmailDomainVerificationUseCase: ConfirmEmailDomainVerificationUseCase,
 ) {
 
     @PostMapping
@@ -53,4 +58,16 @@ class OrganizationController(
     fun leave(@AuthenticationPrincipal userId: Long, @PathVariable id: Long) {
         leaveOrganizationUseCase.execute(userId, id)
     }
+
+    @PostMapping("/verify-email")
+    fun requestEmailDomainVerification(
+        @AuthenticationPrincipal userId: Long,
+        @Valid @RequestBody request: RequestEmailDomainVerificationRequest,
+    ): EmailDomainVerificationResponse = requestEmailDomainVerificationUseCase.execute(userId, request.email).toResponse()
+
+    @PostMapping("/verify-email/confirm")
+    fun confirmEmailDomainVerification(
+        @AuthenticationPrincipal userId: Long,
+        @Valid @RequestBody request: ConfirmEmailDomainVerificationRequest,
+    ): OrganizationResponse = confirmEmailDomainVerificationUseCase.execute(userId, request.code).toResponse()
 }

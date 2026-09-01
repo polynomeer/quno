@@ -33,5 +33,7 @@ internal fun Organization.toResult(memberCount: Long) = OrganizationResult(
     description = description,
     createdBy = createdBy,
     memberCount = memberCount,
+    emailDomain = emailDomain,
+    verified = verified,
     createdAt = createdAt,
 )

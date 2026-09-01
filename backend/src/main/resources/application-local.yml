@@ -12,6 +12,17 @@ spring:
     redis:
       host: localhost
       port: 6390
+  mail:
+    # Mailpit local SMTP catcher (docker-compose) — no real provider configured. Inspect
+    # captured mail at http://localhost:8026.
+    host: localhost
+    port: 1026
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
 
 management:
   endpoint:

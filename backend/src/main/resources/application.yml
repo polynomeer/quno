@@ -24,3 +24,5 @@ quno:
     secret: "change-me-quno-dev-secret-please-override-in-real-environments-0123456789"
     access-token-ttl-seconds: 1800
     refresh-token-ttl-seconds: 1209600
+  mail:
+    from-address: "noreply@quno.dev"

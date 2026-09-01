@@ -20,7 +20,12 @@ import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
 import com.quno.qunobackend.domain.directask.SelfDirectAskException
 import com.quno.qunobackend.domain.follow.SelfFollowException
 import com.quno.qunobackend.domain.organization.DuplicateOrganizationNameException
+import com.quno.qunobackend.domain.organization.EmailDomainVerificationExpiredException
+import com.quno.qunobackend.domain.organization.EmailDomainVerificationNotFoundException
+import com.quno.qunobackend.domain.organization.InvalidVerificationCodeException
 import com.quno.qunobackend.domain.organization.OrganizationNotFoundException
+import com.quno.qunobackend.domain.organization.PublicEmailDomainException
+import com.quno.qunobackend.domain.organization.VerifiedOrganizationJoinRequiresEmailException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -65,6 +70,7 @@ class GlobalExceptionHandler {
         DuplicateDirectAskException::class,
         DirectAskRequestAlreadyRespondedException::class,
         DirectAskNotAcceptedException::class,
+        EmailDomainVerificationExpiredException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -87,6 +93,7 @@ class GlobalExceptionHandler {
         AnswerVersionNotFoundException::class,
         OrganizationNotFoundException::class,
         DirectAskRequestNotFoundException::class,
+        EmailDomainVerificationNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -101,6 +108,7 @@ class GlobalExceptionHandler {
         AnswerAccessDeniedException::class,
         SelfDirectAskException::class,
         DirectAskAccessDeniedException::class,
+        VerifiedOrganizationJoinRequiresEmailException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
@@ -111,7 +119,13 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("VALIDATION_ERROR", message))
     }
 
-    @ExceptionHandler(CannotClusterWithSelfException::class, InvalidVoteValueException::class, CommentReplyDepthExceededException::class)
+    @ExceptionHandler(
+        CannotClusterWithSelfException::class,
+        InvalidVoteValueException::class,
+        CommentReplyDepthExceededException::class,
+        PublicEmailDomainException::class,
+        InvalidVerificationCodeException::class,
+    )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 }

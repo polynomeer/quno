@@ -26,6 +26,15 @@ services:
     volumes:
       - quno-redis-data:/data
 
+  # Local SMTP catcher for Verified Organization email verification (Phase 23, ADR-0035) — no
+  # real email provider configured. Web UI to inspect captured mail at http://localhost:8026,
+  # SMTP on 1026 (non-default to match the other services' clash-avoidance ports).
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1026:1025"
+      - "8026:8025"
+
 volumes:
   quno-postgres-data:
   quno-mongo-data:

@@ -27,6 +27,9 @@ class OrganizationJpaEntity(
     @Column(name = "created_by", nullable = false)
     val createdBy: Long,
 
+    @Column(name = "email_domain")
+    val emailDomain: String?,
+
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant,
 )

@@ -11,6 +11,8 @@ class InMemoryOrganizationRepository : OrganizationRepository {
 
     override fun findBySlug(slug: String): Organization? = organizationsById.values.find { it.slug == slug }
 
+    override fun findByEmailDomain(domain: String): Organization? = organizationsById.values.find { it.emailDomain == domain }
+
     override fun save(organization: Organization): Organization {
         val saved = if (organization.id == null) {
             Organization.reconstitute(
@@ -19,6 +21,7 @@ class InMemoryOrganizationRepository : OrganizationRepository {
                 slug = organization.slug,
                 description = organization.description,
                 createdBy = organization.createdBy,
+                emailDomain = organization.emailDomain,
                 createdAt = organization.createdAt,
             )
         } else {

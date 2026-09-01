@@ -16,6 +16,8 @@ class OrganizationRepositoryAdapter(
 
     override fun findBySlug(slug: String): Organization? = jpaRepository.findBySlug(slug)?.toDomain()
 
+    override fun findByEmailDomain(domain: String): Organization? = jpaRepository.findByEmailDomain(domain)?.toDomain()
+
     override fun save(organization: Organization): Organization {
         val entity = OrganizationJpaEntity(
             id = organization.id,
@@ -23,6 +25,7 @@ class OrganizationRepositoryAdapter(
             slug = organization.slug,
             description = organization.description,
             createdBy = organization.createdBy,
+            emailDomain = organization.emailDomain,
             createdAt = organization.createdAt,
         )
         return jpaRepository.save(entity).toDomain()
@@ -44,6 +47,7 @@ class OrganizationRepositoryAdapter(
         slug = slug,
         description = description,
         createdBy = createdBy,
+        emailDomain = emailDomain,
         createdAt = createdAt,
     )
 }
