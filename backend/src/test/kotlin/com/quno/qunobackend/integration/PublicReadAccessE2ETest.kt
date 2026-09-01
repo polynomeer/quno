@@ -97,6 +97,7 @@ class PublicReadAccessE2ETest {
         mockMvc.perform(get("/api/v1/questions/$questionId/versions")).andExpect(status().isOk)
         mockMvc.perform(get("/api/v1/questions/$questionId/versions/1")).andExpect(status().isOk)
         mockMvc.perform(get("/api/v1/questions/$questionId/versions/1/diff")).andExpect(status().isNotFound) // no earlier version to diff against — proves the route itself isn't blocked by auth
+        mockMvc.perform(get("/api/v1/questions/$questionId/related")).andExpect(status().isOk)
         mockMvc.perform(get("/api/v1/questions/$questionId/answers"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].body").value("An answer for the public to read."))

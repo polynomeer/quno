@@ -74,6 +74,7 @@ class SecurityConfig(
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions/{version}", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions/{version}/diff", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/related", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{questionId}/answers", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{questionId}/comments", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/versions", permitAll)
