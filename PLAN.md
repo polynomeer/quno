@@ -416,11 +416,11 @@ ADR-0041이 남겨둔 두 후속 후보(이 확대, SEO 메타데이터) 중 사
 
 ADR-0041/0042가 남겨둔 마지막 후속 후보를 [ADR-0043](docs/architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md)로 착수한다. 질문 상세의 동적 Open Graph와 태그·조직 sitemap까지만 — 질문/프로필 sitemap 열거는 전체 목록 API가 없어 범위 밖.
 
-- [ ] F17.1 질문 상세 동적 OG — `app/questions/[id]/page.tsx`를 얇은 async Server Component로 분리(`generateMetadata` + 기존 내용을 옮긴 `QuestionDetailContent` 클라이언트 컴포넌트 렌더). `generateMetadata`는 인증 없이 공개된 `GET /questions/{id}`를 서버에서 직접 `fetch`해 제목/본문 요약으로 title·description·Open Graph를 채우고, 404/오류는 조용히 기본 제목으로 대체(페이지 자체를 깨뜨리지 않음)
-- [ ] F17.2 사이트 전역 기본 메타데이터 — 루트 레이아웃에 `openGraph`/`twitter` 기본값과 `metadataBase`(`NEXT_PUBLIC_SITE_URL` 환경변수, 기본값 `http://localhost:3000`) 추가
-- [ ] F17.3 sitemap/robots — `app/sitemap.ts`(정적 라우트 + `GET /tags`/`GET /organizations`를 쿼리 없이 호출해 전체 태그·조직 URL 열거)와 `app/robots.ts`(전체 허용 + sitemap 위치) 신규 추가
-- [ ] F17.4 검증 — 프로덕션 빌드로 질문 상세 페이지의 `<meta property="og:*">` 태그가 실제 질문 제목/본문을 반영하는지, 존재하지 않는 질문 ID는 페이지가 깨지지 않고 기본 제목으로 대체되는지, `/sitemap.xml`과 `/robots.txt`가 올바른 URL을 포함해 렌더링되는지 확인
-- [ ] 31.1 문서화 — `api-design.md`/`roadmap.md`에 반영(이미 [ADR-0043](docs/architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md)로 결정 기록됨), ADR-0041/0042 상태를 "SEO는 ADR-0043으로 마무리됨"으로 갱신
+- [x] F17.1 질문 상세 동적 OG — `app/questions/[id]/page.tsx`를 얇은 async Server Component로 분리(`generateMetadata` + 기존 내용을 옮긴 `QuestionDetailContent` 클라이언트 컴포넌트 렌더). `generateMetadata`는 인증 없이 공개된 `GET /questions/{id}`를 서버에서 직접 `fetch`해 제목/본문 요약으로 title·description·Open Graph·Twitter Card를 채우고, 404/오류는 조용히 기본 제목으로 대체(페이지 자체를 깨뜨리지 않음). 백엔드에서 `GET /tags`/`GET /organizations`가 `limit`을 받지 않아 20개로 묶여있던 것도 함께 발견해 다른 목록 GET들과 동일하게 `limit` 파라미터 추가(sitemap이 21번째 태그부터 빠지는 것을 방지)
+- [x] F17.2 사이트 전역 기본 메타데이터 — 루트 레이아웃에 `openGraph`/`twitter` 기본값과 `metadataBase`(`NEXT_PUBLIC_SITE_URL` 환경변수, 기본값 `http://localhost:3000`), `title.template`(`%s - Quno`) 추가 — 질문 상세는 원본 제목만 반환하고 접미사는 템플릿이 붙임(중복 방지)
+- [x] F17.3 sitemap/robots — `app/sitemap.ts`(정적 라우트 + `GET /tags`/`GET /organizations`를 `limit=1000`으로 호출해 전체 태그·조직 URL 열거, 질문/프로필은 전체 목록 API가 없어 제외)와 `app/robots.ts`(전체 허용 + sitemap 위치) 신규 추가
+- [x] F17.4 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 질문 상세 페이지의 실제 `<meta property="og:*">`/`<title>`이 질문 제목·본문을 정확히 반영하는지, 존재하지 않는 질문 ID는 페이지가 깨지지 않고 "질문을 찾을 수 없습니다 - Quno"로 대체되는지, `/sitemap.xml`(태그 22개+조직 전부, 20개 제한 없이)과 `/robots.txt`가 올바르게 렌더링되는지 브라우저로 확인. 검증 중 이전 Phase 테스트의 leftover access token이 `/me` 404를 반복시켜 페이지가 로딩 상태에 멈춘 것처럼 보인 적이 있었으나 localStorage를 비우니 정상 — 이번 Phase 자체의 버그는 아니었음
+- [x] 31.1 문서화 — `api-design.md`(새 "SEO 메타데이터 (Phase 31)" 섹션)/`roadmap.md`에 반영, ADR-0041/0042 상태를 "SEO는 ADR-0043으로 이어짐"으로 갱신(이미 [ADR-0043](docs/architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md)로 결정 기록됨)
 
 ## Phase 32+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
