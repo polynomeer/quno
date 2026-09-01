@@ -8,7 +8,9 @@ import { cn } from "@/shared/lib/cn";
 import type { VoteTargetType } from "../api/vote.types";
 
 /** Backend blocks self-voting (`SelfVoteException`, 403) — show the score plainly instead of
- * interactive buttons when the viewer is the author (design.md #9 Action Rail, scoped down). */
+ * interactive buttons when the viewer is the author (design.md #9 Action Rail, scoped down).
+ * Anonymous viewers (Phase 29, ADR-0041 — question/answer reading is public) get the same
+ * read-only treatment, since voting itself still requires login. */
 export function VoteControl({
   targetType,
   targetId,
@@ -27,7 +29,7 @@ export function VoteControl({
   const castVote = useCastVote(targetType, targetId, questionId);
   const retractVote = useRetractVote(targetType, targetId, questionId);
 
-  if (me && me.id === authorId) {
+  if (!me || me.id === authorId) {
     return <span className="text-sm font-semibold text-text-secondary">{score}</span>;
   }
 

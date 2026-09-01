@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useSearch } from "@/features/search/hooks/useSearch";
 import { SearchFilters } from "@/features/search/ui/SearchFilters";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
@@ -13,7 +13,7 @@ import type { QuestionStatus } from "@/shared/ui/StatusBadge";
 import type { SearchSort } from "@/features/search/api/search.types";
 
 function QuestionsSearchContent() {
-  const { isLoading: authLoading } = useRequireAuth();
+  const { isLoading: authLoading } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";

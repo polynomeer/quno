@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useFileReport } from "../hooks/useFileReport";
 import { Button } from "@/shared/ui/Button";
 import { Textarea } from "@/shared/ui/Textarea";
@@ -16,12 +17,18 @@ const reasonLabels: Record<ReportReason, string> = {
 
 /** No self-report restriction on the backend, so this doesn't check authorship either — anyone,
  * including the author, can report. Re-reporting isn't blocked client-side (backend doesn't
- * dedupe), just discouraged via a per-view "Reported" state after a successful submit. */
+ * dedupe), just discouraged via a per-view "Reported" state after a successful submit. Hidden
+ * entirely for anonymous viewers (Phase 29, ADR-0041) — reporting itself still requires login. */
 export function ReportButton({ targetType, targetId }: { targetType: ReportTargetType; targetId: number }) {
+  const { data: me } = useSession();
   const fileReport = useFileReport(targetType, targetId);
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason>("SPAM");
   const [message, setMessage] = useState("");
+
+  if (!me) {
+    return null;
+  }
 
   if (fileReport.isSuccess) {
     return <span className="text-xs text-text-secondary">Reported</span>;

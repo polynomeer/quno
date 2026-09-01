@@ -118,7 +118,7 @@ export function CommentItem({
                   </button>
                 </>
               )}
-              {canReply && !comment.isDeleted && (
+              {canReply && !comment.isDeleted && currentUserId && (
                 <>
                   {" · "}
                   <button type="button" onClick={() => setIsReplying((v) => !v)} className="hover:text-text-primary">

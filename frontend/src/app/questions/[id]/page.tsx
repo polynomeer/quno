@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useState } from "react";
-import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import Link from "next/link";
+import { useSession } from "@/features/auth/hooks/useSession";
 import { useQuestion } from "@/features/question/hooks/useQuestion";
 import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestions";
 import { useAnswers } from "@/features/answer/hooks/useAnswers";
@@ -31,7 +32,7 @@ type AnswerSort = "best" | "newest" | "oldest" | "score";
 export default function QuestionDetailPage({ params }: PageProps<"/questions/[id]">) {
   const { id } = use(params);
   const questionId = Number(id);
-  const { me, isLoading: authLoading } = useRequireAuth();
+  const { data: me, isLoading: authLoading } = useSession();
   const { data: question, isLoading, isError } = useQuestion(questionId);
   const { data: related } = useRelatedQuestions(questionId);
   const { data: answers } = useAnswers(questionId);
@@ -70,10 +71,12 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
               <StatusBadge status={question.status} />
               <h1 className="text-2xl font-semibold">{question.title}</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <WatchButton questionId={question.id} />
-              <SaveButton questionId={question.id} />
-            </div>
+            {me && (
+              <div className="flex items-center gap-2">
+                <WatchButton questionId={question.id} />
+                <SaveButton questionId={question.id} />
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-1">
             {question.tags.map((tag) => (
@@ -90,7 +93,7 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
               />
               {me && me.id !== question.authorId && <ReportButton targetType="QUESTION" targetId={question.id} />}
             </div>
-            <OutdatedAction questionId={question.id} status={question.status} />
+            {me && <OutdatedAction questionId={question.id} status={question.status} />}
           </div>
         </header>
 
@@ -180,13 +183,24 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
           )}
         </section>
 
-        <AnswerComposer questionId={questionId} />
+        {me ? (
+          <AnswerComposer questionId={questionId} />
+        ) : (
+          <p className="text-sm text-text-secondary">
+            <Link href={`/login?redirectTo=/questions/${questionId}`} className="text-brand hover:underline">
+              로그인
+            </Link>
+            하고 답변을 작성하세요.
+          </p>
+        )}
 
-        <ClusterPanel questionId={question.id} acceptedAnswerId={acceptedAnswerId} />
-
-        <ForkPanel questionId={question.id} />
-
-        <LiveChatPanel questionId={question.id} />
+        {me && (
+          <>
+            <ClusterPanel questionId={question.id} acceptedAnswerId={acceptedAnswerId} />
+            <ForkPanel questionId={question.id} />
+            <LiveChatPanel questionId={question.id} />
+          </>
+        )}
       </div>
 
       <aside className="space-y-3">
