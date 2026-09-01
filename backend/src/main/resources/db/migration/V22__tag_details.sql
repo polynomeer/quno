@@ -1,0 +1,2 @@
+ALTER TABLE tags ADD COLUMN description TEXT;
+ALTER TABLE tags ADD COLUMN docs_url VARCHAR(500);

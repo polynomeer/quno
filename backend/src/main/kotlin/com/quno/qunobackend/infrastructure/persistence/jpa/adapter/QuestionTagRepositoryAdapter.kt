@@ -32,6 +32,8 @@ class QuestionTagRepositoryAdapter(
         id = requireNotNull(id),
         name = name,
         slug = slug,
+        description = description,
+        docsUrl = docsUrl,
         deletedAt = deletedAt,
         createdAt = createdAt,
     )

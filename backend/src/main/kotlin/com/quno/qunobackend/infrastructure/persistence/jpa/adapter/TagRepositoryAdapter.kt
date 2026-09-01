@@ -17,6 +17,8 @@ class TagRepositoryAdapter(
             id = tag.id,
             name = tag.name,
             slug = tag.slug,
+            description = tag.description,
+            docsUrl = tag.docsUrl,
             deletedAt = tag.deletedAt,
             createdAt = tag.createdAt,
         )
@@ -41,6 +43,8 @@ class TagRepositoryAdapter(
         id = requireNotNull(id),
         name = name,
         slug = slug,
+        description = description,
+        docsUrl = docsUrl,
         deletedAt = deletedAt,
         createdAt = createdAt,
     )
