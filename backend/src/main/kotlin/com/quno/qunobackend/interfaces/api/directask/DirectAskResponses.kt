@@ -1,6 +1,9 @@
 package com.quno.qunobackend.interfaces.api.directask
 
+import com.quno.qunobackend.application.directask.dto.CreateDirectAskRequestResult
+import com.quno.qunobackend.application.directask.dto.DirectAskPaymentResult
 import com.quno.qunobackend.application.directask.dto.DirectAskRequestResult
+import com.quno.qunobackend.domain.directask.DirectAskPaymentStatus
 import com.quno.qunobackend.domain.directask.DirectAskRequestStatus
 import java.time.Instant
 
@@ -25,3 +28,11 @@ fun DirectAskRequestResult.toResponse() = DirectAskRequestResponse(
     createdAt = createdAt,
     respondedAt = respondedAt,
 )
+
+data class DirectAskPaymentResponse(val orderId: String, val amount: Long, val status: DirectAskPaymentStatus, val clientKey: String)
+
+fun DirectAskPaymentResult.toResponse() = DirectAskPaymentResponse(orderId = orderId, amount = amount, status = status, clientKey = clientKey)
+
+data class CreateDirectAskRequestResponse(val request: DirectAskRequestResponse, val payment: DirectAskPaymentResponse)
+
+fun CreateDirectAskRequestResult.toResponse() = CreateDirectAskRequestResponse(request = request.toResponse(), payment = payment.toResponse())

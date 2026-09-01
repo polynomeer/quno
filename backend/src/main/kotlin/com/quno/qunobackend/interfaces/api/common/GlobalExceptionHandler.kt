@@ -16,7 +16,11 @@ import com.quno.qunobackend.domain.directask.DirectAskAccessDeniedException
 import com.quno.qunobackend.domain.directask.DirectAskNotAcceptedException
 import com.quno.qunobackend.domain.directask.DirectAskRequestAlreadyRespondedException
 import com.quno.qunobackend.domain.directask.DirectAskRequestNotFoundException
+import com.quno.qunobackend.domain.directask.DirectAskPaymentNotFoundException
 import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
+import com.quno.qunobackend.domain.directask.PaymentAlreadyProcessedException
+import com.quno.qunobackend.domain.directask.PaymentAmountMismatchException
+import com.quno.qunobackend.domain.directask.PaymentConfirmationFailedException
 import com.quno.qunobackend.domain.directask.SelfDirectAskException
 import com.quno.qunobackend.domain.follow.SelfFollowException
 import com.quno.qunobackend.domain.livechat.LiveChatRoomNotFoundException
@@ -72,6 +76,8 @@ class GlobalExceptionHandler {
         DirectAskRequestAlreadyRespondedException::class,
         DirectAskNotAcceptedException::class,
         EmailDomainVerificationExpiredException::class,
+        PaymentAlreadyProcessedException::class,
+        PaymentConfirmationFailedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -96,6 +102,7 @@ class GlobalExceptionHandler {
         DirectAskRequestNotFoundException::class,
         EmailDomainVerificationNotFoundException::class,
         LiveChatRoomNotFoundException::class,
+        DirectAskPaymentNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -127,6 +134,7 @@ class GlobalExceptionHandler {
         CommentReplyDepthExceededException::class,
         PublicEmailDomainException::class,
         InvalidVerificationCodeException::class,
+        PaymentAmountMismatchException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))

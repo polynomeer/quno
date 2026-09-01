@@ -28,8 +28,10 @@ class DirectAskRequestRepositoryAdapter(
 
     override fun findById(id: Long): DirectAskRequest? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
-    override fun existsPending(questionId: Long, targetUserId: Long): Boolean =
-        jpaRepository.existsByQuestionIdAndTargetUserIdAndStatus(questionId, targetUserId, DirectAskRequestStatus.PENDING)
+    override fun existsOpen(questionId: Long, targetUserId: Long): Boolean =
+        jpaRepository.existsByQuestionIdAndTargetUserIdAndStatusIn(
+            questionId, targetUserId, listOf(DirectAskRequestStatus.AWAITING_PAYMENT, DirectAskRequestStatus.PENDING),
+        )
 
     override fun findAllByRequesterId(requesterId: Long): List<DirectAskRequest> =
         jpaRepository.findAllByRequesterIdOrderByCreatedAtDesc(requesterId).map { it.toDomain() }

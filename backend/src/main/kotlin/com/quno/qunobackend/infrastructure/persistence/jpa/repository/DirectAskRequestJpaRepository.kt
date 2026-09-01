@@ -5,7 +5,7 @@ import com.quno.qunobackend.infrastructure.persistence.jpa.entity.DirectAskReque
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface DirectAskRequestJpaRepository : JpaRepository<DirectAskRequestJpaEntity, Long> {
-    fun existsByQuestionIdAndTargetUserIdAndStatus(questionId: Long, targetUserId: Long, status: DirectAskRequestStatus): Boolean
+    fun existsByQuestionIdAndTargetUserIdAndStatusIn(questionId: Long, targetUserId: Long, statuses: Collection<DirectAskRequestStatus>): Boolean
     fun findAllByRequesterIdOrderByCreatedAtDesc(requesterId: Long): List<DirectAskRequestJpaEntity>
     fun findAllByTargetUserIdOrderByCreatedAtDesc(targetUserId: Long): List<DirectAskRequestJpaEntity>
 }

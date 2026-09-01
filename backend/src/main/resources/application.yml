@@ -26,3 +26,14 @@ quno:
     refresh-token-ttl-seconds: 1209600
   mail:
     from-address: "noreply@quno.dev"
+  toss:
+    # Toss Payments' publicly documented "문서용 테스트 키" — usable without signing up, real
+    # money never moves. Override via QUNO_TOSS_CLIENT_KEY / QUNO_TOSS_SECRET_KEY outside local
+    # dev with a real merchant's keys (see ADR-0037).
+    client-key: "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq"
+    secret-key: "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R"
+    api-base-url: "https://api.tosspayments.com"
+  direct-ask:
+    # KRW, flat fee. No real usage data yet — same "start at a round number, revisit later"
+    # judgment as ADR-0032's vote weights.
+    fee-amount: 1000

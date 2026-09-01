@@ -29,9 +29,10 @@ class InMemoryDirectAskRequestRepository : DirectAskRequestRepository {
 
     override fun findById(id: Long): DirectAskRequest? = requestsById[id]
 
-    override fun existsPending(questionId: Long, targetUserId: Long): Boolean =
+    override fun existsOpen(questionId: Long, targetUserId: Long): Boolean =
         requestsById.values.any {
-            it.questionId == questionId && it.targetUserId == targetUserId && it.status == DirectAskRequestStatus.PENDING
+            it.questionId == questionId && it.targetUserId == targetUserId &&
+                (it.status == DirectAskRequestStatus.AWAITING_PAYMENT || it.status == DirectAskRequestStatus.PENDING)
         }
 
     override fun findAllByRequesterId(requesterId: Long): List<DirectAskRequest> =
