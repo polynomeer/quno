@@ -380,11 +380,21 @@ Phase 24가 백엔드까지만 구현하고 미뤄둔 실시간 질문방 화면
 - [x] F13.4 검증 — 두 계정으로 같은 브라우저의 서로 다른 탭을 열어 실제 서버로 전 구간 확인: 방 없음→시작하기→자동 참여→다른 탭에서 "채팅 참여하기"→접속자 수 1→2 실시간 갱신→한쪽이 보낸 메시지가 다른 쪽에 새로고침 없이 즉시 도착(히스토리 REST 로드 + 실시간 브로드캐스트 병합, id 기준 중복 제거)→탭 종료 시 접속자 수 2→1 갱신까지 확인. `LIVE_CHAT_STARTED` 알림도 실제 서버로 확인(actor가 질문 작성자 자신이면 알림이 가지 않는 기존 규칙 때문에, 검증 중 같은 브라우저의 두 탭이 `localStorage`를 공유해 실수로 같은 계정이 되어버린 첫 시도를 알아채고 계정을 다시 분리해 재검증함 — 코드 버그 아님, 브라우저 저장소 공유가 원인)
 - [x] F13.5 문서화 — `api-design.md`("Live Chat (Phase 24)" 섹션에 프론트엔드 연동 사실 추가)에 반영, [ADR-0039](docs/architecture/decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)로 라이브러리 선택과 연결 시점 스코프 결정 기록
 
-## Phase 28+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 28 — 태그 상세 정보 보강 (mvp-scope.md 로드맵에 없던 새 범위)
+
+[ADR-0021](docs/architecture/decisions/0021-tag-detail-via-search-approximation.md)이 `Tag` 도메인이 `id`/`name`/`slug`뿐이라는 이유로 검색 근사로 미뤄뒀던 태그 상세 정보를 [ADR-0040](docs/architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)으로 채운다. 남은 프론트엔드 격차 중 마지막 하나로, 사용자가 이어서 진행을 확인했다(2026-09-01).
+
+- [x] 28.1 백엔드 — `tags`에 `description`/`docs_url` 추가(V22 마이그레이션), 위키 스타일로 아무 로그인 사용자나 `PUT /tags/{id}`로 편집 가능(태그 생성 자체와 같은 신뢰 수준). `GET /tags/{id}` 단건 조회 신설. `TagStatsRepository`(native SQL) + `GET /tags/{id}/questions?sort=latest|unanswered|top`(검색 근사를 대체, `question_tags` 직접 조회), `GET /tags/{id}/contributors`(답변 개수 기준, 채택·투표 가중치는 넣지 않음), `GET /tags/{id}/related`(co-occurrence 기준)
+- [x] 28.2 테스트 — 단위 테스트(`Tag.updateDetails`, `GetTagUseCase`/`UpdateTagDetailsUseCase`/`ListTagQuestionsUseCase`/`ListTagContributorsUseCase`/`ListRelatedTagsUseCase`, 페이크 리포지토리로 오케스트레이션만 검증 — native SQL 자체는 기존 관례대로 curl로만 검증)와 실제 서버 검증(태그 두 개가 겹치는 질문 두 개+답변 하나를 만들어 latest/unanswered/top 정렬·기여자·관련 태그가 실제 데이터로 정확히 나오는지, 설명 수정이 저장되는지 curl로 확인)
+- [x] F14.1 프론트엔드 — `entities/tag`/`features/tag` 신설. `/tags/{name}` 페이지를 검색 근사 대신 `useTagByName`(이름→id 조회 후 새 API 호출)으로 재작성, Latest/Unanswered/Top 탭(URL 쿼리 `?sort=`), 설명/문서 링크 인라인 위키 편집(`TagDetailsEditor`), 상위 기여자·관련 태그 사이드바, `FollowTagButton`(`JoinOrganizationButton`과 동일하게 `useUserProfile(내 id).followedTags`로 팔로우 여부 판단 — ADR-0021이 API 부재로 미뤘던 것을 그 사이 생긴 패턴으로 해소). Tag Directory에도 설명 스니펫 추가
+- [x] F14.2 검증 — 실제 서버로 두 계정과 태그 두 개(kotlin/spring-boot)가 겹치는 질문 두 개(하나는 미답변)를 만들어 Latest/Unanswered/Top 탭 전환, 상위 기여자·관련 태그 표시, Follow/Unfollow 토글, 설명 인라인 편집·저장까지 브라우저로 전 구간 확인. 이번 Phase 자체의 프론트 버그는 없었음
+- [x] 28.3 문서화 — `api-design.md`("태그 (Phase 28)" 섹션 신설)에 반영, [ADR-0040](docs/architecture/decisions/0040-tag-detail-wiki-editable-and-real-stats.md)으로 스코프 결정 기록, ADR-0021 상태를 "일부 대체됨"으로 갱신
+
+## Phase 29+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방 프론트엔드까지 모두 구현됐다(Phase 27). 남은 프론트엔드 격차는 태그 상세 정보 보강뿐이다([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보 프론트엔드까지 모두 구현됐다(Phase 28). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다 — 남은 것은 질문/프로필 비로그인 공개 열람([ADR-0013](docs/architecture/decisions/0013-defer-public-read-access.md), 대응 백엔드 자체가 없어 재검토 필요)뿐이다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
 
 ## 진행 방식
 
