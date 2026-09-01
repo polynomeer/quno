@@ -351,11 +351,20 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 24.4 테스트 — 단위 테스트(`OpenLiveChatRoomUseCase`: find-or-create·새 방일 때만 알림, `PostLiveChatMessageUseCase`/`ListLiveChatMessagesUseCase`/`LiveChatPresenceUseCase`, `DispatchOutboxEventsUseCase`: LIVE_CHAT_STARTED 수신자)와 실제 서버 검증. WebSocket은 curl로 검증할 수 없어 Python `websockets` 라이브러리로 STOMP 프레임을 직접 구성하는 클라이언트 스크립트를 작성해 CONNECT 인증→presence 구독/카운트 브로드캐스트→메시지 전송/실시간 수신→연결종료 시 카운트 감소까지 전 구간을 실제 프로토콜로 확인. 첫 시도에서 `StompAuthChannelInterceptor`가 `StompHeaderAccessor.wrap()`으로 detached accessor를 만들어 Principal 설정이 실제 세션에 반영되지 않는 버그를 발견해 `MessageHeaderAccessor.getAccessor()`로 수정
 - [x] 24.5 문서화 — `domain-model.md`(Live Chat 컨텍스트, Aggregate, ERD, 테이블별 책임, Domain Events, MongoDB 문서 모델에 실제 구현+prefix 함정 경고 반영)와 `api-design.md`("Live Chat (Phase 24)" 섹션)에 반영, [ADR-0036](docs/architecture/decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 스코프 결정과 MongoDB prefix 발견을 함께 기록
 
-## Phase 25+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 25 — 유료 Direct Ask: 토스페이먼츠 테스트 모드 연동 (mvp-scope.md 로드맵 Phase 5, 나머지)
+
+[ADR-0034](docs/architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)가 안전상의 이유로 범위 밖에 뒀던 결제를 [ADR-0037](docs/architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)로 착수했다(2026-09-01, 사용자가 토스페이먼츠 테스트 모드 연동을 선택 — 내부 포인트/크레딧 경제 대안 대신 진짜 결제 프로토콜을 실 계좌 없이 끝까지 구현·검증). Phase 22의 무료 Direct Ask 흐름을 대체한다.
+
+- [x] 25.1 결제 도메인 — 새 Aggregate `DirectAskPayment`(id, directAskRequestId, orderId, amount, status: PENDING/PAID/CANCELLED, tossPaymentKey, createdAt/confirmedAt/cancelledAt)와 `DirectAskPaymentRepository`(V21 마이그레이션: `direct_ask_payments` 테이블 + `order_id` 유니크 인덱스). `PaymentGateway` 포트(`confirm`/`cancel`) + `TossPaymentGateway` 구현(토스 Core API, Basic Auth). `DirectAskRequestStatus`에 `AWAITING_PAYMENT`를 `PENDING` 앞에 추가하고 `activate()` 전이 메서드 신규 추가
+- [x] 25.2 결제 게이팅 흐름 — `POST /questions/{id}/direct-asks`가 요청(`AWAITING_PAYMENT`)과 결제(`PENDING`)를 같은 트랜잭션에서 생성하고 `{request, payment}`(클라이언트 위젯용 `clientKey` 포함)를 반환할 뿐, 이 시점엔 알림을 발행하지 않는다. `POST /direct-asks/payments/confirm`(orderId, paymentKey, amount)이 서버에 기록된 금액과 클라이언트가 보낸 금액을 대조(`PaymentAmountMismatchException`)한 뒤 토스 승인 API를 호출하고, 성공하면 요청을 `PENDING`으로 전이시키며 그제서야 `DIRECT_ASK_REQUESTED` 알림을 발행한다. 중복 요청 방지 부분 유니크 인덱스가 `AWAITING_PAYMENT`도 포함하도록 확장(`existsOpen`). `RespondToDirectAskRequestUseCase`의 decline 분기에 토스 취소 API 호출 + 결제 `CANCELLED` 전이(자동 환불) 추가. `ListMyDirectAsksUseCase`의 received 목록은 `AWAITING_PAYMENT` 요청을 계속 걸러냄
+- [x] 25.3 테스트 — 단위 테스트(`CreateDirectAskRequestUseCase`: AWAITING_PAYMENT로 생성, `ConfirmDirectAskPaymentUseCase`: 정상 확인·금액 불일치·미존재 orderId·중복 확인·토스 거부, `RespondToDirectAskRequestUseCase`: 수락 시 결제 유지·거절 시 결제 취소)와 `FakePaymentGateway`. 실제 검증은 두 갈래로 분리했다 — 비즈니스 로직은 위 단위 테스트로, 실제 아웃바운드 HTTP 계약(URL/Basic Auth 헤더/JSON 바디)은 로컬 Python 모크 Toss 서버로 `quno.toss.api-base-url`을 임시 오버라이드해 curl로 전 구간(결제 전 요청 비노출→결제 확인→노출·알림→금액 위조 400→수락 시 결제 유지→거절 시 자동 환불) 확인. **부수 발견**: `RestClient.builder()` 정적 팩토리가 이 프로젝트의 Jackson 3 컨버터 자동구성을 거치지 않아 요청 바디가 조용히 `{}`로 직렬화되던 버그를 모크 서버로 발견, `ObjectMapper` 직접 주입으로 수동 직렬화하도록 수정(ADR-0037 참고). 토스 테스트 모드는 실카드 정보 입력 없이는 진짜 `paymentKey`를 발급하지 않아, 결제위젯을 통한 실제 체크아웃까지는 검증하지 못함 — 사람이 직접 완주해야 하는 갭으로 남김
+- [x] 25.4 문서화 — `domain-model.md`(Trust Network 컨텍스트에 `DirectAskPayment` Aggregate, ERD, 테이블별 책임, Domain Events 갱신)와 `api-design.md`("유료 Direct Ask (Phase 25)" 섹션 신설, 기존 "Direct Ask (Phase 22)" 섹션은 대체됨으로 표시)에 반영, [ADR-0037](docs/architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)로 스코프 결정 기록. 프론트엔드(결제위젯 UI)는 이번 범위에 포함하지 않음(다른 모든 Phase와 동일하게 백엔드까지만)
+
+## Phase 26+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- [ ] Phase ? — 유료 Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — PG 연동, 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
+- Phase 1~6 백엔드 범위는 모두 구현됐다(Phase 25로 Phase 5 "신뢰 네트워크"까지 완료). 남은 것은 프론트엔드 격차뿐이다 — 태그 상세 정보, Organization/Direct Ask, 실시간 질문방 등([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항-2026-09-01-갱신) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
 
 ## 진행 방식
 
