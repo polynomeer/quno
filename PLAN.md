@@ -406,8 +406,8 @@ Phase 24가 백엔드까지만 구현하고 미뤄둔 실시간 질문방 화면
 
 ADR-0041이 남겨둔 두 후속 후보(이 확대, SEO 메타데이터) 중 사용자가 이것을 먼저 선택했다(2026-09-02, [ADR-0042](docs/architecture/decisions/0042-expand-public-read-access-tags-orgs-profiles.md)).
 
-- [ ] 30.1 백엔드 — `SecurityConfig`에 태그(`GET /tags`, `/{id}`, `/{id}/questions`, `/{id}/contributors`, `/{id}/related`), 조직(`GET /organizations`, `/{id}`), 사용자 프로필(`GET /users/{id}/profile`, `/reputation`, `/badges`)을 HTTP 메서드 단위로 `permitAll` 추가. 같은 경로의 쓰기(태그 편집, Organization 생성/가입/탈퇴/이메일 인증, Follow)는 그대로 인증 필요
-- [ ] 30.2 테스트 — `PublicReadAccessE2ETest`의 "GET /tags는 범위 밖(401)" 단언을 뒤집고, 새로 공개된 GET 5종과 여전히 인증이 필요한 쓰기(태그 편집 401, Organization 생성/가입 401, Follow 401)를 함께 검증하는 케이스 추가
+- [x] 30.1 백엔드 — `SecurityConfig`에 태그(`GET /tags`, `/{id}`, `/{id}/questions`, `/{id}/contributors`, `/{id}/related`), 조직(`GET /organizations`, `/{id}`), 사용자 프로필(`GET /users/{id}/profile`, `/reputation`, `/badges`)을 HTTP 메서드 단위로 `permitAll` 추가. 같은 경로의 쓰기(태그 편집, Organization 생성/가입/탈퇴/이메일 인증, Follow)는 그대로 인증 필요
+- [x] 30.2 테스트 — `PublicReadAccessE2ETest`의 "GET /tags는 범위 밖(401)" 단언을 뒤집고, 새로 공개된 GET 5종과 여전히 인증이 필요한 쓰기(태그 편집 401, Organization 생성/가입 401, Follow 401)를 함께 검증하는 케이스 추가. 전체 스위트 통과 확인
 - [ ] F16.1 프론트엔드 — `/tags`, `/tags/[name]`, `/organizations`, `/organizations/[id]`, `/users/[id]` 5개 페이지를 `useRequireAuth`에서 `useSession`으로 전환. 검토 중 발견한 기존 방문자 가드 누락 2건 수정: `FollowUserButton`에 `if (!me) return null` 추가(자기 자신 팔로우 방지 가드만 있고 로그인 여부 가드가 없었음), `EmailDomainVerificationPanel`에 `if (!viewerId) return null` 추가(`viewerId: number | undefined` 시그니처인데 실제 undefined 체크가 없었음). `TagDetailsEditor`/`CreateOrganizationForm`에도 같은 self-guard 신규 추가(기존엔 가드 자체가 없었음). `JoinOrganizationButton`/`FollowTagButton`/`RequestDirectAskPanel`은 이미 자체 가드가 있어 손대지 않음
 - [ ] F16.2 검증 — 완전한 익명 세션으로 태그 목록/상세(질문·기여자·관련 태그 포함), 조직 목록/상세, 사용자 프로필(질문·답변·평판·배지·팔로우 태그·소속 조직)이 로그인 없이 보이는지, Follow/Join/편집/이메일 인증 버튼이 전부 숨겨지는지, 로그인 후 회귀 없이 동작하는지 브라우저로 확인
 - [ ] 30.3 문서화 — `api-design.md`/`domain-model.md`/`roadmap.md`에 반영(이미 [ADR-0042](docs/architecture/decisions/0042-expand-public-read-access-tags-orgs-profiles.md)로 결정 기록됨)
