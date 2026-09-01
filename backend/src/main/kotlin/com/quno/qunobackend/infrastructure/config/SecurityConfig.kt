@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.user.TokenProvider
 import com.quno.qunobackend.infrastructure.security.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -63,6 +64,24 @@ class SecurityConfig(
                 // The WebSocket handshake itself stays unauthenticated — real auth happens one
                 // level up, inside the STOMP CONNECT frame (see StompAuthChannelInterceptor).
                 authorize("/ws/**", permitAll)
+                // Public read access (Phase 29, ADR-0041) — question/answer/comment content and
+                // search, so an anonymous visitor can actually read what a shared link points to.
+                // Deliberately narrow: only these GETs, method-scoped so the POST/PUT/DELETE on
+                // the very same paths (revise, comment, etc.) still require auth. Everything else
+                // (tags, organizations, direct-asks, live-chat, dashboard, profiles, moderation,
+                // notifications) stays behind the anyRequest/authenticated fallback below.
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions/{version}", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions/{version}/diff", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{questionId}/answers", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{questionId}/comments", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/versions", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/versions/{version}", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/versions/{version}/diff", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/comments", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/comments/{commentId}/versions", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/search", permitAll)
                 authorize(anyRequest, authenticated)
             }
         }
