@@ -2,6 +2,7 @@ package com.quno.qunobackend.interfaces.api.user
 
 import com.quno.qunobackend.application.user.usecase.GetUserProfileUseCase
 import com.quno.qunobackend.interfaces.api.answer.toResponse
+import com.quno.qunobackend.interfaces.api.organization.toResponse
 import com.quno.qunobackend.interfaces.api.search.toResponse
 import com.quno.qunobackend.interfaces.api.tag.toResponse
 import org.springframework.web.bind.annotation.GetMapping
@@ -25,6 +26,7 @@ class UserProfileController(
             questions = result.questions.map { it.toResponse() },
             answers = result.answers.map { it.toResponse() },
             followedTags = result.followedTags.map { it.toResponse() },
+            organizations = result.organizations.map { it.toResponse() },
         )
     }
 }

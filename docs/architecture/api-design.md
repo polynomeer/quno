@@ -319,6 +319,82 @@
 - 셋 다 조회 시점 집계일 뿐 스키마 변경이나 새 이벤트가 없다 — `votes` 테이블은 Phase 11에서 이미 있었다.
 - 어뷰징 방지(투표 속도 제한, 봇 탐지 등)는 이번 범위에 포함하지 않는다 — 자기 투표 금지(`SelfVoteException`)만 여전히 유일한 방어다.
 
+## 기술 버전 영향 감지 (Phase 21)
+
+[ADR-0017](decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)이 외부 데이터 피드가 없다는 이유로 범위 밖에 뒀던 "기술 버전 영향 감지"의 진짜 자동화를 [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)으로 시작했다. endoflife.date를 연동해 실제 릴리스 데이터를 얻지만, 질문을 자동으로 `OUTDATED`로 전환하지는 않는다 — 감지 결과를 알림으로만 전달하고 최종 판단은 여전히 사람이 `POST /questions/{id}/outdated`로 내린다.
+
+- **스캐너(외부 API 없음)**: `TechnologyVersionScanScheduler`가 하루 1회 `domain/qunobot/TrackedTechnologies`(태그 slug → endoflife.date 제품 slug, 하드코딩된 큐레이션: kotlin, spring-boot, redis, kafka→apache-kafka, postgresql, mongodb, docker→docker-engine)의 각 제품 최신 릴리스를 조회한다. `technology_releases`에 태그당 1행(이력 아님)으로 저장하고, 저장된 버전과 실제로 달라졌을 때만 "새 릴리스"로 취급한다(처음 보는 태그는 베이스라인만 저장, 알림 없음 — 롤아웃 시점에 기존 태그 전부가 "새 릴리스"로 오탐되는 것을 막기 위해).
+- 새 릴리스가 감지되면 해당 태그가 달리고 `RESOLVED`/`OUTDATED`가 아니며 콘텐츠(question_versions 최신 `created_at`)가 릴리스일보다 오래된 질문을 찾아 `TECH_VERSION_IMPACT_DETECTED` outbox 이벤트를 발행한다(Ward 구독자 + 질문 작성자, `QUESTION_OUTDATED`와 동일한 수신자 규칙). 이 이벤트에는 다른 모든 이벤트와 달리 `actorId`가 없다 — 발행자가 사람이 아니라 스케줄러이기 때문이다.
+- `GET /qunobot/version-impacts?limit=`: 현재 영향권에 있는 질문을 릴리스일 내림차순으로 반환한다. `VersionImpact`(`domain/qunobot`)는 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 API 응답까지 그대로 재사용한다. Spike Detection과 달리 **Redis 캐싱은 하지 않는다** — 이 모델에 Instant/LocalDate가 섞여 있어 기존 JSON 캐시 직렬화 전례가 없고, 추적 기술 수가 작아 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
+- 한 제품의 외부 API 호출이 실패해도(알 수 없는 slug, 타임아웃, 장애) 그 제품만 건너뛰고 나머지 스캔은 계속된다 — `TechnologyReleaseFeed.fetchLatest`가 예외 대신 null을 반환한다.
+
+## Organization & Direct Ask (Phase 22)
+
+mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)로 착수했다. 실제 회사·학교 인증(Verified Organization)과 결제(유료 Direct Ask)는 이번 범위에 포함하지 않는다.
+
+### Organization
+
+- `POST /organizations`(body: `name`, `description?`, 201): 생성자가 자동으로 첫 멤버가 된다. 이름이 `Organization.slugify`(대소문자 정규화만, Tag와 달리 비-ASCII 문자를 보존)로 기존 조직과 충돌하면 409.
+- `GET /organizations?q=`: 이름 부분 일치 검색(대소문자 무시), 없으면 전체 목록.
+- `GET /organizations/{id}`: 상세(`memberCount` 포함). 없으면 404.
+- `POST /organizations/{id}/join` / `DELETE /organizations/{id}/join`: 가입/탈퇴, 둘 다 멱등.
+- `GET /users/{id}/profile`이 이제 `organizations` 필드로 그 사용자가 속한 조직 목록을 함께 반환한다(followedTags와 같은 조립 패턴).
+- 조직 기반 추천/피드("같은 조직 개발자들이 자주 질문한 Topic")는 이번 범위에 없다 — 실제 조직 데이터가 쌓이기 전에는 검증할 방법이 없다고 판단했다.
+
+### Direct Ask (Phase 22 — Phase 25에서 유료로 대체됨, [아래 섹션](#유료-direct-ask-phase-25) 참고)
+
+- `PUT /me/direct-ask-settings`(body: `accepts`): Direct Ask 수신 여부를 직접 켜고 끈다. 기본값은 `false`(스팸 방지) — `GET /me`의 `acceptsDirectAsk` 필드로 현재 값을 확인할 수 있다. 이 설정은 Phase 25 이후에도 그대로 유효하다.
+- `POST /direct-asks/{id}/accept` / `POST /direct-asks/{id}/decline`: 요청의 대상만 응답할 수 있다(아니면 403 `DirectAskAccessDeniedException`). 이미 응답된 요청을 다시 응답하면 409(`DirectAskRequestAlreadyRespondedException`). `DIRECT_ASK_ACCEPTED`/`DIRECT_ASK_DECLINED` 이벤트가 원 요청자에게만 통보된다.
+- `GET /me/direct-asks?role=sent|received`(기본 `received`): 내가 보낸/받은 요청 목록, 최신순.
+- **답변과의 직접 연결은 없다**: 요청을 수락한 뒤에는 기존 `POST /questions/{id}/answers`로 평범하게 답변을 작성한다 — `DirectAskRequest`는 특정 `Answer`를 가리키지 않는다. "이 답변이 Direct Ask에서 나왔다"는 표시나 전문가 추천(원본 기획의 Topic Expert 등)은 이번 범위 밖이다.
+
+## 유료 Direct Ask (Phase 25)
+
+[ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)가 범위 밖에 뒀던 결제를 [ADR-0037](decisions/0037-paid-direct-ask-toss-payments-test-mode.md)로 토스페이먼츠 테스트 모드 연동으로 구현했다. Phase 22의 무료 흐름을 대체한다 — 이제 모든 Direct Ask 요청에 정액 수수료(`quno.direct-ask.fee-amount`, 기본 1,000원)가 붙는다.
+
+- `POST /questions/{id}/direct-asks`(body: `targetUserId`, `message?`, 201): 요청과 결제를 함께 만든다. 응답은 `{request, payment}` — `request.status`는 `AWAITING_PAYMENT`(결제 확인 전이라 대상에게 보이지 않고 알림도 안 감), `payment`는 `{orderId, amount, status, clientKey}`(클라이언트가 토스 결제위젯을 렌더링하는 데 필요한 값, `clientKey`는 공개 키라 노출해도 안전).
+  - 검증 규칙(자기 자신 요청 403, 옵트아웃 409, 중복 409)은 Phase 22와 동일하되, 중복 검사가 `AWAITING_PAYMENT`도 포함하도록 넓어졌다(V21의 부분 유니크 인덱스).
+- `POST /direct-asks/payments/confirm`(body: `orderId`, `paymentKey`, `amount`): 클라이언트가 토스 위젯을 완료하고 리다이렉트된 뒤 호출한다.
+  - `amount`가 요청 생성 시점에 기록된 금액과 다르면 400(`PaymentAmountMismatchException`) — 클라이언트가 보낸 금액을 절대 그대로 믿지 않고, 토스 승인 API를 호출하기 전에 먼저 서버가 기록해둔 금액과 대조한다.
+  - 존재하지 않는 `orderId`는 404, 이미 처리된 결제는 409(`PaymentAlreadyProcessedException`), 토스가 승인을 거부하면 409(`PaymentConfirmationFailedException`).
+  - 성공하면 요청이 `PENDING`으로 전이되고, **이 시점에야** `DIRECT_ASK_REQUESTED` outbox 이벤트가 대상 사용자에게 통보된다(Phase 22와 수신자 규칙은 동일 — Ward 구독자 기본 fan-out을 건너뛰는 `CONTENT_HIDDEN`류).
+- 대상이 **거절하면 자동으로 환불**된다 — `POST /direct-asks/{id}/decline`이 내부적으로 토스 취소 API를 호출해 결제를 `CANCELLED`로 되돌린다. **수락하면 결제는 그대로 유지**된다(`PAID`).
+- `GET /me/direct-asks`(sent/received 둘 다)는 여전히 `DirectAskRequestResponse`를 반환한다 — `received`는 Phase 22와 마찬가지로 `AWAITING_PAYMENT` 요청을 걸러낸다(대상은 결제 확인 전 요청을 볼 수 없음), `sent`는 요청자 본인이 결제를 재개할 수 있도록 걸러내지 않는다.
+- **전문가 지급대행(정산)은 범위 밖이다** — 요청자의 결제는 Quno가 받을 뿐, 그 돈을 전문가 계좌로 실제 송금하는 흐름은 만들지 않았다. 웹훅도 만들지 않았다(리다이렉트+승인만으로 카드 결제를 완결할 수 있다).
+- **검증 한계**: 토스페이먼츠 테스트 모드는 실제 카드 정보를 입력해야만 진짜 `paymentKey`가 발급된다(가상 테스트 카드번호가 없음). 카드 정보 입력은 안전상 예외 없이 지켜야 할 선이라, 결제위젯을 통한 실제 체크아웃은 사람이 직접 한 번 완료해봐야 한다 — 서버 쪽 로직(상태 전이, 위조 방지, 환불)과 실제 아웃바운드 HTTP 계약(URL/인증/바디 형태)은 로컬 모크 서버로 전 구간 검증했지만, 진짜 토스 서버를 통한 승인 왕복까지는 검증하지 못했다(ADR-0037 참고).
+
+## Verified Organization (Phase 23)
+
+[ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)가 범위 밖에 뒀던 실제 회사·학교 인증을 [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)로 업무/학교 이메일 도메인 인증으로 구현했다.
+
+- `PUT /me/direct-ask-settings`와 별개로, `POST /organizations/verify-email`(body: `email`)이 6자리 코드를 생성해 그 주소로 이메일을 발송한다. `gmail.com`/`naver.com` 같은 공개 웹메일 도메인은 `PublicEmailDomains` 차단 목록으로 즉시 거부(400) — 누구나 등록 가능한 도메인은 소속을 증명하지 못한다.
+- `POST /organizations/verify-email/confirm`(body: `code`): 로그인한 사용자의 가장 최근 요청과 코드를 대조한다. 코드가 틀리면 400, 만료(15분)됐으면 409, 애초에 요청이 없거나 이미 확인됐으면 404. 성공하면 해당 도메인의 Organization을 find-or-create해 자동으로 멤버가 된다 — 이미 같은 도메인으로 Verified된 조직이 있으면 그걸 재사용하고, 동일 이름의 기존 Virtual 조직이 있으면 그 자리에서 승격(같은 id 유지)하며, 둘 다 없으면 새로 만든다.
+- `POST /organizations/{id}/join`은 대상이 Verified 조직이면 403(`VerifiedOrganizationJoinRequiresEmailException`)으로 거부한다 — 멤버십은 오직 이메일 인증을 통해서만 부여된다. 이 게이트가 없으면 기존 join 엔드포인트로 검증 전체를 우회할 수 있다.
+- `OrganizationResponse`에 `emailDomain`(nullable)과 `verified`(계산값)가 추가됐다 — Virtual/Community 조직은 둘 다 `null`/`false`.
+- **로컬 개발은 Mailpit으로 검증한다**: `docker-compose`에 추가한 `mailpit` 서비스(SMTP 1026, 웹 UI http://localhost:8026)가 실제 SMTP 프로토콜로 발송된 이메일을 받는다. 프로덕션 SMTP 자격증명은 이 코드베이스가 구성하지 않는다 — 배포 시점에 `spring.mail.*`를 환경변수로 오버라이드해야 한다(JWT secret과 같은 패턴).
+
+## Live Chat (Phase 24)
+
+[ADR-0019](decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. REST는 방을 열고/조회하고 과거 메시지를 읽는 역할만 하고, 실제 메시징과 접속자 현황은 STOMP-over-WebSocket으로 이뤄진다.
+
+### REST
+
+- `POST /questions/{id}/live-chat`(201): find-or-create — 이미 방이 있으면 그 방을 그대로 반환한다. 새로 만들어졌을 때만 `LIVE_CHAT_STARTED` outbox 이벤트(Ward 구독자 + 질문 작성자)가 발행된다.
+- `GET /questions/{id}/live-chat`: 방 조회. 없으면 404.
+- `GET /live-chat/{roomId}/messages?limit=`(기본 50): 가장 최근 메시지를 오래된 순으로 반환 — WebSocket 구독이 시작되기 전, 화면에 스크롤백을 채우는 용도.
+
+### WebSocket (STOMP, endpoint `/ws`)
+
+- **인증**: HTTP 핸드셰이크 자체는 인증하지 않는다(SecurityConfig가 `/ws/**`를 permitAll) — 실제 인증은 STOMP `CONNECT` 프레임의 `Authorization: Bearer <token>` 네이티브 헤더에서 이뤄진다(`StompAuthChannelInterceptor`, 기존 `TokenProvider` 재사용). 토큰이 없거나 무효하면 연결이 거부된다 — REST의 401과는 다른 실패 모양이라는 걸 클라이언트가 알아야 한다.
+- `SUBSCRIBE /topic/live-chat/{roomId}`: 그 방에 새로 올라오는 메시지를 실시간으로 받는다(자신이 보낸 메시지도 포함해서 다시 받는다 — 낙관적 UI 업데이트가 필요 없다).
+- `SEND /app/live-chat/{roomId}/send`(body: `{"body": "..."}`): 메시지를 MongoDB에 저장하고 그 방 구독자 전원에게 브로드캐스트한다. 메시지 하나하나는 outbox 이벤트를 발행하지 않는다(Vote와 같은 이유 — 스팸 방지).
+- `SUBSCRIBE /topic/questions/{questionId}/presence`: 구독 자체가 "이 질문을 보고 있다"는 신호다. 구독 시 Redis Set에 세션이 추가되고 즉시 갱신된 `{"viewerCount": N}`이 그 질문의 모든 presence 구독자에게 브로드캐스트된다. `UNSUBSCRIBE`나 WebSocket 연결 종료 시 자동으로 빠지고 다시 브로드캐스트된다 — 클라이언트가 별도로 "나감"을 알릴 필요가 없다.
+
+### 알려진 한계
+
+- Presence의 세션→구독 매핑은 단일 인스턴스에서만 정확하다(ADR-0036 참고) — 수평 확장 시 재검토 필요.
+- "실시간 대화 → 구조화된 지식"(원본 기획)은 자동 변환이 아니다. 사람이 채팅을 읽고 기존 `POST /questions/{id}/versions`나 `POST /questions/{id}/answers`를 직접 호출한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

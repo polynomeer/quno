@@ -149,6 +149,80 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `TECH_VERSION_IMPACT_DETECTED notifies watchers and the question author, with no actor to exclude`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.TECH_VERSION_IMPACT_DETECTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"questionAuthorId":99,"tagSlug":"kotlin","productSlug":"kotlin","latestVersion":"2.5.0","latestReleaseDate":"2026-08-20"}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isNotEmpty())
+        assertTrue(notificationRepository.findAllByUserId(99L).isNotEmpty())
+    }
+
+    @Test
+    fun `LIVE_CHAT_STARTED notifies watchers and the question author, excluding the actor`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.LIVE_CHAT_STARTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"roomId":5,"actorId":20,"questionAuthorId":99}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertTrue(notificationRepository.findAllByUserId(99L).isNotEmpty())
+    }
+
+    @Test
+    fun `DIRECT_ASK_REQUESTED notifies only the target, not watchers`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.DIRECT_ASK_REQUESTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"directAskRequestId":5,"actorId":30,"targetUserId":40}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertEquals(1, notificationRepository.findAllByUserId(40L).size)
+        assertTrue(notificationRepository.findAllByUserId(30L).isEmpty())
+    }
+
+    @Test
+    fun `DIRECT_ASK_ACCEPTED notifies only the original requester, not watchers`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.DIRECT_ASK_ACCEPTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"directAskRequestId":5,"actorId":40,"requesterId":30}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertEquals(1, notificationRepository.findAllByUserId(30L).size)
+        assertTrue(notificationRepository.findAllByUserId(40L).isEmpty())
+    }
+
+    @Test
     fun `marks the event published so it is not dispatched twice`() {
         outboxEventRepository.save(
             OutboxEvent.create(

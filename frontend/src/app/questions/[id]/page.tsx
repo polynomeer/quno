@@ -25,7 +25,7 @@ import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { ApiError } from "@/shared/api/api-error";
 
-type AnswerSort = "best" | "newest" | "oldest";
+type AnswerSort = "best" | "newest" | "oldest" | "score";
 
 export default function QuestionDetailPage({ params }: PageProps<"/questions/[id]">) {
   const { id } = use(params);
@@ -52,6 +52,7 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
 
   const sortedAnswers = [...(answers ?? [])].sort((a, b) => {
     if (sort === "best" && a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
+    if (sort === "score" && a.score !== b.score) return b.score - a.score;
     const byTime = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     return sort === "newest" ? -byTime : byTime;
   });
@@ -148,6 +149,7 @@ export default function QuestionDetailPage({ params }: PageProps<"/questions/[id
                   <option value="best">Best</option>
                   <option value="newest">Newest</option>
                   <option value="oldest">Oldest</option>
+                  <option value="score">Score</option>
                 </select>
               </label>
             )}

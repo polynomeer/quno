@@ -38,8 +38,21 @@ import org.springframework.transaction.annotation.Transactional
  *   - MENTIONED_IN_COMMENT: **only** the mentioned users, never the question's watchers — this is
  *     a targeted "you were named" notice, not a general activity signal (Phase 19, ADR-0031).
  *     `mentionedUserIds` is a JSON array, parsed by extractLongList rather than extractLong.
- * CONTENT_HIDDEN and MENTIONED_IN_COMMENT are the only event types that skip the base watcher
- * fan-out entirely. The actor who caused the event is never notified about their own action.
+ *   - TECH_VERSION_IMPACT_DETECTED: watchers + the question's author, same recipients as
+ *     QUESTION_OUTDATED. Unlike every other event type, the actor here is the scheduler, not a
+ *     user — the payload has no `actorId`, so nobody is excluded (Phase 21, ADR-0033).
+ *   - DIRECT_ASK_REQUESTED: **only** the request's target user, never the question's watchers —
+ *     this is a private ask addressed to one specific person, not a public activity signal
+ *     (Phase 22, ADR-0034).
+ *   - DIRECT_ASK_ACCEPTED / DIRECT_ASK_DECLINED: **only** the original requester — they want to
+ *     know the outcome of their own ask, watchers don't.
+ *   - LIVE_CHAT_STARTED: watchers + the question's author, same recipients as QUESTION_OUTDATED
+ *     (Phase 24, ADR-0036) — only fires when a room is genuinely new, never on re-opening an
+ *     existing one. Individual chat messages never produce outbox events (would be spam, same
+ *     reasoning as Vote not producing one per cast).
+ * CONTENT_HIDDEN, MENTIONED_IN_COMMENT, and the three DIRECT_ASK_* types are the only event
+ * types that skip the base watcher fan-out entirely. The actor who caused the event is never
+ * notified about their own action.
  */
 @Service
 class DispatchOutboxEventsUseCase(
@@ -59,7 +72,14 @@ class DispatchOutboxEventsUseCase(
         val actorId = extractLong(event.payload, "actorId")
         val answerId = extractLong(event.payload, "answerId")
 
-        val recipients = if (event.eventType == OutboxEventTypes.CONTENT_HIDDEN || event.eventType == OutboxEventTypes.MENTIONED_IN_COMMENT) {
+        val targetedOnlyEventTypes = setOf(
+            OutboxEventTypes.CONTENT_HIDDEN,
+            OutboxEventTypes.MENTIONED_IN_COMMENT,
+            OutboxEventTypes.DIRECT_ASK_REQUESTED,
+            OutboxEventTypes.DIRECT_ASK_ACCEPTED,
+            OutboxEventTypes.DIRECT_ASK_DECLINED,
+        )
+        val recipients = if (event.eventType in targetedOnlyEventTypes) {
             mutableSetOf()
         } else {
             watchRepository.findWatcherIds(questionId).toMutableSet()
@@ -78,6 +98,11 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.CONTENT_HIDDEN -> extractLong(event.payload, "contentAuthorId")?.let(recipients::add)
             OutboxEventTypes.ANSWER_REVISION -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.MENTIONED_IN_COMMENT -> extractLongList(event.payload, "mentionedUserIds").forEach(recipients::add)
+            OutboxEventTypes.TECH_VERSION_IMPACT_DETECTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.DIRECT_ASK_REQUESTED -> extractLong(event.payload, "targetUserId")?.let(recipients::add)
+            OutboxEventTypes.DIRECT_ASK_ACCEPTED, OutboxEventTypes.DIRECT_ASK_DECLINED ->
+                extractLong(event.payload, "requesterId")?.let(recipients::add)
+            OutboxEventTypes.LIVE_CHAT_STARTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 

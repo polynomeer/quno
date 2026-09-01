@@ -12,7 +12,25 @@ import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
 import com.quno.qunobackend.domain.comment.CommentAlreadyDeletedException
 import com.quno.qunobackend.domain.comment.CommentNotFoundException
 import com.quno.qunobackend.domain.comment.CommentReplyDepthExceededException
+import com.quno.qunobackend.domain.directask.DirectAskAccessDeniedException
+import com.quno.qunobackend.domain.directask.DirectAskNotAcceptedException
+import com.quno.qunobackend.domain.directask.DirectAskRequestAlreadyRespondedException
+import com.quno.qunobackend.domain.directask.DirectAskRequestNotFoundException
+import com.quno.qunobackend.domain.directask.DirectAskPaymentNotFoundException
+import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
+import com.quno.qunobackend.domain.directask.PaymentAlreadyProcessedException
+import com.quno.qunobackend.domain.directask.PaymentAmountMismatchException
+import com.quno.qunobackend.domain.directask.PaymentConfirmationFailedException
+import com.quno.qunobackend.domain.directask.SelfDirectAskException
 import com.quno.qunobackend.domain.follow.SelfFollowException
+import com.quno.qunobackend.domain.livechat.LiveChatRoomNotFoundException
+import com.quno.qunobackend.domain.organization.DuplicateOrganizationNameException
+import com.quno.qunobackend.domain.organization.EmailDomainVerificationExpiredException
+import com.quno.qunobackend.domain.organization.EmailDomainVerificationNotFoundException
+import com.quno.qunobackend.domain.organization.InvalidVerificationCodeException
+import com.quno.qunobackend.domain.organization.OrganizationNotFoundException
+import com.quno.qunobackend.domain.organization.PublicEmailDomainException
+import com.quno.qunobackend.domain.organization.VerifiedOrganizationJoinRequiresEmailException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -53,6 +71,13 @@ class GlobalExceptionHandler {
         AnswerNotAcceptedException::class,
         ReportAlreadyResolvedException::class,
         CommentAlreadyDeletedException::class,
+        DuplicateOrganizationNameException::class,
+        DuplicateDirectAskException::class,
+        DirectAskRequestAlreadyRespondedException::class,
+        DirectAskNotAcceptedException::class,
+        EmailDomainVerificationExpiredException::class,
+        PaymentAlreadyProcessedException::class,
+        PaymentConfirmationFailedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
@@ -73,6 +98,11 @@ class GlobalExceptionHandler {
         CommentNotFoundException::class,
         ReportNotFoundException::class,
         AnswerVersionNotFoundException::class,
+        OrganizationNotFoundException::class,
+        DirectAskRequestNotFoundException::class,
+        EmailDomainVerificationNotFoundException::class,
+        LiveChatRoomNotFoundException::class,
+        DirectAskPaymentNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
@@ -85,6 +115,9 @@ class GlobalExceptionHandler {
         SelfFollowException::class,
         ModeratorAccessDeniedException::class,
         AnswerAccessDeniedException::class,
+        SelfDirectAskException::class,
+        DirectAskAccessDeniedException::class,
+        VerifiedOrganizationJoinRequiresEmailException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
@@ -95,7 +128,14 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("VALIDATION_ERROR", message))
     }
 
-    @ExceptionHandler(CannotClusterWithSelfException::class, InvalidVoteValueException::class, CommentReplyDepthExceededException::class)
+    @ExceptionHandler(
+        CannotClusterWithSelfException::class,
+        InvalidVoteValueException::class,
+        CommentReplyDepthExceededException::class,
+        PublicEmailDomainException::class,
+        InvalidVerificationCodeException::class,
+        PaymentAmountMismatchException::class,
+    )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 }

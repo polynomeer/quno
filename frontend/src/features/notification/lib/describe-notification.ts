@@ -47,6 +47,14 @@ export function describeNotification(notification: Notification): DescribedNotif
       return { message: "모더레이터에 의해 콘텐츠가 숨겨졌습니다", href };
     case "MENTIONED_IN_COMMENT":
       return { message: "댓글에서 언급되었습니다", href };
+    case "TECH_VERSION_IMPACT_DETECTED": {
+      const tagSlug = typeof payload.tagSlug === "string" ? payload.tagSlug : null;
+      const latestVersion = typeof payload.latestVersion === "string" ? payload.latestVersion : null;
+      return {
+        message: `${tagSlug ?? "관련 기술"}${latestVersion ? ` ${latestVersion}` : ""} 릴리스로 이 질문이 오래되었을 수 있습니다`,
+        href,
+      };
+    }
     default:
       return { message: notification.type, href };
   }

@@ -1,5 +1,5 @@
 /** Backend keeps `type` as a plain String (domain/common/OutboxEventTypes), not an enum —
- * these ten are the only values currently emitted, see docs/architecture/domain-model.md. */
+ * these eleven are the only values currently emitted, see docs/architecture/domain-model.md. */
 export type NotificationType =
   | "QUESTION_REVISION"
   | "NEW_ANSWER"
@@ -10,7 +10,8 @@ export type NotificationType =
   | "NEW_COMMENT"
   | "CONTENT_HIDDEN"
   | "ANSWER_REVISION"
-  | "MENTIONED_IN_COMMENT";
+  | "MENTIONED_IN_COMMENT"
+  | "TECH_VERSION_IMPACT_DETECTED";
 
 export interface Notification {
   id: number;

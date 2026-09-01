@@ -19,6 +19,7 @@ class UserRepositoryAdapter(
             passwordHash = user.passwordHash,
             isActive = user.isActive,
             role = user.role,
+            acceptsDirectAsk = user.acceptsDirectAsk,
             createdAt = user.createdAt,
             updatedAt = user.updatedAt,
         )
@@ -42,6 +43,7 @@ class UserRepositoryAdapter(
         passwordHash = passwordHash,
         isActive = isActive,
         role = role,
+        acceptsDirectAsk = acceptsDirectAsk,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )

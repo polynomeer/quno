@@ -7,6 +7,8 @@ import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
 import com.quno.qunobackend.application.common.AnswerResultAssembler
 import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
+import com.quno.qunobackend.application.organization.usecase.InMemoryOrganizationMembershipRepository
+import com.quno.qunobackend.application.organization.usecase.InMemoryOrganizationRepository
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionRepository
@@ -31,6 +33,8 @@ class GetUserProfileUseCaseTest {
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val answerRepository = InMemoryAnswerRepository()
     private val userTagFollowRepository = InMemoryUserTagFollowRepository()
+    private val organizationRepository = InMemoryOrganizationRepository()
+    private val organizationMembershipRepository = InMemoryOrganizationMembershipRepository()
     private val answerResultAssembler = AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository())
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
@@ -48,6 +52,8 @@ class GetUserProfileUseCaseTest {
         answerRepository,
         userTagFollowRepository,
         tagRepository,
+        organizationRepository,
+        organizationMembershipRepository,
         QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
         answerResultAssembler,
     )
