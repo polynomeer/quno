@@ -341,11 +341,20 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 23.4 테스트 — 단위 테스트(`RequestEmailDomainVerificationUseCase`: 코드 발송·공개 도메인 거부·재요청이 이전 코드를 대체, `ConfirmEmailDomainVerificationUseCase`: 정상 확인·2번째 사용자 합류·기존 Virtual 조직 승격·오답/만료/중복확인 거부, `JoinOrganizationUseCase`: Verified 조직 직접 가입 거부)와 실제 서버 검증(실제 SMTP로 발송된 이메일을 Mailpit API에서 코드를 읽어 curl로 전 구간 확인: 공개 도메인 거부→요청→발송 확인→오답 거부→정상 확인→재사용 거부→직접가입 거부→2번째 사용자 합류→기존 동명 Virtual 조직 승격까지)
 - [x] 23.5 문서화 — `domain-model.md`(Trust Network 컨텍스트, Aggregate, ERD, 테이블별 책임)와 `api-design.md`("Verified Organization (Phase 23)" 섹션)에 반영, [ADR-0035](docs/architecture/decisions/0035-verified-organization-email-domain-mailpit.md)로 스코프 결정 기록
 
-## Phase 24+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 24 — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지)
+
+[ADR-0019](docs/architecture/decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)가 "새 인프라 투자가 실제로 정당화될 때"까지 미뤄뒀던 실시간 질문방을 [ADR-0036](docs/architecture/decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 착수했다. 원본 기획서(19장 "실시간 질문 공간")의 presence("현재 N명이 보고 있습니다")와 질문별 Live Chat 두 가지를 구현했다 — "실시간 대화 → 구조화된 지식" 자동 변환은 만들지 않았다(사람이 기존 리비전/답변 API로 직접 정제).
+
+- [x] 24.1 인프라 — `spring-boot-starter-websocket` 추가. `LiveChatRoom`(PostgreSQL, V20 마이그레이션, 질문당 최대 1개)과 `LiveChatMessage`(MongoDB — 이 프로젝트가 MongoDB를 실제로 채택한 첫 사례, 고빈도 append-only 특성에 맞음). 접속자(presence)는 Redis Set(`RedisLiveChatPresenceTracker`). **부수 발견**: `application-local.yml`의 기존 `spring.data.mongodb.uri`가 Spring Boot 4에서 실제로는 아무것도 바인딩하지 못했다 — 연결 프로퍼티가 `spring.mongodb.*`로 이동됐는데(존재하지 않는 키라 조용히 무시됨), `GET /actuator/configprops`로 원인을 확인해 올바른 prefix로 수정
+- [x] 24.2 STOMP/WebSocket — `WebSocketConfig`(`/ws` 핸드셰이크, `/app`/`/topic` prefix), `StompAuthChannelInterceptor`(STOMP CONNECT 프레임의 Bearer 토큰을 기존 `TokenProvider`로 검증 — WebSocket 핸드셰이크 자체는 SecurityConfig에서 permitAll, 실제 인증은 CONNECT 프레임에서). `LiveChatWebSocketController`(`SEND /app/live-chat/{roomId}/send` → 저장 후 `/topic/live-chat/{roomId}`로 브로드캐스트). `PresenceEventListener`(`/topic/questions/{id}/presence` 구독/구독해제/연결종료를 감지해 Redis Set 갱신 후 인원수 브로드캐스트 — 세션→구독 매핑은 인메모리, 단일 인스턴스 전제)
+- [x] 24.3 REST — `POST /questions/{id}/live-chat`(find-or-create, 새로 만들어졌을 때만 `LIVE_CHAT_STARTED` outbox 이벤트), `GET /questions/{id}/live-chat`, `GET /live-chat/{roomId}/messages?limit=`(히스토리, WebSocket 구독 전 스크롤백용). 채팅 메시지 자체는 outbox 이벤트를 발행하지 않음(Vote와 같은 이유 — 스팸 방지)
+- [x] 24.4 테스트 — 단위 테스트(`OpenLiveChatRoomUseCase`: find-or-create·새 방일 때만 알림, `PostLiveChatMessageUseCase`/`ListLiveChatMessagesUseCase`/`LiveChatPresenceUseCase`, `DispatchOutboxEventsUseCase`: LIVE_CHAT_STARTED 수신자)와 실제 서버 검증. WebSocket은 curl로 검증할 수 없어 Python `websockets` 라이브러리로 STOMP 프레임을 직접 구성하는 클라이언트 스크립트를 작성해 CONNECT 인증→presence 구독/카운트 브로드캐스트→메시지 전송/실시간 수신→연결종료 시 카운트 감소까지 전 구간을 실제 프로토콜로 확인. 첫 시도에서 `StompAuthChannelInterceptor`가 `StompHeaderAccessor.wrap()`으로 detached accessor를 만들어 Principal 설정이 실제 세션에 반영되지 않는 버그를 발견해 `MessageHeaderAccessor.getAccessor()`로 수정
+- [x] 24.5 문서화 — `domain-model.md`(Live Chat 컨텍스트, Aggregate, ERD, 테이블별 책임, Domain Events, MongoDB 문서 모델에 실제 구현+prefix 함정 경고 반영)와 `api-design.md`("Live Chat (Phase 24)" 섹션)에 반영, [ADR-0036](docs/architecture/decisions/0036-live-chat-websocket-mongodb-redis-presence.md)으로 스코프 결정과 MongoDB prefix 발견을 함께 기록
+
+## Phase 25+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
 - [ ] Phase ? — 유료 Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — PG 연동, 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 
 ## 진행 방식
