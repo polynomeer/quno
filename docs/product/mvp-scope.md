@@ -42,29 +42,33 @@ MVP의 목적은 기능 수를 늘리는 것이 아니라 이 가설을 최소 �
 
 ## MVP에서 제외 (Later)
 
-- QPR Review / Needs Info / Re-request 전체 플로우
-- Super Answer, Cluster 편집 UI
-- QunoBot 자동 Outdated 판정
-- Question Fork
-- Flow(릴스형 소비 UI), Instant Question
-- Direct Ask 및 결제
-- Organization / 회사·학교 네트워크
-- Architecture Canvas, 실시간 질문방(Live Chat)
-- 포스팅/블로그 기능
-- 복잡한 Reputation Economy
+MVP 착수 시점(2026-08-25)의 결정이다. 이후 아래 항목 대부분이 실제로 구현됐다 — 각 괄호가 현재 상태.
 
-이 기능들은 모두 가치가 있지만 **"질문이 살아있다"는 핵심 가설을 검증한 이후**에 추가한다.
+- QPR Review / Needs Info / Re-request 전체 플로우 (**구현됨**, 로드맵 Phase 2 = [PLAN.md](../../PLAN.md) Phase 5)
+- Super Answer, Cluster 편집 UI (**구현됨** — Cluster+Super Answer는 [PLAN.md](../../PLAN.md) Phase 6, Cluster Merge는 Phase 18)
+- QunoBot 자동 Outdated 판정 (**부분 구현** — 사용자 명시적 표시로 근사만 함, 진짜 자동 판정은 여전히 없음, [PLAN.md](../../PLAN.md) Phase 8/[ADR-0017](../architecture/decisions/0017-manual-outdated-marking-and-spike-detection-scope.md))
+- Question Fork (**구현됨**, [PLAN.md](../../PLAN.md) Phase 18)
+- Flow(릴스형 소비 UI), Instant Question (Instant Question은 **이미 충족**됨 — 기존 `POST /questions`로 별도 작업 불필요. Quno Flow는 **구현됐지만 릴스형 스와이프 UI가 아니라 카드 리스트 활동 스트림**으로 범위를 좁혀 구현함, [PLAN.md](../../PLAN.md) Phase 10/[ADR-0019](../architecture/decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md))
+- Direct Ask 및 결제 (여전히 제외 — 핵심 설계 없음)
+- Organization / 회사·학교 네트워크 (여전히 제외 — 인증 방식 미정)
+- Architecture Canvas (여전히 제외), 실시간 질문방(Live Chat) (여전히 제외 — WebSocket 인프라 투자 필요, [ADR-0019](../architecture/decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md))
+- 포스팅/블로그 기능 (여전히 제외)
+- 복잡한 Reputation Economy (**부분 구현** — 활동 기반 단순 합산 점수만, [PLAN.md](../../PLAN.md) Phase 9/20, [ADR-0018](../architecture/decisions/0018-simple-reputation-score-only.md)/[ADR-0032](../architecture/decisions/0032-vote-score-search-sort-dashboard-reputation.md))
+
+이 기능들은 모두 가치가 있지만 **"질문이 살아있다"는 핵심 가설을 검증한 이후**에 추가한다는 것이 MVP 착수 당시의 판단이었다.
 
 ## 로드맵 (Phase)
 
-| Phase | 목표 | 주요 범위 |
-|---|---|---|
-| **MVP (Phase 1)** | Living Question 검증 | Revision, Answer, Ward, Tag, Search, Related Question, 라이트 대시보드 |
-| Phase 2 | 협업형 QPR | Review/Needs Info/Re-request, 답변-질문버전 연결 고도화 |
-| Phase 3 | 질문 네트워크 | Cluster, Merge/Fork, Super Answer, 지식 그래프 시각화 |
-| Phase 4 | 자동 유지보수 | QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection |
-| Phase 5 | 신뢰 네트워크 | Organization, 전문가 평판, Direct Ask |
-| Phase 6 | 소비 경험 강화 | Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard |
+| Phase | 목표 | 주요 범위 | 상태 |
+|---|---|---|---|
+| **MVP (Phase 1)** | Living Question 검증 | Revision, Answer, Ward, Tag, Search, Related Question, 라이트 대시보드 | 완료 |
+| Phase 2 | 협업형 QPR | Review/Needs Info/Re-request, 답변-질문버전 연결 고도화 | 완료([PLAN.md](../../PLAN.md) Phase 5) |
+| Phase 3 | 질문 네트워크 | Cluster, Merge/Fork, Super Answer, 지식 그래프 시각화 | 그래프 **데이터 API**까지 완료, 시각화 UI만 범위 밖([PLAN.md](../../PLAN.md) Phase 6/18) |
+| Phase 4 | 자동 유지보수 | QunoBot, 기술 버전 영향 감지, Outdated/Regression, Spike Detection | Outdated 근사·Spike Detection 완료, **기술 버전 자동 감지만 외부 데이터 소스 필요로 미착수**([PLAN.md](../../PLAN.md) Phase 8) |
+| Phase 5 | 신뢰 네트워크 | Organization, 전문가 평판, Direct Ask | 평판 점수만 완료(Vote 반영 포함), **Organization/Direct Ask는 핵심 설계 없어 미착수**([PLAN.md](../../PLAN.md) Phase 9/20) |
+| Phase 6 | 소비 경험 강화 | Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard | Flow/Dashboard/Instant Question 완료, **실시간 질문방만 WebSocket 인프라 투자 필요로 미착수**([PLAN.md](../../PLAN.md) Phase 10) |
+
+Phase 1~6 로드맵에는 없었지만 이후 별도로 추가된 범위(Vote, Comment, Save, Follow User, Badge, Moderation, Answer Revision)는 [PLAN.md](../../PLAN.md) Phase 11~20 참고.
 
 ## 성공 지표
 

@@ -20,7 +20,7 @@
 
 ### 프론트엔드 설계 (2026-08-26 추가 — 재작성의 근거 자료)
 
-- `Quno_프론트엔드_상세_설계서.docx` — React/Next.js 기반 프론트엔드 UX·디자인 시스템·기술 아키텍처 설계서(37개 절). 정리된 내용은 [docs/frontend/](../frontend/README.md)에 재작성되어 있다. **주의**: 이 문서는 Upvote/Downvote·댓글·배지·모더레이션 같은 범용 Stack Overflow형 기능을 전제하는데, 이는 아래 "대안 탐색안"의 `Quno_서비스_기획_및_백엔드_설계서.docx`가 다뤘던 것과 같은 계열의 아이디어이며 현재 백엔드([PLAN.md](../../PLAN.md))에는 대부분 구현돼 있지 않다 — 격차 목록은 [docs/frontend/roadmap.md](../frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고.
+- `Quno_프론트엔드_상세_설계서.docx` — React/Next.js 기반 프론트엔드 UX·디자인 시스템·기술 아키텍처 설계서(37개 절). 정리된 내용은 [docs/frontend/](../frontend/README.md)에 재작성되어 있다. 이 문서는 Upvote/Downvote·댓글·배지·모더레이션 같은 범용 Stack Overflow형 기능을 전제하는데(아래 "대안 탐색안"의 `Quno_서비스_기획_및_백엔드_설계서.docx`가 다뤘던 것과 같은 계열의 아이디어), 작성 당시(2026-08-26)에는 대부분 백엔드에 없었지만 이후 [PLAN.md](../../PLAN.md) Phase 11~20에서 모두 구현됐다 — 현재 격차는 [docs/frontend/roadmap.md](../frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고.
 
 ### 기타
 

@@ -107,9 +107,11 @@ Profile ────────────→ Contributions ─→ Question De
 - [ ] Auth guard와 redirectTo
 - [ ] Playwright 핵심 플로우 테스트
 
-## 7. 백엔드 격차 요약과 착수 전 확인 사항 (2026-09-01 갱신, Phase 29)
+## 7. 백엔드 격차 요약과 착수 전 확인 사항
 
-이 설계서는 Stack Overflow형 서비스를 전제로 투표(Vote)·댓글(Comment)·배지(Badge)·모더레이션을 포함했고, Quno 백엔드([PLAN.md](../../PLAN.md) 참고)는 처음엔 다른 방향(리비전·Ward·QPR·Cluster/Super Answer·평판 점수·Quno Flow)으로 "살아있는 질문" 철학을 구현해왔다. 이후 Phase 11~20에서 아래 표의 항목들을 대부분 채웠다 — 실제 프론트엔드 작업을 시작하기 전에 여전히 남은 격차만 확인하면 된다.
+> 2026-09-01 갱신: 이 절은 원래 "투표/댓글/배지/모더레이션 등이 백엔드에 없다"는 격차를 기록했으나, Phase 11~29에서 아래 표의 항목이 모두 구현됐다(남은 격차 없음 — 아래 표 이후 문단 참고).
+
+이 설계서는 Stack Overflow형 서비스를 전제로 투표(Vote)·댓글(Comment)·배지(Badge)·모더레이션을 포함했고, Quno 백엔드([PLAN.md](../../PLAN.md) 참고)는 처음엔 다른 방향(리비전·Ward·QPR·Cluster/Super Answer·평판 점수·Quno Flow)으로 "살아있는 질문" 철학을 구현해왔다.
 
 | 이 설계서가 전제하는 기능 | 현재 백엔드 상태 |
 |---|---|
