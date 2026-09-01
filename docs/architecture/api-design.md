@@ -341,17 +341,27 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - `GET /users/{id}/profile`이 이제 `organizations` 필드로 그 사용자가 속한 조직 목록을 함께 반환한다(followedTags와 같은 조립 패턴).
 - 조직 기반 추천/피드("같은 조직 개발자들이 자주 질문한 Topic")는 이번 범위에 없다 — 실제 조직 데이터가 쌓이기 전에는 검증할 방법이 없다고 판단했다.
 
-### Direct Ask
+### Direct Ask (Phase 22 — Phase 25에서 유료로 대체됨, [아래 섹션](#유료-direct-ask-phase-25) 참고)
 
-- `PUT /me/direct-ask-settings`(body: `accepts`): Direct Ask 수신 여부를 직접 켜고 끈다. 기본값은 `false`(스팸 방지) — `GET /me`의 `acceptsDirectAsk` 필드로 현재 값을 확인할 수 있다.
-- `POST /questions/{id}/direct-asks`(body: `targetUserId`, `message?`, 201): 특정 사용자에게 이 질문에 답해달라고 요청한다.
-  - 자기 자신에게 요청하면 403(`SelfDirectAskException`).
-  - 대상이 `acceptsDirectAsk=false`면 409(`DirectAskNotAcceptedException`) — 옵트아웃한 사용자에게는 요청 자체가 생성되지 않는다.
-  - 같은 (질문, 대상)에 이미 열린(PENDING) 요청이 있으면 409(`DuplicateDirectAskException`, 스팸 방지 — V18의 부분 유니크 인덱스로 DB 레벨에서도 보장).
-  - `DIRECT_ASK_REQUESTED` outbox 이벤트가 대상 사용자에게만 통보된다(Ward 구독자 기본 fan-out을 건너뛰는 `CONTENT_HIDDEN`/`MENTIONED_IN_COMMENT`와 같은 부류).
+- `PUT /me/direct-ask-settings`(body: `accepts`): Direct Ask 수신 여부를 직접 켜고 끈다. 기본값은 `false`(스팸 방지) — `GET /me`의 `acceptsDirectAsk` 필드로 현재 값을 확인할 수 있다. 이 설정은 Phase 25 이후에도 그대로 유효하다.
 - `POST /direct-asks/{id}/accept` / `POST /direct-asks/{id}/decline`: 요청의 대상만 응답할 수 있다(아니면 403 `DirectAskAccessDeniedException`). 이미 응답된 요청을 다시 응답하면 409(`DirectAskRequestAlreadyRespondedException`). `DIRECT_ASK_ACCEPTED`/`DIRECT_ASK_DECLINED` 이벤트가 원 요청자에게만 통보된다.
 - `GET /me/direct-asks?role=sent|received`(기본 `received`): 내가 보낸/받은 요청 목록, 최신순.
 - **답변과의 직접 연결은 없다**: 요청을 수락한 뒤에는 기존 `POST /questions/{id}/answers`로 평범하게 답변을 작성한다 — `DirectAskRequest`는 특정 `Answer`를 가리키지 않는다. "이 답변이 Direct Ask에서 나왔다"는 표시나 전문가 추천(원본 기획의 Topic Expert 등)은 이번 범위 밖이다.
+
+## 유료 Direct Ask (Phase 25)
+
+[ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)가 범위 밖에 뒀던 결제를 [ADR-0037](decisions/0037-paid-direct-ask-toss-payments-test-mode.md)로 토스페이먼츠 테스트 모드 연동으로 구현했다. Phase 22의 무료 흐름을 대체한다 — 이제 모든 Direct Ask 요청에 정액 수수료(`quno.direct-ask.fee-amount`, 기본 1,000원)가 붙는다.
+
+- `POST /questions/{id}/direct-asks`(body: `targetUserId`, `message?`, 201): 요청과 결제를 함께 만든다. 응답은 `{request, payment}` — `request.status`는 `AWAITING_PAYMENT`(결제 확인 전이라 대상에게 보이지 않고 알림도 안 감), `payment`는 `{orderId, amount, status, clientKey}`(클라이언트가 토스 결제위젯을 렌더링하는 데 필요한 값, `clientKey`는 공개 키라 노출해도 안전).
+  - 검증 규칙(자기 자신 요청 403, 옵트아웃 409, 중복 409)은 Phase 22와 동일하되, 중복 검사가 `AWAITING_PAYMENT`도 포함하도록 넓어졌다(V21의 부분 유니크 인덱스).
+- `POST /direct-asks/payments/confirm`(body: `orderId`, `paymentKey`, `amount`): 클라이언트가 토스 위젯을 완료하고 리다이렉트된 뒤 호출한다.
+  - `amount`가 요청 생성 시점에 기록된 금액과 다르면 400(`PaymentAmountMismatchException`) — 클라이언트가 보낸 금액을 절대 그대로 믿지 않고, 토스 승인 API를 호출하기 전에 먼저 서버가 기록해둔 금액과 대조한다.
+  - 존재하지 않는 `orderId`는 404, 이미 처리된 결제는 409(`PaymentAlreadyProcessedException`), 토스가 승인을 거부하면 409(`PaymentConfirmationFailedException`).
+  - 성공하면 요청이 `PENDING`으로 전이되고, **이 시점에야** `DIRECT_ASK_REQUESTED` outbox 이벤트가 대상 사용자에게 통보된다(Phase 22와 수신자 규칙은 동일 — Ward 구독자 기본 fan-out을 건너뛰는 `CONTENT_HIDDEN`류).
+- 대상이 **거절하면 자동으로 환불**된다 — `POST /direct-asks/{id}/decline`이 내부적으로 토스 취소 API를 호출해 결제를 `CANCELLED`로 되돌린다. **수락하면 결제는 그대로 유지**된다(`PAID`).
+- `GET /me/direct-asks`(sent/received 둘 다)는 여전히 `DirectAskRequestResponse`를 반환한다 — `received`는 Phase 22와 마찬가지로 `AWAITING_PAYMENT` 요청을 걸러낸다(대상은 결제 확인 전 요청을 볼 수 없음), `sent`는 요청자 본인이 결제를 재개할 수 있도록 걸러내지 않는다.
+- **전문가 지급대행(정산)은 범위 밖이다** — 요청자의 결제는 Quno가 받을 뿐, 그 돈을 전문가 계좌로 실제 송금하는 흐름은 만들지 않았다. 웹훅도 만들지 않았다(리다이렉트+승인만으로 카드 결제를 완결할 수 있다).
+- **검증 한계**: 토스페이먼츠 테스트 모드는 실제 카드 정보를 입력해야만 진짜 `paymentKey`가 발급된다(가상 테스트 카드번호가 없음). 카드 정보 입력은 안전상 예외 없이 지켜야 할 선이라, 결제위젯을 통한 실제 체크아웃은 사람이 직접 한 번 완료해봐야 한다 — 서버 쪽 로직(상태 전이, 위조 방지, 환불)과 실제 아웃바운드 HTTP 계약(URL/인증/바디 형태)은 로컬 모크 서버로 전 구간 검증했지만, 진짜 토스 서버를 통한 승인 왕복까지는 검증하지 못했다(ADR-0037 참고).
 
 ## Verified Organization (Phase 23)
 
