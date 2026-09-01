@@ -331,12 +331,21 @@ Phase 18 백엔드 중 Cluster Merge는 프론트엔드 변경이 필요 없다(
 - [x] 22.4 테스트 — 단위 테스트(Organization: 생성/중복 이름/한글 이름 slug 충돌 없음/가입·탈퇴 멱등/존재하지 않는 조직 404, Direct Ask: 생성 성공/자기요청 거부/옵트아웃 거부/중복 거부/응답 권한·상태 invariant, `DispatchOutboxEventsUseCase`: DIRECT_ASK_* 수신자)와 실제 서버 검증(한글 조직명 생성→중복 거부→검색→가입/탈퇴→프로필 반영, Direct Ask 옵트아웃 거부→옵트인→요청→자기요청 거부→중복 거부→비대상자 수락 거부→대상자 수락→재응답 거부→sent/received 목록→알림 도착→수락 후 실제 답변 작성까지 curl로 전 구간 확인)
 - [x] 22.5 문서화 — `domain-model.md`(새 Trust Network 컨텍스트, Aggregate, ERD, 테이블별 책임, Domain Events)와 `api-design.md`("Organization & Direct Ask (Phase 22)" 섹션)에 반영, [ADR-0034](docs/architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)로 스코프 결정 기록. 프론트엔드는 이번 범위에 포함하지 않음(백엔드 API만 우선 구현 — Spike Detection/기술 버전 감지와 같은 순서)
 
-## Phase 23+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 23 — Verified Organization: 업무/학교 이메일 도메인 인증 (mvp-scope.md 로드맵 Phase 5, 나머지)
+
+[ADR-0034](docs/architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)가 외부 신원 인증 인프라가 없다는 이유로 범위 밖에 뒀던 Verified Organization을 [ADR-0035](docs/architecture/decisions/0035-verified-organization-email-domain-mailpit.md)로 착수했다. 이 프로젝트에는 이메일 발송 인프라가 전혀 없었다(회원가입도 이메일 소유를 검증하지 않음) — 실제 SMTP 발송과 로컬에서 그 왕복을 검증할 방법이 모두 필요했다.
+
+- [x] 23.1 이메일 인프라 — `docker-compose`에 로컬 SMTP 캐처 `mailpit` 추가(웹 UI로 수신 메일 확인 가능). `spring-boot-starter-mail` 의존성 추가, `application-local.yml`이 Mailpit(포트 1026)을 가리키도록 설정. 프로덕션 SMTP 자격증명은 구성하지 않음 — JWT secret과 동일하게 배포 시점 환경변수 오버라이드가 필요한 알려진 갭
+- [x] 23.2 이메일 도메인 인증 도메인 — 새 Aggregate `EmailDomainVerification`(id, userId, email, domain, code, status: PENDING/VERIFIED, createdAt, expiresAt, verifiedAt, V19 마이그레이션)과 `EmailDomainVerificationRepository`. 만료는 배경 작업 없이 조회 시점에 `expiresAt` 비교로 계산. `PublicEmailDomains`(gmail.com/naver.com 등 하드코딩 차단 목록)로 공개 웹메일 도메인은 요청 단계에서 거부. `VerificationEmailSender` 포트 + `SmtpVerificationEmailSender`(Spring `JavaMailSender`) 구현
+- [x] 23.3 Organization 확장 — `organizations.email_domain`(unique, nullable) 컬럼 추가. `Organization.verified`(계산 프로퍼티, emailDomain != null)와 `verify()`(기존 Virtual 조직을 그 자리에서 승격) 추가. `POST /organizations/verify-email`(코드 발송) → `POST /organizations/verify-email/confirm`(코드 대조 → 도메인으로 Organization find-or-create/승격 → 자동 가입). 기존 `POST /organizations/{id}/join`은 대상이 Verified면 거부(`VerifiedOrganizationJoinRequiresEmailException`) — 이 게이트가 없으면 이메일 인증을 완전히 우회할 수 있음
+- [x] 23.4 테스트 — 단위 테스트(`RequestEmailDomainVerificationUseCase`: 코드 발송·공개 도메인 거부·재요청이 이전 코드를 대체, `ConfirmEmailDomainVerificationUseCase`: 정상 확인·2번째 사용자 합류·기존 Virtual 조직 승격·오답/만료/중복확인 거부, `JoinOrganizationUseCase`: Verified 조직 직접 가입 거부)와 실제 서버 검증(실제 SMTP로 발송된 이메일을 Mailpit API에서 코드를 읽어 curl로 전 구간 확인: 공개 도메인 거부→요청→발송 확인→오답 거부→정상 확인→재사용 거부→직접가입 거부→2번째 사용자 합류→기존 동명 Virtual 조직 승격까지)
+- [x] 23.5 문서화 — `domain-model.md`(Trust Network 컨텍스트, Aggregate, ERD, 테이블별 책임)와 `api-design.md`("Verified Organization (Phase 23)" 섹션)에 반영, [ADR-0035](docs/architecture/decisions/0035-verified-organization-email-domain-mailpit.md)로 스코프 결정 기록
+
+## Phase 24+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
 - [ ] Phase ? — 실시간 질문방(Live Chat) (mvp-scope.md 로드맵 Phase 6, 나머지) — WebSocket 기반 실시간 연결/현재 접속자 추적/메시지 영속화 인프라를 실제로 투자할 시점에 설계한다
-- [ ] Phase ? — Verified Organization (mvp-scope.md 로드맵 Phase 5, 나머지) — 실제 회사·학교 소속을 검증하는 방식(이메일 도메인 매칭 등)을 정할 수 있을 때 착수
 - [ ] Phase ? — 유료 Direct Ask (mvp-scope.md 로드맵 Phase 5, 나머지) — PG 연동, 결제 처리 범위 등 핵심 설계가 아직 없어 착수 시점에 다시 설계한다
 
 ## 진행 방식
