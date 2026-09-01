@@ -370,11 +370,21 @@ Phase 22/23/25가 백엔드까지만 구현하고 미뤄둔 Organization/Direct 
 - [x] F12.4 백엔드 보강 — `GET /me/direct-asks`가 `questionId`/`requesterId`/`targetUserId`만 반환해 프론트가 사람이 읽을 수 있는 목록을 그릴 수 없었다. `SavedQuestionResponse`와 동일한 비정규화 패턴으로 `questionTitle`/`requesterNickname`/`targetUserNickname`을 추가하는 `DirectAskRequestListItemResult`/`Response`를 새로 만들고 `ListMyDirectAsksUseCase`가 `QuestionRepository`/`UserRepository`로 조립하도록 변경(단위 테스트 추가)
 - [x] F12.5 검증 — 두 계정(요청자/대상)으로 실제 서버 전 구간 확인: 대상이 Direct Ask 수신을 켠 뒤 요청 생성(AWAITING_PAYMENT, 결제 전 대상에게 안 보임)→실제 토스 API 계약 검증에 썼던 로컬 모크 Toss 서버로 백엔드의 `quno.toss.api-base-url`을 오버라이드해 `/direct-asks/checkout`에 직접 진입(성공/실패 분기 모두)→확인 후 PENDING 전이·알림 발행→수락 시 결제 유지·거절 시 결제 취소(모크 서버 로그로 `cancelReason` 확인)→양쪽 알림 센터에 올바른 문구와 링크 노출까지 브라우저로 확인. Organization도 생성→탈퇴/재가입→업무 이메일 인증(Mailpit 실제 수신 코드 사용)으로 Verified 조직 자동 가입→Verified 조직에 직접 가입 시도 시 안내 문구로 막히는지까지 확인. **결제창(Toss 실제 호스팅 체크아웃) 자체는 카드 정보 입력이 필요해 사람이 완료해야 한다** — 요청 생성까지는 실제 API로, 확인 이후는 모크 서버로 검증한 것은 ADR-0037의 검증 갭과 동일한 한계
 
-## Phase 27+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 27 — 실시간 질문방(Live Chat) 프론트엔드 연동 (mvp-scope.md 로드맵 Phase 6, 나머지)
+
+Phase 24가 백엔드까지만 구현하고 미뤄둔 실시간 질문방 화면을 붙인다. 남은 프론트엔드 격차(태그 상세 정보 보강 / 실시간 질문방) 중 이것을 이어서 진행하기로 사용자가 확인했다(2026-09-01, [ADR-0039](docs/architecture/decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)).
+
+- [x] F13.1 인프라 — 이 프로젝트 최초의 WebSocket 클라이언트 의존성으로 `@stomp/stompjs` 추가(백엔드가 SockJS 폴백 없는 순수 WebSocket으로 STOMP를 노출해 `sockjs-client`는 불필요). `features/live-chat`(타입/API/쿼리키/`lib/websocket-url.ts`) 신설
+- [x] F13.2 훅 — `useLiveChatRoom`(404→null, `useCluster` 패턴), `useOpenLiveChatRoom`(find-or-create 뮤테이션), `useLiveChatMessageHistory`(REST 스크롤백), `useLiveChatSocket`(STOMP 연결 소유 — `/topic/live-chat/{roomId}` 메시지와 `/topic/questions/{id}/presence` 접속자 수 구독, CONNECT 프레임에 `Authorization` 네이티브 헤더로 인증). 연결은 `enabled` 플래그로 게이팅해 "채팅 참여하기"를 누르기 전에는 WebSocket을 열지 않는다(ADR-0039)
+- [x] F13.3 UI — `LiveChatPanel`을 Question Detail 페이지의 Fork 패널 아래 배치(`id="live-chat"`, 알림 anchor 대상). 방이 없으면 "실시간 질문방 시작하기"(열자마자 자동 참여), 있으면 "채팅 참여하기" 버튼. 참여 후 메시지 목록(발신자는 `사용자 #{senderId}`, 본인은 "나", 프로필 링크 제공 — ADR-0039가 닉네임 조회를 hot path 비용 문제로 보류)과 실시간 접속자 수, Enter 전송 지원 입력창. `describeNotification`/`NotificationType`에 `LIVE_CHAT_STARTED`("실시간 질문방이 열렸습니다", `#live-chat`로 링크) 추가
+- [x] F13.4 검증 — 두 계정으로 같은 브라우저의 서로 다른 탭을 열어 실제 서버로 전 구간 확인: 방 없음→시작하기→자동 참여→다른 탭에서 "채팅 참여하기"→접속자 수 1→2 실시간 갱신→한쪽이 보낸 메시지가 다른 쪽에 새로고침 없이 즉시 도착(히스토리 REST 로드 + 실시간 브로드캐스트 병합, id 기준 중복 제거)→탭 종료 시 접속자 수 2→1 갱신까지 확인. `LIVE_CHAT_STARTED` 알림도 실제 서버로 확인(actor가 질문 작성자 자신이면 알림이 가지 않는 기존 규칙 때문에, 검증 중 같은 브라우저의 두 탭이 `localStorage`를 공유해 실수로 같은 계정이 되어버린 첫 시도를 알아채고 계정을 다시 분리해 재검증함 — 코드 버그 아님, 브라우저 저장소 공유가 원인)
+- [x] F13.5 문서화 — `api-design.md`("Live Chat (Phase 24)" 섹션에 프론트엔드 연동 사실 추가)에 반영, [ADR-0039](docs/architecture/decisions/0039-live-chat-frontend-stompjs-connect-on-demand.md)로 라이브러리 선택과 연결 시점 스코프 결정 기록
+
+## Phase 28+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위는 모두 구현됐다(Phase 25로 Phase 5 "신뢰 네트워크"까지 완료). 남은 프론트엔드 격차는 태그 상세 정보 보강과 실시간 질문방(Live Chat)뿐이다([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방 프론트엔드까지 모두 구현됐다(Phase 27). 남은 프론트엔드 격차는 태그 상세 정보 보강뿐이다([docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고). 새 백엔드 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴) 여기 다시 전개한다
 
 ## 진행 방식
 
