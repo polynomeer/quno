@@ -107,7 +107,7 @@ Profile ────────────→ Contributions ─→ Question De
 - [ ] Auth guard와 redirectTo
 - [ ] Playwright 핵심 플로우 테스트
 
-## 7. 백엔드 격차 요약과 착수 전 확인 사항 (2026-09-01 갱신)
+## 7. 백엔드 격차 요약과 착수 전 확인 사항 (2026-09-01 갱신, Phase 26)
 
 이 설계서는 Stack Overflow형 서비스를 전제로 투표(Vote)·댓글(Comment)·배지(Badge)·모더레이션을 포함했고, Quno 백엔드([PLAN.md](../../PLAN.md) 참고)는 처음엔 다른 방향(리비전·Ward·QPR·Cluster/Super Answer·평판 점수·Quno Flow)으로 "살아있는 질문" 철학을 구현해왔다. 이후 Phase 11~20에서 아래 표의 항목들을 대부분 채웠다 — 실제 프론트엔드 작업을 시작하기 전에 여전히 남은 격차만 확인하면 된다.
 
@@ -122,8 +122,10 @@ Profile ────────────→ Contributions ─→ Question De
 | 모더레이션(신고, 리뷰 큐, 역할 기반 권한) | **구현됨**(Phase 16, [ADR-0028](../architecture/decisions/0028-moderation-mvp-report-dismiss-hide-only.md)) — 단, Keep/Hide 두 액션뿐, Close-as-duplicate/Edit/사유별 필터/역할 부여 API는 없음 |
 | 답변(Answer) 수정 이력 | **구현됨**(Phase 17, [ADR-0029](../architecture/decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) — Question과 동일한 revision UI 패턴 재사용 |
 | 질문/프로필 비로그인 공개 열람 | 여전히 없음(모두 인증 필요) — [ADR-0013](../architecture/decisions/0013-defer-public-read-access.md)에서 보류 중 |
-| 실시간 질문방(Live Chat) | 여전히 없음 — [ADR-0019](../architecture/decisions/0019-quno-flow-and-dashboard-only-no-live-chat.md)로 범위 밖, 착수 시점 WebSocket 인프라 투자 결정 필요 |
+| 실시간 질문방(Live Chat) | 백엔드는 **구현됨**(Phase 24, [ADR-0036](../architecture/decisions/0036-live-chat-websocket-mongodb-redis-presence.md)) — STOMP/WebSocket, presence 포함. **프론트엔드는 아직 없음**(백엔드만 우선 구현, Spike Detection과 같은 순서) — 남은 프론트엔드 격차 중 하나 |
 | Cluster Merge, Question Fork, 지식 그래프 | **구현됨**(Phase 18, [ADR-0030](../architecture/decisions/0030-cluster-merge-question-fork-graph-data-only.md)) — 그래프는 데이터 API까지만, 시각화 UI는 없음 |
-| Organization, Direct Ask | 여전히 없음 — 조직 인증 방식·결제 범위 등 핵심 설계 자체가 없어 착수 시점에 재설계 필요 |
+| Organization, Direct Ask(유료) | 백엔드·프론트엔드 모두 **구현됨**(Phase 22/23/25/26, [ADR-0034](../architecture/decisions/0034-organization-virtual-only-direct-ask-no-payment.md)/[0035](../architecture/decisions/0035-verified-organization-email-domain-mailpit.md)/[0037](../architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)/[0038](../architecture/decisions/0038-organization-direct-ask-frontend-no-user-search.md)) — Virtual/Community/Verified 조직, 토스페이먼츠 테스트 모드 결제. Direct Ask 요청 대상은 사용자 검색이 아니라 프로필 페이지에서 고른다(ADR-0038) |
 
 반대로 이 설계서에 없지만 백엔드에는 이미 있는 기능도 있다 — QPR Review(정보 요청/재요청), Cluster/Super Answer/Merge, Question Fork, 지식 그래프 데이터 API, Outdated 표시, Spike Detection, Quno Flow 활동 스트림. 프론트엔드 설계 시 이들을 어느 화면에 어떻게 노출할지도 함께 정해야 한다.
+
+남은 프론트엔드 격차: 태그별 세분화 Expertise/실시간 질문방(둘 다 대응 백엔드는 있음), 질문·프로필 비로그인 공개 열람(대응 백엔드 자체가 없음, ADR-0013).

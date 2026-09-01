@@ -62,3 +62,4 @@
 | [0035](0035-verified-organization-email-domain-mailpit.md) | Verified Organization을 업무/학교 이메일 도메인 인증으로 구현, 로컬은 Mailpit으로 검증 | 승인됨 |
 | [0036](0036-live-chat-websocket-mongodb-redis-presence.md) | 실시간 질문방을 STOMP/WebSocket + MongoDB(메시지) + Redis(접속자)로 구현, Spring Boot 4 Mongo prefix 변경 발견 | 승인됨 |
 | [0037](0037-paid-direct-ask-toss-payments-test-mode.md) | 유료 Direct Ask를 토스페이먼츠 테스트 모드로 구현(무료 Direct Ask 대체), 지급대행은 범위 밖, RestClient 요청 직렬화 함정 발견 | 승인됨 |
+| [0038](0038-organization-direct-ask-frontend-no-user-search.md) | Organization/Direct Ask 프론트엔드는 사용자 검색 없이 프로필 페이지를 진입점으로, 결제는 Toss 호스팅 체크아웃으로 구현 | 승인됨 |
