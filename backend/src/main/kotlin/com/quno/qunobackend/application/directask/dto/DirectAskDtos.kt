@@ -33,7 +33,7 @@ data class DirectAskPaymentResult(
 
 data class CreateDirectAskRequestResult(val request: DirectAskRequestResult, val payment: DirectAskPaymentResult)
 
-data class ConfirmDirectAskPaymentCommand(val orderId: String, val paymentKey: String, val amount: Long)
+data class ConfirmDirectAskPaymentCommand(val orderId: String, val paymentKey: String, val amount: Long, val actorId: Long)
 
 /** Denormalized for `GET /me/direct-asks` only (mirrors SavedQuestionResult) — the frontend list
  * screen needs a title and nicknames to render, not just ids. */

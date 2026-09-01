@@ -5,6 +5,7 @@ import com.quno.qunobackend.application.directask.dto.DirectAskRequestResult
 import com.quno.qunobackend.domain.common.OutboxEvent
 import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
+import com.quno.qunobackend.domain.directask.DirectAskAccessDeniedException
 import com.quno.qunobackend.domain.directask.DirectAskPaymentNotFoundException
 import com.quno.qunobackend.domain.directask.DirectAskPaymentRepository
 import com.quno.qunobackend.domain.directask.DirectAskPaymentStatus
@@ -32,6 +33,11 @@ class ConfirmDirectAskPaymentUseCase(
     fun execute(command: ConfirmDirectAskPaymentCommand): DirectAskRequestResult {
         val payment = directAskPaymentRepository.findByOrderId(command.orderId)
             ?: throw DirectAskPaymentNotFoundException(command.orderId)
+        val request = directAskRequestRepository.findById(payment.directAskRequestId)
+            ?: throw DirectAskRequestNotFoundException(payment.directAskRequestId)
+        // Only the requester who opened this payment may confirm it — orderId/paymentKey are
+        // unguessable in practice, but the endpoint shouldn't rely on that alone.
+        if (request.requesterId != command.actorId) throw DirectAskAccessDeniedException(requireNotNull(request.id))
         if (payment.status != DirectAskPaymentStatus.PENDING) throw PaymentAlreadyProcessedException(command.orderId)
         // Never trust the client's amount for the actual Toss call — compare against what was
         // recorded when the payment was opened first.
@@ -39,9 +45,6 @@ class ConfirmDirectAskPaymentUseCase(
 
         val confirmed = paymentGateway.confirm(command.paymentKey, command.orderId, command.amount)
         directAskPaymentRepository.save(payment.confirm(confirmed.paymentKey))
-
-        val request = directAskRequestRepository.findById(payment.directAskRequestId)
-            ?: throw DirectAskRequestNotFoundException(payment.directAskRequestId)
         val activated = directAskRequestRepository.save(request.activate())
 
         // targetUserId is the only recipient — see DispatchOutboxEventsUseCase's kdoc, same

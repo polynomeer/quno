@@ -48,9 +48,12 @@ class DirectAskController(
     }
 
     @PostMapping("/direct-asks/payments/confirm")
-    fun confirmPayment(@Valid @RequestBody request: ConfirmDirectAskPaymentRequest): DirectAskRequestResponse =
+    fun confirmPayment(
+        @AuthenticationPrincipal actorId: Long,
+        @Valid @RequestBody request: ConfirmDirectAskPaymentRequest,
+    ): DirectAskRequestResponse =
         confirmDirectAskPaymentUseCase.execute(
-            ConfirmDirectAskPaymentCommand(orderId = request.orderId, paymentKey = request.paymentKey, amount = request.amount),
+            ConfirmDirectAskPaymentCommand(orderId = request.orderId, paymentKey = request.paymentKey, amount = request.amount, actorId = actorId),
         ).toResponse()
 
     @PostMapping("/direct-asks/{id}/accept")

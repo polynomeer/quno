@@ -16,7 +16,7 @@ class DuplicateDirectAskException(questionId: Long, targetUserId: Long) :
 class DirectAskRequestAlreadyRespondedException(id: Long) : RuntimeException("Direct ask request already responded to: $id")
 
 /** Only the target of the request may accept/decline it. */
-class DirectAskAccessDeniedException(id: Long) : RuntimeException("Not the target of direct ask request: $id")
+class DirectAskAccessDeniedException(id: Long) : RuntimeException("Not authorized for direct ask request: $id")
 
 class DirectAskPaymentNotFoundException(orderId: String) : RuntimeException("Direct ask payment not found: $orderId")
 

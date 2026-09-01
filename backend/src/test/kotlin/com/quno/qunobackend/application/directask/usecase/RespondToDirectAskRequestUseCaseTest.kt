@@ -58,7 +58,7 @@ class RespondToDirectAskRequestUseCaseTest {
         updateDirectAskSettingsUseCase.execute(targetId, accepts = true)
         val questionId = createQuestionUseCase.execute(CreateQuestionCommand(requesterId, "t", "body", null, null)).id
         val created = createDirectAskRequestUseCase.execute(CreateDirectAskRequestCommand(questionId, requesterId, targetId, null))
-        confirmPaymentUseCase.execute(ConfirmDirectAskPaymentCommand(created.payment.orderId, "toss-key-1", created.payment.amount))
+        confirmPaymentUseCase.execute(ConfirmDirectAskPaymentCommand(created.payment.orderId, "toss-key-1", created.payment.amount, requesterId))
         return Triple(created.request.id, requesterId, targetId)
     }
 

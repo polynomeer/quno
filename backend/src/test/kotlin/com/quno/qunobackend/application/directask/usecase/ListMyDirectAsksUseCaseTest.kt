@@ -68,7 +68,7 @@ class ListMyDirectAsksUseCaseTest {
         assertTrue(useCase.executeReceived(targetId).isEmpty())
 
         confirmDirectAskPaymentUseCase.execute(
-            ConfirmDirectAskPaymentCommand(created.payment.orderId, "mock-payment-key", created.payment.amount),
+            ConfirmDirectAskPaymentCommand(created.payment.orderId, "mock-payment-key", created.payment.amount, requesterId),
         )
 
         val received = useCase.executeReceived(targetId)
