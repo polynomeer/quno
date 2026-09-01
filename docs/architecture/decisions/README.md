@@ -66,3 +66,4 @@
 | [0039](0039-live-chat-frontend-stompjs-connect-on-demand.md) | 실시간 질문방 프론트엔드는 `@stomp/stompjs`로, 연결은 "채팅 참여하기"를 누른 뒤에만 열도록 구현 | 승인됨 |
 | [0040](0040-tag-detail-wiki-editable-and-real-stats.md) | 태그 상세 정보(설명/문서 링크/기여자/관련 태그)는 위키 스타일 편집과 실제 통계 쿼리로 구현, 30일 활동 요약은 범위 밖 | 승인됨 |
 | [0041](0041-narrow-public-read-access.md) | 비로그인 공개 열람은 질문 상세/목록/검색으로 좁혀서 시작(ADR-0013 재검토), SEO 메타데이터는 범위 밖 | 승인됨 |
+| [0042](0042-expand-public-read-access-tags-orgs-profiles.md) | 비로그인 공개 열람을 태그·조직 상세·사용자 프로필까지 확대, SEO 메타데이터는 여전히 범위 밖 | 승인됨 |

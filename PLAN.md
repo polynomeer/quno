@@ -402,11 +402,21 @@ Phase 24가 백엔드까지만 구현하고 미뤄둔 실시간 질문방 화면
 - [x] F15.2 검증 — 실제 서버에 `localStorage`를 비운 완전한 익명 세션으로 질문 상세(답변·댓글·관련 질문 포함)와 검색 결과가 로그인 없이 정상 렌더링되는지, 쓰기 버튼/패널이 전부 숨겨지는지, 로그인 후에는 모든 기능이 회귀 없이 그대로 동작하는지 브라우저로 확인. 이번 Phase 자체의 프론트 버그는 없었음
 - [x] 29.3 문서화 — `api-design.md`("비로그인 공개 열람 (Phase 29)" 섹션 신설)에 반영, [ADR-0041](docs/architecture/decisions/0041-narrow-public-read-access.md)로 스코프 결정 기록, ADR-0013 상태를 "일부 대체됨"으로 갱신
 
-## Phase 30+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 30 — 비로그인 공개 열람 확대: 태그·조직 상세·사용자 프로필 (mvp-scope.md 로드맵에 없던 새 범위)
+
+ADR-0041이 남겨둔 두 후속 후보(이 확대, SEO 메타데이터) 중 사용자가 이것을 먼저 선택했다(2026-09-02, [ADR-0042](docs/architecture/decisions/0042-expand-public-read-access-tags-orgs-profiles.md)).
+
+- [ ] 30.1 백엔드 — `SecurityConfig`에 태그(`GET /tags`, `/{id}`, `/{id}/questions`, `/{id}/contributors`, `/{id}/related`), 조직(`GET /organizations`, `/{id}`), 사용자 프로필(`GET /users/{id}/profile`, `/reputation`, `/badges`)을 HTTP 메서드 단위로 `permitAll` 추가. 같은 경로의 쓰기(태그 편집, Organization 생성/가입/탈퇴/이메일 인증, Follow)는 그대로 인증 필요
+- [ ] 30.2 테스트 — `PublicReadAccessE2ETest`의 "GET /tags는 범위 밖(401)" 단언을 뒤집고, 새로 공개된 GET 5종과 여전히 인증이 필요한 쓰기(태그 편집 401, Organization 생성/가입 401, Follow 401)를 함께 검증하는 케이스 추가
+- [ ] F16.1 프론트엔드 — `/tags`, `/tags/[name]`, `/organizations`, `/organizations/[id]`, `/users/[id]` 5개 페이지를 `useRequireAuth`에서 `useSession`으로 전환. 검토 중 발견한 기존 방문자 가드 누락 2건 수정: `FollowUserButton`에 `if (!me) return null` 추가(자기 자신 팔로우 방지 가드만 있고 로그인 여부 가드가 없었음), `EmailDomainVerificationPanel`에 `if (!viewerId) return null` 추가(`viewerId: number | undefined` 시그니처인데 실제 undefined 체크가 없었음). `TagDetailsEditor`/`CreateOrganizationForm`에도 같은 self-guard 신규 추가(기존엔 가드 자체가 없었음). `JoinOrganizationButton`/`FollowTagButton`/`RequestDirectAskPanel`은 이미 자체 가드가 있어 손대지 않음
+- [ ] F16.2 검증 — 완전한 익명 세션으로 태그 목록/상세(질문·기여자·관련 태그 포함), 조직 목록/상세, 사용자 프로필(질문·답변·평판·배지·팔로우 태그·소속 조직)이 로그인 없이 보이는지, Follow/Join/편집/이메일 인증 버튼이 전부 숨겨지는지, 로그인 후 회귀 없이 동작하는지 브라우저로 확인
+- [ ] 30.3 문서화 — `api-design.md`/`domain-model.md`/`roadmap.md`에 반영(이미 [ADR-0042](docs/architecture/decisions/0042-expand-public-read-access-tags-orgs-profiles.md)로 결정 기록됨)
+
+## Phase 31+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
 [mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
 
-- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람까지 모두 구현됐다(Phase 29). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. 태그/조직/사용자 프로필 공개 확대와 SEO 메타데이터(Open Graph, sitemap)는 ADR-0041이 의도적으로 남겨둔 후속 후보다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
+- Phase 1~6 백엔드 범위와 Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람까지 모두 구현됐다(Phase 29~30). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. SEO 메타데이터(Open Graph, sitemap)는 ADR-0041/0042가 의도적으로 남겨둔 마지막 후속 후보다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
 
 ## 진행 방식
 
