@@ -46,6 +46,10 @@ import org.springframework.transaction.annotation.Transactional
  *     (Phase 22, ADR-0034).
  *   - DIRECT_ASK_ACCEPTED / DIRECT_ASK_DECLINED: **only** the original requester — they want to
  *     know the outcome of their own ask, watchers don't.
+ *   - LIVE_CHAT_STARTED: watchers + the question's author, same recipients as QUESTION_OUTDATED
+ *     (Phase 24, ADR-0036) — only fires when a room is genuinely new, never on re-opening an
+ *     existing one. Individual chat messages never produce outbox events (would be spam, same
+ *     reasoning as Vote not producing one per cast).
  * CONTENT_HIDDEN, MENTIONED_IN_COMMENT, and the three DIRECT_ASK_* types are the only event
  * types that skip the base watcher fan-out entirely. The actor who caused the event is never
  * notified about their own action.
@@ -98,6 +102,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.DIRECT_ASK_REQUESTED -> extractLong(event.payload, "targetUserId")?.let(recipients::add)
             OutboxEventTypes.DIRECT_ASK_ACCEPTED, OutboxEventTypes.DIRECT_ASK_DECLINED ->
                 extractLong(event.payload, "requesterId")?.let(recipients::add)
+            OutboxEventTypes.LIVE_CHAT_STARTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 

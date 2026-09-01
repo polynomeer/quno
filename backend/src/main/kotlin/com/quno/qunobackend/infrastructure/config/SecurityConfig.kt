@@ -60,6 +60,9 @@ class SecurityConfig(
                 authorize("/actuator/health", permitAll)
                 authorize("/actuator/info", permitAll)
                 authorize("/api/v1/auth/**", permitAll)
+                // The WebSocket handshake itself stays unauthenticated — real auth happens one
+                // level up, inside the STOMP CONNECT frame (see StompAuthChannelInterceptor).
+                authorize("/ws/**", permitAll)
                 authorize(anyRequest, authenticated)
             }
         }

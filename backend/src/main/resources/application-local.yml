@@ -6,9 +6,15 @@ spring:
     url: jdbc:postgresql://localhost:5442/quno
     username: quno
     password: quno
+  # NOTE: Spring Boot 4 moved MongoDB connection properties from spring.data.mongodb.* to
+  # spring.mongodb.* (org.springframework.boot.mongodb.autoconfigure.MongoProperties) — the old
+  # prefix silently binds nothing and the client falls back to mongodb://localhost/test. Verified
+  # via GET /actuator/configprops during Phase 24 (ADR-0036); see that ADR for the full story.
+  mongodb:
+    host: localhost
+    port: 27017
+    database: quno
   data:
-    mongodb:
-      uri: mongodb://localhost:27017/quno
     redis:
       host: localhost
       port: 6390

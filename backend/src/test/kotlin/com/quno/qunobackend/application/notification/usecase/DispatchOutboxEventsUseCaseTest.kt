@@ -167,6 +167,24 @@ class DispatchOutboxEventsUseCaseTest {
     }
 
     @Test
+    fun `LIVE_CHAT_STARTED notifies watchers and the question author, excluding the actor`() {
+        watchRepository.watch(userId = 20L, questionId = 1L)
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.LIVE_CHAT_STARTED,
+                aggregateType = "QUESTION",
+                aggregateId = 1L,
+                payload = """{"roomId":5,"actorId":20,"questionAuthorId":99}""",
+            ),
+        )
+
+        useCase.execute()
+
+        assertTrue(notificationRepository.findAllByUserId(20L).isEmpty())
+        assertTrue(notificationRepository.findAllByUserId(99L).isNotEmpty())
+    }
+
+    @Test
     fun `DIRECT_ASK_REQUESTED notifies only the target, not watchers`() {
         watchRepository.watch(userId = 20L, questionId = 1L)
         outboxEventRepository.save(

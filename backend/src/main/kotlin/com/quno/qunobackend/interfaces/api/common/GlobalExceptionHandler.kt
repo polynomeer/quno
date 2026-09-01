@@ -19,6 +19,7 @@ import com.quno.qunobackend.domain.directask.DirectAskRequestNotFoundException
 import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
 import com.quno.qunobackend.domain.directask.SelfDirectAskException
 import com.quno.qunobackend.domain.follow.SelfFollowException
+import com.quno.qunobackend.domain.livechat.LiveChatRoomNotFoundException
 import com.quno.qunobackend.domain.organization.DuplicateOrganizationNameException
 import com.quno.qunobackend.domain.organization.EmailDomainVerificationExpiredException
 import com.quno.qunobackend.domain.organization.EmailDomainVerificationNotFoundException
@@ -94,6 +95,7 @@ class GlobalExceptionHandler {
         OrganizationNotFoundException::class,
         DirectAskRequestNotFoundException::class,
         EmailDomainVerificationNotFoundException::class,
+        LiveChatRoomNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
