@@ -29,9 +29,10 @@ export default function TagDirectoryPage() {
             <li key={tag.id}>
               <Link
                 href={`/tags/${encodeURIComponent(tag.name)}`}
-                className="block rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-text-secondary/40"
+                className="block rounded-md border border-border px-3 py-2 text-sm hover:border-text-secondary/40"
               >
-                {tag.name}
+                <span className="font-medium">{tag.name}</span>
+                {tag.description && <p className="mt-1 truncate text-xs text-text-secondary">{tag.description}</p>}
               </Link>
             </li>
           ))}
