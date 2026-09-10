@@ -22,7 +22,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # docker-compose.yml이 application-local.yml과 동일한 포트(5442/6390 등)를 쓰므로
       # 로컬 개발과 똑같은 방식으로 인프라를 띄운다 — `./gradlew test`가 local 프로필로 이 인프라에
@@ -84,7 +84,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
