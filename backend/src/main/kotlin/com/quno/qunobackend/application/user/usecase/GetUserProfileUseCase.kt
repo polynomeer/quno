@@ -36,13 +36,17 @@ class GetUserProfileUseCase(
 
         val answers = answerResultAssembler.toResults(answerRepository.findAllByAuthorId(userId))
 
-        val followedTags = userTagFollowRepository.findFollowedTagIds(userId)
-            .mapNotNull { tagRepository.findById(it) }
-            .map { it.toResult() }
+        // 팔로우 태그/소속 조직 둘 다 id 하나씩 findById(+countMembers)를 부르고 있었다
+        // (quality-improvement-plan.md Q-2) — 이 엔드포인트가 공개(ADR-0042)라 배치로 바꾼다.
+        val followedTagIds = userTagFollowRepository.findFollowedTagIds(userId)
+        val followedTagsById = tagRepository.findAllByIds(followedTagIds).associateBy { it.id }
+        val followedTags = followedTagIds.mapNotNull { followedTagsById[it] }.map { it.toResult() }
 
-        val organizations = organizationMembershipRepository.findOrganizationIdsByUserId(userId)
-            .mapNotNull { organizationRepository.findById(it) }
-            .map { it.toResult(memberCount = organizationMembershipRepository.countMembers(requireNotNull(it.id))) }
+        val organizationIds = organizationMembershipRepository.findOrganizationIdsByUserId(userId)
+        val organizationsById = organizationRepository.findAllByIds(organizationIds).associateBy { it.id }
+        val memberCounts = organizationMembershipRepository.countMembersByOrganizations(organizationIds)
+        val organizations = organizationIds.mapNotNull { organizationsById[it] }
+            .map { it.toResult(memberCount = memberCounts[it.id] ?: 0L) }
 
         return UserProfileResult(
             userId = userId,

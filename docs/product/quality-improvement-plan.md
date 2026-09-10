@@ -15,11 +15,11 @@
 
 ## Q-2. 성능
 
-- [ ] 프론트엔드 번들 사이즈 점검 — `next build` 산출물 분석(`@next/bundle-analyzer`), 불필요하게 큰 의존성 확인
-- [ ] 이미지 최적화 — `next/image` 사용 여부 전수 점검
-- [ ] 백엔드 N+1 쿼리 — production-readiness.md B-4와 연결되나, 여기서는 "장애 예방"이 아니라 "체감 응답속도" 관점에서 목록 API 전수 점검
-- [ ] 캐싱 확대 — Redis는 이미 인프라에 있음(Live Chat presence 등에서 사용 중), 태그/조직처럼 자주 조회되고 자주 안 바뀌는 데이터에 캐시 적용 검토
-- [ ] 검색 성능 — 현재 PostgreSQL 기반 검색(Phase 20에서 Score 정렬 추가)의 실 데이터량 기준 응답시간 측정, 필요시 인덱스 점검
+- [x] 프론트엔드 번들 사이즈 점검 — `@next/bundle-analyzer`가 이 프로젝트의 Turbopack 빌드와 비호환임을 발견해 내장 `next experimental-analyze`로 대체(ADR-0050). Live Chat이 항상 `@stomp/stompjs`를 로드하던 것을 발견해 `next/dynamic`으로 실제 지연 로드하도록 수정, 프로덕션 빌드 네트워크 요청으로 검증
+- [x] 이미지 최적화 — 코드 전체에 `<img>`/`next/image`/이미지 참조가 전혀 없어 대상 없음(텍스트/Markdown 기반 서비스). `create-next-app` 잔여 미사용 SVG 5개만 정리
+- [x] 백엔드 N+1 쿼리 — `AnswerResultAssembler`/`GetActivityFeedUseCase`(`/api/v1/flow`)/`SearchOrganizationsUseCase`(공개)/`GetUserProfileUseCase`(공개) 4곳에서 항목마다 조회하던 것을 배치 쿼리로 교체(ADR-0050)
+- [x] 캐싱 확대 — `OrganizationRepositoryAdapter.search()`에 기존 Dashboard와 같은 Redis cache-aside 패턴 적용(TTL 60초), 실제 캐시 히트/라운드트립 확인. 태그는 위키 편집 대상(Phase 28)이라 캐싱 시 "방금 수정한 설명이 안 보이는" 회귀 위험이 커서 의도적으로 제외(ADR-0050)
+- [x] 검색 성능 — 함수형 GIN 인덱스(V23 마이그레이션)를 추가했으나, `EXPLAIN`으로 현재 쿼리의 두 테이블에 걸친 OR 조건 구조상 아직 실제로 쓰이지 않는 것까지 확인. 쿼리를 UNION 기반으로 재작성해야 인덱스를 탈 수 있는데, `SearchJpaRepository`를 직접 검증하는 테스트가 없어 회귀 안전망 없이 SQL을 바꾸는 위험을 피해 이번엔 보류(ADR-0050)
 
 ## Q-3. 접근성(a11y)
 

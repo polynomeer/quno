@@ -10,5 +10,9 @@ interface OrganizationMembershipRepository {
     fun leave(organizationId: Long, userId: Long)
     fun isMember(organizationId: Long, userId: Long): Boolean
     fun countMembers(organizationId: Long): Long
+
+    /** Batch form of [countMembers] — avoids N+1 when listing organizations (search results
+     * etc.). Missing keys mean zero members, not "not found". */
+    fun countMembersByOrganizations(organizationIds: List<Long>): Map<Long, Long>
     fun findOrganizationIdsByUserId(userId: Long): List<Long>
 }

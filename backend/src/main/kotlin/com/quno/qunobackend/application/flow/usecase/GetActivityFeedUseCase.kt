@@ -25,11 +25,18 @@ class GetActivityFeedUseCase(
     private val answerRepository: AnswerRepository,
     private val questionClusterRepository: QuestionClusterRepository,
 ) {
+    // 인기/재활성화 질문 두 섹션은 findById를 항목마다 호출하고 있었다(quality-improvement-plan.md
+    // Q-2) — `/api/v1/flow`는 기본 limit=5*여러 섹션이라 방문할 때마다 실제로 여러 번 나가던
+    // 쿼리였다. Phase 35에서 만든 배치 조회(findAllByIds)를 재사용해 섹션당 1번으로 줄인다.
+    // 클러스터/Super Answer 섹션(cluster → answer → question 3단 조회)은 배치화하려면 두 리포지토리에
+    // 새 배치 메서드가 필요하고, 이 섹션은 발생 빈도 자체가 낮아 이번에는 그대로 둔다.
     fun execute(limitPerSection: Int): List<FlowCard> {
         val cards = mutableListOf<FlowCard>()
 
-        dashboardRepository.findPopularQuestionIds(limitPerSection).forEach { questionId ->
-            val question = questionRepository.findById(questionId) ?: return@forEach
+        val popularIds = dashboardRepository.findPopularQuestionIds(limitPerSection)
+        val popularQuestionsById = questionRepository.findAllByIds(popularIds).associateBy { it.id }
+        popularIds.forEach { questionId ->
+            val question = popularQuestionsById[questionId] ?: return@forEach
             cards += FlowCard(
                 type = FlowCardType.POPULAR_QUESTION,
                 headline = "\"${question.title}\"이(가) 지금 가장 인기 있는 질문입니다",
@@ -44,8 +51,10 @@ class GetActivityFeedUseCase(
             )
         }
 
-        flowRepository.findRecentlyReopenedQuestionIds(limitPerSection).forEach { questionId ->
-            val question = questionRepository.findById(questionId) ?: return@forEach
+        val reopenedIds = flowRepository.findRecentlyReopenedQuestionIds(limitPerSection)
+        val reopenedQuestionsById = questionRepository.findAllByIds(reopenedIds).associateBy { it.id }
+        reopenedIds.forEach { questionId ->
+            val question = reopenedQuestionsById[questionId] ?: return@forEach
             cards += FlowCard(
                 type = FlowCardType.REOPENED_QUESTION,
                 headline = "\"${question.title}\"이(가) 다시 활성화되었습니다",

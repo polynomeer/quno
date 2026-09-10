@@ -27,6 +27,11 @@ class TagRepositoryAdapter(
 
     override fun findById(id: Long): Tag? = jpaRepository.findByIdAndDeletedAtIsNull(id)?.toDomain()
 
+    override fun findAllByIds(ids: List<Long>): List<Tag> {
+        if (ids.isEmpty()) return emptyList()
+        return jpaRepository.findAllByIdInAndDeletedAtIsNull(ids).map { it.toDomain() }
+    }
+
     override fun findBySlug(slug: String): Tag? = jpaRepository.findBySlugAndDeletedAtIsNull(slug)?.toDomain()
 
     override fun search(query: String?, limit: Int): List<Tag> {

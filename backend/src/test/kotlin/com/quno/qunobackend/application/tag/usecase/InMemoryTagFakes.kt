@@ -21,6 +21,8 @@ class InMemoryTagRepository : TagRepository {
 
     override fun findById(id: Long): Tag? = byId[id]?.takeIf { it.deletedAt == null }
 
+    override fun findAllByIds(ids: List<Long>): List<Tag> = ids.mapNotNull { findById(it) }
+
     override fun findBySlug(slug: String): Tag? = byId.values.find { it.slug == slug && it.deletedAt == null }
 
     override fun search(query: String?, limit: Int): List<Tag> = byId.values

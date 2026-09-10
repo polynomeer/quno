@@ -9,6 +9,8 @@ class InMemoryOrganizationRepository : OrganizationRepository {
 
     override fun findById(id: Long): Organization? = organizationsById[id]
 
+    override fun findAllByIds(ids: List<Long>): List<Organization> = ids.mapNotNull { organizationsById[it] }
+
     override fun findBySlug(slug: String): Organization? = organizationsById.values.find { it.slug == slug }
 
     override fun findByEmailDomain(domain: String): Organization? = organizationsById.values.find { it.emailDomain == domain }

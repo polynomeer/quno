@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface TagJpaRepository : JpaRepository<TagJpaEntity, Long> {
     fun findByIdAndDeletedAtIsNull(id: Long): TagJpaEntity?
+    fun findAllByIdInAndDeletedAtIsNull(ids: List<Long>): List<TagJpaEntity>
     fun findBySlugAndDeletedAtIsNull(slug: String): TagJpaEntity?
     fun findAllByDeletedAtIsNullOrderByNameAsc(pageable: Pageable): List<TagJpaEntity>
     fun findAllByDeletedAtIsNullAndNameContainingIgnoreCaseOrderByNameAsc(name: String, pageable: Pageable): List<TagJpaEntity>

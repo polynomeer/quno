@@ -22,12 +22,18 @@ class AnswerResultAssembler(
 ) {
     fun toResult(answer: Answer): AnswerResult = toResults(listOf(answer)).single()
 
+    /** 투표 점수를 답변 하나씩 조회하던 것을 배치 쿼리로 바꿨다(quality-improvement-plan.md
+     * Q-2) — 질문 하나에 답변이 N개면 N번 나가던 쿼리가 결과 개수와 무관하게 1번으로 줄었다. */
     fun toResults(answers: List<Answer>): List<AnswerResult> {
+        if (answers.isEmpty()) return emptyList()
+
         val latestVersionCache = mutableMapOf<Long, Int?>()
         fun latestVersionNumberOf(questionId: Long): Int? = latestVersionCache.getOrPut(questionId) {
             val latestVersionId = questionRepository.findById(questionId)?.latestVersionId ?: return@getOrPut null
             questionVersionRepository.findById(latestVersionId)?.versionNumber
         }
+
+        val scoresByAnswerId = voteRepository.sumScoresByTargets(VoteTargetType.ANSWER, answers.mapNotNull { it.id })
 
         return answers.map { answer ->
             val latestVersionNumber = latestVersionNumberOf(answer.questionId)
@@ -39,7 +45,7 @@ class AnswerResultAssembler(
                 isAccepted = answer.isAccepted,
                 targetVersionNumber = answer.targetVersionNumber,
                 isStale = latestVersionNumber != null && answer.targetVersionNumber < latestVersionNumber,
-                score = voteRepository.sumScore(VoteTargetType.ANSWER, requireNotNull(answer.id)),
+                score = scoresByAnswerId[answer.id] ?: 0L,
                 createdAt = answer.createdAt,
                 updatedAt = answer.updatedAt,
             )

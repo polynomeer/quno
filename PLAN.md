@@ -505,9 +505,21 @@ production-readiness.md(상용화 필수 조건)의 코드로 구현 가능한 �
 - [x] 38.6 검증 — 재포맷 후 백엔드 전체 테스트 스위트(348개, 회귀 없음) 재확인, `ktlintCheck` 재실행으로 클린 상태 확인, 프론트엔드 lint/coverage/build 전부 통과 확인
 - [x] 38.7 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 체크박스 갱신(프론트엔드 테스트 실질적 확충은 진행 중으로 남김 — 전체 커버리지 5.5%는 여전히 낮음)
 
-## Phase 39+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 39 — 품질 개선: 성능 (quality-improvement-plan.md Q-2)
 
-[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-2(성능)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 38(코드 품질 게이트)에 이어 진행한다([ADR-0050](docs/architecture/decisions/0050-performance-code-splitting-n-plus-1-caching.md)).
+
+- [x] 39.1 번들 사이즈 — `@next/bundle-analyzer` 설치 후 이 프로젝트의 Turbopack 기본 빌드와 호환되지 않는 것을 발견(별도 설치 필요 없는 내장 `next experimental-analyze`로 교체). `LiveChatPanel`이 항상 `@stomp/stompjs`를 로드하고 있어 소켓 사용 코드를 `LiveChatSession`(신규)으로 분리하고 `next/dynamic({ ssr: false })`으로만 불러오게 함 — 프로덕션 빌드+실제 네트워크 요청으로 "채팅 참여하기" 클릭 전엔 청크가 안 실리고, 클릭 시 로드돼 메시지 송수신까지 정상 동작하는 것을 확인
+- [x] 39.2 이미지 최적화 — 대상 없음(전체 코드에 이미지 사용 0건). `create-next-app` 잔여 미사용 SVG 5개(file.svg 등) 삭제
+- [x] 39.3 N+1 쿼리 4곳 — `AnswerResultAssembler`(답변 투표 점수), `GetActivityFeedUseCase`/`/api/v1/flow`(인기·재활성화 질문 2섹션), `SearchOrganizationsUseCase`/`GET /organizations`(멤버 수), `GetUserProfileUseCase`/`GET /users/{id}/profile`(팔로우 태그·소속 조직)를 Phase 35에서 만든 배치 메서드 재사용 또는 신규 배치 메서드(`OrganizationMembershipRepository.countMembersByOrganizations`, `TagRepository.findAllByIds`, `OrganizationRepository.findAllByIds`)로 교체
+- [x] 39.4 캐싱 — `OrganizationRepositoryAdapter.search()`에 `DashboardRepositoryAdapter`와 같은 Redis cache-aside(TTL 60초) 적용, 캐시 히트/라운드트립 실측 확인. 태그는 위키 편집(Phase 28) 대상이라 캐싱하면 "방금 수정한 설명이 안 보이는" 회귀처럼 느껴질 위험이 커서 의도적으로 제외
+- [x] 39.5 검색 성능 — V23 마이그레이션으로 함수형 GIN 인덱스(질문 전문 검색) + pg_trgm GIN 인덱스(태그명 부분 매치) 추가. `EXPLAIN`(+`enable_seqscan off`로 강제)까지 해봤지만 현재 쿼리의 두 테이블에 걸친 OR 조건 구조상 아직 안 쓰이는 것을 확인 — UNION 재작성이 필요한데 `SearchJpaRepository` 직접 검증 테스트가 없어 회귀 위험 때문에 이번엔 보류
+- [x] 39.6 검증 — 배치 쿼리 교체 후 백엔드 전체 테스트 스위트(348개, 회귀 없음) 재확인, 프론트엔드 lint/test/build 통과, Live Chat 지연 로드와 조직 검색 캐싱 둘 다 실제 서버로 라이브 검증
+- [x] 39.7 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-2 체크박스 전부 갱신
+
+## Phase 40+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-3(접근성)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 

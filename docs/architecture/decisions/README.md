@@ -74,3 +74,4 @@
 | [0047](0047-testing-signup-page-e2e-load-test-scope.md) | 회원가입 UI 전무를 발견해 신설, E2E는 Playwright로 결제 제외 핵심 플로우만, 부하 테스트는 스크립트만 준비 | 승인됨 |
 | [0048](0048-openapi-docs-public-and-runbook.md) | springdoc-openapi로 API 문서 자동 생성(공개), 운영 런북은 배포 대상 미정 전제로 작성 | 승인됨 |
 | [0049](0049-code-quality-gates-ktlint-jacoco-eslint.md) | ktlint 전체 재포맷(intellij_idea 스타일) 후 CI 게이트화, detekt는 Kotlin 2.2 비호환으로 보류, 커버리지 가시화 | 승인됨 |
+| [0050](0050-performance-code-splitting-n-plus-1-caching.md) | Live Chat 코드 스플리팅, N+1 4곳 배치화, 조직 검색만 캐싱(태그는 위키 편집 충돌로 제외), 검색 인덱스는 추가했으나 쿼리 재작성 전까지 미사용 확인 | 승인됨 |

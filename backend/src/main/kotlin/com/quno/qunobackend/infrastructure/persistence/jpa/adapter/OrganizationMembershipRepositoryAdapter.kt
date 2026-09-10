@@ -27,5 +27,10 @@ class OrganizationMembershipRepositoryAdapter(
 
     override fun countMembers(organizationId: Long): Long = jpaRepository.countByOrganizationId(organizationId)
 
+    override fun countMembersByOrganizations(organizationIds: List<Long>): Map<Long, Long> {
+        if (organizationIds.isEmpty()) return emptyMap()
+        return jpaRepository.countMembersByOrganizations(organizationIds).associate { it.organizationId to it.memberCount }
+    }
+
     override fun findOrganizationIdsByUserId(userId: Long): List<Long> = jpaRepository.findAllByUserId(userId).map { it.organizationId }
 }

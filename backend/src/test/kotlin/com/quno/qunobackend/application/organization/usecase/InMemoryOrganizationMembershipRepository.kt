@@ -17,5 +17,8 @@ class InMemoryOrganizationMembershipRepository : OrganizationMembershipRepositor
 
     override fun countMembers(organizationId: Long): Long = memberships.count { it.first == organizationId }.toLong()
 
+    override fun countMembersByOrganizations(organizationIds: List<Long>): Map<Long, Long> =
+        organizationIds.associateWith { countMembers(it) }
+
     override fun findOrganizationIdsByUserId(userId: Long): List<Long> = memberships.filter { it.second == userId }.map { it.first }
 }
