@@ -68,3 +68,4 @@
 | [0041](0041-narrow-public-read-access.md) | 비로그인 공개 열람은 질문 상세/목록/검색으로 좁혀서 시작(ADR-0013 재검토), SEO 메타데이터는 범위 밖 | 승인됨 |
 | [0042](0042-expand-public-read-access-tags-orgs-profiles.md) | 비로그인 공개 열람을 태그·조직 상세·사용자 프로필까지 확대, SEO 메타데이터는 여전히 범위 밖 | 승인됨 |
 | [0043](0043-seo-metadata-question-og-and-sitemap.md) | SEO 메타데이터는 질문 상세의 동적 Open Graph + 태그·조직 sitemap까지만, 질문/프로필 sitemap 열거는 범위 밖 | 승인됨 |
+| [0044](0044-production-readiness-track-code-first.md) | 상용 전환을 사람이 할 일/코드로 할 일로 나누고, 배포 파이프라인부터 코드 작업 우선 진행 | 승인됨 |

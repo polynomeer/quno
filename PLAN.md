@@ -422,11 +422,19 @@ ADR-0041/0042가 남겨둔 마지막 후속 후보를 [ADR-0043](docs/architectu
 - [x] F17.4 검증 — 로컬 Postgres 포트 충돌로 8091 포트에 별도 인스턴스+`.env.local`로 검증(이전 Phase와 동일한 방식). 질문 상세 페이지의 실제 `<meta property="og:*">`/`<title>`이 질문 제목·본문을 정확히 반영하는지, 존재하지 않는 질문 ID는 페이지가 깨지지 않고 "질문을 찾을 수 없습니다 - Quno"로 대체되는지, `/sitemap.xml`(태그 22개+조직 전부, 20개 제한 없이)과 `/robots.txt`가 올바르게 렌더링되는지 브라우저로 확인. 검증 중 이전 Phase 테스트의 leftover access token이 `/me` 404를 반복시켜 페이지가 로딩 상태에 멈춘 것처럼 보인 적이 있었으나 localStorage를 비우니 정상 — 이번 Phase 자체의 버그는 아니었음
 - [x] 31.1 문서화 — `api-design.md`(새 "SEO 메타데이터 (Phase 31)" 섹션)/`roadmap.md`에 반영, ADR-0041/0042 상태를 "SEO는 ADR-0043으로 이어짐"으로 갱신(이미 [ADR-0043](docs/architecture/decisions/0043-seo-metadata-question-og-and-sitemap.md)로 결정 기록됨)
 
-## Phase 32+ — 이후 로드맵 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 32 — 상용 전환: 배포 파이프라인 (production-readiness.md B-1)
 
-[mvp-scope.md](docs/product/mvp-scope.md#로드맵-phase) 로드맵과 대응한다(괄호 안이 mvp-scope.md 자체 번호). 아래는 순서 참고용이며, MVP 검증 결과에 따라 우선순위가 바뀔 수 있다.
+MVP 백로그가 모두 끝나 사용자가 "상용 제품 수준으로 완성"을 다음 목표로 정했다(2026-09-10). 상용화 항목을 사람이 할 일/코드로 할 일로 나눈 [production-readiness.md](docs/product/production-readiness.md)와 완성도 개선을 다루는 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)를 신설했다([ADR-0044](docs/architecture/decisions/0044-production-readiness-track-code-first.md)). 배포 파이프라인이 없으면 나머지 전부가 "로컬에서만 검증된 코드"에 머무르므로 최우선으로 진행한다.
 
-- Phase 1~6 백엔드 범위, Organization/Direct Ask/실시간 질문방/태그 상세 정보/비로그인 공개 열람/SEO 메타데이터까지 모두 구현됐다(Phase 29~31). [docs/frontend/roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항)에 정리된 프론트엔드 격차가 모두 닫혔다. 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다. 새 Phase가 필요해지면(예: mvp-scope.md 갱신, 새 원본 기획 발굴, MVP 검증 결과에 따른 우선순위 조정) 여기 다시 전개한다
+- [ ] 32.1 백엔드 `Dockerfile`(멀티스테이지, non-root)과 프론트엔드 `Dockerfile`(Next.js standalone)
+- [ ] 32.2 `application-prod.yml` 프로필 신설 — JWT secret/Toss 키 등 필수 환경변수가 비어 있으면 prod 프로필 기동을 실패시키는 안전장치 포함
+- [ ] 32.3 `.env.example` 작성
+- [ ] 32.4 GitHub Actions CI — PR마다 백엔드 테스트 + 프론트엔드 빌드/테스트/lint 자동 실행
+- [ ] 32.5 문서화 — production-readiness.md 체크박스 갱신
+
+## Phase 33+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[production-readiness.md](docs/product/production-readiness.md) B-2~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
