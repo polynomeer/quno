@@ -32,18 +32,24 @@ class HideReportedContentUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val answerRepository = InMemoryAnswerRepository()
     private val reportRepository = InMemoryReportRepository()
     private val fileReportUseCase = FileReportUseCase(questionRepository, answerRepository, reportRepository)
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val hideReportedContentUseCase = HideReportedContentUseCase(
-        userRepository, questionRepository, answerRepository, reportRepository, outboxEventRepository,
+        userRepository,
+        questionRepository,
+        answerRepository,
+        reportRepository,
+        outboxEventRepository,
     )
 
-    private fun aUser(nickname: String): Long =
-        signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
+    private fun aUser(nickname: String): Long = signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
 
     @Test
     fun `hiding a reported question soft-deletes it and notifies only its author`() {

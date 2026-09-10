@@ -18,11 +18,9 @@ class JwtTokenProvider(
     private val accessTokenTtlSeconds = jwtProperties.accessTokenTtlSeconds
     private val refreshTokenTtlSeconds = jwtProperties.refreshTokenTtlSeconds
 
-    override fun generateAccessToken(userId: Long): String =
-        generateToken(userId, TOKEN_TYPE_ACCESS, accessTokenTtlSeconds)
+    override fun generateAccessToken(userId: Long): String = generateToken(userId, TOKEN_TYPE_ACCESS, accessTokenTtlSeconds)
 
-    override fun generateRefreshToken(userId: Long): String =
-        generateToken(userId, TOKEN_TYPE_REFRESH, refreshTokenTtlSeconds)
+    override fun generateRefreshToken(userId: Long): String = generateToken(userId, TOKEN_TYPE_REFRESH, refreshTokenTtlSeconds)
 
     override fun validateAccessToken(token: String): Long = parseAndValidate(token, TOKEN_TYPE_ACCESS)
 

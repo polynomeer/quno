@@ -10,26 +10,28 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.search.SearchSort
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 class QuestionSearchUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val createUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        questionTagRepository,
     )
     private val searchRepository = InMemorySearchRepository()
     private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
     private val useCase = QuestionSearchUseCase(searchRepository, questionRepository, hydrator)
 
-    private fun question(title: String, tags: List<String> = emptyList()): Long =
-        createUseCase.execute(
-            CreateQuestionCommand(authorId = 1L, title = title, body = "body", environment = null, logs = null, tagNames = tags),
-        ).id
+    private fun question(title: String, tags: List<String> = emptyList()): Long = createUseCase.execute(
+        CreateQuestionCommand(authorId = 1L, title = title, body = "body", environment = null, logs = null, tagNames = tags),
+    ).id
 
     @Test
     fun `search hydrates ids in the order the repository returns them`() {

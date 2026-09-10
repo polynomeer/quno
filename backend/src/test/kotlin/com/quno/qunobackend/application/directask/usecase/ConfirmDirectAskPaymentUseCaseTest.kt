@@ -39,12 +39,19 @@ class ConfirmDirectAskPaymentUseCaseTest {
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val updateDirectAskSettingsUseCase = UpdateDirectAskSettingsUseCase(userRepository)
     private val createDirectAskRequestUseCase = CreateDirectAskRequestUseCase(
-        questionRepository, userRepository, directAskRequestRepository, directAskPaymentRepository,
-        feeAmount = 1000L, tossClientKey = "test_ck_fake",
+        questionRepository,
+        userRepository,
+        directAskRequestRepository,
+        directAskPaymentRepository,
+        feeAmount = 1000L,
+        tossClientKey = "test_ck_fake",
     )
     private val useCase =
         ConfirmDirectAskPaymentUseCase(directAskPaymentRepository, directAskRequestRepository, paymentGateway, outboxEventRepository)

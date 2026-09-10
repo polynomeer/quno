@@ -13,21 +13,19 @@ class Notification private constructor(
     val isRead: Boolean,
     val createdAt: Instant,
 ) {
-    fun markRead(): Notification =
-        Notification(id, userId, type, questionId, answerId, payload, true, createdAt)
+    fun markRead(): Notification = Notification(id, userId, type, questionId, answerId, payload, true, createdAt)
 
     companion object {
-        fun create(userId: Long, type: String, questionId: Long?, answerId: Long?, payload: String): Notification =
-            Notification(
-                id = null,
-                userId = userId,
-                type = type,
-                questionId = questionId,
-                answerId = answerId,
-                payload = payload,
-                isRead = false,
-                createdAt = Instant.now(),
-            )
+        fun create(userId: Long, type: String, questionId: Long?, answerId: Long?, payload: String): Notification = Notification(
+            id = null,
+            userId = userId,
+            type = type,
+            questionId = questionId,
+            answerId = answerId,
+            payload = payload,
+            isRead = false,
+            createdAt = Instant.now(),
+        )
 
         fun reconstitute(
             id: Long,

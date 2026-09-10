@@ -19,6 +19,5 @@ class InMemoryCommentVersionRepository : CommentVersionRepository {
         return saved
     }
 
-    override fun findAllByCommentIdOrderByVersionNumberAsc(commentId: Long): List<CommentVersion> =
-        versions.filter { it.commentId == commentId }.sortedBy { it.versionNumber }
+    override fun findAllByCommentIdOrderByVersionNumberAsc(commentId: Long): List<CommentVersion> = versions.filter { it.commentId == commentId }.sortedBy { it.versionNumber }
 }

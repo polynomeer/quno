@@ -18,8 +18,7 @@ class NotificationController(
 ) {
 
     @GetMapping
-    fun list(@AuthenticationPrincipal userId: Long): List<NotificationResponse> =
-        listMyNotificationsUseCase.execute(userId).map { it.toResponse() }
+    fun list(@AuthenticationPrincipal userId: Long): List<NotificationResponse> = listMyNotificationsUseCase.execute(userId).map { it.toResponse() }
 
     @PostMapping("/mark-read")
     @ResponseStatus(HttpStatus.NO_CONTENT)

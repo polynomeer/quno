@@ -34,8 +34,7 @@ class SaveController(
     }
 
     @GetMapping("/me/saves")
-    fun mySaves(@AuthenticationPrincipal userId: Long): List<SavedQuestionResponse> =
-        listMySavesUseCase.execute(userId).map {
-            SavedQuestionResponse(questionId = it.questionId, title = it.title, status = it.status)
-        }
+    fun mySaves(@AuthenticationPrincipal userId: Long): List<SavedQuestionResponse> = listMySavesUseCase.execute(userId).map {
+        SavedQuestionResponse(questionId = it.questionId, title = it.title, status = it.status)
+    }
 }

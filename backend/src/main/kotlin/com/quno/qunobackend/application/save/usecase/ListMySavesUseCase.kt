@@ -10,10 +10,9 @@ class ListMySavesUseCase(
     private val saveRepository: SaveRepository,
     private val questionRepository: QuestionRepository,
 ) {
-    fun execute(userId: Long): List<SavedQuestionResult> =
-        saveRepository.findSavedQuestionIds(userId).mapNotNull { questionId ->
-            questionRepository.findById(questionId)?.let { question ->
-                SavedQuestionResult(questionId = questionId, title = question.title, status = question.status)
-            }
+    fun execute(userId: Long): List<SavedQuestionResult> = saveRepository.findSavedQuestionIds(userId).mapNotNull { questionId ->
+        questionRepository.findById(questionId)?.let { question ->
+            SavedQuestionResult(questionId = questionId, title = question.title, status = question.status)
         }
+    }
 }

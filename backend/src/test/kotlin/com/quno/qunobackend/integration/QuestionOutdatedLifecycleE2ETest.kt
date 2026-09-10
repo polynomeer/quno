@@ -108,6 +108,7 @@ class QuestionOutdatedLifecycleE2ETest {
         val notificationsJson = mockMvc.perform(
             get("/api/v1/me/notifications").header("Authorization", "Bearer $bearerToken"),
         ).andExpect(status().isOk).andReturn().response.contentAsString
+
         @Suppress("UNCHECKED_CAST")
         val notifications = objectMapper.readValue(notificationsJson, List::class.java) as List<Map<*, *>>
         assertTrue(

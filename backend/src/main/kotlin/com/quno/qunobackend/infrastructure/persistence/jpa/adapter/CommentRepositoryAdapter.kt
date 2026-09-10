@@ -30,8 +30,7 @@ class CommentRepositoryAdapter(
 
     override fun findById(id: Long): Comment? = jpaRepository.findById(id).map { it.toDomain() }.orElse(null)
 
-    override fun listByTarget(targetType: CommentTargetType, targetId: Long): List<Comment> =
-        jpaRepository.findAllByTargetTypeAndTargetIdOrderByCreatedAtAsc(targetType, targetId).map { it.toDomain() }
+    override fun listByTarget(targetType: CommentTargetType, targetId: Long): List<Comment> = jpaRepository.findAllByTargetTypeAndTargetIdOrderByCreatedAtAsc(targetType, targetId).map { it.toDomain() }
 
     private fun CommentJpaEntity.toDomain(): Comment = Comment.reconstitute(
         id = requireNotNull(id),

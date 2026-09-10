@@ -1,7 +1,7 @@
 package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 
-import com.quno.qunobackend.domain.tag.Tag
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
+import com.quno.qunobackend.domain.tag.Tag
 import com.quno.qunobackend.infrastructure.persistence.jpa.entity.QuestionTagId
 import com.quno.qunobackend.infrastructure.persistence.jpa.entity.QuestionTagJpaEntity
 import com.quno.qunobackend.infrastructure.persistence.jpa.entity.TagJpaEntity

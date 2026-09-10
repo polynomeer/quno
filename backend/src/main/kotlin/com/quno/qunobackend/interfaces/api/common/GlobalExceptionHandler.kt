@@ -14,9 +14,9 @@ import com.quno.qunobackend.domain.comment.CommentNotFoundException
 import com.quno.qunobackend.domain.comment.CommentReplyDepthExceededException
 import com.quno.qunobackend.domain.directask.DirectAskAccessDeniedException
 import com.quno.qunobackend.domain.directask.DirectAskNotAcceptedException
+import com.quno.qunobackend.domain.directask.DirectAskPaymentNotFoundException
 import com.quno.qunobackend.domain.directask.DirectAskRequestAlreadyRespondedException
 import com.quno.qunobackend.domain.directask.DirectAskRequestNotFoundException
-import com.quno.qunobackend.domain.directask.DirectAskPaymentNotFoundException
 import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
 import com.quno.qunobackend.domain.directask.PaymentAlreadyProcessedException
 import com.quno.qunobackend.domain.directask.PaymentAmountMismatchException
@@ -85,12 +85,10 @@ class GlobalExceptionHandler {
         PaymentAlreadyProcessedException::class,
         PaymentConfirmationFailedException::class,
     )
-    fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
+    fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
 
     @ExceptionHandler(InvalidCredentialsException::class, InvalidTokenException::class)
-    fun handleUnauthorized(ex: RuntimeException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse("UNAUTHORIZED", ex.message.orEmpty()))
+    fun handleUnauthorized(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse("UNAUTHORIZED", ex.message.orEmpty()))
 
     @ExceptionHandler(
         UserNotFoundException::class,
@@ -110,8 +108,7 @@ class GlobalExceptionHandler {
         LiveChatRoomNotFoundException::class,
         DirectAskPaymentNotFoundException::class,
     )
-    fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
+    fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
     @ExceptionHandler(
         QuestionAccessDeniedException::class,
@@ -125,8 +122,7 @@ class GlobalExceptionHandler {
         DirectAskAccessDeniedException::class,
         VerifiedOrganizationJoinRequiresEmailException::class,
     )
-    fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
+    fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
@@ -138,13 +134,11 @@ class GlobalExceptionHandler {
     // 직접 던지는 프레임워크 예외다 — 클라이언트의 잘못이지 서버 버그가 아니므로, catch-all
     // (Exception::class, 아래)에 걸려 500+Sentry로 잘못 보고되지 않도록 여기서 먼저 400으로 잡는다.
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun handleMalformedBody(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", "요청 본문을 읽을 수 없습니다."))
+    fun handleMalformedBody(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", "요청 본문을 읽을 수 없습니다."))
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-    fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ErrorResponse("BAD_REQUEST", "'${ex.name}' 파라미터 형식이 올바르지 않습니다."))
+    fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ErrorResponse("BAD_REQUEST", "'${ex.name}' 파라미터 형식이 올바르지 않습니다."))
 
     @ExceptionHandler(
         CannotClusterWithSelfException::class,
@@ -154,8 +148,7 @@ class GlobalExceptionHandler {
         InvalidVerificationCodeException::class,
         PaymentAmountMismatchException::class,
     )
-    fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
-        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
+    fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 
     // 위 핸들러들이 다루는 도메인 예외는 예상된 비즈니스 흐름(중복/404/권한 없음 등)이라 에러
     // 트래킹 대상이 아니다 — 여기 걸리는 건 진짜 예기치 못한 버그뿐이라 Sentry로 보낸다. DSN이

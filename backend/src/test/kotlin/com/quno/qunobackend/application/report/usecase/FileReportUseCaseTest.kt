@@ -22,7 +22,10 @@ class FileReportUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val answerRepository = InMemoryAnswerRepository()
     private val reportRepository = InMemoryReportRepository()

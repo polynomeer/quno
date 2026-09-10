@@ -12,20 +12,18 @@ class VersionImpactRepositoryAdapter(
     private val jpaRepository: VersionImpactJpaRepository,
 ) : VersionImpactRepository {
 
-    override fun findAffectedQuestions(tagSlug: String, sinceDate: LocalDate, limit: Int): List<AffectedQuestion> =
-        jpaRepository.findAffectedQuestions(tagSlug, sinceDate, limit).map {
-            AffectedQuestion(questionId = it.getQuestionId(), questionAuthorId = it.getQuestionAuthorId())
-        }
+    override fun findAffectedQuestions(tagSlug: String, sinceDate: LocalDate, limit: Int): List<AffectedQuestion> = jpaRepository.findAffectedQuestions(tagSlug, sinceDate, limit).map {
+        AffectedQuestion(questionId = it.getQuestionId(), questionAuthorId = it.getQuestionAuthorId())
+    }
 
-    override fun findVersionImpacts(limit: Int): List<VersionImpact> =
-        jpaRepository.findVersionImpacts(limit).map {
-            VersionImpact(
-                questionId = it.getQuestionId(),
-                questionTitle = it.getQuestionTitle(),
-                tagSlug = it.getTagSlug(),
-                productSlug = it.getProductSlug(),
-                latestVersion = it.getLatestVersion(),
-                latestReleaseDate = it.getLatestReleaseDate(),
-            )
-        }
+    override fun findVersionImpacts(limit: Int): List<VersionImpact> = jpaRepository.findVersionImpacts(limit).map {
+        VersionImpact(
+            questionId = it.getQuestionId(),
+            questionTitle = it.getQuestionTitle(),
+            tagSlug = it.getTagSlug(),
+            productSlug = it.getProductSlug(),
+            latestVersion = it.getLatestVersion(),
+            latestReleaseDate = it.getLatestReleaseDate(),
+        )
+    }
 }

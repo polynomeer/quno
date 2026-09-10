@@ -22,7 +22,10 @@ class CastVoteUseCaseTest {
     private val answerRepository = InMemoryAnswerRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val voteRepository = InMemoryVoteRepository()
     private val castVoteUseCase = CastVoteUseCase(questionRepository, answerRepository, voteRepository)
@@ -31,8 +34,7 @@ class CastVoteUseCaseTest {
         CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
     ).id
 
-    private fun anAnswer(questionId: Long, authorId: Long = 2L): Long =
-        requireNotNull(answerRepository.save(Answer.write(questionId, authorId, "answer body", 1)).id)
+    private fun anAnswer(questionId: Long, authorId: Long = 2L): Long = requireNotNull(answerRepository.save(Answer.write(questionId, authorId, "answer body", 1)).id)
 
     @Test
     fun `casting an upvote on a question registers it`() {

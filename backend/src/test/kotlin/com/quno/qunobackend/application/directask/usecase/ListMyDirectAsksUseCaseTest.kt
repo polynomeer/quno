@@ -30,22 +30,31 @@ class ListMyDirectAsksUseCaseTest {
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val updateDirectAskSettingsUseCase = UpdateDirectAskSettingsUseCase(userRepository)
     private val createDirectAskRequestUseCase = CreateDirectAskRequestUseCase(
-        questionRepository, userRepository, directAskRequestRepository, directAskPaymentRepository,
-        feeAmount = 1000L, tossClientKey = "test_ck_fake",
+        questionRepository,
+        userRepository,
+        directAskRequestRepository,
+        directAskPaymentRepository,
+        feeAmount = 1000L,
+        tossClientKey = "test_ck_fake",
     )
     private val confirmDirectAskPaymentUseCase = ConfirmDirectAskPaymentUseCase(
-        directAskPaymentRepository, directAskRequestRepository, paymentGateway, InMemoryOutboxEventRepository(),
+        directAskPaymentRepository,
+        directAskRequestRepository,
+        paymentGateway,
+        InMemoryOutboxEventRepository(),
     )
     private val useCase = ListMyDirectAsksUseCase(directAskRequestRepository, questionRepository, userRepository)
 
     private fun signUp(email: String, nickname: String): Long = signUpUseCase.execute(SignUpCommand(email, nickname, "password123")).userId
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(CreateQuestionCommand(authorId, "How does X work?", "body", null, null)).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(CreateQuestionCommand(authorId, "How does X work?", "body", null, null)).id
 
     @Test
     fun `enriches sent and received lists with question title and nicknames, and hides unpaid requests from the target`() {

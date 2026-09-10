@@ -24,7 +24,6 @@ class LiveChatMessage private constructor(
             return LiveChatMessage(id = null, roomId = roomId, senderId = senderId, body = trimmed, createdAt = Instant.now())
         }
 
-        fun reconstitute(id: String, roomId: Long, senderId: Long, body: String, createdAt: Instant): LiveChatMessage =
-            LiveChatMessage(id, roomId, senderId, body, createdAt)
+        fun reconstitute(id: String, roomId: Long, senderId: Long, body: String, createdAt: Instant): LiveChatMessage = LiveChatMessage(id, roomId, senderId, body, createdAt)
     }
 }

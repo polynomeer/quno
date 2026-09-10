@@ -28,8 +28,7 @@ class DirectAskPaymentRepositoryAdapter(
 
     override fun findByOrderId(orderId: String): DirectAskPayment? = jpaRepository.findByOrderId(orderId)?.toDomain()
 
-    override fun findByDirectAskRequestId(directAskRequestId: Long): DirectAskPayment? =
-        jpaRepository.findByDirectAskRequestId(directAskRequestId)?.toDomain()
+    override fun findByDirectAskRequestId(directAskRequestId: Long): DirectAskPayment? = jpaRepository.findByDirectAskRequestId(directAskRequestId)?.toDomain()
 
     private fun DirectAskPaymentJpaEntity.toDomain(): DirectAskPayment = DirectAskPayment.reconstitute(
         id = requireNotNull(id),

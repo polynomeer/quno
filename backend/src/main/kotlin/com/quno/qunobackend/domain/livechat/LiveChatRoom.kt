@@ -16,10 +16,8 @@ class LiveChatRoom private constructor(
     val createdAt: Instant,
 ) {
     companion object {
-        fun open(questionId: Long, createdBy: Long): LiveChatRoom =
-            LiveChatRoom(id = null, questionId = questionId, createdBy = createdBy, createdAt = Instant.now())
+        fun open(questionId: Long, createdBy: Long): LiveChatRoom = LiveChatRoom(id = null, questionId = questionId, createdBy = createdBy, createdAt = Instant.now())
 
-        fun reconstitute(id: Long, questionId: Long, createdBy: Long, createdAt: Instant): LiveChatRoom =
-            LiveChatRoom(id, questionId, createdBy, createdAt)
+        fun reconstitute(id: Long, questionId: Long, createdBy: Long, createdAt: Instant): LiveChatRoom = LiveChatRoom(id, questionId, createdBy, createdAt)
     }
 }

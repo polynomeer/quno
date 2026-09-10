@@ -25,8 +25,7 @@ class NotificationRepositoryAdapter(
         return jpaRepository.save(entity).toDomain()
     }
 
-    override fun findAllByUserId(userId: Long): List<Notification> =
-        jpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId).map { it.toDomain() }
+    override fun findAllByUserId(userId: Long): List<Notification> = jpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId).map { it.toDomain() }
 
     override fun markAllReadForUser(userId: Long) {
         jpaRepository.markAllReadForUser(userId)

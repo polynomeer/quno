@@ -26,8 +26,7 @@ class EmailDomainVerificationRepositoryAdapter(
         return jpaRepository.save(entity).toDomain()
     }
 
-    override fun findLatestByUserId(userId: Long): EmailDomainVerification? =
-        jpaRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)?.toDomain()
+    override fun findLatestByUserId(userId: Long): EmailDomainVerification? = jpaRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)?.toDomain()
 
     private fun EmailDomainVerificationJpaEntity.toDomain(): EmailDomainVerification = EmailDomainVerification.reconstitute(
         id = requireNotNull(id),

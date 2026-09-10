@@ -25,8 +25,7 @@ class Question private constructor(
     val updatedAt: Instant,
 ) {
     /** Used right after creating Qv1: keeps status OPEN, only wires the pointer. */
-    fun withLatestVersion(versionId: Long, title: String = this.title): Question =
-        Question(id, authorId, title, status, versionId, acceptedAnswerId, clusterId, originQuestionId, deletedAt, createdAt, Instant.now())
+    fun withLatestVersion(versionId: Long, title: String = this.title): Question = Question(id, authorId, title, status, versionId, acceptedAnswerId, clusterId, originQuestionId, deletedAt, createdAt, Instant.now())
 
     /**
      * Used when a revision (Qv2+) is appended. A RESOLVED question stays RESOLVED —
@@ -38,8 +37,7 @@ class Question private constructor(
     }
 
     /** Used when an answer is accepted. */
-    fun resolve(acceptedAnswerId: Long): Question =
-        Question(id, authorId, title, QuestionStatus.RESOLVED, latestVersionId, acceptedAnswerId, clusterId, originQuestionId, deletedAt, createdAt, Instant.now())
+    fun resolve(acceptedAnswerId: Long): Question = Question(id, authorId, title, QuestionStatus.RESOLVED, latestVersionId, acceptedAnswerId, clusterId, originQuestionId, deletedAt, createdAt, Instant.now())
 
     /**
      * Used when a reviewer opens a ReviewRequest (QPR "Review", PLAN.md 5.2). A RESOLVED
@@ -55,8 +53,7 @@ class Question private constructor(
 
     /** Used when this question is marked as the same problem as another (PLAN.md 6.1), or
      * absorbed into another cluster by a Merge (Phase 18, ADR-0030). */
-    fun joinCluster(clusterId: Long): Question =
-        Question(id, authorId, title, status, latestVersionId, acceptedAnswerId, clusterId, originQuestionId, deletedAt, createdAt, Instant.now())
+    fun joinCluster(clusterId: Long): Question = Question(id, authorId, title, status, latestVersionId, acceptedAnswerId, clusterId, originQuestionId, deletedAt, createdAt, Instant.now())
 
     /**
      * Used when a user explicitly flags this question as outdated (PLAN.md 8.1, ADR-0017) —

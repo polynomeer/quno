@@ -17,10 +17,8 @@ class TagStatsRepositoryAdapter(
         TagQuestionSort.TOP -> tagStatsJpaRepository.findTopQuestionIds(tagId, limit)
     }
 
-    override fun findTopContributors(tagId: Long, limit: Int): List<TagContributor> =
-        tagStatsJpaRepository.findTopContributors(tagId, limit)
-            .map { TagContributor(userId = it.getUserId(), nickname = it.getNickname(), answerCount = it.getAnswerCount()) }
+    override fun findTopContributors(tagId: Long, limit: Int): List<TagContributor> = tagStatsJpaRepository.findTopContributors(tagId, limit)
+        .map { TagContributor(userId = it.getUserId(), nickname = it.getNickname(), answerCount = it.getAnswerCount()) }
 
-    override fun findRelatedTagIds(tagId: Long, limit: Int): List<Long> =
-        tagStatsJpaRepository.findRelatedTagIds(tagId, limit)
+    override fun findRelatedTagIds(tagId: Long, limit: Int): List<Long> = tagStatsJpaRepository.findRelatedTagIds(tagId, limit)
 }

@@ -29,14 +29,16 @@ class DismissReportUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val reportRepository = InMemoryReportRepository()
     private val fileReportUseCase = FileReportUseCase(questionRepository, InMemoryAnswerRepository(), reportRepository)
     private val dismissReportUseCase = DismissReportUseCase(userRepository, reportRepository)
 
-    private fun aUser(nickname: String): Long =
-        signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
+    private fun aUser(nickname: String): Long = signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
 
     private fun aPendingReport(): Long {
         val questionId = createQuestionUseCase.execute(

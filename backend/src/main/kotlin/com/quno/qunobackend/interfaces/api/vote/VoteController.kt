@@ -60,6 +60,5 @@ class VoteController(
     }
 
     @GetMapping("/me/votes")
-    fun myVotes(@AuthenticationPrincipal voterId: Long): List<VoteResponse> =
-        listMyVotesUseCase.execute(voterId).map { it.toResponse() }
+    fun myVotes(@AuthenticationPrincipal voterId: Long): List<VoteResponse> = listMyVotesUseCase.execute(voterId).map { it.toResponse() }
 }

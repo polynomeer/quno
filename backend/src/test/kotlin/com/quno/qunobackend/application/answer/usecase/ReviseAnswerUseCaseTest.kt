@@ -26,10 +26,17 @@ class ReviseAnswerUseCaseTest {
     private val answerVersionRepository = InMemoryAnswerVersionRepository()
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, answerVersionRepository, outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        answerVersionRepository,
+        outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val reviseAnswerUseCase = ReviseAnswerUseCase(answerRepository, answerVersionRepository, questionRepository, outboxEventRepository)
@@ -38,8 +45,7 @@ class ReviseAnswerUseCaseTest {
         CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
     ).id
 
-    private fun anAnswer(questionId: Long, authorId: Long = 2L): Long =
-        writeAnswerUseCase.execute(WriteAnswerCommand(questionId, authorId, "v1 body")).id
+    private fun anAnswer(questionId: Long, authorId: Long = 2L): Long = writeAnswerUseCase.execute(WriteAnswerCommand(questionId, authorId, "v1 body")).id
 
     @Test
     fun `appends a new version and updates the cached body`() {

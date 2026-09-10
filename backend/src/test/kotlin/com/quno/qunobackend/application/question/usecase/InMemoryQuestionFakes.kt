@@ -38,14 +38,11 @@ class InMemoryQuestionRepository : QuestionRepository {
     // No real locking needed for a single-threaded in-memory fake.
     override fun findByIdForUpdate(id: Long): Question? = findById(id)
 
-    override fun findAllByAuthorId(authorId: Long): List<Question> =
-        byId.values.filter { it.authorId == authorId }.sortedByDescending { it.createdAt }
+    override fun findAllByAuthorId(authorId: Long): List<Question> = byId.values.filter { it.authorId == authorId }.sortedByDescending { it.createdAt }
 
-    override fun findAllByClusterId(clusterId: Long): List<Question> =
-        byId.values.filter { it.clusterId == clusterId }
+    override fun findAllByClusterId(clusterId: Long): List<Question> = byId.values.filter { it.clusterId == clusterId }
 
-    override fun findAllByOriginQuestionId(originQuestionId: Long): List<Question> =
-        byId.values.filter { it.originQuestionId == originQuestionId }
+    override fun findAllByOriginQuestionId(originQuestionId: Long): List<Question> = byId.values.filter { it.originQuestionId == originQuestionId }
 }
 
 class InMemoryQuestionVersionRepository : QuestionVersionRepository {
@@ -74,9 +71,7 @@ class InMemoryQuestionVersionRepository : QuestionVersionRepository {
 
     override fun findById(id: Long): QuestionVersion? = byId[id]
 
-    override fun findByQuestionIdAndVersionNumber(questionId: Long, versionNumber: Int): QuestionVersion? =
-        byId.values.find { it.questionId == questionId && it.versionNumber == versionNumber }
+    override fun findByQuestionIdAndVersionNumber(questionId: Long, versionNumber: Int): QuestionVersion? = byId.values.find { it.questionId == questionId && it.versionNumber == versionNumber }
 
-    override fun findAllByQuestionIdOrderByVersionNumberAsc(questionId: Long): List<QuestionVersion> =
-        byId.values.filter { it.questionId == questionId }.sortedBy { it.versionNumber }
+    override fun findAllByQuestionIdOrderByVersionNumberAsc(questionId: Long): List<QuestionVersion> = byId.values.filter { it.questionId == questionId }.sortedBy { it.versionNumber }
 }

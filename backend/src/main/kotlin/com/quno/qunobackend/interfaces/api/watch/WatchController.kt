@@ -34,8 +34,7 @@ class WatchController(
     }
 
     @GetMapping("/me/watches")
-    fun myWatches(@AuthenticationPrincipal userId: Long): List<WatchedQuestionResponse> =
-        listMyWatchesUseCase.execute(userId).map {
-            WatchedQuestionResponse(questionId = it.questionId, title = it.title, status = it.status)
-        }
+    fun myWatches(@AuthenticationPrincipal userId: Long): List<WatchedQuestionResponse> = listMyWatchesUseCase.execute(userId).map {
+        WatchedQuestionResponse(questionId = it.questionId, title = it.title, status = it.status)
+    }
 }

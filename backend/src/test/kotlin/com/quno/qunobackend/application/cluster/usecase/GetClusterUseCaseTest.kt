@@ -11,9 +11,9 @@ import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import org.junit.jupiter.api.Test
 
 class GetClusterUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -23,17 +23,21 @@ class GetClusterUseCaseTest {
     private val questionClusterRepository = InMemoryQuestionClusterRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, questionTagRepository,
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        questionTagRepository,
     )
     private val markQuestionsAsSameProblemUseCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)
     private val useCase = GetClusterUseCase(
-        questionClusterRepository, questionRepository, QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
+        questionClusterRepository,
+        questionRepository,
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
     )
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `returns the cluster's member questions`() {

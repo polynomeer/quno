@@ -39,16 +39,14 @@ class TagController(
 ) {
 
     @GetMapping
-    fun search(@RequestParam(required = false) q: String?, @RequestParam(required = false) limit: Int?): List<TagResponse> =
-        searchTagsUseCase.execute(q, limit ?: 20).map { it.toResponse() }
+    fun search(@RequestParam(required = false) q: String?, @RequestParam(required = false) limit: Int?): List<TagResponse> = searchTagsUseCase.execute(q, limit ?: 20).map { it.toResponse() }
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: Long): TagResponse = getTagUseCase.execute(id).toResponse()
 
     /** Wiki-style — no ownership check, any authenticated user can edit (Phase 28, ADR-0040). */
     @PutMapping("/{id}")
-    fun updateDetails(@PathVariable id: Long, @Valid @RequestBody request: UpdateTagDetailsRequest): TagResponse =
-        updateTagDetailsUseCase.execute(id, request.description, request.docsUrl).toResponse()
+    fun updateDetails(@PathVariable id: Long, @Valid @RequestBody request: UpdateTagDetailsRequest): TagResponse = updateTagDetailsUseCase.execute(id, request.description, request.docsUrl).toResponse()
 
     @GetMapping("/{id}/questions")
     fun questions(
@@ -61,12 +59,10 @@ class TagController(
     }
 
     @GetMapping("/{id}/contributors")
-    fun contributors(@PathVariable id: Long, @RequestParam(required = false) limit: Int?): List<TagContributorResponse> =
-        listTagContributorsUseCase.execute(id, limit ?: 10).map { it.toResponse() }
+    fun contributors(@PathVariable id: Long, @RequestParam(required = false) limit: Int?): List<TagContributorResponse> = listTagContributorsUseCase.execute(id, limit ?: 10).map { it.toResponse() }
 
     @GetMapping("/{id}/related")
-    fun related(@PathVariable id: Long, @RequestParam(required = false) limit: Int?): List<TagResponse> =
-        listRelatedTagsUseCase.execute(id, limit ?: 10).map { it.toResponse() }
+    fun related(@PathVariable id: Long, @RequestParam(required = false) limit: Int?): List<TagResponse> = listRelatedTagsUseCase.execute(id, limit ?: 10).map { it.toResponse() }
 
     @PostMapping("/{id}/follow")
     @ResponseStatus(HttpStatus.NO_CONTENT)

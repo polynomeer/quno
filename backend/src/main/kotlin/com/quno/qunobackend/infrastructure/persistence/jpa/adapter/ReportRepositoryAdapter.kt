@@ -31,11 +31,9 @@ class ReportRepositoryAdapter(
 
     override fun findById(id: Long): Report? = jpaRepository.findById(id).map { it.toDomain() }.orElse(null)
 
-    override fun listByStatus(status: ReportStatus): List<Report> =
-        jpaRepository.findAllByStatusOrderByCreatedAtAsc(status).map { it.toDomain() }
+    override fun listByStatus(status: ReportStatus): List<Report> = jpaRepository.findAllByStatusOrderByCreatedAtAsc(status).map { it.toDomain() }
 
-    override fun countByTarget(targetType: ReportTargetType, targetId: Long): Long =
-        jpaRepository.countByTargetTypeAndTargetId(targetType, targetId)
+    override fun countByTarget(targetType: ReportTargetType, targetId: Long): Long = jpaRepository.countByTargetTypeAndTargetId(targetType, targetId)
 
     private fun ReportJpaEntity.toDomain(): Report = Report.reconstitute(
         id = requireNotNull(id),

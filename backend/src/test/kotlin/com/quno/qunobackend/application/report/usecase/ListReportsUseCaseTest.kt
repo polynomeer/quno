@@ -26,14 +26,16 @@ class ListReportsUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val reportRepository = InMemoryReportRepository()
     private val fileReportUseCase = FileReportUseCase(questionRepository, InMemoryAnswerRepository(), reportRepository)
     private val listReportsUseCase = ListReportsUseCase(userRepository, reportRepository)
 
-    private fun aUser(nickname: String): Long =
-        signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
+    private fun aUser(nickname: String): Long = signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
 
     private fun aQuestion(authorId: Long): Long = createQuestionUseCase.execute(
         CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),

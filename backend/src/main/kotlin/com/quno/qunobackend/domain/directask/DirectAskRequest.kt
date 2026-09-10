@@ -43,17 +43,16 @@ class DirectAskRequest private constructor(
     }
 
     companion object {
-        fun request(questionId: Long, requesterId: Long, targetUserId: Long, message: String?): DirectAskRequest =
-            DirectAskRequest(
-                id = null,
-                questionId = questionId,
-                requesterId = requesterId,
-                targetUserId = targetUserId,
-                message = message?.trim()?.ifBlank { null },
-                status = DirectAskRequestStatus.AWAITING_PAYMENT,
-                createdAt = Instant.now(),
-                respondedAt = null,
-            )
+        fun request(questionId: Long, requesterId: Long, targetUserId: Long, message: String?): DirectAskRequest = DirectAskRequest(
+            id = null,
+            questionId = questionId,
+            requesterId = requesterId,
+            targetUserId = targetUserId,
+            message = message?.trim()?.ifBlank { null },
+            status = DirectAskRequestStatus.AWAITING_PAYMENT,
+            createdAt = Instant.now(),
+            respondedAt = null,
+        )
 
         fun reconstitute(
             id: Long,

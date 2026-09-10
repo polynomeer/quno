@@ -20,8 +20,7 @@ class QuestionSearchUseCase(
     private val questionRepository: QuestionRepository,
     private val hydrator: QuestionSummaryHydrator,
 ) {
-    fun search(query: String, limit: Int = 20, sort: SearchSort = SearchSort.RELEVANCE): List<QuestionSearchResult> =
-        hydrator.hydrate(searchRepository.searchQuestionIds(query, limit, sort))
+    fun search(query: String, limit: Int = 20, sort: SearchSort = SearchSort.RELEVANCE): List<QuestionSearchResult> = hydrator.hydrate(searchRepository.searchQuestionIds(query, limit, sort))
 
     fun related(questionId: Long, limit: Int = 5): List<QuestionSearchResult> {
         questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)

@@ -14,6 +14,5 @@ class VersionImpactController(
 ) {
 
     @GetMapping
-    fun get(@RequestParam(required = false) limit: Int?): List<VersionImpact> =
-        getVersionImpactsUseCase.execute(limit ?: 10)
+    fun get(@RequestParam(required = false) limit: Int?): List<VersionImpact> = getVersionImpactsUseCase.execute(limit ?: 10)
 }

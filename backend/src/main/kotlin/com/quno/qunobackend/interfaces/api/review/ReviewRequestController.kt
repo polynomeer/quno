@@ -38,8 +38,7 @@ class ReviewRequestController(
     }
 
     @GetMapping
-    fun list(@PathVariable questionId: Long): List<ReviewRequestResponse> =
-        listReviewRequestsUseCase.execute(questionId).map { it.toResponse() }
+    fun list(@PathVariable questionId: Long): List<ReviewRequestResponse> = listReviewRequestsUseCase.execute(questionId).map { it.toResponse() }
 
     @PostMapping("/{reviewRequestId}/re-request")
     fun reRequest(

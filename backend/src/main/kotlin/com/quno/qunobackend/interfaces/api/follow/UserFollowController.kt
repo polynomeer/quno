@@ -34,8 +34,7 @@ class UserFollowController(
     }
 
     @GetMapping("/me/following")
-    fun myFollowing(@AuthenticationPrincipal followerId: Long): List<FolloweeResponse> =
-        listMyFollowingUseCase.execute(followerId).map {
-            FolloweeResponse(userId = it.userId, nickname = it.nickname)
-        }
+    fun myFollowing(@AuthenticationPrincipal followerId: Long): List<FolloweeResponse> = listMyFollowingUseCase.execute(followerId).map {
+        FolloweeResponse(userId = it.userId, nickname = it.nickname)
+    }
 }

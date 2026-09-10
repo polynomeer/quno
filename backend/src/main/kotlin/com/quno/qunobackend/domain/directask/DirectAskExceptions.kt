@@ -10,8 +10,7 @@ class DirectAskNotAcceptedException(targetUserId: Long) : RuntimeException("User
 
 /** One open (AWAITING_PAYMENT or PENDING) request per (question, target) — see V21's partial
  * unique index. */
-class DuplicateDirectAskException(questionId: Long, targetUserId: Long) :
-    RuntimeException("An open Direct Ask request already exists for question $questionId and user $targetUserId")
+class DuplicateDirectAskException(questionId: Long, targetUserId: Long) : RuntimeException("An open Direct Ask request already exists for question $questionId and user $targetUserId")
 
 class DirectAskRequestAlreadyRespondedException(id: Long) : RuntimeException("Direct ask request already responded to: $id")
 
@@ -23,8 +22,7 @@ class DirectAskPaymentNotFoundException(orderId: String) : RuntimeException("Dir
 /** The client-supplied amount doesn't match what was recorded when the payment was opened —
  * either tampering or a stale client. Never trust the client's amount for the actual Toss confirm
  * call. */
-class PaymentAmountMismatchException(expected: Long, actual: Long) :
-    RuntimeException("Payment amount mismatch: expected $expected, got $actual")
+class PaymentAmountMismatchException(expected: Long, actual: Long) : RuntimeException("Payment amount mismatch: expected $expected, got $actual")
 
 class PaymentAlreadyProcessedException(orderId: String) : RuntimeException("Payment already processed: $orderId")
 

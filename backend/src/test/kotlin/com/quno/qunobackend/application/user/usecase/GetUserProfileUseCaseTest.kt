@@ -20,10 +20,10 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryUserTagFollowReposit
 import com.quno.qunobackend.application.user.dto.SignUpCommand
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.user.UserNotFoundException
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import org.junit.jupiter.api.Test
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class GetUserProfileUseCaseTest {
     private val userRepository = InMemoryUserRepository()
@@ -39,11 +39,18 @@ class GetUserProfileUseCaseTest {
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, questionTagRepository,
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        questionTagRepository,
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(),
-        InMemoryOutboxEventRepository(), answerResultAssembler,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        InMemoryAnswerVersionRepository(),
+        InMemoryOutboxEventRepository(),
+        answerResultAssembler,
     )
     private val followTagUseCase = FollowTagUseCase(tagRepository, userTagFollowRepository)
     private val useCase = GetUserProfileUseCase(

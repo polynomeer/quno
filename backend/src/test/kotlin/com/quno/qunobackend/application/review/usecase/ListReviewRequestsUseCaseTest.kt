@@ -20,10 +20,16 @@ class ListReviewRequestsUseCaseTest {
     private val reviewRequestRepository = InMemoryReviewRequestRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val createReviewRequestUseCase = CreateReviewRequestUseCase(
-        questionRepository, questionVersionRepository, reviewRequestRepository, InMemoryOutboxEventRepository(),
+        questionRepository,
+        questionVersionRepository,
+        reviewRequestRepository,
+        InMemoryOutboxEventRepository(),
     )
     private val useCase = ListReviewRequestsUseCase(questionRepository, reviewRequestRepository)
 

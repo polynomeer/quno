@@ -69,8 +69,7 @@ class PresenceEventListener(
         messagingTemplate.convertAndSend("/topic/questions/$questionId/presence", PresenceBroadcast(count))
     }
 
-    private fun parseQuestionId(destination: String?): Long? =
-        destination?.let { QUESTION_PRESENCE_PATTERN.find(it)?.groupValues?.get(1)?.toLongOrNull() }
+    private fun parseQuestionId(destination: String?): Long? = destination?.let { QUESTION_PRESENCE_PATTERN.find(it)?.groupValues?.get(1)?.toLongOrNull() }
 
     companion object {
         private val QUESTION_PRESENCE_PATTERN = Regex("""^/topic/questions/(\d+)/presence$""")

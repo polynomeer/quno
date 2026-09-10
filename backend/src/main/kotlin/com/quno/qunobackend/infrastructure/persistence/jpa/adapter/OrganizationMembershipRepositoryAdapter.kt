@@ -23,11 +23,9 @@ class OrganizationMembershipRepositoryAdapter(
         jpaRepository.deleteById(OrganizationMembershipId(organizationId, userId))
     }
 
-    override fun isMember(organizationId: Long, userId: Long): Boolean =
-        jpaRepository.existsById(OrganizationMembershipId(organizationId, userId))
+    override fun isMember(organizationId: Long, userId: Long): Boolean = jpaRepository.existsById(OrganizationMembershipId(organizationId, userId))
 
     override fun countMembers(organizationId: Long): Long = jpaRepository.countByOrganizationId(organizationId)
 
-    override fun findOrganizationIdsByUserId(userId: Long): List<Long> =
-        jpaRepository.findAllByUserId(userId).map { it.organizationId }
+    override fun findOrganizationIdsByUserId(userId: Long): List<Long> = jpaRepository.findAllByUserId(userId).map { it.organizationId }
 }

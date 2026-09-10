@@ -16,6 +16,5 @@ class InMemorySearchRepository : SearchRepository {
         return searchResults.take(limit)
     }
 
-    override fun findRelatedQuestionIds(questionId: Long, limit: Int): List<Long> =
-        (relatedResults[questionId] ?: emptyList()).take(limit)
+    override fun findRelatedQuestionIds(questionId: Long, limit: Int): List<Long> = (relatedResults[questionId] ?: emptyList()).take(limit)
 }

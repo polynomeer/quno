@@ -18,7 +18,10 @@ class ListMyVotesUseCaseTest {
     private val answerRepository = InMemoryAnswerRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val voteRepository = InMemoryVoteRepository()
     private val castVoteUseCase = CastVoteUseCase(questionRepository, answerRepository, voteRepository)

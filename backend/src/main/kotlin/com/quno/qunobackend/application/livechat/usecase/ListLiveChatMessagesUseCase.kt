@@ -10,6 +10,5 @@ import org.springframework.stereotype.Service
 class ListLiveChatMessagesUseCase(
     private val liveChatMessageRepository: LiveChatMessageRepository,
 ) {
-    fun execute(roomId: Long, limit: Int = 50): List<LiveChatMessageResult> =
-        liveChatMessageRepository.findRecentByRoomId(roomId, limit).map { it.toResult() }
+    fun execute(roomId: Long, limit: Int = 50): List<LiveChatMessageResult> = liveChatMessageRepository.findRecentByRoomId(roomId, limit).map { it.toResult() }
 }

@@ -10,6 +10,5 @@ class RecommendQuestionsUseCase(
     private val recommendationRepository: RecommendationRepository,
     private val hydrator: QuestionSummaryHydrator,
 ) {
-    fun execute(userId: Long, limit: Int = 20): List<QuestionSearchResult> =
-        hydrator.hydrate(recommendationRepository.recommendQuestionIdsByTagFollows(userId, limit))
+    fun execute(userId: Long, limit: Int = 20): List<QuestionSearchResult> = hydrator.hydrate(recommendationRepository.recommendQuestionIdsByTagFollows(userId, limit))
 }

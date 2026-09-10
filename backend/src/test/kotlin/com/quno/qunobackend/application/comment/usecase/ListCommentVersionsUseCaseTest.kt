@@ -21,12 +21,19 @@ class ListCommentVersionsUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val commentRepository = InMemoryCommentRepository()
     private val commentVersionRepository = InMemoryCommentVersionRepository()
     private val createCommentUseCase = CreateCommentUseCase(
-        questionRepository, InMemoryAnswerRepository(), commentRepository, InMemoryUserRepository(), InMemoryOutboxEventRepository(),
+        questionRepository,
+        InMemoryAnswerRepository(),
+        commentRepository,
+        InMemoryUserRepository(),
+        InMemoryOutboxEventRepository(),
     )
     private val editCommentUseCase = EditCommentUseCase(commentRepository, commentVersionRepository)
     private val useCase = ListCommentVersionsUseCase(commentRepository, commentVersionRepository)

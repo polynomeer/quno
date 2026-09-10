@@ -32,18 +32,24 @@ class CreateDirectAskRequestUseCaseTest {
 
     private val signUpUseCase = SignUpUseCase(userRepository, BCryptPasswordEncoder())
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val updateDirectAskSettingsUseCase = UpdateDirectAskSettingsUseCase(userRepository)
     private val useCase = CreateDirectAskRequestUseCase(
-        questionRepository, userRepository, directAskRequestRepository, directAskPaymentRepository,
-        feeAmount = 1000L, tossClientKey = "test_ck_fake",
+        questionRepository,
+        userRepository,
+        directAskRequestRepository,
+        directAskPaymentRepository,
+        feeAmount = 1000L,
+        tossClientKey = "test_ck_fake",
     )
 
     private fun signUp(email: String, nickname: String): Long = signUpUseCase.execute(SignUpCommand(email, nickname, "password123")).userId
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(CreateQuestionCommand(authorId, "t", "body", null, null)).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(CreateQuestionCommand(authorId, "t", "body", null, null)).id
 
     @Test
     fun `creates a request awaiting payment when the target accepts Direct Ask`() {

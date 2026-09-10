@@ -26,9 +26,7 @@ class InMemoryAnswerVersionRepository : AnswerVersionRepository {
 
     override fun findById(id: Long): AnswerVersion? = byId[id]
 
-    override fun findByAnswerIdAndVersionNumber(answerId: Long, versionNumber: Int): AnswerVersion? =
-        byId.values.find { it.answerId == answerId && it.versionNumber == versionNumber }
+    override fun findByAnswerIdAndVersionNumber(answerId: Long, versionNumber: Int): AnswerVersion? = byId.values.find { it.answerId == answerId && it.versionNumber == versionNumber }
 
-    override fun findAllByAnswerIdOrderByVersionNumberAsc(answerId: Long): List<AnswerVersion> =
-        byId.values.filter { it.answerId == answerId }.sortedBy { it.versionNumber }
+    override fun findAllByAnswerIdOrderByVersionNumberAsc(answerId: Long): List<AnswerVersion> = byId.values.filter { it.answerId == answerId }.sortedBy { it.versionNumber }
 }

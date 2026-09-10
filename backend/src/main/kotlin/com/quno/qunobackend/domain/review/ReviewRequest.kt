@@ -25,7 +25,14 @@ class ReviewRequest private constructor(
     fun addressed(): ReviewRequest {
         check(status == ReviewRequestStatus.OPEN) { "review request is already addressed" }
         return ReviewRequest(
-            id, questionId, requestedBy, message, ReviewRequestStatus.ADDRESSED, questionVersionNumberAtRequest, createdAt, Instant.now(),
+            id,
+            questionId,
+            requestedBy,
+            message,
+            ReviewRequestStatus.ADDRESSED,
+            questionVersionNumberAtRequest,
+            createdAt,
+            Instant.now(),
         )
     }
 
@@ -54,7 +61,14 @@ class ReviewRequest private constructor(
             createdAt: Instant,
             addressedAt: Instant?,
         ): ReviewRequest = ReviewRequest(
-            id, questionId, requestedBy, message, status, questionVersionNumberAtRequest, createdAt, addressedAt,
+            id,
+            questionId,
+            requestedBy,
+            message,
+            status,
+            questionVersionNumberAtRequest,
+            createdAt,
+            addressedAt,
         )
     }
 }

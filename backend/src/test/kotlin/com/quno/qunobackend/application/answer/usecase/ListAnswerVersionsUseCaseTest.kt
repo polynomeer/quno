@@ -24,10 +24,17 @@ class ListAnswerVersionsUseCaseTest {
     private val answerVersionRepository = InMemoryAnswerVersionRepository()
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, answerVersionRepository, outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        answerVersionRepository,
+        outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val reviseAnswerUseCase = ReviseAnswerUseCase(answerRepository, answerVersionRepository, questionRepository, outboxEventRepository)

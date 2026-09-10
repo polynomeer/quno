@@ -22,10 +22,10 @@ import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.domain.review.ReviewRequestStatus
 import com.quno.qunobackend.domain.review.SelfReviewRequestException
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 class CreateReviewRequestUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -36,21 +36,30 @@ class CreateReviewRequestUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(), outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        InMemoryAnswerVersionRepository(),
+        outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
     private val useCase = CreateReviewRequestUseCase(
-        questionRepository, questionVersionRepository, reviewRequestRepository, outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        reviewRequestRepository,
+        outboxEventRepository,
     )
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `opens a review request and moves the question to NEEDS_INFO`() {

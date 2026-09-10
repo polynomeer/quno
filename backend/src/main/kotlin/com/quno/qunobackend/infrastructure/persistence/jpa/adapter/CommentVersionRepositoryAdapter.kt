@@ -22,8 +22,7 @@ class CommentVersionRepositoryAdapter(
         return jpaRepository.save(entity).toDomain()
     }
 
-    override fun findAllByCommentIdOrderByVersionNumberAsc(commentId: Long): List<CommentVersion> =
-        jpaRepository.findAllByCommentIdOrderByVersionNumberAsc(commentId).map { it.toDomain() }
+    override fun findAllByCommentIdOrderByVersionNumberAsc(commentId: Long): List<CommentVersion> = jpaRepository.findAllByCommentIdOrderByVersionNumberAsc(commentId).map { it.toDomain() }
 
     private fun CommentVersionJpaEntity.toDomain(): CommentVersion = CommentVersion.reconstitute(
         id = requireNotNull(id),

@@ -25,11 +25,9 @@ class AnswerVersionRepositoryAdapter(
 
     override fun findById(id: Long): AnswerVersion? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
-    override fun findByAnswerIdAndVersionNumber(answerId: Long, versionNumber: Int): AnswerVersion? =
-        jpaRepository.findByAnswerIdAndVersionNumber(answerId, versionNumber)?.toDomain()
+    override fun findByAnswerIdAndVersionNumber(answerId: Long, versionNumber: Int): AnswerVersion? = jpaRepository.findByAnswerIdAndVersionNumber(answerId, versionNumber)?.toDomain()
 
-    override fun findAllByAnswerIdOrderByVersionNumberAsc(answerId: Long): List<AnswerVersion> =
-        jpaRepository.findAllByAnswerIdOrderByVersionNumberAsc(answerId).map { it.toDomain() }
+    override fun findAllByAnswerIdOrderByVersionNumberAsc(answerId: Long): List<AnswerVersion> = jpaRepository.findAllByAnswerIdOrderByVersionNumberAsc(answerId).map { it.toDomain() }
 
     private fun AnswerVersionJpaEntity.toDomain(): AnswerVersion = AnswerVersion.reconstitute(
         id = requireNotNull(id),

@@ -51,10 +51,9 @@ class DirectAskController(
     fun confirmPayment(
         @AuthenticationPrincipal actorId: Long,
         @Valid @RequestBody request: ConfirmDirectAskPaymentRequest,
-    ): DirectAskRequestResponse =
-        confirmDirectAskPaymentUseCase.execute(
-            ConfirmDirectAskPaymentCommand(orderId = request.orderId, paymentKey = request.paymentKey, amount = request.amount, actorId = actorId),
-        ).toResponse()
+    ): DirectAskRequestResponse = confirmDirectAskPaymentUseCase.execute(
+        ConfirmDirectAskPaymentCommand(orderId = request.orderId, paymentKey = request.paymentKey, amount = request.amount, actorId = actorId),
+    ).toResponse()
 
     @PostMapping("/direct-asks/{id}/accept")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -21,11 +21,9 @@ class LiveChatMessageRepositoryAdapter(
         return mongoRepository.save(document).toDomain()
     }
 
-    override fun findRecentByRoomId(roomId: Long, limit: Int): List<LiveChatMessage> =
-        mongoRepository.findByRoomIdOrderByCreatedAtDesc(roomId, PageRequest.of(0, limit))
-            .map { it.toDomain() }
-            .reversed()
+    override fun findRecentByRoomId(roomId: Long, limit: Int): List<LiveChatMessage> = mongoRepository.findByRoomIdOrderByCreatedAtDesc(roomId, PageRequest.of(0, limit))
+        .map { it.toDomain() }
+        .reversed()
 
-    private fun LiveChatMessageDocument.toDomain(): LiveChatMessage =
-        LiveChatMessage.reconstitute(id = requireNotNull(id), roomId = roomId, senderId = senderId, body = body, createdAt = createdAt)
+    private fun LiveChatMessageDocument.toDomain(): LiveChatMessage = LiveChatMessage.reconstitute(id = requireNotNull(id), roomId = roomId, senderId = senderId, body = body, createdAt = createdAt)
 }

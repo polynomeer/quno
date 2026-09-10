@@ -21,6 +21,5 @@ class RecommendationController(
         @AuthenticationPrincipal userId: Long,
         @RequestParam(required = false, defaultValue = "tags") source: String,
         @RequestParam(required = false) limit: Int?,
-    ): List<QuestionSearchResultResponse> =
-        recommendQuestionsUseCase.execute(userId, limit ?: 20).map { it.toResponse() }
+    ): List<QuestionSearchResultResponse> = recommendQuestionsUseCase.execute(userId, limit ?: 20).map { it.toResponse() }
 }

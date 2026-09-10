@@ -1,8 +1,8 @@
 package com.quno.qunobackend.application.reputation.usecase
 
+import com.quno.qunobackend.application.user.dto.SignUpCommand
 import com.quno.qunobackend.application.user.usecase.InMemoryUserRepository
 import com.quno.qunobackend.application.user.usecase.SignUpUseCase
-import com.quno.qunobackend.application.user.dto.SignUpCommand
 import com.quno.qunobackend.domain.reputation.ReputationRepository
 import com.quno.qunobackend.domain.reputation.UserReputation
 import com.quno.qunobackend.domain.user.UserNotFoundException
@@ -19,8 +19,7 @@ class GetUserReputationUseCaseTest {
     fun `computes the weighted score from the repository's raw counts`() {
         val userId = signUpUseCase.execute(SignUpCommand("a@b.com", "alice", "password123")).userId
         val reputationRepository = object : ReputationRepository {
-            override fun compute(userId: Long): UserReputation =
-                UserReputation(userId, questionCount = 3, answerCount = 4, acceptedAnswerCount = 2, superAnswerCount = 1, voteScoreReceived = 5)
+            override fun compute(userId: Long): UserReputation = UserReputation(userId, questionCount = 3, answerCount = 4, acceptedAnswerCount = 2, superAnswerCount = 1, voteScoreReceived = 5)
         }
         val useCase = GetUserReputationUseCase(userRepository, reputationRepository)
 

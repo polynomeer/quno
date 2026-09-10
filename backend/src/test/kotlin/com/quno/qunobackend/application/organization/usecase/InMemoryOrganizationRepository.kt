@@ -31,9 +31,8 @@ class InMemoryOrganizationRepository : OrganizationRepository {
         return saved
     }
 
-    override fun search(query: String?, limit: Int): List<Organization> =
-        organizationsById.values
-            .filter { query.isNullOrBlank() || it.name.contains(query, ignoreCase = true) }
-            .sortedBy { it.name }
-            .take(limit)
+    override fun search(query: String?, limit: Int): List<Organization> = organizationsById.values
+        .filter { query.isNullOrBlank() || it.name.contains(query, ignoreCase = true) }
+        .sortedBy { it.name }
+        .take(limit)
 }

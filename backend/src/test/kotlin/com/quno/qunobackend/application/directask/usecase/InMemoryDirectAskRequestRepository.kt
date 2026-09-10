@@ -29,15 +29,13 @@ class InMemoryDirectAskRequestRepository : DirectAskRequestRepository {
 
     override fun findById(id: Long): DirectAskRequest? = requestsById[id]
 
-    override fun existsOpen(questionId: Long, targetUserId: Long): Boolean =
-        requestsById.values.any {
-            it.questionId == questionId && it.targetUserId == targetUserId &&
-                (it.status == DirectAskRequestStatus.AWAITING_PAYMENT || it.status == DirectAskRequestStatus.PENDING)
-        }
+    override fun existsOpen(questionId: Long, targetUserId: Long): Boolean = requestsById.values.any {
+        it.questionId == questionId &&
+            it.targetUserId == targetUserId &&
+            (it.status == DirectAskRequestStatus.AWAITING_PAYMENT || it.status == DirectAskRequestStatus.PENDING)
+    }
 
-    override fun findAllByRequesterId(requesterId: Long): List<DirectAskRequest> =
-        requestsById.values.filter { it.requesterId == requesterId }.sortedByDescending { it.createdAt }
+    override fun findAllByRequesterId(requesterId: Long): List<DirectAskRequest> = requestsById.values.filter { it.requesterId == requesterId }.sortedByDescending { it.createdAt }
 
-    override fun findAllByTargetUserId(targetUserId: Long): List<DirectAskRequest> =
-        requestsById.values.filter { it.targetUserId == targetUserId }.sortedByDescending { it.createdAt }
+    override fun findAllByTargetUserId(targetUserId: Long): List<DirectAskRequest> = requestsById.values.filter { it.targetUserId == targetUserId }.sortedByDescending { it.createdAt }
 }

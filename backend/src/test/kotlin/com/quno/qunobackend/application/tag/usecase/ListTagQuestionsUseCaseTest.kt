@@ -19,16 +19,18 @@ class ListTagQuestionsUseCaseTest {
     private val tagRepository = InMemoryTagRepository()
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        questionTagRepository,
     )
     private val tagStatsRepository = InMemoryTagStatsRepository()
     private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
     private val useCase = ListTagQuestionsUseCase(tagRepository, tagStatsRepository, hydrator)
 
-    private fun question(title: String): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = 1L, title = title, body = "body", environment = null, logs = null),
-        ).id
+    private fun question(title: String): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = 1L, title = title, body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `hydrates ids the repository ranks for the requested sort`() {

@@ -73,3 +73,4 @@
 | [0046](0046-reliability-account-withdrawal-data-export-n-plus-1.md) | 회원 탈퇴는 익명화(삭제 아님), 개인정보 다운로드는 셀프서비스 API, N+1 배치 쿼리로 제거 | 승인됨 |
 | [0047](0047-testing-signup-page-e2e-load-test-scope.md) | 회원가입 UI 전무를 발견해 신설, E2E는 Playwright로 결제 제외 핵심 플로우만, 부하 테스트는 스크립트만 준비 | 승인됨 |
 | [0048](0048-openapi-docs-public-and-runbook.md) | springdoc-openapi로 API 문서 자동 생성(공개), 운영 런북은 배포 대상 미정 전제로 작성 | 승인됨 |
+| [0049](0049-code-quality-gates-ktlint-jacoco-eslint.md) | ktlint 전체 재포맷(intellij_idea 스타일) 후 CI 게이트화, detekt는 Kotlin 2.2 비호환으로 보류, 커버리지 가시화 | 승인됨 |

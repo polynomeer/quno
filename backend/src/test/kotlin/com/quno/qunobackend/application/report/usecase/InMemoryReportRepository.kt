@@ -32,9 +32,7 @@ class InMemoryReportRepository : ReportRepository {
 
     override fun findById(id: Long): Report? = byId[id]
 
-    override fun listByStatus(status: ReportStatus): List<Report> =
-        byId.values.filter { it.status == status }.sortedBy { it.createdAt }
+    override fun listByStatus(status: ReportStatus): List<Report> = byId.values.filter { it.status == status }.sortedBy { it.createdAt }
 
-    override fun countByTarget(targetType: ReportTargetType, targetId: Long): Long =
-        byId.values.count { it.targetType == targetType && it.targetId == targetId }.toLong()
+    override fun countByTarget(targetType: ReportTargetType, targetId: Long): Long = byId.values.count { it.targetType == targetType && it.targetId == targetId }.toLong()
 }

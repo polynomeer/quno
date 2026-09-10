@@ -20,6 +20,5 @@ class LiveChatRoomRepositoryAdapter(
 
     override fun findByQuestionId(questionId: Long): LiveChatRoom? = jpaRepository.findByQuestionId(questionId)?.toDomain()
 
-    private fun LiveChatRoomJpaEntity.toDomain(): LiveChatRoom =
-        LiveChatRoom.reconstitute(id = requireNotNull(id), questionId = questionId, createdBy = createdBy, createdAt = createdAt)
+    private fun LiveChatRoomJpaEntity.toDomain(): LiveChatRoom = LiveChatRoom.reconstitute(id = requireNotNull(id), questionId = questionId, createdBy = createdBy, createdAt = createdAt)
 }

@@ -12,11 +12,11 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 class WriteAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -25,7 +25,10 @@ class WriteAnswerUseCaseTest {
     private val tagRepository = InMemoryTagRepository()
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val answerVersionRepository = InMemoryAnswerVersionRepository()
     private val useCase = WriteAnswerUseCase(

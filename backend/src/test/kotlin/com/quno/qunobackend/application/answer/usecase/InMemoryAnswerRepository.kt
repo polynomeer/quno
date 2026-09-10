@@ -30,12 +30,9 @@ class InMemoryAnswerRepository : AnswerRepository {
 
     override fun findById(id: Long): Answer? = byId[id]?.takeIf { it.deletedAt == null }
 
-    override fun findAllByQuestionId(questionId: Long): List<Answer> =
-        byId.values.filter { it.questionId == questionId && it.deletedAt == null }
+    override fun findAllByQuestionId(questionId: Long): List<Answer> = byId.values.filter { it.questionId == questionId && it.deletedAt == null }
 
-    override fun findAcceptedByQuestionId(questionId: Long): Answer? =
-        byId.values.find { it.questionId == questionId && it.isAccepted && it.deletedAt == null }
+    override fun findAcceptedByQuestionId(questionId: Long): Answer? = byId.values.find { it.questionId == questionId && it.isAccepted && it.deletedAt == null }
 
-    override fun findAllByAuthorId(authorId: Long): List<Answer> =
-        byId.values.filter { it.authorId == authorId && it.deletedAt == null }.sortedByDescending { it.createdAt }
+    override fun findAllByAuthorId(authorId: Long): List<Answer> = byId.values.filter { it.authorId == authorId && it.deletedAt == null }.sortedByDescending { it.createdAt }
 }

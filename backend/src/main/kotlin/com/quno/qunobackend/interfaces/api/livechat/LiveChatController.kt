@@ -8,7 +8,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -26,13 +25,11 @@ class LiveChatController(
 
     @PostMapping("/api/v1/questions/{questionId}/live-chat")
     @ResponseStatus(HttpStatus.CREATED)
-    fun open(@AuthenticationPrincipal userId: Long, @PathVariable questionId: Long): LiveChatRoomResponse =
-        openLiveChatRoomUseCase.execute(questionId, userId).toResponse()
+    fun open(@AuthenticationPrincipal userId: Long, @PathVariable questionId: Long): LiveChatRoomResponse = openLiveChatRoomUseCase.execute(questionId, userId).toResponse()
 
     @GetMapping("/api/v1/questions/{questionId}/live-chat")
     fun get(@PathVariable questionId: Long): LiveChatRoomResponse = getLiveChatRoomUseCase.execute(questionId).toResponse()
 
     @GetMapping("/api/v1/live-chat/{roomId}/messages")
-    fun messages(@PathVariable roomId: Long, @RequestParam(required = false) limit: Int?): List<LiveChatMessageResponse> =
-        listLiveChatMessagesUseCase.execute(roomId, limit ?: 50).map { it.toResponse() }
+    fun messages(@PathVariable roomId: Long, @RequestParam(required = false) limit: Int?): List<LiveChatMessageResponse> = listLiveChatMessagesUseCase.execute(roomId, limit ?: 50).map { it.toResponse() }
 }

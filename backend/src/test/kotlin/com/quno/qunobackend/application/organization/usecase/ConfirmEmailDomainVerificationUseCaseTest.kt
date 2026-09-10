@@ -19,7 +19,9 @@ class ConfirmEmailDomainVerificationUseCaseTest {
     private val emailSender = FakeVerificationEmailSender()
     private val requestUseCase = RequestEmailDomainVerificationUseCase(emailDomainVerificationRepository, emailSender)
     private val useCase = ConfirmEmailDomainVerificationUseCase(
-        emailDomainVerificationRepository, organizationRepository, organizationMembershipRepository,
+        emailDomainVerificationRepository,
+        organizationRepository,
+        organizationMembershipRepository,
     )
     private val joinUseCase = JoinOrganizationUseCase(organizationRepository, organizationMembershipRepository)
 

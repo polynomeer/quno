@@ -14,8 +14,7 @@ class ListMyFollowingUseCaseTest {
     private val followUseCase = FollowUserUseCase(userRepository, userFollowRepository)
     private val listUseCase = ListMyFollowingUseCase(userFollowRepository, userRepository)
 
-    private fun aUser(nickname: String): Long =
-        signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
+    private fun aUser(nickname: String): Long = signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
 
     @Test
     fun `lists the users a user follows`() {

@@ -493,9 +493,21 @@ Phase 36(테스트)에 이어 진행한다([ADR-0048](docs/architecture/decision
 - [x] 37.3 검증 — 임시 인스턴스로 `/v3/api-docs`(74개 경로 정확히 인식)와 `/swagger-ui/index.html`을 인증 없이 확인, 브라우저로 Swagger UI 실제 렌더링(제목/Authorize 버튼/엔드포인트 목록) 확인. 백엔드 전체 테스트 스위트(348개, 회귀 없음) 재확인
 - [x] 37.4 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-6 체크박스 갱신 — 이로써 B-1~B-6 전부 완료
 
-## Phase 38+ — 품질 개선 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 38 — 품질 개선: 코드 품질 게이트 (quality-improvement-plan.md Q-1)
 
-production-readiness.md(상용화 필수 조건)의 코드로 구현 가능한 항목(B-1~B-6)이 Phase 32~37로 전부 끝났다. 이제 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1(코드 품질 게이트)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+production-readiness.md(상용화 필수 조건)의 코드로 구현 가능한 항목(B-1~B-6)이 Phase 32~37로 전부 끝나, 이제부터 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)를 진행한다([ADR-0049](docs/architecture/decisions/0049-code-quality-gates-ktlint-jacoco-eslint.md)).
+
+- [x] 38.1 ktlint 도입 — 처음 `ktlintFormat`을 돌렸다가 408개 파일·9천 줄 넘게 바뀌는 것을 발견. 원인은 `.editorconfig`가 하나라도 있으면 ktlint가 관대한 `intellij_idea` 대신 엄격한 `ktlint_official` 스타일로 자동 전환되는 것이었음 — `ktlint_code_style = intellij_idea`를 명시해 174개 파일·약 1,300줄(순수 포맷팅)로 축소. 이 규모의 일회성 재포맷을 적용할지 사용자에게 확인받아("전체 재포맷 후 CI 게이트로 적용") 진행. 이 프로젝트의 DTO 그룹핑 컨벤션(Commands.kt/Results.kt)과 충돌하는 `filename` 규칙은 명시적으로 끔
+- [x] 38.2 (발견) detekt 도입 보류 — `io.gitlab.arturbosch.detekt` 1.23.8(현재 최신)이 자신을 컴파일한 Kotlin 2.0.21로만 실행되도록 하드 체크하는데 우회 옵션이 전혀 없음을 공식 문서·소스로 확인. 이 프로젝트의 Kotlin 2.2.21이 detekt 자체 classpath까지 강제 정렬시켜 걸림 — `configurations`에 직접 버전을 `force`해도 정렬이 이겨서 실패하는 것까지 실측 확인 후 보류 결정(ADR-0049)
+- [x] 38.3 커버리지 도구 — 백엔드 Gradle `jacoco`(내장, `./gradlew test`에 자동 연결, 도입 시점 라인 커버리지 81.8%), 프론트엔드 `@vitest/coverage-v8`(`npm run test:coverage`, 도입 시점 5.5%). 둘 다 임계값 실패 없이 CI 아티팩트로만 업로드
+- [x] 38.4 프론트엔드 ESLint 강화 — `no-explicit-any`/`no-unused-vars`를 error로 상향(기존 `any` 0건). 검증 중 `coverage/` 산출물이 lint 대상에 잡혀 무관한 경고를 내는 것을 발견해 무시 목록에 추가
+- [x] 38.5 CI 연동 — `.github/workflows/ci.yml`의 backend 잡에 `ktlintCheck` 스텝과 jacoco 리포트 업로드 추가, frontend 잡의 단위 테스트를 `test:coverage`로 교체하고 커버리지 리포트 업로드 추가
+- [x] 38.6 검증 — 재포맷 후 백엔드 전체 테스트 스위트(348개, 회귀 없음) 재확인, `ktlintCheck` 재실행으로 클린 상태 확인, 프론트엔드 lint/coverage/build 전부 통과 확인
+- [x] 38.7 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 체크박스 갱신(프론트엔드 테스트 실질적 확충은 진행 중으로 남김 — 전체 커버리지 5.5%는 여전히 낮음)
+
+## Phase 39+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-2(성능)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 

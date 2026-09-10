@@ -48,8 +48,7 @@ class AnswerController(
     }
 
     @GetMapping("/questions/{questionId}/answers")
-    fun list(@PathVariable questionId: Long): List<AnswerResponse> =
-        listAnswersUseCase.execute(questionId).map { it.toResponse() }
+    fun list(@PathVariable questionId: Long): List<AnswerResponse> = listAnswersUseCase.execute(questionId).map { it.toResponse() }
 
     @PostMapping("/answers/{answerId}/accept")
     fun accept(@AuthenticationPrincipal actorId: Long, @PathVariable answerId: Long): AcceptAnswerResponse {
@@ -71,10 +70,9 @@ class AnswerController(
     ).toResponse()
 
     @GetMapping("/answers/{answerId}/versions")
-    fun listVersions(@PathVariable answerId: Long): List<AnswerVersionSummaryResponse> =
-        listAnswerVersionsUseCase.execute(answerId).map {
-            AnswerVersionSummaryResponse(versionNumber = it.versionNumber, createdBy = it.createdBy, createdAt = it.createdAt)
-        }
+    fun listVersions(@PathVariable answerId: Long): List<AnswerVersionSummaryResponse> = listAnswerVersionsUseCase.execute(answerId).map {
+        AnswerVersionSummaryResponse(versionNumber = it.versionNumber, createdBy = it.createdBy, createdAt = it.createdAt)
+    }
 
     @GetMapping("/answers/{answerId}/versions/{version}")
     fun getVersion(@PathVariable answerId: Long, @PathVariable version: Int): AnswerVersionResponse {

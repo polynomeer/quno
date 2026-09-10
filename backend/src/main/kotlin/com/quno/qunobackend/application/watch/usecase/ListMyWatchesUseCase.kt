@@ -10,10 +10,9 @@ class ListMyWatchesUseCase(
     private val watchRepository: WatchRepository,
     private val questionRepository: QuestionRepository,
 ) {
-    fun execute(userId: Long): List<WatchedQuestionResult> =
-        watchRepository.findWatchedQuestionIds(userId).mapNotNull { questionId ->
-            questionRepository.findById(questionId)?.let { question ->
-                WatchedQuestionResult(questionId = questionId, title = question.title, status = question.status)
-            }
+    fun execute(userId: Long): List<WatchedQuestionResult> = watchRepository.findWatchedQuestionIds(userId).mapNotNull { questionId ->
+        questionRepository.findById(questionId)?.let { question ->
+            WatchedQuestionResult(questionId = questionId, title = question.title, status = question.status)
         }
+    }
 }

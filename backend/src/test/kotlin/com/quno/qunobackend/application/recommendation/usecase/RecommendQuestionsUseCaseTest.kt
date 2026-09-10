@@ -8,16 +8,19 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersion
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 class RecommendQuestionsUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val createUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        questionTagRepository,
     )
     private val recommendationRepository = InMemoryRecommendationRepository()
     private val useCase = RecommendQuestionsUseCase(

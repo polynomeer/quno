@@ -8,10 +8,10 @@
 
 ## Q-1. 코드 품질 게이트 (가장 먼저 — 이후 모든 개선의 기반)
 
-- [ ] 백엔드 정적 분석 도입 — ktlint(포맷) + detekt(코드 스멜/복잡도), CI에 연결
-- [ ] 프론트엔드 ESLint 규칙 강화 — 현재 `eslint.config.mjs` 존재, 규칙 수준 재점검(any 금지, 미사용 import 등)
-- [ ] 테스트 커버리지 측정 도구 도입 — 백엔드 Jacoco, 프론트엔드 Vitest coverage. 수치 자체보다 "커버리지가 급격히 떨어지는 PR을 눈에 띄게" 하는 목적
-- [ ] 프론트엔드 테스트 실질적 확충 — [production-readiness.md](production-readiness.md) B-5와 겹치지만 관점이 다름: 여기서는 "회귀 방지", B-5는 "출시 전 최소 안전망"
+- [x] 백엔드 정적 분석 도입 — ktlint 도입, 기존 코드 전체(174개 파일, 순수 포맷팅) 재포맷 후 CI 게이트화(ADR-0049). detekt는 Kotlin 2.2.21과의 하드 호환성 문제(우회 불가 확인)로 새 릴리스가 나올 때까지 보류
+- [x] 프론트엔드 ESLint 규칙 강화 — `no-explicit-any`/`no-unused-vars`를 warn에서 error로 상향(기존 `any` 사용 0건이라 즉시 고칠 것 없었음). 검증 중 `coverage/` 리포트 산출물이 lint 대상에 잡히던 것을 발견해 무시 목록에 추가
+- [x] 테스트 커버리지 측정 도구 도입 — 백엔드 Jacoco(내장, 도입 시점 라인 커버리지 81.8% 확인), 프론트엔드 `@vitest/coverage-v8`. 둘 다 CI 아티팩트로만 업로드하고 임계값 실패는 두지 않음(ADR-0049)
+- [ ] 프론트엔드 테스트 실질적 확충 — [production-readiness.md](production-readiness.md) B-5(Phase 36)에서 1→6개 파일로 늘렸지만 전체 커버리지는 여전히 5.5% 수준(도입한 커버리지 도구로 실측). 회귀 방지 관점의 지속적 확충은 계속 진행 필요
 
 ## Q-2. 성능
 

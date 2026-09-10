@@ -55,7 +55,6 @@ class DirectAskPayment private constructor(
             createdAt: Instant,
             confirmedAt: Instant?,
             cancelledAt: Instant?,
-        ): DirectAskPayment =
-            DirectAskPayment(id, directAskRequestId, orderId, amount, status, tossPaymentKey, createdAt, confirmedAt, cancelledAt)
+        ): DirectAskPayment = DirectAskPayment(id, directAskRequestId, orderId, amount, status, tossPaymentKey, createdAt, confirmedAt, cancelledAt)
     }
 }

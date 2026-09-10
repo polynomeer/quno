@@ -11,5 +11,4 @@ data class QuestionSearchResultResponse(
     val score: Long,
 )
 
-fun QuestionSearchResult.toResponse() =
-    QuestionSearchResultResponse(id = id, title = title, status = status, tags = tags, score = score)
+fun QuestionSearchResult.toResponse() = QuestionSearchResultResponse(id = id, title = title, status = status, tags = tags, score = score)

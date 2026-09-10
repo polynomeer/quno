@@ -10,8 +10,7 @@ class InMemoryVersionImpactRepository : VersionImpactRepository {
     var affectedQuestionsByTag: Map<String, List<AffectedQuestion>> = emptyMap()
     var versionImpacts: List<VersionImpact> = emptyList()
 
-    override fun findAffectedQuestions(tagSlug: String, sinceDate: LocalDate, limit: Int): List<AffectedQuestion> =
-        (affectedQuestionsByTag[tagSlug] ?: emptyList()).take(limit)
+    override fun findAffectedQuestions(tagSlug: String, sinceDate: LocalDate, limit: Int): List<AffectedQuestion> = (affectedQuestionsByTag[tagSlug] ?: emptyList()).take(limit)
 
     override fun findVersionImpacts(limit: Int): List<VersionImpact> = versionImpacts.take(limit)
 }

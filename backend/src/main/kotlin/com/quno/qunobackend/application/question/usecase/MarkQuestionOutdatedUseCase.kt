@@ -45,6 +45,5 @@ class MarkQuestionOutdatedUseCase(
         return QuestionMutationResult(id = command.questionId, title = updated.title, status = updated.status, versionNumber = versionNumber)
     }
 
-    private fun escapeJson(value: String): String =
-        value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "")
+    private fun escapeJson(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "")
 }

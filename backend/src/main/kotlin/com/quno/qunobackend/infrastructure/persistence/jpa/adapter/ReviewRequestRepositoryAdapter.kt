@@ -27,8 +27,7 @@ class ReviewRequestRepositoryAdapter(
 
     override fun findById(id: Long): ReviewRequest? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
-    override fun findAllByQuestionId(questionId: Long): List<ReviewRequest> =
-        jpaRepository.findAllByQuestionIdOrderByCreatedAtDesc(questionId).map { it.toDomain() }
+    override fun findAllByQuestionId(questionId: Long): List<ReviewRequest> = jpaRepository.findAllByQuestionIdOrderByCreatedAtDesc(questionId).map { it.toDomain() }
 
     private fun ReviewRequestJpaEntity.toDomain(): ReviewRequest = ReviewRequest.reconstitute(
         id = requireNotNull(id),

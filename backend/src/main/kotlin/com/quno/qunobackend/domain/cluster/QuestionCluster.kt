@@ -16,8 +16,7 @@ class QuestionCluster private constructor(
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
-    fun designateSuperAnswer(answerId: Long): QuestionCluster =
-        QuestionCluster(id, answerId, createdAt, Instant.now())
+    fun designateSuperAnswer(answerId: Long): QuestionCluster = QuestionCluster(id, answerId, createdAt, Instant.now())
 
     companion object {
         fun create(): QuestionCluster {
@@ -25,7 +24,6 @@ class QuestionCluster private constructor(
             return QuestionCluster(id = null, representativeAnswerId = null, createdAt = now, updatedAt = now)
         }
 
-        fun reconstitute(id: Long, representativeAnswerId: Long?, createdAt: Instant, updatedAt: Instant): QuestionCluster =
-            QuestionCluster(id, representativeAnswerId, createdAt, updatedAt)
+        fun reconstitute(id: Long, representativeAnswerId: Long?, createdAt: Instant, updatedAt: Instant): QuestionCluster = QuestionCluster(id, representativeAnswerId, createdAt, updatedAt)
     }
 }

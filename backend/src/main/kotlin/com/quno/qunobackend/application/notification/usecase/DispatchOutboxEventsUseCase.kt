@@ -121,13 +121,11 @@ class DispatchOutboxEventsUseCase(
         outboxEventRepository.markPublished(requireNotNull(event.id))
     }
 
-    private fun extractLong(json: String, field: String): Long? =
-        Regex(""""$field"\s*:\s*(\d+)""").find(json)?.groupValues?.get(1)?.toLong()
+    private fun extractLong(json: String, field: String): Long? = Regex(""""$field"\s*:\s*(\d+)""").find(json)?.groupValues?.get(1)?.toLong()
 
-    private fun extractLongList(json: String, field: String): List<Long> =
-        Regex(""""$field"\s*:\s*\[([^\]]*)]""").find(json)
-            ?.groupValues?.get(1)
-            ?.split(",")
-            ?.mapNotNull { it.trim().toLongOrNull() }
-            ?: emptyList()
+    private fun extractLongList(json: String, field: String): List<Long> = Regex(""""$field"\s*:\s*\[([^\]]*)]""").find(json)
+        ?.groupValues?.get(1)
+        ?.split(",")
+        ?.mapNotNull { it.trim().toLongOrNull() }
+        ?: emptyList()
 }

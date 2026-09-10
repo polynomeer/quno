@@ -9,8 +9,7 @@ import org.springframework.stereotype.Service
 class ListMyNotificationsUseCase(
     private val notificationRepository: NotificationRepository,
 ) {
-    fun execute(userId: Long): List<NotificationResult> =
-        notificationRepository.findAllByUserId(userId).map { it.toResult() }
+    fun execute(userId: Long): List<NotificationResult> = notificationRepository.findAllByUserId(userId).map { it.toResult() }
 }
 
 private fun Notification.toResult() = NotificationResult(

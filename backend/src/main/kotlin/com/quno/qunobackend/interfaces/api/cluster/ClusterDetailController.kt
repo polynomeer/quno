@@ -18,13 +18,11 @@ class ClusterDetailController(
 ) {
 
     @GetMapping
-    fun get(@PathVariable clusterId: Long): ClusterDetailResponse =
-        getClusterUseCase.execute(clusterId).toResponse()
+    fun get(@PathVariable clusterId: Long): ClusterDetailResponse = getClusterUseCase.execute(clusterId).toResponse()
 
     @PostMapping("/super-answer")
     fun designateSuperAnswer(
         @PathVariable clusterId: Long,
         @Valid @RequestBody request: DesignateSuperAnswerRequest,
-    ): ClusterDetailResponse =
-        designateSuperAnswerUseCase.execute(clusterId, request.answerId).toResponse()
+    ): ClusterDetailResponse = designateSuperAnswerUseCase.execute(clusterId, request.answerId).toResponse()
 }

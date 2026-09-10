@@ -4,5 +4,4 @@ class AnswerNotFoundException(id: Long) : RuntimeException("Answer not found: $i
 
 class AnswerAccessDeniedException(id: Long) : RuntimeException("Not authorized to modify answer: $id")
 
-class AnswerVersionNotFoundException(answerId: Long, versionNumber: Int) :
-    RuntimeException("Answer $answerId has no version $versionNumber")
+class AnswerVersionNotFoundException(answerId: Long, versionNumber: Int) : RuntimeException("Answer $answerId has no version $versionNumber")

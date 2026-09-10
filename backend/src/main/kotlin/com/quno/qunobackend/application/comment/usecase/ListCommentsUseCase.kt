@@ -10,6 +10,5 @@ class ListCommentsUseCase(
     private val commentRepository: CommentRepository,
 ) {
     /** Includes soft-deleted comments (tombstoned, body nulled by [toResult]) — see ADR-0024 #4. */
-    fun execute(targetType: CommentTargetType, targetId: Long): List<CommentResult> =
-        commentRepository.listByTarget(targetType, targetId).map { it.toResult() }
+    fun execute(targetType: CommentTargetType, targetId: Long): List<CommentResult> = commentRepository.listByTarget(targetType, targetId).map { it.toResult() }
 }

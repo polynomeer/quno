@@ -20,14 +20,16 @@ class MarkQuestionOutdatedUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val useCase = MarkQuestionOutdatedUseCase(questionRepository, questionVersionRepository, outboxEventRepository)
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `marks a question outdated`() {

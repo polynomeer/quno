@@ -29,6 +29,5 @@ class InMemoryDirectAskPaymentRepository : DirectAskPaymentRepository {
 
     override fun findByOrderId(orderId: String): DirectAskPayment? = paymentsById.values.find { it.orderId == orderId }
 
-    override fun findByDirectAskRequestId(directAskRequestId: Long): DirectAskPayment? =
-        paymentsById.values.find { it.directAskRequestId == directAskRequestId }
+    override fun findByDirectAskRequestId(directAskRequestId: Long): DirectAskPayment? = paymentsById.values.find { it.directAskRequestId == directAskRequestId }
 }

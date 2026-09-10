@@ -7,6 +7,5 @@ package com.quno.qunobackend.domain.comment
 object CommentMentionParser {
     private val MENTION_PATTERN = Regex("""@([\w-]+)""")
 
-    fun parseNicknames(body: String): Set<String> =
-        MENTION_PATTERN.findAll(body).map { it.groupValues[1] }.toSet()
+    fun parseNicknames(body: String): Set<String> = MENTION_PATTERN.findAll(body).map { it.groupValues[1] }.toSet()
 }

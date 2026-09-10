@@ -13,6 +13,5 @@ class BadgeController(
 ) {
 
     @GetMapping
-    fun get(@PathVariable id: Long): List<BadgeResponse> =
-        getUserBadgesUseCase.execute(id).map { BadgeResponse(type = it, tier = it.tier) }
+    fun get(@PathVariable id: Long): List<BadgeResponse> = getUserBadgesUseCase.execute(id).map { BadgeResponse(type = it, tier = it.tier) }
 }

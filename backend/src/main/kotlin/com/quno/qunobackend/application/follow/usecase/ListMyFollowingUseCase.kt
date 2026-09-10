@@ -10,10 +10,9 @@ class ListMyFollowingUseCase(
     private val userFollowRepository: UserFollowRepository,
     private val userRepository: UserRepository,
 ) {
-    fun execute(followerId: Long): List<FolloweeResult> =
-        userFollowRepository.findFolloweeIds(followerId).mapNotNull { followeeId ->
-            userRepository.findById(followeeId)?.let { user ->
-                FolloweeResult(userId = followeeId, nickname = user.nickname)
-            }
+    fun execute(followerId: Long): List<FolloweeResult> = userFollowRepository.findFolloweeIds(followerId).mapNotNull { followeeId ->
+        userRepository.findById(followeeId)?.let { user ->
+            FolloweeResult(userId = followeeId, nickname = user.nickname)
         }
+    }
 }

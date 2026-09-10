@@ -15,6 +15,5 @@ class SearchRepositoryAdapter(
         SearchSort.SCORE -> searchJpaRepository.searchQuestionIdsByScore(query, limit)
     }
 
-    override fun findRelatedQuestionIds(questionId: Long, limit: Int): List<Long> =
-        searchJpaRepository.findRelatedQuestionIds(questionId, limit)
+    override fun findRelatedQuestionIds(questionId: Long, limit: Int): List<Long> = searchJpaRepository.findRelatedQuestionIds(questionId, limit)
 }

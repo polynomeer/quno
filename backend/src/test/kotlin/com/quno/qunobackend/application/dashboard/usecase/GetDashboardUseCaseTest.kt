@@ -20,16 +20,19 @@ import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.dashboard.TagTrend
 import com.quno.qunobackend.domain.notification.Notification
 import com.quno.qunobackend.domain.qunobot.TagSpike
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import org.junit.jupiter.api.Test
 
 class GetDashboardUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, InMemoryQuestionVersionRepository(), tagRepository, questionTagRepository,
+        questionRepository,
+        InMemoryQuestionVersionRepository(),
+        tagRepository,
+        questionTagRepository,
     )
     private val dashboardRepository = InMemoryDashboardRepository()
     private val notificationRepository = InMemoryNotificationRepository()

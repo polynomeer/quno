@@ -21,9 +21,9 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.flow.FlowCardType
 import com.quno.qunobackend.domain.qunobot.TagSpike
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 class GetActivityFeedUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -37,22 +37,33 @@ class GetActivityFeedUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(), outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        InMemoryAnswerVersionRepository(),
+        outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
     private val markQuestionsAsSameProblemUseCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)
     private val useCase = GetActivityFeedUseCase(
-        dashboardRepository, spikeDetectionRepository, flowRepository, questionRepository, answerRepository, questionClusterRepository,
+        dashboardRepository,
+        spikeDetectionRepository,
+        flowRepository,
+        questionRepository,
+        answerRepository,
+        questionClusterRepository,
     )
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t$authorId", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t$authorId", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `builds a popular question card`() {

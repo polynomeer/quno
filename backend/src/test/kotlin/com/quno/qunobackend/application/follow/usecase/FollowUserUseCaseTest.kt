@@ -18,8 +18,7 @@ class FollowUserUseCaseTest {
     private val followUseCase = FollowUserUseCase(userRepository, userFollowRepository)
     private val unfollowUseCase = UnfollowUserUseCase(userFollowRepository)
 
-    private fun aUser(nickname: String): Long =
-        signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
+    private fun aUser(nickname: String): Long = signUpUseCase.execute(SignUpCommand("$nickname@example.com", nickname, "password123")).userId
 
     @Test
     fun `following an existing user registers the follow`() {

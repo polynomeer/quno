@@ -28,16 +28,15 @@ class DirectAskRequestRepositoryAdapter(
 
     override fun findById(id: Long): DirectAskRequest? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
-    override fun existsOpen(questionId: Long, targetUserId: Long): Boolean =
-        jpaRepository.existsByQuestionIdAndTargetUserIdAndStatusIn(
-            questionId, targetUserId, listOf(DirectAskRequestStatus.AWAITING_PAYMENT, DirectAskRequestStatus.PENDING),
-        )
+    override fun existsOpen(questionId: Long, targetUserId: Long): Boolean = jpaRepository.existsByQuestionIdAndTargetUserIdAndStatusIn(
+        questionId,
+        targetUserId,
+        listOf(DirectAskRequestStatus.AWAITING_PAYMENT, DirectAskRequestStatus.PENDING),
+    )
 
-    override fun findAllByRequesterId(requesterId: Long): List<DirectAskRequest> =
-        jpaRepository.findAllByRequesterIdOrderByCreatedAtDesc(requesterId).map { it.toDomain() }
+    override fun findAllByRequesterId(requesterId: Long): List<DirectAskRequest> = jpaRepository.findAllByRequesterIdOrderByCreatedAtDesc(requesterId).map { it.toDomain() }
 
-    override fun findAllByTargetUserId(targetUserId: Long): List<DirectAskRequest> =
-        jpaRepository.findAllByTargetUserIdOrderByCreatedAtDesc(targetUserId).map { it.toDomain() }
+    override fun findAllByTargetUserId(targetUserId: Long): List<DirectAskRequest> = jpaRepository.findAllByTargetUserIdOrderByCreatedAtDesc(targetUserId).map { it.toDomain() }
 
     private fun DirectAskRequestJpaEntity.toDomain(): DirectAskRequest = DirectAskRequest.reconstitute(
         id = requireNotNull(id),

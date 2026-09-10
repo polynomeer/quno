@@ -23,9 +23,7 @@ class UserFollowRepositoryAdapter(
         jpaRepository.deleteById(UserFollowId(followerId, followeeId))
     }
 
-    override fun isFollowing(followerId: Long, followeeId: Long): Boolean =
-        jpaRepository.existsById(UserFollowId(followerId, followeeId))
+    override fun isFollowing(followerId: Long, followeeId: Long): Boolean = jpaRepository.existsById(UserFollowId(followerId, followeeId))
 
-    override fun findFolloweeIds(followerId: Long): List<Long> =
-        jpaRepository.findAllByFollowerId(followerId).map { it.followeeId }
+    override fun findFolloweeIds(followerId: Long): List<Long> = jpaRepository.findAllByFollowerId(followerId).map { it.followeeId }
 }

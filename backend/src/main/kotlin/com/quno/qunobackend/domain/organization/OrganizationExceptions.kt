@@ -9,5 +9,4 @@ class DuplicateOrganizationNameException(name: String) : RuntimeException("Organ
 
 /** Membership in a Verified organization can only be granted by ConfirmEmailDomainVerificationUseCase —
  * see ADR-0035. `POST /organizations/{id}/join` refuses a verified organization's id outright. */
-class VerifiedOrganizationJoinRequiresEmailException(organizationId: Long) :
-    RuntimeException("Organization $organizationId is verified — join by verifying a matching work/school email instead")
+class VerifiedOrganizationJoinRequiresEmailException(organizationId: Long) : RuntimeException("Organization $organizationId is verified — join by verifying a matching work/school email instead")

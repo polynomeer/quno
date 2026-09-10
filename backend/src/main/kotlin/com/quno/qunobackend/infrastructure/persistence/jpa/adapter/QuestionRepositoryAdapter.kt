@@ -37,14 +37,11 @@ class QuestionRepositoryAdapter(
 
     override fun findByIdForUpdate(id: Long): Question? = jpaRepository.findByIdForUpdate(id)?.toDomain()
 
-    override fun findAllByAuthorId(authorId: Long): List<Question> =
-        jpaRepository.findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId).map { it.toDomain() }
+    override fun findAllByAuthorId(authorId: Long): List<Question> = jpaRepository.findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId).map { it.toDomain() }
 
-    override fun findAllByClusterId(clusterId: Long): List<Question> =
-        jpaRepository.findAllByClusterIdAndDeletedAtIsNull(clusterId).map { it.toDomain() }
+    override fun findAllByClusterId(clusterId: Long): List<Question> = jpaRepository.findAllByClusterIdAndDeletedAtIsNull(clusterId).map { it.toDomain() }
 
-    override fun findAllByOriginQuestionId(originQuestionId: Long): List<Question> =
-        jpaRepository.findAllByOriginQuestionIdAndDeletedAtIsNull(originQuestionId).map { it.toDomain() }
+    override fun findAllByOriginQuestionId(originQuestionId: Long): List<Question> = jpaRepository.findAllByOriginQuestionIdAndDeletedAtIsNull(originQuestionId).map { it.toDomain() }
 
     private fun QuestionJpaEntity.toDomain(): Question = Question.reconstitute(
         id = requireNotNull(id),

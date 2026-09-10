@@ -14,6 +14,5 @@ class SpikeDetectionController(
 ) {
 
     @GetMapping
-    fun get(@RequestParam(required = false) limit: Int?): List<TagSpike> =
-        detectTagSpikesUseCase.execute(limit ?: 10)
+    fun get(@RequestParam(required = false) limit: Int?): List<TagSpike> = detectTagSpikesUseCase.execute(limit ?: 10)
 }

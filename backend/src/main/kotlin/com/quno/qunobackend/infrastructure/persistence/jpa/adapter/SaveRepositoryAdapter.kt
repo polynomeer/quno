@@ -23,9 +23,7 @@ class SaveRepositoryAdapter(
         jpaRepository.deleteById(SaveId(userId, questionId))
     }
 
-    override fun isSaved(userId: Long, questionId: Long): Boolean =
-        jpaRepository.existsById(SaveId(userId, questionId))
+    override fun isSaved(userId: Long, questionId: Long): Boolean = jpaRepository.existsById(SaveId(userId, questionId))
 
-    override fun findSavedQuestionIds(userId: Long): List<Long> =
-        jpaRepository.findAllByUserId(userId).map { it.questionId }
+    override fun findSavedQuestionIds(userId: Long): List<Long> = jpaRepository.findAllByUserId(userId).map { it.questionId }
 }

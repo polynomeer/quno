@@ -21,10 +21,8 @@ class ClusterController(
     fun markAsSameProblem(
         @PathVariable questionId: Long,
         @Valid @RequestBody request: MarkAsSameProblemRequest,
-    ): ClusterResponse =
-        markQuestionsAsSameProblemUseCase.execute(questionId, request.relatedQuestionId).toResponse()
+    ): ClusterResponse = markQuestionsAsSameProblemUseCase.execute(questionId, request.relatedQuestionId).toResponse()
 
     @GetMapping
-    fun getForQuestion(@PathVariable questionId: Long): ClusterDetailResponse =
-        getClusterUseCase.executeForQuestion(questionId).toResponse()
+    fun getForQuestion(@PathVariable questionId: Long): ClusterDetailResponse = getClusterUseCase.executeForQuestion(questionId).toResponse()
 }

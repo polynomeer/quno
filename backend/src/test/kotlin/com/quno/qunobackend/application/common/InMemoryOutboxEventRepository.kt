@@ -26,8 +26,7 @@ class InMemoryOutboxEventRepository : OutboxEventRepository {
         return saved
     }
 
-    override fun findUnpublished(limit: Int): List<OutboxEvent> =
-        events.filter { it.publishedAt == null }.take(limit)
+    override fun findUnpublished(limit: Int): List<OutboxEvent> = events.filter { it.publishedAt == null }.take(limit)
 
     override fun markPublished(id: Long) {
         val index = events.indexOfFirst { it.id == id }

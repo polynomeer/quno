@@ -20,9 +20,9 @@ import com.quno.qunobackend.domain.answer.AnswerNotFoundException
 import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
 import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import org.junit.jupiter.api.Test
 
 class DesignateSuperAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -34,23 +34,31 @@ class DesignateSuperAnswerUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, questionTagRepository,
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        questionTagRepository,
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(), outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        InMemoryAnswerVersionRepository(),
+        outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
     private val markQuestionsAsSameProblemUseCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)
     private val getClusterUseCase = GetClusterUseCase(
-        questionClusterRepository, questionRepository, QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
+        questionClusterRepository,
+        questionRepository,
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
     )
     private val useCase = DesignateSuperAnswerUseCase(questionClusterRepository, questionRepository, answerRepository, getClusterUseCase)
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `designates an accepted answer from a cluster member as the Super Answer`() {

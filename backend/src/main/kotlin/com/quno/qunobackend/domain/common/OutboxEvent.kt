@@ -19,16 +19,15 @@ class OutboxEvent private constructor(
     val publishedAt: Instant?,
 ) {
     companion object {
-        fun create(eventType: String, aggregateType: String, aggregateId: Long, payload: String): OutboxEvent =
-            OutboxEvent(
-                id = null,
-                eventType = eventType,
-                aggregateType = aggregateType,
-                aggregateId = aggregateId,
-                payload = payload,
-                createdAt = Instant.now(),
-                publishedAt = null,
-            )
+        fun create(eventType: String, aggregateType: String, aggregateId: Long, payload: String): OutboxEvent = OutboxEvent(
+            id = null,
+            eventType = eventType,
+            aggregateType = aggregateType,
+            aggregateId = aggregateId,
+            payload = payload,
+            createdAt = Instant.now(),
+            publishedAt = null,
+        )
 
         fun reconstitute(
             id: Long,

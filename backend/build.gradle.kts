@@ -4,6 +4,8 @@ plugins {
 	id("org.springframework.boot") version "4.0.8"
 	id("io.spring.dependency-management") version "1.1.7"
 	kotlin("plugin.jpa") version "2.2.21"
+	id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
+	jacoco
 }
 
 group = "com.quno"
@@ -81,4 +83,15 @@ tasks.withType<Test> {
 	// Spring context tests (e.g. QunoBackendApplicationTests) need a real datasource/mongo/redis;
 	// the local profile points at the docker-compose services (see CLAUDE.md).
 	systemProperty("spring.profiles.active", "local")
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+// 코드 품질 게이트(quality-improvement-plan.md Q-1, ADR-0049). 커버리지는 수치 강제가 목적이
+// 아니라 "PR에서 급격히 떨어지면 눈에 띄게" 하는 용도라 임계값 실패는 만들지 않는다.
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required = true
+		html.required = true
+	}
 }

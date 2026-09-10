@@ -19,8 +19,7 @@ class Tag private constructor(
         return Tag(id, normalized, slugify(normalized), description, docsUrl, deletedAt, createdAt)
     }
 
-    fun updateDetails(description: String?, docsUrl: String?): Tag =
-        Tag(id, name, slug, description?.trim()?.ifBlank { null }, docsUrl?.trim()?.ifBlank { null }, deletedAt, createdAt)
+    fun updateDetails(description: String?, docsUrl: String?): Tag = Tag(id, name, slug, description?.trim()?.ifBlank { null }, docsUrl?.trim()?.ifBlank { null }, deletedAt, createdAt)
 
     fun softDelete(): Tag = Tag(id, name, slug, description, docsUrl, Instant.now(), createdAt)
 
@@ -29,8 +28,13 @@ class Tag private constructor(
             require(name.isNotBlank()) { "name must not be blank" }
             val normalized = name.trim()
             return Tag(
-                id = null, name = normalized, slug = slugify(normalized),
-                description = null, docsUrl = null, deletedAt = null, createdAt = Instant.now(),
+                id = null,
+                name = normalized,
+                slug = slugify(normalized),
+                description = null,
+                docsUrl = null,
+                deletedAt = null,
+                createdAt = Instant.now(),
             )
         }
 

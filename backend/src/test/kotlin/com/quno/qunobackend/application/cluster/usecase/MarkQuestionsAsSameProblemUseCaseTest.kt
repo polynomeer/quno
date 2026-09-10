@@ -20,14 +20,16 @@ class MarkQuestionsAsSameProblemUseCaseTest {
     private val questionClusterRepository = InMemoryQuestionClusterRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val useCase = MarkQuestionsAsSameProblemUseCase(questionRepository, questionClusterRepository)
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `marking two unclustered questions creates a new cluster containing both`() {

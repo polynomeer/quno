@@ -22,12 +22,14 @@ class OpenLiveChatRoomUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val useCase = OpenLiveChatRoomUseCase(questionRepository, liveChatRoomRepository, outboxEventRepository)
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(CreateQuestionCommand(authorId, "t", "body", null, null)).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(CreateQuestionCommand(authorId, "t", "body", null, null)).id
 
     @Test
     fun `opening a room for the first time creates it and notifies the question's author`() {

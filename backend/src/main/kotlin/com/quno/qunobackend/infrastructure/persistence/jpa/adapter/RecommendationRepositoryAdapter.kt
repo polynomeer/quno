@@ -9,6 +9,5 @@ class RecommendationRepositoryAdapter(
     private val jpaRepository: RecommendationJpaRepository,
 ) : RecommendationRepository {
 
-    override fun recommendQuestionIdsByTagFollows(userId: Long, limit: Int): List<Long> =
-        jpaRepository.recommendQuestionIdsByTagFollows(userId, limit)
+    override fun recommendQuestionIdsByTagFollows(userId: Long, limit: Int): List<Long> = jpaRepository.recommendQuestionIdsByTagFollows(userId, limit)
 }

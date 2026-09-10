@@ -27,14 +27,11 @@ class VoteRepositoryAdapter(
         jpaRepository.deleteById(VoteId(voterId, targetType, targetId))
     }
 
-    override fun findByVoterAndTarget(voterId: Long, targetType: VoteTargetType, targetId: Long): Vote? =
-        jpaRepository.findById(VoteId(voterId, targetType, targetId)).map { it.toDomain() }.orElse(null)
+    override fun findByVoterAndTarget(voterId: Long, targetType: VoteTargetType, targetId: Long): Vote? = jpaRepository.findById(VoteId(voterId, targetType, targetId)).map { it.toDomain() }.orElse(null)
 
-    override fun findByVoter(voterId: Long): List<Vote> =
-        jpaRepository.findAllByVoterId(voterId).map { it.toDomain() }
+    override fun findByVoter(voterId: Long): List<Vote> = jpaRepository.findAllByVoterId(voterId).map { it.toDomain() }
 
-    override fun sumScore(targetType: VoteTargetType, targetId: Long): Long =
-        jpaRepository.sumScore(targetType.name, targetId)
+    override fun sumScore(targetType: VoteTargetType, targetId: Long): Long = jpaRepository.sumScore(targetType.name, targetId)
 
     override fun sumScoresByTargets(targetType: VoteTargetType, targetIds: List<Long>): Map<Long, Long> {
         if (targetIds.isEmpty()) return emptyMap()

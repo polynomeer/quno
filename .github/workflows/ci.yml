@@ -36,9 +36,23 @@ jobs:
             sleep 1
           done
 
+      - name: 코드 스타일 검사 (ktlint)
+        working-directory: backend
+        run: ./gradlew ktlintCheck --no-daemon
+
       - name: 백엔드 테스트
         working-directory: backend
         run: ./gradlew test --no-daemon
+
+      # 수치를 강제하는 게 목적이 아니라 PR에서 커버리지가 급격히 떨어지면 눈에 띄게 하는
+      # 용도라 실패 조건은 없다(quality-improvement-plan.md Q-1) — 리포트만 아티팩트로 남긴다.
+      - name: 커버리지 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/build/reports/jacoco/test/html/
+          retention-days: 14
 
       - name: 인프라 정리
         if: always()
@@ -64,9 +78,17 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
-      - name: 단위 테스트
+      - name: 단위 테스트 + 커버리지
         working-directory: frontend
-        run: npm test -- --run
+        run: npm run test:coverage
+
+      - name: 커버리지 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 14
 
       - name: 빌드
         working-directory: frontend

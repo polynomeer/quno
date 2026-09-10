@@ -20,8 +20,7 @@ class User private constructor(
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
-    fun updateDirectAskSettings(accepts: Boolean): User =
-        User(id, email, nickname, passwordHash, isActive, role, accepts, createdAt, Instant.now())
+    fun updateDirectAskSettings(accepts: Boolean): User = User(id, email, nickname, passwordHash, isActive, role, accepts, createdAt, Instant.now())
 
     /**
      * 개인정보 삭제 요청(회원 탈퇴)을 반영한다 — Row를 지우지 않고 PII만 익명화한다(ADR-0046).

@@ -14,6 +14,5 @@ class FlowController(
 ) {
 
     @GetMapping
-    fun get(@RequestParam(required = false) limit: Int?): List<FlowCard> =
-        getActivityFeedUseCase.execute(limit ?: 5)
+    fun get(@RequestParam(required = false) limit: Int?): List<FlowCard> = getActivityFeedUseCase.execute(limit ?: 5)
 }

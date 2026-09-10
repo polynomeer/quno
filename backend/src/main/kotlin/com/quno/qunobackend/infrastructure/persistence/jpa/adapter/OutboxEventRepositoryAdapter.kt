@@ -26,8 +26,7 @@ class OutboxEventRepositoryAdapter(
         return jpaRepository.save(entity).toDomain()
     }
 
-    override fun findUnpublished(limit: Int): List<OutboxEvent> =
-        jpaRepository.findAllByPublishedAtIsNullOrderByCreatedAtAsc(PageRequest.of(0, limit)).map { it.toDomain() }
+    override fun findUnpublished(limit: Int): List<OutboxEvent> = jpaRepository.findAllByPublishedAtIsNullOrderByCreatedAtAsc(PageRequest.of(0, limit)).map { it.toDomain() }
 
     override fun markPublished(id: Long) {
         jpaRepository.markPublished(id, Instant.now())

@@ -19,7 +19,6 @@ class CommentVersion private constructor(
             return CommentVersion(id = null, commentId = commentId, versionNumber = versionNumber, body = body, createdAt = Instant.now())
         }
 
-        fun reconstitute(id: Long, commentId: Long, versionNumber: Int, body: String, createdAt: Instant) =
-            CommentVersion(id, commentId, versionNumber, body, createdAt)
+        fun reconstitute(id: Long, commentId: Long, versionNumber: Int, body: String, createdAt: Instant) = CommentVersion(id, commentId, versionNumber, body, createdAt)
     }
 }

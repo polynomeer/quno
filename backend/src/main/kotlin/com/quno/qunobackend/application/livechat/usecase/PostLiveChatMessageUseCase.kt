@@ -21,5 +21,4 @@ class PostLiveChatMessageUseCase(
     }
 }
 
-internal fun LiveChatMessage.toResult() =
-    LiveChatMessageResult(id = requireNotNull(id), roomId = roomId, senderId = senderId, body = body, createdAt = createdAt)
+internal fun LiveChatMessage.toResult() = LiveChatMessageResult(id = requireNotNull(id), roomId = roomId, senderId = senderId, body = body, createdAt = createdAt)

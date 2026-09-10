@@ -31,6 +31,5 @@ class InMemoryCommentRepository : CommentRepository {
 
     override fun findById(id: Long): Comment? = byId[id]
 
-    override fun listByTarget(targetType: CommentTargetType, targetId: Long): List<Comment> =
-        byId.values.filter { it.targetType == targetType && it.targetId == targetId }.sortedBy { it.createdAt }
+    override fun listByTarget(targetType: CommentTargetType, targetId: Long): List<Comment> = byId.values.filter { it.targetType == targetType && it.targetId == targetId }.sortedBy { it.createdAt }
 }

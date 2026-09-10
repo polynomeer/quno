@@ -8,6 +8,5 @@ import org.springframework.stereotype.Service
 class ListMyVotesUseCase(
     private val voteRepository: VoteRepository,
 ) {
-    fun execute(voterId: Long): List<VoteResult> =
-        voteRepository.findByVoter(voterId).map { VoteResult(it.targetType, it.targetId, it.value) }
+    fun execute(voterId: Long): List<VoteResult> = voteRepository.findByVoter(voterId).map { VoteResult(it.targetType, it.targetId, it.value) }
 }

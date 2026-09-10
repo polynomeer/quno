@@ -26,8 +26,7 @@ class InMemoryNotificationRepository : NotificationRepository {
         return saved
     }
 
-    override fun findAllByUserId(userId: Long): List<Notification> =
-        byId.values.filter { it.userId == userId }.sortedByDescending { it.createdAt }
+    override fun findAllByUserId(userId: Long): List<Notification> = byId.values.filter { it.userId == userId }.sortedByDescending { it.createdAt }
 
     override fun markAllReadForUser(userId: Long) {
         byId.values.filter { it.userId == userId && !it.isRead }.forEach { save(it.markRead()) }

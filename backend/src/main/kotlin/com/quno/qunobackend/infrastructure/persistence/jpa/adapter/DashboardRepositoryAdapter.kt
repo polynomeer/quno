@@ -46,8 +46,7 @@ class DashboardRepositoryAdapter(
     }
 
     /** Not cached — a simple indexed query, unlike the two aggregate rankings above. */
-    override fun findResolvedTodayQuestionIds(limit: Int): List<Long> =
-        jpaRepository.findResolvedTodayQuestionIds(limit)
+    override fun findResolvedTodayQuestionIds(limit: Int): List<Long> = jpaRepository.findResolvedTodayQuestionIds(limit)
 
     companion object {
         private const val POPULAR_QUESTIONS_KEY = "dashboard:popular-questions"

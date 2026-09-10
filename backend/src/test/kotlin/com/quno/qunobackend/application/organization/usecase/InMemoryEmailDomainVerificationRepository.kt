@@ -30,6 +30,5 @@ class InMemoryEmailDomainVerificationRepository : EmailDomainVerificationReposit
     // Keyed by id (monotonically increasing on save), not createdAt — two requests made in the
     // same test can share an Instant.now() value at low clock resolution, which would make a
     // createdAt-based "latest" pick arbitrarily.
-    override fun findLatestByUserId(userId: Long): EmailDomainVerification? =
-        byId.values.filter { it.userId == userId }.maxByOrNull { requireNotNull(it.id) }
+    override fun findLatestByUserId(userId: Long): EmailDomainVerification? = byId.values.filter { it.userId == userId }.maxByOrNull { requireNotNull(it.id) }
 }

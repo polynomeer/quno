@@ -31,18 +31,23 @@ class ReRequestReviewUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val reviseQuestionUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository, outboxEventRepository)
     private val createReviewRequestUseCase = CreateReviewRequestUseCase(
-        questionRepository, questionVersionRepository, reviewRequestRepository, outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        reviewRequestRepository,
+        outboxEventRepository,
     )
     private val useCase = ReRequestReviewUseCase(questionRepository, questionVersionRepository, reviewRequestRepository, outboxEventRepository)
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `re-requesting after a revision addresses that specific request`() {

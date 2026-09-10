@@ -45,8 +45,7 @@ class CommentController(
     ).toResponse()
 
     @GetMapping("/questions/{questionId}/comments")
-    fun listQuestionComments(@PathVariable questionId: Long): List<CommentResponse> =
-        listCommentsUseCase.execute(CommentTargetType.QUESTION, questionId).map { it.toResponse() }
+    fun listQuestionComments(@PathVariable questionId: Long): List<CommentResponse> = listCommentsUseCase.execute(CommentTargetType.QUESTION, questionId).map { it.toResponse() }
 
     @PostMapping("/answers/{answerId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
@@ -59,8 +58,7 @@ class CommentController(
     ).toResponse()
 
     @GetMapping("/answers/{answerId}/comments")
-    fun listAnswerComments(@PathVariable answerId: Long): List<CommentResponse> =
-        listCommentsUseCase.execute(CommentTargetType.ANSWER, answerId).map { it.toResponse() }
+    fun listAnswerComments(@PathVariable answerId: Long): List<CommentResponse> = listCommentsUseCase.execute(CommentTargetType.ANSWER, answerId).map { it.toResponse() }
 
     @PutMapping("/comments/{commentId}")
     fun edit(
@@ -70,8 +68,7 @@ class CommentController(
     ): CommentResponse = editCommentUseCase.execute(EditCommentCommand(commentId, editorId, request.body)).toResponse()
 
     @GetMapping("/comments/{commentId}/versions")
-    fun versions(@PathVariable commentId: Long): List<CommentVersionResponse> =
-        listCommentVersionsUseCase.execute(commentId).map { it.toResponse() }
+    fun versions(@PathVariable commentId: Long): List<CommentVersionResponse> = listCommentVersionsUseCase.execute(commentId).map { it.toResponse() }
 
     @DeleteMapping("/comments/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

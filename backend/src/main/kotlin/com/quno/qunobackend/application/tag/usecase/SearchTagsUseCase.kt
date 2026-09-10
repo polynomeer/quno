@@ -8,6 +8,5 @@ import org.springframework.stereotype.Service
 class SearchTagsUseCase(
     private val tagRepository: TagRepository,
 ) {
-    fun execute(query: String?, limit: Int = 20): List<TagResult> =
-        tagRepository.search(query, limit).map { it.toResult() }
+    fun execute(query: String?, limit: Int = 20): List<TagResult> = tagRepository.search(query, limit).map { it.toResult() }
 }

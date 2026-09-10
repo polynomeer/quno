@@ -15,9 +15,7 @@ class InMemoryWatchRepository : WatchRepository {
 
     override fun isWatching(userId: Long, questionId: Long): Boolean = (userId to questionId) in watches
 
-    override fun findWatchedQuestionIds(userId: Long): List<Long> =
-        watches.filter { it.first == userId }.map { it.second }
+    override fun findWatchedQuestionIds(userId: Long): List<Long> = watches.filter { it.first == userId }.map { it.second }
 
-    override fun findWatcherIds(questionId: Long): List<Long> =
-        watches.filter { it.second == questionId }.map { it.first }
+    override fun findWatcherIds(questionId: Long): List<Long> = watches.filter { it.second == questionId }.map { it.first }
 }

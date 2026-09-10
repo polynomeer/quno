@@ -23,12 +23,9 @@ class WatchRepositoryAdapter(
         jpaRepository.deleteById(WatchId(userId, questionId))
     }
 
-    override fun isWatching(userId: Long, questionId: Long): Boolean =
-        jpaRepository.existsById(WatchId(userId, questionId))
+    override fun isWatching(userId: Long, questionId: Long): Boolean = jpaRepository.existsById(WatchId(userId, questionId))
 
-    override fun findWatchedQuestionIds(userId: Long): List<Long> =
-        jpaRepository.findAllByUserId(userId).map { it.questionId }
+    override fun findWatchedQuestionIds(userId: Long): List<Long> = jpaRepository.findAllByUserId(userId).map { it.questionId }
 
-    override fun findWatcherIds(questionId: Long): List<Long> =
-        jpaRepository.findAllByQuestionId(questionId).map { it.userId }
+    override fun findWatcherIds(questionId: Long): List<Long> = jpaRepository.findAllByQuestionId(questionId).map { it.userId }
 }

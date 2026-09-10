@@ -43,8 +43,10 @@ class GetDashboardUseCase(
         // popularity, since "something unusual is happening" is more newsworthy than "this is
         // popular as usual". Reuses Quno Flow's own card assembly instead of duplicating it.
         val headlineCards = getActivityFeedUseCase.execute(1)
-        val headline = (headlineCards.firstOrNull { it.type == FlowCardType.TAG_SPIKE }
-            ?: headlineCards.firstOrNull { it.type == FlowCardType.POPULAR_QUESTION })
+        val headline = (
+            headlineCards.firstOrNull { it.type == FlowCardType.TAG_SPIKE }
+                ?: headlineCards.firstOrNull { it.type == FlowCardType.POPULAR_QUESTION }
+            )
             ?.let { DashboardHeadline(text = it.headline, questionId = it.questionId) }
 
         val resolvedToday = hydrator.hydrate(dashboardRepository.findResolvedTodayQuestionIds(RESOLVED_TODAY_LIMIT))

@@ -155,6 +155,7 @@ class PublicReadAccessE2ETest {
 
         val tagJson = mockMvc.perform(get("/api/v1/tags?q=public-read-e2e-tag").header("Authorization", "Bearer $userToken"))
             .andReturn().response.contentAsString
+
         @Suppress("UNCHECKED_CAST")
         val tagId = (((objectMapper.readValue(tagJson, List::class.java) as List<Map<*, *>>).first())["id"] as Number).toLong()
         this.tagId = tagId

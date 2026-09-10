@@ -25,8 +25,7 @@ class Answer private constructor(
         return Answer(id, questionId, authorId, bodyMarkdown, true, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now())
     }
 
-    fun unaccept(): Answer =
-        Answer(id, questionId, authorId, bodyMarkdown, false, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now())
+    fun unaccept(): Answer = Answer(id, questionId, authorId, bodyMarkdown, false, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now())
 
     /** Used by moderation Hide (Phase 16, ADR-0028). Idempotent. */
     fun softDelete(): Answer {
@@ -35,8 +34,7 @@ class Answer private constructor(
     }
 
     /** Used right after inserting the first AnswerVersion: wires the pointer and refreshes the body cache. */
-    fun withLatestVersion(versionId: Long, bodyMarkdown: String = this.bodyMarkdown): Answer =
-        Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, versionId, deletedAt, createdAt, Instant.now())
+    fun withLatestVersion(versionId: Long, bodyMarkdown: String = this.bodyMarkdown): Answer = Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, versionId, deletedAt, createdAt, Instant.now())
 
     companion object {
         /** [targetVersionNumber] is the question's latest version number at write time (see PLAN.md 5.1). */

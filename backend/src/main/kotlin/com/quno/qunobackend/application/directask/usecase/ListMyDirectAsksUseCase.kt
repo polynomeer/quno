@@ -16,16 +16,14 @@ class ListMyDirectAsksUseCase(
 ) {
     /** Includes AWAITING_PAYMENT — the requester should be able to see (and resume) a request
      * they haven't finished paying for. */
-    fun executeSent(userId: Long): List<DirectAskRequestListItemResult> =
-        directAskRequestRepository.findAllByRequesterId(userId).mapNotNull { it.toListItem() }
+    fun executeSent(userId: Long): List<DirectAskRequestListItemResult> = directAskRequestRepository.findAllByRequesterId(userId).mapNotNull { it.toListItem() }
 
     /** Excludes AWAITING_PAYMENT (Phase 25, ADR-0037) — the target only ever sees a request once
      * payment is confirmed, same invariant [ConfirmDirectAskPaymentUseCase] enforces for
      * notifications. */
-    fun executeReceived(userId: Long): List<DirectAskRequestListItemResult> =
-        directAskRequestRepository.findAllByTargetUserId(userId)
-            .filter { it.status != DirectAskRequestStatus.AWAITING_PAYMENT }
-            .mapNotNull { it.toListItem() }
+    fun executeReceived(userId: Long): List<DirectAskRequestListItemResult> = directAskRequestRepository.findAllByTargetUserId(userId)
+        .filter { it.status != DirectAskRequestStatus.AWAITING_PAYMENT }
+        .mapNotNull { it.toListItem() }
 
     private fun DirectAskRequest.toListItem(): DirectAskRequestListItemResult? {
         val question = questionRepository.findById(questionId) ?: return null

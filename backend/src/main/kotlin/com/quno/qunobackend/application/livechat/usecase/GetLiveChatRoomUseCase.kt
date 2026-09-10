@@ -9,6 +9,5 @@ import org.springframework.stereotype.Service
 class GetLiveChatRoomUseCase(
     private val liveChatRoomRepository: LiveChatRoomRepository,
 ) {
-    fun execute(questionId: Long): LiveChatRoomResult =
-        (liveChatRoomRepository.findByQuestionId(questionId) ?: throw LiveChatRoomNotFoundException(questionId)).toResult()
+    fun execute(questionId: Long): LiveChatRoomResult = (liveChatRoomRepository.findByQuestionId(questionId) ?: throw LiveChatRoomNotFoundException(questionId)).toResult()
 }

@@ -86,6 +86,7 @@ class VoteLifecycleE2ETest {
         val votesJson = mockMvc.perform(
             get("/api/v1/me/votes").header("Authorization", "Bearer $voterToken"),
         ).andExpect(status().isOk).andReturn().response.contentAsString
+
         @Suppress("UNCHECKED_CAST")
         val votes = objectMapper.readValue(votesJson, List::class.java) as List<Map<*, *>>
         assert(votes.any { (it["targetId"] as Number).toLong() == questionId && (it["value"] as Number).toInt() == 1 }) {

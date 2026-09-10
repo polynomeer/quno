@@ -14,11 +14,11 @@ import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionStatus
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
 
 class AcceptAnswerUseCaseTest {
     private val questionRepository = InMemoryQuestionRepository()
@@ -27,7 +27,10 @@ class AcceptAnswerUseCaseTest {
     private val tagRepository = InMemoryTagRepository()
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
         questionRepository,
@@ -39,10 +42,9 @@ class AcceptAnswerUseCaseTest {
     )
     private val acceptAnswerUseCase = AcceptAnswerUseCase(questionRepository, answerRepository, outboxEventRepository)
 
-    private fun questionAskedBy(authorId: Long): Long =
-        createQuestionUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
-        ).id
+    private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `accepting an answer resolves the question`() {

@@ -16,15 +16,11 @@ class InMemoryVoteRepository : VoteRepository {
         byKey.remove(Triple(voterId, targetType, targetId))
     }
 
-    override fun findByVoterAndTarget(voterId: Long, targetType: VoteTargetType, targetId: Long): Vote? =
-        byKey[Triple(voterId, targetType, targetId)]
+    override fun findByVoterAndTarget(voterId: Long, targetType: VoteTargetType, targetId: Long): Vote? = byKey[Triple(voterId, targetType, targetId)]
 
-    override fun findByVoter(voterId: Long): List<Vote> =
-        byKey.values.filter { it.voterId == voterId }
+    override fun findByVoter(voterId: Long): List<Vote> = byKey.values.filter { it.voterId == voterId }
 
-    override fun sumScore(targetType: VoteTargetType, targetId: Long): Long =
-        byKey.values.filter { it.targetType == targetType && it.targetId == targetId }.sumOf { it.value.toLong() }
+    override fun sumScore(targetType: VoteTargetType, targetId: Long): Long = byKey.values.filter { it.targetType == targetType && it.targetId == targetId }.sumOf { it.value.toLong() }
 
-    override fun sumScoresByTargets(targetType: VoteTargetType, targetIds: List<Long>): Map<Long, Long> =
-        targetIds.associateWith { sumScore(targetType, it) }
+    override fun sumScoresByTargets(targetType: VoteTargetType, targetIds: List<Long>): Map<Long, Long> = targetIds.associateWith { sumScore(targetType, it) }
 }

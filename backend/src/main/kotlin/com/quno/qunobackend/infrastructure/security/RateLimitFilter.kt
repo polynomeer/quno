@@ -69,10 +69,9 @@ class RateLimitFilter(
         return Bucket.builder().addLimit(bandwidth).build()
     }
 
-    private fun clientIp(request: HttpServletRequest): String =
-        request.getHeader("X-Forwarded-For")
-            ?.substringBefore(",")
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: request.remoteAddr
+    private fun clientIp(request: HttpServletRequest): String = request.getHeader("X-Forwarded-For")
+        ?.substringBefore(",")
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }
+        ?: request.remoteAddr
 }

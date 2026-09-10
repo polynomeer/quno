@@ -110,6 +110,7 @@ class CommentLifecycleE2ETest {
 
         val afterDeleteJson = mockMvc.perform(get("/api/v1/questions/$questionId/comments").header("Authorization", "Bearer $authorToken"))
             .andExpect(status().isOk).andReturn().response.contentAsString
+
         @Suppress("UNCHECKED_CAST")
         val comments = objectMapper.readValue(afterDeleteJson, List::class.java) as List<Map<*, *>>
         assert(comments.size == 1 && comments[0]["body"] == null && comments[0]["isDeleted"] == true) {
@@ -292,6 +293,7 @@ class CommentLifecycleE2ETest {
         val versionsJson = mockMvc.perform(
             get("/api/v1/comments/$commentId/versions").header("Authorization", "Bearer $commenterToken"),
         ).andExpect(status().isOk).andReturn().response.contentAsString
+
         @Suppress("UNCHECKED_CAST")
         val versions = objectMapper.readValue(versionsJson, List::class.java) as List<Map<*, *>>
         assert(versions.size == 1 && versions[0]["body"] == "oiginal typo") { "expected the pre-edit body archived, got: $versions" }
@@ -344,6 +346,7 @@ class CommentLifecycleE2ETest {
         val notificationsJson = mockMvc.perform(
             get("/api/v1/me/notifications").header("Authorization", "Bearer $bearerToken"),
         ).andExpect(status().isOk).andReturn().response.contentAsString
+
         @Suppress("UNCHECKED_CAST")
         val notifications = objectMapper.readValue(notificationsJson, List::class.java) as List<Map<*, *>>
         assert(notifications.any { it["type"] == expectedType }) {

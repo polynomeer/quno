@@ -37,10 +37,17 @@ class CreateCommentUseCaseTest {
     private val outboxEventRepository = InMemoryOutboxEventRepository()
 
     private val createQuestionUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val writeAnswerUseCase = WriteAnswerUseCase(
-        questionRepository, questionVersionRepository, answerRepository, InMemoryAnswerVersionRepository(), outboxEventRepository,
+        questionRepository,
+        questionVersionRepository,
+        answerRepository,
+        InMemoryAnswerVersionRepository(),
+        outboxEventRepository,
         AnswerResultAssembler(questionRepository, questionVersionRepository, InMemoryVoteRepository()),
     )
     private val useCase = CreateCommentUseCase(questionRepository, answerRepository, commentRepository, userRepository, outboxEventRepository)
@@ -49,8 +56,7 @@ class CreateCommentUseCaseTest {
         CreateQuestionCommand(authorId = authorId, title = "t", body = "body", environment = null, logs = null),
     ).id
 
-    private fun userNamed(nickname: String): Long =
-        requireNotNull(userRepository.save(User.register("$nickname@example.com", nickname, "hash")).id)
+    private fun userNamed(nickname: String): Long = requireNotNull(userRepository.save(User.register("$nickname@example.com", nickname, "hash")).id)
 
     @Test
     fun `comments on a question`() {

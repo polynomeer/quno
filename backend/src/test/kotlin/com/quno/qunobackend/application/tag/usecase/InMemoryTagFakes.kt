@@ -23,11 +23,10 @@ class InMemoryTagRepository : TagRepository {
 
     override fun findBySlug(slug: String): Tag? = byId.values.find { it.slug == slug && it.deletedAt == null }
 
-    override fun search(query: String?, limit: Int): List<Tag> =
-        byId.values
-            .filter { it.deletedAt == null && (query.isNullOrBlank() || it.name.contains(query, ignoreCase = true)) }
-            .sortedBy { it.name }
-            .take(limit)
+    override fun search(query: String?, limit: Int): List<Tag> = byId.values
+        .filter { it.deletedAt == null && (query.isNullOrBlank() || it.name.contains(query, ignoreCase = true)) }
+        .sortedBy { it.name }
+        .take(limit)
 }
 
 class InMemoryQuestionTagRepository(private val tagRepository: InMemoryTagRepository) : QuestionTagRepository {
@@ -37,11 +36,9 @@ class InMemoryQuestionTagRepository(private val tagRepository: InMemoryTagReposi
         links += questionId to tagId
     }
 
-    override fun findTagsByQuestionId(questionId: Long): List<Tag> =
-        links.filter { it.first == questionId }.mapNotNull { tagRepository.findById(it.second) }
+    override fun findTagsByQuestionId(questionId: Long): List<Tag> = links.filter { it.first == questionId }.mapNotNull { tagRepository.findById(it.second) }
 
-    override fun findTagsByQuestionIds(questionIds: List<Long>): Map<Long, List<Tag>> =
-        questionIds.associateWith { findTagsByQuestionId(it) }
+    override fun findTagsByQuestionIds(questionIds: List<Long>): Map<Long, List<Tag>> = questionIds.associateWith { findTagsByQuestionId(it) }
 }
 
 class InMemoryUserTagFollowRepository : UserTagFollowRepository {

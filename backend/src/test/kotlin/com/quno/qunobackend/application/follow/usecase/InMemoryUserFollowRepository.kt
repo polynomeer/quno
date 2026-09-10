@@ -15,6 +15,5 @@ class InMemoryUserFollowRepository : UserFollowRepository {
 
     override fun isFollowing(followerId: Long, followeeId: Long): Boolean = (followerId to followeeId) in follows
 
-    override fun findFolloweeIds(followerId: Long): List<Long> =
-        follows.filter { it.first == followerId }.map { it.second }
+    override fun findFolloweeIds(followerId: Long): List<Long> = follows.filter { it.first == followerId }.map { it.second }
 }

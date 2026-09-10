@@ -11,8 +11,7 @@ class TechnologyReleaseRepositoryAdapter(
     private val jpaRepository: TechnologyReleaseJpaRepository,
 ) : TechnologyReleaseRepository {
 
-    override fun findByTagSlug(tagSlug: String): TechnologyRelease? =
-        jpaRepository.findByTagSlug(tagSlug)?.toDomain()
+    override fun findByTagSlug(tagSlug: String): TechnologyRelease? = jpaRepository.findByTagSlug(tagSlug)?.toDomain()
 
     override fun save(release: TechnologyRelease): TechnologyRelease {
         val entity = TechnologyReleaseJpaEntity(

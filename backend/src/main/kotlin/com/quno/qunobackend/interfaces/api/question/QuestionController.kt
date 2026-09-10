@@ -104,15 +104,14 @@ class QuestionController(
     }
 
     @GetMapping("/{id}/versions")
-    fun listVersions(@PathVariable id: Long): List<QuestionVersionSummaryResponse> =
-        listQuestionVersionsUseCase.execute(id).map {
-            QuestionVersionSummaryResponse(
-                versionNumber = it.versionNumber,
-                title = it.title,
-                createdBy = it.createdBy,
-                createdAt = it.createdAt,
-            )
-        }
+    fun listVersions(@PathVariable id: Long): List<QuestionVersionSummaryResponse> = listQuestionVersionsUseCase.execute(id).map {
+        QuestionVersionSummaryResponse(
+            versionNumber = it.versionNumber,
+            title = it.title,
+            createdBy = it.createdBy,
+            createdAt = it.createdAt,
+        )
+    }
 
     @GetMapping("/{id}/versions/{version}")
     fun getVersion(@PathVariable id: Long, @PathVariable version: Int): QuestionVersionResponse {
@@ -148,8 +147,7 @@ class QuestionController(
     fun related(
         @PathVariable id: Long,
         @RequestParam(required = false) limit: Int?,
-    ): List<QuestionSearchResultResponse> =
-        questionSearchUseCase.related(id, limit ?: 5).map { it.toResponse() }
+    ): List<QuestionSearchResultResponse> = questionSearchUseCase.related(id, limit ?: 5).map { it.toResponse() }
 
     @PostMapping("/{id}/outdated")
     fun markOutdated(
@@ -165,16 +163,13 @@ class QuestionController(
 
     @PostMapping("/{id}/fork")
     @ResponseStatus(HttpStatus.CREATED)
-    fun fork(@AuthenticationPrincipal actorId: Long, @PathVariable id: Long): QuestionMutationResponse =
-        forkQuestionUseCase.execute(ForkQuestionCommand(originQuestionId = id, actorId = actorId)).toResponse()
+    fun fork(@AuthenticationPrincipal actorId: Long, @PathVariable id: Long): QuestionMutationResponse = forkQuestionUseCase.execute(ForkQuestionCommand(originQuestionId = id, actorId = actorId)).toResponse()
 
     @GetMapping("/{id}/forks")
-    fun forks(@PathVariable id: Long): List<QuestionSearchResultResponse> =
-        listQuestionForksUseCase.execute(id).map { it.toResponse() }
+    fun forks(@PathVariable id: Long): List<QuestionSearchResultResponse> = listQuestionForksUseCase.execute(id).map { it.toResponse() }
 
     @GetMapping("/{id}/graph")
     fun graph(@PathVariable id: Long): QuestionGraphResponse = getQuestionGraphUseCase.execute(id).toResponse()
 
-    private fun QuestionMutationResult.toResponse() =
-        QuestionMutationResponse(id = id, title = title, status = status, versionNumber = versionNumber)
+    private fun QuestionMutationResult.toResponse() = QuestionMutationResponse(id = id, title = title, status = status, versionNumber = versionNumber)
 }

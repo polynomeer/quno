@@ -16,7 +16,10 @@ class GetQuestionVersionDiffUseCaseTest {
     private val questionVersionRepository = InMemoryQuestionVersionRepository()
     private val tagRepository = InMemoryTagRepository()
     private val createUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository, InMemoryOutboxEventRepository())
     private val diffUseCase = GetQuestionVersionDiffUseCase(questionRepository, questionVersionRepository)

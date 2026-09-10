@@ -37,12 +37,10 @@ class OrganizationController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@AuthenticationPrincipal userId: Long, @Valid @RequestBody request: CreateOrganizationRequest): OrganizationResponse =
-        createOrganizationUseCase.execute(request.name, request.description, userId).toResponse()
+    fun create(@AuthenticationPrincipal userId: Long, @Valid @RequestBody request: CreateOrganizationRequest): OrganizationResponse = createOrganizationUseCase.execute(request.name, request.description, userId).toResponse()
 
     @GetMapping
-    fun search(@RequestParam(required = false) q: String?, @RequestParam(required = false) limit: Int?): List<OrganizationResponse> =
-        searchOrganizationsUseCase.execute(q, limit ?: 20).map { it.toResponse() }
+    fun search(@RequestParam(required = false) q: String?, @RequestParam(required = false) limit: Int?): List<OrganizationResponse> = searchOrganizationsUseCase.execute(q, limit ?: 20).map { it.toResponse() }
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: Long): OrganizationResponse = getOrganizationUseCase.execute(id).toResponse()

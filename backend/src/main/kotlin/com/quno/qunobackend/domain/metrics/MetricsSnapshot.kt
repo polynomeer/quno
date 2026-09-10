@@ -21,6 +21,5 @@ data class MetricsSnapshot(
     val wardCoverageRate: Double get() = rate(watchedQuestions, totalQuestions)
     val livingQuestionRate: Double get() = rate(livingQuestions, totalQuestions)
 
-    private fun rate(numerator: Long, denominator: Long): Double =
-        if (denominator == 0L) 0.0 else numerator.toDouble() / denominator
+    private fun rate(numerator: Long, denominator: Long): Double = if (denominator == 0L) 0.0 else numerator.toDouble() / denominator
 }

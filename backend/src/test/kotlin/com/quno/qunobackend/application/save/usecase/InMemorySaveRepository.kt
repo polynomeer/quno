@@ -15,6 +15,5 @@ class InMemorySaveRepository : SaveRepository {
 
     override fun isSaved(userId: Long, questionId: Long): Boolean = (userId to questionId) in saves
 
-    override fun findSavedQuestionIds(userId: Long): List<Long> =
-        saves.filter { it.first == userId }.map { it.second }
+    override fun findSavedQuestionIds(userId: Long): List<Long> = saves.filter { it.first == userId }.map { it.second }
 }

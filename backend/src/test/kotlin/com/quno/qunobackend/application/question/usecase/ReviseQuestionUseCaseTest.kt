@@ -19,14 +19,16 @@ class ReviseQuestionUseCaseTest {
     private val tagRepository = InMemoryTagRepository()
     private val outboxEventRepository = InMemoryOutboxEventRepository()
     private val createUseCase = CreateQuestionUseCase(
-        questionRepository, questionVersionRepository, tagRepository, InMemoryQuestionTagRepository(tagRepository),
+        questionRepository,
+        questionVersionRepository,
+        tagRepository,
+        InMemoryQuestionTagRepository(tagRepository),
     )
     private val reviseUseCase = ReviseQuestionUseCase(questionRepository, questionVersionRepository, outboxEventRepository)
 
-    private fun createQuestion(authorId: Long = 1L): Long =
-        createUseCase.execute(
-            CreateQuestionCommand(authorId = authorId, title = "Redis timeout", body = "v1 body", environment = null, logs = null),
-        ).id
+    private fun createQuestion(authorId: Long = 1L): Long = createUseCase.execute(
+        CreateQuestionCommand(authorId = authorId, title = "Redis timeout", body = "v1 body", environment = null, logs = null),
+    ).id
 
     @Test
     fun `appends a new version and moves the status to UPDATED`() {
