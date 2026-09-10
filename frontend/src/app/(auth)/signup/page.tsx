@@ -3,15 +3,16 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useLogin } from "@/features/auth/hooks/useLogin";
+import { useSignUp } from "@/features/auth/hooks/useSignUp";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { ApiError } from "@/shared/api/api-error";
 
-function LoginForm() {
+function SignUpForm() {
   const [email, setEmail] = useState("");
+  const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
-  const login = useLogin();
+  const signUp = useSignUp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/";
@@ -19,16 +20,16 @@ function LoginForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      await login.mutateAsync({ email, password });
+      await signUp.mutateAsync({ email, nickname, password });
       router.push(redirectTo);
     } catch {
-      // error surfaced below via login.error
+      // error surfaced below via signUp.error
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-sm space-y-4 py-12">
-      <h1 className="text-xl font-semibold">로그인</h1>
+      <h1 className="text-xl font-semibold">회원가입</h1>
       <Input
         type="email"
         placeholder="Email"
@@ -38,35 +39,47 @@ function LoginForm() {
         required
       />
       <Input
+        type="text"
+        placeholder="Nickname"
+        value={nickname}
+        onChange={(event) => setNickname(event.target.value)}
+        autoComplete="nickname"
+        minLength={2}
+        maxLength={50}
+        required
+      />
+      <Input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        autoComplete="current-password"
+        autoComplete="new-password"
+        minLength={8}
+        maxLength={100}
         required
       />
-      {login.isError && (
+      {signUp.isError && (
         <p className="text-sm text-danger">
-          {login.error instanceof ApiError ? login.error.message : "로그인에 실패했습니다."}
+          {signUp.error instanceof ApiError ? signUp.error.message : "회원가입에 실패했습니다."}
         </p>
       )}
-      <Button type="submit" className="w-full" disabled={login.isPending}>
-        {login.isPending ? "로그인 중..." : "로그인"}
+      <Button type="submit" className="w-full" disabled={signUp.isPending}>
+        {signUp.isPending ? "가입 중..." : "회원가입"}
       </Button>
       <p className="text-center text-sm text-text-secondary">
-        계정이 없으신가요?{" "}
-        <Link href="/signup" className="text-brand hover:underline">
-          회원가입
+        이미 계정이 있으신가요?{" "}
+        <Link href="/login" className="text-brand hover:underline">
+          로그인
         </Link>
       </p>
     </form>
   );
 }
 
-export default function LoginPage() {
+export default function SignUpPage() {
   return (
     <Suspense>
-      <LoginForm />
+      <SignUpForm />
     </Suspense>
   );
 }

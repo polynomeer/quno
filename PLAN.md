@@ -471,9 +471,22 @@ Phase 34(관측 가능성)에 이어 진행한다([ADR-0046](docs/architecture/d
 - [x] F18.1 프론트엔드 — 회원 탈퇴/개인정보 다운로드는 API만 있고 UI가 전무했음을 확인해 신규 구현. `AccountDangerZone`(신규, `features/auth/ui`)을 `DirectAskSettingsToggle`과 같은 위치(`/users/[id]` 자기 프로필, `isOwnProfile` 가드)에 배치. "회원 탈퇴"는 클릭 전엔 버튼만 보이다가 클릭하면 비밀번호 입력 폼이 펼쳐지는 방식(백엔드가 이미 비밀번호 재확인을 강제하므로 별도 `window.confirm`은 불필요하다고 판단), 성공 시 토큰 정리 후 홈으로 리다이렉트. "내 데이터 다운로드"는 fetch한 JSON을 Blob+객체 URL로 브라우저 다운로드시킴. 로그인 폼(`useLogin`)이 이미 쓰던 `try/catch`(에러는 mutation의 `.error` 상태로만 노출) 패턴을 처음에 빠뜨려 탈퇴 실패 시 Next.js 개발 오버레이에 처리되지 않은 예외로 잡히는 것을 발견해 수정
 - [x] F18.2 검증 — 실제 서버(임시 인스턴스)에 대해 브라우저로 잘못된 비밀번호(인라인 에러, 오버레이 없음)/정상 탈퇴(로그아웃 상태로 홈 리다이렉트)/데이터 다운로드(네트워크 탭에서 200 확인) 전부 확인. 콘솔 에러 없음
 
-## Phase 36+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 36 — 상용 전환: 테스트 (production-readiness.md B-5)
 
-[production-readiness.md](docs/product/production-readiness.md) B-5~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 35(신뢰성/데이터)에 이어 진행한다([ADR-0047](docs/architecture/decisions/0047-testing-signup-page-e2e-load-test-scope.md)).
+
+- [x] 36.1 (발견) E2E 골든 패스(회원가입→질문 작성→답변)를 준비하다가 프론트엔드에 회원가입 화면이 아예 없었던 것을 발견 — `authApi.signUp`은 정의만 되고 어디서도 호출되지 않았고, `/login`/`AppHeader` 어디에도 가입 링크가 없었다. 실제로는 웹사이트로 계정을 만들 방법이 없었던 심각한 격차라 별도 Phase로 미루지 않고 바로 고침
+- [x] 36.2 회원가입 화면 신설 — `useSignUp`(신규, 가입 성공 시 `useLogin` 재사용해 자동 로그인) + `/signup`(신규, `/login`과 동일 패턴, 백엔드 검증 제약과 맞춘 클라이언트 유효성 검사). `/login`과 `AppHeader`(로그아웃 상태)에 상호 링크 추가
+- [x] 36.3 프론트엔드 유닛 테스트 확충 — 1개(`cn.test.ts`)에서 6개 파일·18개 테스트로. `http-client.test.ts`(Authorization 헤더 부착/생략, 401 시 토큰 재발급 후 원요청 재시도, 재발급 자체 실패 시 토큰 정리, 204 처리), `token-storage.test.ts`, `Button.test.tsx`, `AccountDangerZone.test.tsx`(방금 만든 탈퇴 폼의 펼침/에러 표시/제출 검증)
+- [x] 36.4 E2E 테스트 도입 — `@playwright/test`가 devDependencies에 이미 설치돼 있었지만(누가 언제 넣었는지 불명) 설정·테스트가 전혀 없었던 것을 확인. `playwright.config.ts` 신규(프론트 dev 서버만 관리, 백엔드는 별도 기동 전제) + `e2e/golden-path.spec.ts`(회원가입→질문 작성→답변, 실제 UI 조작). Direct Ask 결제는 토스 호스팅 체크아웃 리다이렉트 의존성 때문에 범위 밖(ADR-0047). Vitest가 `e2e/**`를 자기 테스트로 착각해 충돌하는 것을 발견해 `vitest.config.ts`에 `exclude` 추가
+- [x] 36.5 부하 테스트 스크립트 — `scripts/load-test.js`(k6, 비로그인 공개 읽기 경로: 검색/태그 목록/질문 상세). 로그인 필요한 쓰기 경로는 VU당 계정 관리가 필요해 범위 밖
+- [x] 36.6 검증 — 프론트엔드 유닛 테스트 18개 통과, E2E 테스트 로컬에서 실제 통과(회원가입→질문 상세 리다이렉트→답변 등록까지 실제 UI로 확인), k6 스모크 실행(로컬 대상 VUs=3/10초, 체크 100% 통과, p95 57ms — 로컬 수치라 용량 산정 근거 아님). 프론트엔드 lint/build 통과
+- [x] 36.7 CI — `.github/workflows/ci.yml`에 `e2e` 잡 추가(인프라+백엔드+프론트엔드 모두 기동 후 Playwright 실행, 실패 시 리포트 아티팩트 업로드)
+- [x] 36.8 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-5 체크박스 전부 갱신
+
+## Phase 37+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[production-readiness.md](docs/product/production-readiness.md) B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
