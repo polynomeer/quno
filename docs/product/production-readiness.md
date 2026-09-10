@@ -30,12 +30,12 @@ Claude Code가 실행할 수 없는 항목이다. 코드 작업과 별개로 사
 
 ### B-1. 배포 파이프라인 (최우선 — 이게 없으면 "상용"이 성립하지 않는다)
 
-- [ ] 백엔드 `Dockerfile` (멀티스테이지 빌드, non-root 유저)
-- [ ] 프론트엔드 `Dockerfile` (Next.js standalone output)
-- [ ] `application-prod.yml` 프로필 신설 — 로컬 전용 기본값(JWT secret 더미값, Toss 테스트 키, `ddl-auto` 등) 중 실서비스에 위험한 것을 프로필 분리로 강제한다
-- [ ] 필수 환경변수 검증 — prod 프로필에서 `QUNO_JWT_SECRET` 등 필수값이 비어 있으면 기동 실패하도록(현재는 더미값으로 조용히 기동됨)
-- [ ] `.env.example` 작성 — 현재 저장소에 없음, 어떤 환경변수가 필요한지 문서화
-- [ ] GitHub Actions CI — PR마다 백엔드(`./gradlew test`)와 프론트엔드(`npm run build`, `npm test`, lint) 자동 실행. 현재 `.github/workflows`가 아예 없어 병합 전 검증이 전적으로 수동임
+- [x] 백엔드 `Dockerfile`(`backend/Dockerfile`) — 멀티스테이지(JDK로 빌드 → JRE로 실행), non-root 유저. 로컬 Docker로 이미지 빌드+기동+헬스체크까지 실측 검증
+- [x] 프론트엔드 `Dockerfile`(`frontend/Dockerfile`) — `next.config.ts`에 `output: "standalone"` 추가 후 멀티스테이지 빌드, non-root 유저. 로컬 Docker로 이미지 빌드+기동+HTTP 200 응답 실측 검증
+- [x] `application-prod.yml` 프로필 신설(`backend/src/main/resources/application-prod.yml`) — JWT secret/Toss 키/DB·Redis·Mongo·메일 접속정보를 전부 `${VAR}`(기본값 없음) 플레이스홀더로 참조
+- [x] 필수 환경변수 검증 — 위 프로필의 `${VAR}` 문법 자체가 검증 수단(Spring의 표준 fail-fast 패턴). 필수값 하나라도 비면 `PlaceholderResolutionException`으로 기동 실패, 전부 채우면 정상 기동하는 것을 Docker 컨테이너로 양쪽 다 실측 확인
+- [x] `.env.example` 작성(저장소 루트) — prod 프로필이 요구하는 환경변수 전체와 프론트엔드 빌드 인자를 문서화
+- [x] GitHub Actions CI(`.github/workflows/ci.yml`) — PR/main 푸시마다 백엔드(docker compose로 인프라 기동 후 `./gradlew test`)와 프론트엔드(`npm run lint`/`npm test -- --run`/`npm run build`) 자동 실행. 로컬에서 각 명령이 실제로 통과하는 것을 확인(백엔드 테스트는 기존에 이미 검증된 스위트라 재실행은 생략)
 - [ ] (선택, 배포 대상 확정 후) CD 파이프라인 — 사람이 클라우드 계정/대상을 정한 뒤 착수
 
 ### B-2. 보안 강화

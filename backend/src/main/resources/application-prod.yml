@@ -1,0 +1,38 @@
+# 운영 배포용 프로필. `application.yml`의 개발용 기본값(JWT secret 더미값, Toss 테스트 키 등)이
+# 실수로 그대로 쓰이는 것을 막기 위해, 여기서 참조하는 환경변수가 비어 있으면 Spring이 플레이스홀더를
+# 해석하지 못해 기동 자체가 실패한다(기본값을 주지 않는 `${VAR}` 문법 — Spring Boot의 표준 "필수값"
+# 패턴). 전체 목록은 저장소 루트의 `.env.example` 참고.
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  mongodb:
+    host: ${SPRING_MONGODB_HOST}
+    port: ${SPRING_MONGODB_PORT:27017}
+    database: ${SPRING_MONGODB_DATABASE:quno}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:true}
+
+quno:
+  jwt:
+    secret: ${QUNO_JWT_SECRET}
+  toss:
+    client-key: ${QUNO_TOSS_CLIENT_KEY}
+    secret-key: ${QUNO_TOSS_SECRET_KEY}

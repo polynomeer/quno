@@ -1,0 +1,7 @@
+.gradle
+build
+.kotlin
+*.log
+.idea
+.vscode
+HELP.md

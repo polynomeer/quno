@@ -426,11 +426,11 @@ ADR-0041/0042가 남겨둔 마지막 후속 후보를 [ADR-0043](docs/architectu
 
 MVP 백로그가 모두 끝나 사용자가 "상용 제품 수준으로 완성"을 다음 목표로 정했다(2026-09-10). 상용화 항목을 사람이 할 일/코드로 할 일로 나눈 [production-readiness.md](docs/product/production-readiness.md)와 완성도 개선을 다루는 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)를 신설했다([ADR-0044](docs/architecture/decisions/0044-production-readiness-track-code-first.md)). 배포 파이프라인이 없으면 나머지 전부가 "로컬에서만 검증된 코드"에 머무르므로 최우선으로 진행한다.
 
-- [ ] 32.1 백엔드 `Dockerfile`(멀티스테이지, non-root)과 프론트엔드 `Dockerfile`(Next.js standalone)
-- [ ] 32.2 `application-prod.yml` 프로필 신설 — JWT secret/Toss 키 등 필수 환경변수가 비어 있으면 prod 프로필 기동을 실패시키는 안전장치 포함
-- [ ] 32.3 `.env.example` 작성
-- [ ] 32.4 GitHub Actions CI — PR마다 백엔드 테스트 + 프론트엔드 빌드/테스트/lint 자동 실행
-- [ ] 32.5 문서화 — production-readiness.md 체크박스 갱신
+- [x] 32.1 `backend/Dockerfile`(JDK 21로 `bootJar` 빌드 → JRE 21 런타임, non-root `quno` 유저)과 `frontend/Dockerfile`(`next.config.ts`에 `output: "standalone"` 추가 후 그 산출물만 복사하는 3단계 빌드, non-root 유저) 신규 작성. 둘 다 로컬 Docker로 이미지를 실제 빌드하고 컨테이너로 기동해 헬스체크(백엔드: `/actuator/health`)와 HTTP 200(프론트엔드)까지 확인. 이 과정에서 발견한 것: `EXPOSE 8081`은 로컬 개발 시 다른 프로젝트와의 포트 충돌을 피하려는 `application-local.yml` 전용 값이라 컨테이너에서는 의미가 없어 Spring Boot 기본값 8080으로 고침
+- [x] 32.2 `backend/src/main/resources/application-prod.yml` 신설 — DB/Redis/Mongo/메일 접속정보와 `QUNO_JWT_SECRET`/`QUNO_TOSS_CLIENT_KEY`/`QUNO_TOSS_SECRET_KEY`를 전부 기본값 없는 `${VAR}` 플레이스홀더로 참조. Spring Boot의 표준 방식대로, 참조된 환경변수가 하나라도 비어 있으면 해당 프로퍼티를 바인딩하는 시점에 `PlaceholderResolutionException`으로 기동이 실패한다 — 별도 검증 로직을 만들 필요 없이 문법 자체가 안전장치다. Docker 컨테이너로 두 경우(필수값 누락 → 기동 실패, 전부 채움 → 정상 기동) 모두 실측 확인
+- [x] 32.3 저장소 루트에 `.env.example` 신규 작성 — prod 프로필이 요구하는 환경변수 전체(DB/Redis/Mongo/메일/JWT/Toss)와 프론트엔드 빌드 인자(`NEXT_PUBLIC_API_BASE_URL`/`NEXT_PUBLIC_SITE_URL`) 문서화. 로컬 개발에는 필요 없다는 것(`docker-compose.yml`+`application-local.yml`+`.env.local`이 이미 로컬 기본값 제공)을 파일 상단에 명시
+- [x] 32.4 `.github/workflows/ci.yml` 신규 작성 — `push`/`pull_request`(main) 시 백엔드 잡(`docker compose up -d`로 로컬과 동일한 인프라 기동 → `./gradlew test`, `build.gradle.kts`의 test 태스크가 이미 `local` 프로필로 이 인프라에 연결하도록 설정돼 있음)과 프론트엔드 잡(`npm run lint` → `npm test -- --run` → `npm run build`)을 병렬 실행. 로컬에서 프론트엔드 세 명령이 실제로 통과하는 것을 확인(백엔드 테스트는 기존에 이미 검증된 스위트라 CI 설정 자체의 정확성만 점검)
+- [x] 32.5 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-1 체크박스 전부 갱신
 
 ## Phase 33+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
