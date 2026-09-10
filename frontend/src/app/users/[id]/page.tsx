@@ -16,6 +16,7 @@ import { useBadges } from "@/features/badge/hooks/useBadges";
 import { BadgeList } from "@/features/badge/ui/BadgeList";
 import { RequestDirectAskPanel } from "@/features/direct-ask/ui/RequestDirectAskPanel";
 import { DirectAskSettingsToggle } from "@/features/direct-ask/ui/DirectAskSettingsToggle";
+import { AccountDangerZone } from "@/features/auth/ui/AccountDangerZone";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { TagChip } from "@/shared/ui/TagChip";
 import { Skeleton } from "@/shared/ui/Skeleton";
@@ -145,6 +146,8 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
           </ul>
         )}
       </section>
+
+      {isOwnProfile && <AccountDangerZone />}
     </div>
   );
 }

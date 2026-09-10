@@ -468,6 +468,8 @@ Phase 34(관측 가능성)에 이어 진행한다([ADR-0046](docs/architecture/d
 - [x] 35.6 (발견) `GlobalExceptionHandler`의 catch-all(ADR-0045)이 `HttpMessageNotReadableException`(잘못된 요청 본문) 같은 프레임워크 예외까지 500+Sentry로 잘못 처리하던 것을 실측 검증 중 발견. `HttpMessageNotReadableException`/`MethodArgumentTypeMismatchException` 전용 핸들러를 추가해 400으로 고치고, catch-all에 로그 추가(Sentry가 DSN 없이는 조용히 무시해서 로그가 유일한 단서)
 - [x] 35.7 검증 — 백엔드 테스트 스위트(348개, 신규 9개 포함, 실패·에러·스킵 0) 통과. 임시 인스턴스로 탈퇴(잘못된 비밀번호 401/정상 200/이후 로그인 401/기존 access token으로 본 프로필이 익명화됨/작성 질문이 "탈퇴한 사용자N"으로 보임), 데이터 다운로드, 잘못된 요청 본문·path variable이 400으로 정정된 것까지 curl로 실측
 - [x] 35.8 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-4 체크박스 전부 갱신
+- [x] F18.1 프론트엔드 — 회원 탈퇴/개인정보 다운로드는 API만 있고 UI가 전무했음을 확인해 신규 구현. `AccountDangerZone`(신규, `features/auth/ui`)을 `DirectAskSettingsToggle`과 같은 위치(`/users/[id]` 자기 프로필, `isOwnProfile` 가드)에 배치. "회원 탈퇴"는 클릭 전엔 버튼만 보이다가 클릭하면 비밀번호 입력 폼이 펼쳐지는 방식(백엔드가 이미 비밀번호 재확인을 강제하므로 별도 `window.confirm`은 불필요하다고 판단), 성공 시 토큰 정리 후 홈으로 리다이렉트. "내 데이터 다운로드"는 fetch한 JSON을 Blob+객체 URL로 브라우저 다운로드시킴. 로그인 폼(`useLogin`)이 이미 쓰던 `try/catch`(에러는 mutation의 `.error` 상태로만 노출) 패턴을 처음에 빠뜨려 탈퇴 실패 시 Next.js 개발 오버레이에 처리되지 않은 예외로 잡히는 것을 발견해 수정
+- [x] F18.2 검증 — 실제 서버(임시 인스턴스)에 대해 브라우저로 잘못된 비밀번호(인라인 에러, 오버레이 없음)/정상 탈퇴(로그아웃 상태로 홈 리다이렉트)/데이터 다운로드(네트워크 탭에서 200 확인) 전부 확인. 콘솔 에러 없음
 
 ## Phase 36+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
 
