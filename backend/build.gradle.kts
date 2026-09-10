@@ -47,6 +47,9 @@ dependencies {
 	// Spring 통합 없는 코어 SDK만 쓰고 초기화는 SentryConfig가 직접 한다. DSN이 비어 있으면
 	// (기본값) SDK가 스스로 비활성화되므로 로컬/테스트에는 영향이 없다(production-readiness.md B-3).
 	implementation("io.sentry:sentry:8.56.0")
+	// OpenAPI 문서를 코드에서 자동 생성한다 — 지금까지는 api-design.md를 수기로 갱신해 코드와
+	// 어긋날 위험이 있었다(production-readiness.md B-6). 3.x는 Spring Boot 4/Framework 7 지원.
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-gson:0.13.0")
 	runtimeOnly("org.postgresql:postgresql")

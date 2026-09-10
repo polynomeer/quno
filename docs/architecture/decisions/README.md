@@ -72,3 +72,4 @@
 | [0045](0045-observability-logging-metrics-error-tracking.md) | 구조화 로깅(ECS)·요청 추적 ID·Prometheus·에러 트래킹 도입, Sentry Spring Boot 4 비호환 발견 | 승인됨 |
 | [0046](0046-reliability-account-withdrawal-data-export-n-plus-1.md) | 회원 탈퇴는 익명화(삭제 아님), 개인정보 다운로드는 셀프서비스 API, N+1 배치 쿼리로 제거 | 승인됨 |
 | [0047](0047-testing-signup-page-e2e-load-test-scope.md) | 회원가입 UI 전무를 발견해 신설, E2E는 Playwright로 결제 제외 핵심 플로우만, 부하 테스트는 스크립트만 준비 | 승인됨 |
+| [0048](0048-openapi-docs-public-and-runbook.md) | springdoc-openapi로 API 문서 자동 생성(공개), 운영 런북은 배포 대상 미정 전제로 작성 | 승인됨 |

@@ -71,8 +71,8 @@ Claude Code가 실행할 수 없는 항목이다. 코드 작업과 별개로 사
 
 ### B-6. 문서화
 
-- [ ] OpenAPI/Swagger 자동 생성 — 현재 `docs/architecture/api-design.md`가 수기 문서, springdoc-openapi 도입으로 코드-문서 drift 방지
-- [ ] 운영 런북(Runbook) 작성 — 장애 대응 절차, 롤백 절차, 온콜 체크리스트
+- [x] OpenAPI/Swagger 자동 생성 — `springdoc-openapi-starter-webmvc-ui:3.1.1` 추가, 컨트롤러 74개 경로 자동 인식 확인. `/v3/api-docs`/`/swagger-ui/**`는 공개 질문/태그/조직/프로필과 같은 원칙으로 인증 없이 공개(ADR-0048). JWT Bearer 인증 스킴을 붙여 Swagger UI에서 바로 인증 호출 가능
+- [x] 운영 런북(Runbook) 작성 — `docs/operations/runbook.md`(트리아지, 컴포넌트별 흔한 원인, 롤백 절차, 온콜 체크리스트). 실제 배포 대상이 미정인 상태를 전제로, 이 저장소에 실재하는 도구(헬스체크/Prometheus/Sentry/구조화 로그 요청 추적/DB 백업·복구 스크립트) 기준으로만 작성(ADR-0048)
 
 ## 진행 순서 제안
 

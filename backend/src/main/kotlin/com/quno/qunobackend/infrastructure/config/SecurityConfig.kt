@@ -79,6 +79,11 @@ class SecurityConfig(
                 // Prometheus 서버는 우리 JWT를 발급받을 수 없다 — 앱 차원 인증 대신 인프라
                 // 레벨(내부망/리버스 프록시)에서 접근을 통제해야 한다(ADR-0045).
                 authorize("/actuator/prometheus", permitAll)
+                // API 문서(springdoc-openapi, ADR-0048)도 공개 질문/태그/조직/프로필(ADR-0041/0042)과
+                // 같은 원칙 — 민감 정보가 아니라 개발자 참고 자료라 인증을 걸지 않는다.
+                authorize("/v3/api-docs/**", permitAll)
+                authorize("/swagger-ui/**", permitAll)
+                authorize("/swagger-ui.html", permitAll)
                 authorize("/api/v1/auth/**", permitAll)
                 // The WebSocket handshake itself stays unauthenticated — real auth happens one
                 // level up, inside the STOMP CONNECT frame (see StompAuthChannelInterceptor).

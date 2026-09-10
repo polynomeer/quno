@@ -484,9 +484,18 @@ Phase 35(신뢰성/데이터)에 이어 진행한다([ADR-0047](docs/architectur
 - [x] 36.7 CI — `.github/workflows/ci.yml`에 `e2e` 잡 추가(인프라+백엔드+프론트엔드 모두 기동 후 Playwright 실행, 실패 시 리포트 아티팩트 업로드)
 - [x] 36.8 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-5 체크박스 전부 갱신
 
-## Phase 37+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 37 — 상용 전환: 문서화 (production-readiness.md B-6) — 상용 전환 체크리스트 완료
 
-[production-readiness.md](docs/product/production-readiness.md) B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 36(테스트)에 이어 진행한다([ADR-0048](docs/architecture/decisions/0048-openapi-docs-public-and-runbook.md)). 이 Phase로 production-readiness.md의 B-1~B-6(코드로 구현 가능한 상용 전환 항목) 전부가 완료됐다.
+
+- [x] 37.1 OpenAPI 자동 생성 — `springdoc-openapi-starter-webmvc-ui:3.1.1` 추가(Spring Boot 4/Framework 7 지원 3.x 라인, Sentry 때와 달리 호환성 문제 없었음). `OpenApiConfig`(신규)가 제목/설명 + JWT Bearer 인증 스킴 추가. `SecurityConfig`에 `/v3/api-docs/**`/`/swagger-ui/**` permitAll(공개 질문/태그/조직/프로필과 같은 원칙)
+- [x] 37.2 운영 런북 — `docs/operations/runbook.md`(신규) 작성: 상태 확인 엔드포인트, 요청 추적 방법, 장애 트리아지, 컴포넌트별 흔한 원인 표, 롤백 절차(CD 파이프라인 부재·Flyway 전진 전용 특성 전제), 온콜 체크리스트. 실제 배포 대상 미정 상태를 감안해 클라우드 서비스 이름이 필요한 부분은 "인프라 구성 시 확립할 것"으로 명시적으로 비워둠
+- [x] 37.3 검증 — 임시 인스턴스로 `/v3/api-docs`(74개 경로 정확히 인식)와 `/swagger-ui/index.html`을 인증 없이 확인, 브라우저로 Swagger UI 실제 렌더링(제목/Authorize 버튼/엔드포인트 목록) 확인. 백엔드 전체 테스트 스위트(348개, 회귀 없음) 재확인
+- [x] 37.4 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-6 체크박스 갱신 — 이로써 B-1~B-6 전부 완료
+
+## Phase 38+ — 품질 개선 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+production-readiness.md(상용화 필수 조건)의 코드로 구현 가능한 항목(B-1~B-6)이 Phase 32~37로 전부 끝났다. 이제 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1(코드 품질 게이트)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
