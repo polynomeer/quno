@@ -76,6 +76,9 @@ class SecurityConfig(
                 authorize("/error", permitAll)
                 authorize("/actuator/health", permitAll)
                 authorize("/actuator/info", permitAll)
+                // Prometheus 서버는 우리 JWT를 발급받을 수 없다 — 앱 차원 인증 대신 인프라
+                // 레벨(내부망/리버스 프록시)에서 접근을 통제해야 한다(ADR-0045).
+                authorize("/actuator/prometheus", permitAll)
                 authorize("/api/v1/auth/**", permitAll)
                 // The WebSocket handshake itself stays unauthenticated — real auth happens one
                 // level up, inside the STOMP CONNECT frame (see StompAuthChannelInterceptor).

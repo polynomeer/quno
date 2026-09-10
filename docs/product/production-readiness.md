@@ -49,11 +49,11 @@ Claude Code가 실행할 수 없는 항목이다. 코드 작업과 별개로 사
 
 ### B-3. 관측 가능성(Observability)
 
-- [ ] 구조화된 JSON 로깅 — 현재 콘솔 로그가 사람이 읽기 좋은 포맷뿐, 로그 수집기(예: CloudWatch/Loki) 연동을 전제로 JSON 인코더 추가
-- [ ] 요청 추적 ID(Correlation ID) — 요청마다 ID를 부여해 로그를 관통 추적 가능하게
-- [ ] 에러 트래킹 SDK 통합 — Sentry 등 SDK를 코드에 심는 것까지는 가능(계정 생성은 A 항목). DSN이 없으면 비활성화되도록 설계
-- [ ] Prometheus 메트릭 노출 — Micrometer는 이미 의존성에 있음(HikariCP/MongoDB 메트릭 로그로 확인됨), `/actuator/prometheus` 활성화만 남음
-- [ ] 프론트엔드 에러 바운더리 강화 — 현재 페이지별 에러 처리 상태 재점검, 전역 에러 리포팅 연동
+- [x] 구조화된 JSON 로깅 — Spring Boot 4 내장 기능(`logging.structured.format.console: ecs`)을 prod 프로필에만 적용, 별도 의존성 없음. Docker 컨테이너로 실제 ECS JSON 출력 확인
+- [x] 요청 추적 ID(Correlation ID) — `RequestIdFilter` 신규(`X-Request-Id` 헤더 읽기/발급, MDC 저장). 클라이언트가 보낸 ID 그대로 반영, 없으면 새로 발급하는 것을 실측 확인. ECS 포맷이 MDC를 자동으로 로그에 실어줌
+- [x] 에러 트래킹 SDK 통합 — Sentry의 Spring Boot Starter가 Spring Boot 4와 호환되지 않는 것을 발견(ApplicationContext 로드 실패)해 코어 SDK로 전환, `SentryConfig`가 직접 초기화. `GlobalExceptionHandler`에 예기치 못한 예외만 잡는 catch-all 추가. DSN 없으면 비활성화(계정 생성은 A 항목). 프론트엔드는 `@sentry/browser`로 같은 원칙 적용(ADR-0045)
+- [x] Prometheus 메트릭 노출 — `micrometer-registry-prometheus` 추가, `/actuator/prometheus` 노출. 앱 차원 인증은 걸지 않음(Prometheus 서버가 우리 JWT를 받을 수 없음) — 실제 접근 통제는 인프라 레벨 책임(ADR-0045)
+- [x] 프론트엔드 에러 바운더리 강화 — `app/error.tsx`(라우트 세그먼트), `app/global-error.tsx`(루트), `app/not-found.tsx`(전무했음) 신규 추가. 브라우저로 실제 렌더링 오류를 발생시켜 error.tsx가 정상 표시되는 것과 콘솔 리포팅이 호출되는 것을 확인
 
 ### B-4. 신뢰성 / 데이터
 

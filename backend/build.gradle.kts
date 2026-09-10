@@ -39,6 +39,14 @@ dependencies {
 	// 인메모리 토큰 버킷이라 단일 인스턴스 기준이다 — 다중 인스턴스로 스케일아웃하면 Redis 백엔드로
 	// 바꿔야 한다(production-readiness.md B-2 참고).
 	implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
+	// /actuator/prometheus 노출용. 버전은 spring-boot-starter-actuator가 이미 끌어온
+	// micrometer-core와 호환되도록 Spring Boot의 의존성 관리 BOM에 맡긴다(버전 명시 안 함).
+	implementation("io.micrometer:micrometer-registry-prometheus")
+	// 에러 트래킹 SDK. `sentry-spring-boot-starter-jakarta`는 아직 Spring Boot 4의 재구성된
+	// 패키지(`RestClientCustomizer` 등)와 호환되지 않아(ApplicationContext 로드 실패로 확인)
+	// Spring 통합 없는 코어 SDK만 쓰고 초기화는 SentryConfig가 직접 한다. DSN이 비어 있으면
+	// (기본값) SDK가 스스로 비활성화되므로 로컬/테스트에는 영향이 없다(production-readiness.md B-3).
+	implementation("io.sentry:sentry:8.56.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-gson:0.13.0")
 	runtimeOnly("org.postgresql:postgresql")

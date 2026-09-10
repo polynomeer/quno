@@ -50,6 +50,7 @@ import com.quno.qunobackend.domain.user.InvalidTokenException
 import com.quno.qunobackend.domain.user.UserNotFoundException
 import com.quno.qunobackend.domain.vote.InvalidVoteValueException
 import com.quno.qunobackend.domain.vote.SelfVoteException
+import io.sentry.Sentry
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -138,4 +139,14 @@ class GlobalExceptionHandler {
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
+
+    // 위 핸들러들이 다루는 도메인 예외는 예상된 비즈니스 흐름(중복/404/권한 없음 등)이라 에러
+    // 트래킹 대상이 아니다 — 여기 걸리는 건 진짜 예기치 못한 버그뿐이라 Sentry로 보낸다. DSN이
+    // 없으면(로컬/테스트) Sentry.captureException은 그냥 아무것도 하지 않는다.
+    @ExceptionHandler(Exception::class)
+    fun handleUnexpected(ex: Exception): ResponseEntity<ErrorResponse> {
+        Sentry.captureException(ex)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ErrorResponse("INTERNAL_ERROR", "예기치 못한 오류가 발생했습니다."))
+    }
 }

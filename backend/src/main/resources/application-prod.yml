@@ -5,6 +5,14 @@
 server:
   port: 8080
 
+logging:
+  structured:
+    format:
+      # 콘솔 출력을 ECS(Elastic Common Schema) JSON으로 — 로그 수집기(CloudWatch/Loki 등) 연동을
+      # 전제. Spring Boot 4 내장 기능이라 별도 의존성이 필요 없다. RequestIdFilter가 MDC에 넣는
+      # requestId가 각 로그 라인에 자동으로 실린다(ADR-0045).
+      console: ecs
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
@@ -41,3 +49,9 @@ quno:
   toss:
     client-key: ${QUNO_TOSS_CLIENT_KEY}
     secret-key: ${QUNO_TOSS_SECRET_KEY}
+
+sentry:
+  # 계정 개설·DSN 발급 전까지는 비워둬도 기동에 지장 없다(SDK가 스스로 비활성화) —
+  # production-readiness.md A 항목(사람이 할 일) 완료 후 채워 넣는다.
+  dsn: ${SENTRY_DSN:}
+  environment: production

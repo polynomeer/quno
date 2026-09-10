@@ -13,7 +13,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # prometheus: 스크레이핑 엔드포인트에 앱 차원 인증을 걸지 않는다(Prometheus 서버가 우리
+        # JWT를 발급받을 수 없음) — SecurityConfig에서 permitAll, 실제 접근 통제는 인프라
+        # 레벨(내부망/리버스 프록시)에서 해야 한다(ADR-0045).
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: never
@@ -44,3 +47,8 @@ quno:
     # KRW, flat fee. No real usage data yet — same "start at a round number, revisit later"
     # judgment as ADR-0032's vote weights.
     fee-amount: 1000
+
+sentry:
+  # 빈 값이면 SDK가 스스로 비활성화된다(Sentry 공식 동작) — 계정 개설·DSN 발급은 사람이 할 일
+  # (production-readiness.md A)이라 이 값이 없어도 기동에 지장이 없어야 한다.
+  dsn: ""

@@ -444,9 +444,21 @@ Phase 32(배포 파이프라인)에 이어 진행한다.
 - [x] 33.6 검증 — 로컬에서 임시 백엔드 인스턴스(8092 포트)를 띄워 실측: 허용 오리진은 CORS preflight 200 + 헤더 정상, 비허용 오리진은 403, 보안 헤더(X-Content-Type-Options/X-Frame-Options/Referrer-Policy) 응답에 포함, `/api/v1/auth/login`에 12연속 요청 시 11번째부터 429. 전체 백엔드 테스트 스위트(339개, 실패/에러/스킵 0) 재실행해 회귀 없음 확인
 - [x] 33.7 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-2 체크박스 전부 갱신
 
-## Phase 34+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 34 — 상용 전환: 관측 가능성 (production-readiness.md B-3)
 
-[production-readiness.md](docs/product/production-readiness.md) B-3~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 33(보안 강화)에 이어 진행한다([ADR-0045](docs/architecture/decisions/0045-observability-logging-metrics-error-tracking.md)).
+
+- [x] 34.1 구조화 로깅 — `application-prod.yml`에 `logging.structured.format.console: ecs` 추가(Spring Boot 4 내장 기능, 별도 의존성 없음). 로컬/테스트는 기존 콘솔 포맷 유지. Docker 컨테이너로 실제 ECS JSON 출력 확인
+- [x] 34.2 요청 추적 ID — `RequestIdFilter`(신규, `infrastructure/logging`) 추가. `X-Request-Id` 헤더를 읽거나 없으면 발급해 MDC에 저장하고 응답 헤더로 반환. Security 체인 전용이 아니라 모든 요청에 적용돼야 해서 `JwtAuthenticationFilter`/`RateLimitFilter`와 달리 `@Component` + `@Order(HIGHEST_PRECEDENCE)`로 Boot 전역 필터로 등록. 클라이언트가 보낸 ID 그대로 반영/없으면 신규 발급 양쪽 다 실측 확인
+- [x] 34.3 Prometheus 메트릭 — `micrometer-registry-prometheus` 의존성 추가(버전은 Spring Boot 의존성 관리 BOM에 위임), `management.endpoints.web.exposure.include`에 `prometheus` 추가, `SecurityConfig`에서 `permitAll`(Prometheus 서버가 우리 JWT를 받을 수 없어 인증을 걸 수 없음 — 실제 통제는 인프라 레벨). `/actuator/prometheus` 응답 확인
+- [x] 34.4 백엔드 에러 트래킹 — `io.sentry:sentry-spring-boot-starter-jakarta`를 처음 붙였다가 `ApplicationContext` 로드가 `NoClassDefFoundError: RestClientCustomizer`로 실패하는 것을 테스트로 발견(Spring Boot 4 패키지 재구성과 아직 비호환). 코어 SDK(`io.sentry:sentry`)로 전환하고 `SentryConfig`(신규, `@PostConstruct`)가 직접 초기화. `GlobalExceptionHandler`에 `Exception::class` catch-all 핸들러를 추가해 이미 처리되는 도메인 예외가 아닌 진짜 예기치 못한 예외만 `Sentry.captureException`으로 전달. DSN 비어 있으면(기본값) SDK가 스스로 비활성화됨을 코드 리뷰로 확인(Sentry 공식 동작)
+- [x] 34.5 프론트엔드 에러 바운더리 — 지금까지 커스텀 `error.tsx`/`global-error.tsx`/`not-found.tsx`가 전무했던 것을 발견해 신규 추가. `@sentry/browser`(경량, Next.js 전용 통합 아님 — 이 Next.js 버전에서의 빌드 통합 위험 회피) 기반 `shared/lib/errorReporting.ts`의 `reportError()`를 두 에러 경계에서 호출, `NEXT_PUBLIC_SENTRY_DSN` 없으면 `console.error`만 함. 임시 라우트로 실제 렌더링 에러를 발생시켜 `error.tsx`가 정상 표시되고 `reportError`가 호출되는 것, `/존재하지-않는-경로`에서 `not-found.tsx`가 표시되는 것을 브라우저로 확인 후 임시 라우트 삭제
+- [x] 34.6 검증 — 백엔드 전체 테스트 스위트(339개, Sentry 호환성 문제 발견 전/후 두 번 실행, 최종 실패·에러·스킵 0) 통과, 프론트엔드 `npm run build` 통과
+- [x] 34.7 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-3 체크박스 전부 갱신, `.env.example`에 `QUNO_CORS_ALLOWED_ORIGINS`/`SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` 추가
+
+## Phase 35+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[production-readiness.md](docs/product/production-readiness.md) B-4~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
