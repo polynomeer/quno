@@ -22,5 +22,8 @@ build/
 out/
 *.log
 
+# DB 백업 산출물 (scripts/db-backup.sh) — 개인정보가 포함될 수 있어 커밋하지 않는다
+/backups/
+
 # Claude Code local settings (개인별 권한 오버라이드는 커밋하지 않음)
 .claude/settings.local.json

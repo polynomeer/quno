@@ -36,5 +36,10 @@ class VoteRepositoryAdapter(
     override fun sumScore(targetType: VoteTargetType, targetId: Long): Long =
         jpaRepository.sumScore(targetType.name, targetId)
 
+    override fun sumScoresByTargets(targetType: VoteTargetType, targetIds: List<Long>): Map<Long, Long> {
+        if (targetIds.isEmpty()) return emptyMap()
+        return jpaRepository.sumScoresByTargets(targetType.name, targetIds).associate { it.targetId to it.score }
+    }
+
     private fun VoteJpaEntity.toDomain() = Vote(voterId = voterId, targetType = targetType, targetId = targetId, value = value)
 }

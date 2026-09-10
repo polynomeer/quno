@@ -8,4 +8,8 @@ interface QuestionTagRepository {
     /** Idempotent: attaching an already-attached tag is a no-op. */
     fun attach(questionId: Long, tagId: Long)
     fun findTagsByQuestionId(questionId: Long): List<Tag>
+
+    /** Batch form of [findTagsByQuestionId] — avoids N+1 when hydrating a list of questions.
+     * Missing keys mean no tags, not "not found". */
+    fun findTagsByQuestionIds(questionIds: List<Long>): Map<Long, List<Tag>>
 }

@@ -5,3 +5,5 @@ data class SignUpCommand(val email: String, val nickname: String, val rawPasswor
 data class LoginCommand(val email: String, val rawPassword: String)
 
 data class RefreshTokenCommand(val refreshToken: String)
+
+data class WithdrawUserCommand(val userId: Long, val rawPassword: String)

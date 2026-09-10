@@ -28,6 +28,15 @@ class QuestionTagRepositoryAdapter(
         return tagJpaRepository.findAllById(tagIds).map { it.toDomain() }
     }
 
+    override fun findTagsByQuestionIds(questionIds: List<Long>): Map<Long, List<Tag>> {
+        if (questionIds.isEmpty()) return emptyMap()
+        val links = questionTagJpaRepository.findAllByQuestionIdIn(questionIds)
+        if (links.isEmpty()) return emptyMap()
+        val tagsById = tagJpaRepository.findAllById(links.map { it.tagId }.distinct()).associateBy { requireNotNull(it.id) }
+        return links.groupBy({ it.questionId }, { tagsById[it.tagId] })
+            .mapValues { (_, tags) -> tags.filterNotNull().map { it.toDomain() } }
+    }
+
     private fun TagJpaEntity.toDomain(): Tag = Tag.reconstitute(
         id = requireNotNull(id),
         name = name,

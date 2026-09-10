@@ -30,6 +30,11 @@ class QuestionRepositoryAdapter(
 
     override fun findById(id: Long): Question? = jpaRepository.findByIdAndDeletedAtIsNull(id)?.toDomain()
 
+    override fun findAllByIds(ids: List<Long>): List<Question> {
+        if (ids.isEmpty()) return emptyList()
+        return jpaRepository.findAllByIdInAndDeletedAtIsNull(ids).map { it.toDomain() }
+    }
+
     override fun findByIdForUpdate(id: Long): Question? = jpaRepository.findByIdForUpdate(id)?.toDomain()
 
     override fun findAllByAuthorId(authorId: Long): List<Question> =

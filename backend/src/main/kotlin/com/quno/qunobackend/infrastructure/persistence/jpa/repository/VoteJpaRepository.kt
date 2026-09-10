@@ -17,4 +17,19 @@ interface VoteJpaRepository : JpaRepository<VoteJpaEntity, VoteId> {
         nativeQuery = true,
     )
     fun sumScore(@Param("targetType") targetType: String, @Param("targetId") targetId: Long): Long
+
+    @Query(
+        value = """
+            SELECT target_id AS targetId, COALESCE(SUM(value), 0) AS score FROM votes
+            WHERE target_type = :targetType AND target_id IN (:targetIds)
+            GROUP BY target_id
+        """,
+        nativeQuery = true,
+    )
+    fun sumScoresByTargets(@Param("targetType") targetType: String, @Param("targetIds") targetIds: List<Long>): List<VoteScoreRow>
+}
+
+interface VoteScoreRow {
+    val targetId: Long
+    val score: Long
 }

@@ -14,4 +14,8 @@ interface VoteRepository {
     fun findByVoter(voterId: Long): List<Vote>
 
     fun sumScore(targetType: VoteTargetType, targetId: Long): Long
+
+    /** Batch form of [sumScore] — avoids N+1 when hydrating a list of questions. Missing keys
+     * mean zero votes, not "not found". */
+    fun sumScoresByTargets(targetType: VoteTargetType, targetIds: List<Long>): Map<Long, Long>
 }

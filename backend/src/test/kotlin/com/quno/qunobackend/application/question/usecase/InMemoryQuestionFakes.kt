@@ -33,6 +33,8 @@ class InMemoryQuestionRepository : QuestionRepository {
 
     override fun findById(id: Long): Question? = byId[id]
 
+    override fun findAllByIds(ids: List<Long>): List<Question> = ids.mapNotNull { byId[it] }
+
     // No real locking needed for a single-threaded in-memory fake.
     override fun findByIdForUpdate(id: Long): Question? = findById(id)
 

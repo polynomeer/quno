@@ -39,6 +39,9 @@ class InMemoryQuestionTagRepository(private val tagRepository: InMemoryTagReposi
 
     override fun findTagsByQuestionId(questionId: Long): List<Tag> =
         links.filter { it.first == questionId }.mapNotNull { tagRepository.findById(it.second) }
+
+    override fun findTagsByQuestionIds(questionIds: List<Long>): Map<Long, List<Tag>> =
+        questionIds.associateWith { findTagsByQuestionId(it) }
 }
 
 class InMemoryUserTagFollowRepository : UserTagFollowRepository {

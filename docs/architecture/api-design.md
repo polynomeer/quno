@@ -10,6 +10,8 @@
 | POST | `/api/v1/auth/login` | 로그인, Access/Refresh Token 발급 |
 | POST | `/api/v1/auth/refresh` | Refresh Token으로 Access/Refresh Token 재발급 |
 | GET | `/api/v1/me` | 내 기본 프로필 조회 (이메일 포함, 비공개) |
+| DELETE | `/api/v1/me` | 회원 탈퇴 — body에 현재 비밀번호 필요. Row는 유지하고 PII만 익명화(ADR-0046) |
+| GET | `/api/v1/me/data-export` | 개인정보 다운로드 — 프로필+직접 작성한 질문/답변(`Content-Disposition: attachment`, ADR-0046) |
 | GET | `/api/v1/users/{id}/profile` | 공개 프로필 — 작성 질문/답변, 팔로우 태그 (이메일 미포함) |
 | POST | `/api/v1/questions` | 질문과 Qv1 생성 (`tags: string[]` 선택 — find-or-create, slug 기준 중복 제거) |
 | GET | `/api/v1/questions/{id}` | 질문 최신본/버전 요약 조회 |

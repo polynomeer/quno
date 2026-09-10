@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param
 interface QuestionJpaRepository : JpaRepository<QuestionJpaEntity, Long> {
     fun findByIdAndDeletedAtIsNull(id: Long): QuestionJpaEntity?
 
+    fun findAllByIdInAndDeletedAtIsNull(ids: List<Long>): List<QuestionJpaEntity>
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select q from QuestionJpaEntity q where q.id = :id and q.deletedAt is null")
     fun findByIdForUpdate(@Param("id") id: Long): QuestionJpaEntity?

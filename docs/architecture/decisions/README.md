@@ -70,3 +70,4 @@
 | [0043](0043-seo-metadata-question-og-and-sitemap.md) | SEO 메타데이터는 질문 상세의 동적 Open Graph + 태그·조직 sitemap까지만, 질문/프로필 sitemap 열거는 범위 밖 | 승인됨 |
 | [0044](0044-production-readiness-track-code-first.md) | 상용 전환을 사람이 할 일/코드로 할 일로 나누고, 배포 파이프라인부터 코드 작업 우선 진행 | 승인됨 |
 | [0045](0045-observability-logging-metrics-error-tracking.md) | 구조화 로깅(ECS)·요청 추적 ID·Prometheus·에러 트래킹 도입, Sentry Spring Boot 4 비호환 발견 | 승인됨 |
+| [0046](0046-reliability-account-withdrawal-data-export-n-plus-1.md) | 회원 탈퇴는 익명화(삭제 아님), 개인정보 다운로드는 셀프서비스 API, N+1 배치 쿼리로 제거 | 승인됨 |

@@ -456,9 +456,22 @@ Phase 33(보안 강화)에 이어 진행한다([ADR-0045](docs/architecture/deci
 - [x] 34.6 검증 — 백엔드 전체 테스트 스위트(339개, Sentry 호환성 문제 발견 전/후 두 번 실행, 최종 실패·에러·스킵 0) 통과, 프론트엔드 `npm run build` 통과
 - [x] 34.7 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-3 체크박스 전부 갱신, `.env.example`에 `QUNO_CORS_ALLOWED_ORIGINS`/`SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` 추가
 
-## Phase 35+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 35 — 상용 전환: 신뢰성/데이터 (production-readiness.md B-4)
 
-[production-readiness.md](docs/product/production-readiness.md) B-4~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 34(관측 가능성)에 이어 진행한다([ADR-0046](docs/architecture/decisions/0046-reliability-account-withdrawal-data-export-n-plus-1.md)).
+
+- [x] 35.1 회원 탈퇴 — 지금까지 전혀 없던 기능이었음을 확인해 신규 구현. `User.withdraw(randomPasswordHash)`(도메인)가 email/nickname을 id 접미사로 익명화하고 isActive를 false로(기존에 아무도 안 쓰던 휴면 필드 재사용), 비밀번호 해시를 로그인 불가능한 무작위 값으로 교체. `WithdrawUserUseCase`가 탈퇴 전 현재 비밀번호를 로그인과 동일하게 재검증(탈취된 access token만으로 탈퇴시키는 것 방지). `DELETE /api/v1/me` 신규. 콘텐츠(질문/답변)는 FK 그대로 두고 삭제하지 않음 — 조회 시 자동으로 "탈퇴한 사용자N"으로 보임
+- [x] 35.2 개인정보 다운로드 — `GET /api/v1/me/data-export`(프로필 + 직접 작성한 질문/답변, `Content-Disposition: attachment`) 신규. 원래 계획(관리자 도구)보다 셀프서비스가 더 단순하고 취지에 맞아 범위를 조정(ADR-0046)
+- [x] 35.3 외부 API 재시도/타임아웃 — Toss/메일 모두 이미 타임아웃이 있었음을 확인(메일에는 없어서 5초로 추가). 메일 발송(`SmtpVerificationEmailSender`)에 지수 백오프 재시도(최대 3회) 추가 — 재시도해도 안전한 작업이라서. Toss 결제 확인은 멱등성 미검증으로 재시도 도입을 의도적으로 보류
+- [x] 35.4 N+1 쿼리 제거 — `QuestionSummaryHydrator`가 검색/관련 질문/대시보드/클러스터 등에서 공유되는데 N개 결과에 3*N개 쿼리를 내고 있었음을 발견. `QuestionRepository.findAllByIds`/`QuestionTagRepository.findTagsByQuestionIds`/`VoteRepository.sumScoresByTargets`(IN + GROUP BY) 배치 쿼리 3종 추가로 결과 개수와 무관하게 3개 쿼리로 고정. 순서 보존·누락 id 처리가 기존과 동일함을 신규 테스트로 고정
+- [x] 35.5 DB 백업/복구 — `scripts/db-backup.sh`/`scripts/db-restore.sh` 신규(로컬 docker-compose 또는 `PGHOST` 표준 환경변수로 원격 DB). 로컬에서 실제 백업→복구 리허설(질문/사용자 개수로 데이터 온전성 확인)까지 완료
+- [x] 35.6 (발견) `GlobalExceptionHandler`의 catch-all(ADR-0045)이 `HttpMessageNotReadableException`(잘못된 요청 본문) 같은 프레임워크 예외까지 500+Sentry로 잘못 처리하던 것을 실측 검증 중 발견. `HttpMessageNotReadableException`/`MethodArgumentTypeMismatchException` 전용 핸들러를 추가해 400으로 고치고, catch-all에 로그 추가(Sentry가 DSN 없이는 조용히 무시해서 로그가 유일한 단서)
+- [x] 35.7 검증 — 백엔드 테스트 스위트(348개, 신규 9개 포함, 실패·에러·스킵 0) 통과. 임시 인스턴스로 탈퇴(잘못된 비밀번호 401/정상 200/이후 로그인 401/기존 access token으로 본 프로필이 익명화됨/작성 질문이 "탈퇴한 사용자N"으로 보임), 데이터 다운로드, 잘못된 요청 본문·path variable이 400으로 정정된 것까지 curl로 실측
+- [x] 35.8 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-4 체크박스 전부 갱신
+
+## Phase 36+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[production-readiness.md](docs/product/production-readiness.md) B-5~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 

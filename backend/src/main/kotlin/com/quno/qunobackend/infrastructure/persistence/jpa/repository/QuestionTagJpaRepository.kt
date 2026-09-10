@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface QuestionTagJpaRepository : JpaRepository<QuestionTagJpaEntity, QuestionTagId> {
     fun findAllByQuestionId(questionId: Long): List<QuestionTagJpaEntity>
+
+    fun findAllByQuestionIdIn(questionIds: List<Long>): List<QuestionTagJpaEntity>
 }

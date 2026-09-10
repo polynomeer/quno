@@ -24,4 +24,7 @@ class InMemoryVoteRepository : VoteRepository {
 
     override fun sumScore(targetType: VoteTargetType, targetId: Long): Long =
         byKey.values.filter { it.targetType == targetType && it.targetId == targetId }.sumOf { it.value.toLong() }
+
+    override fun sumScoresByTargets(targetType: VoteTargetType, targetIds: List<Long>): Map<Long, Long> =
+        targetIds.associateWith { sumScore(targetType, it) }
 }

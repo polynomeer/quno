@@ -19,13 +19,25 @@ class QuestionSummaryHydrator(
     private val questionTagRepository: QuestionTagRepository,
     private val voteRepository: VoteRepository,
 ) {
-    /** Silently drops ids that no longer resolve to a question (e.g. deleted since ranking ran). */
-    fun hydrate(ids: List<Long>): List<QuestionSearchResult> = ids.mapNotNull(::toSummary)
+    /** Silently drops ids that no longer resolve to a question (e.g. deleted since ranking ran).
+     * Batches all three lookups instead of querying per id — `ids` is often a ranked list
+     * (search/related/recommend), so this used to be 3*N queries for N results. */
+    fun hydrate(ids: List<Long>): List<QuestionSearchResult> {
+        if (ids.isEmpty()) return emptyList()
 
-    private fun toSummary(id: Long): QuestionSearchResult? {
-        val question = questionRepository.findById(id) ?: return null
-        val tags = questionTagRepository.findTagsByQuestionId(id).map { it.name }
-        val score = voteRepository.sumScore(VoteTargetType.QUESTION, id)
-        return QuestionSearchResult(id = requireNotNull(question.id), title = question.title, status = question.status, tags = tags, score = score)
+        val questionsById = questionRepository.findAllByIds(ids).associateBy { requireNotNull(it.id) }
+        val tagsByQuestionId = questionTagRepository.findTagsByQuestionIds(ids)
+        val scoresByQuestionId = voteRepository.sumScoresByTargets(VoteTargetType.QUESTION, ids)
+
+        return ids.mapNotNull { id ->
+            val question = questionsById[id] ?: return@mapNotNull null
+            QuestionSearchResult(
+                id = id,
+                title = question.title,
+                status = question.status,
+                tags = tagsByQuestionId[id].orEmpty().map { it.name },
+                score = scoresByQuestionId[id] ?: 0L,
+            )
+        }
     }
 }

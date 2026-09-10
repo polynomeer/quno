@@ -7,6 +7,10 @@ interface QuestionRepository {
     /** Excludes soft-deleted questions. */
     fun findById(id: Long): Question?
 
+    /** Batch form of [findById] — avoids N+1 when hydrating a list of ranked ids (search,
+     * related, dashboard, cluster members). Order is not significant; caller re-orders by id. */
+    fun findAllByIds(ids: List<Long>): List<Question>
+
     /** Locks the row (SELECT ... FOR UPDATE) to serialize concurrent revision creation. */
     fun findByIdForUpdate(id: Long): Question?
 
