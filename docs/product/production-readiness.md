@@ -40,12 +40,12 @@ Claude Code가 실행할 수 없는 항목이다. 코드 작업과 별개로 사
 
 ### B-2. 보안 강화
 
-- [ ] CORS 허용 오리진을 환경변수화 — `SecurityConfig.kt`에 `http://localhost:3000`이 하드코딩돼 있어 실 도메인을 못 받음
-- [ ] 보안 헤더 추가 — HSTS, `X-Content-Type-Options`, `Referrer-Policy` 등 (Spring Security `headers {}` DSL)
-- [ ] Rate limiting 도입 — 로그인/회원가입/결제 확인 등 민감 엔드포인트에 무차별 대입·남용 방지 (현재 전무)
-- [ ] 의존성 취약점 스캔 자동화 — `./gradlew dependencyCheckAnalyze` 또는 GitHub Dependabot, `npm audit` CI 연동
-- [ ] Actuator 프로덕션 노출 최소화 — 현재 `health,info`만 노출되고 있어 기본은 안전하나, prod에서 `/actuator/health` 상세 정보(`show-details`)가 인증 없이 노출되지 않는지 재확인
-- [ ] 시크릿 하드코딩 감사 — `application.yml`의 JWT/Toss 기본값이 실수로 prod에 그대로 쓰이지 않도록 B-1의 필수값 검증과 연계
+- [x] CORS 허용 오리진을 환경변수화 — `CorsProperties`(`quno.cors.allowed-origins`) 신설, prod는 `QUNO_CORS_ALLOWED_ORIGINS`(콤마 구분, 필수) 참조. 허용 오리진은 200, 그 외는 403인 것을 실측 확인
+- [x] 보안 헤더 추가 — `SecurityConfig`의 `headers {}` DSL로 `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, HSTS(HTTPS 응답에만 적용) 추가. 실제 응답 헤더로 확인
+- [x] Rate limiting 도입 — `RateLimitFilter`(Bucket4j 인메모리 토큰 버킷)를 로그인/회원가입/토큰 갱신/Direct Ask 결제 확인에 적용. 한도는 `RateLimitProperties`로 분리해 로컬/테스트는 사실상 무제한, prod는 IP당 분당 10회로 좁힘(테스트 스위트가 같은 Spring 컨텍스트를 공유하며 로그인/회원가입을 여러 번 호출하는 것과 충돌하지 않도록). 11번째 요청부터 429 응답을 실측 확인, 전체 테스트 스위트(339개) 회귀 없음 확인
+- [x] 의존성 취약점 스캔 자동화 — `.github/dependabot.yml` 신설(Gradle/npm/GitHub Actions 세 생태계, 주간)
+- [x] Actuator 프로덕션 노출 최소화 — 기존에 이미 안전하게 구성돼 있었음을 재확인: 노출 엔드포인트는 `health,info`뿐이고 `show-details`는 베이스 기본값이 `never`(로컬만 `always`로 재정의, prod는 손대지 않아 `never` 유지)
+- [x] 시크릿 하드코딩 감사 — Phase 32(B-1)의 필수 환경변수 fail-fast 검증으로 이미 커버됨(JWT secret/Toss 키가 비면 prod 기동 자체가 실패)
 
 ### B-3. 관측 가능성(Observability)
 

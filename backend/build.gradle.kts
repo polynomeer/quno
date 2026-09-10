@@ -35,6 +35,10 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("tools.jackson.module:jackson-module-kotlin")
 	implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+	// 로그인/회원가입/결제 확인 같은 민감 엔드포인트의 무차별 대입·남용 방지용 rate limiting.
+	// 인메모리 토큰 버킷이라 단일 인스턴스 기준이다 — 다중 인스턴스로 스케일아웃하면 Redis 백엔드로
+	// 바꿔야 한다(production-readiness.md B-2 참고).
+	implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-gson:0.13.0")
 	runtimeOnly("org.postgresql:postgresql")

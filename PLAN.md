@@ -432,9 +432,21 @@ MVP 백로그가 모두 끝나 사용자가 "상용 제품 수준으로 완성"�
 - [x] 32.4 `.github/workflows/ci.yml` 신규 작성 — `push`/`pull_request`(main) 시 백엔드 잡(`docker compose up -d`로 로컬과 동일한 인프라 기동 → `./gradlew test`, `build.gradle.kts`의 test 태스크가 이미 `local` 프로필로 이 인프라에 연결하도록 설정돼 있음)과 프론트엔드 잡(`npm run lint` → `npm test -- --run` → `npm run build`)을 병렬 실행. 로컬에서 프론트엔드 세 명령이 실제로 통과하는 것을 확인(백엔드 테스트는 기존에 이미 검증된 스위트라 CI 설정 자체의 정확성만 점검)
 - [x] 32.5 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-1 체크박스 전부 갱신
 
-## Phase 33+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 33 — 상용 전환: 보안 강화 (production-readiness.md B-2)
 
-[production-readiness.md](docs/product/production-readiness.md) B-2~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 32(배포 파이프라인)에 이어 진행한다.
+
+- [x] 33.1 CORS 허용 오리진 환경변수화 — `CorsProperties`(`quno.cors.allowed-origins`) 신설, `SecurityConfig`가 하드코딩된 `http://localhost:3000` 대신 이 프로퍼티를 참조. prod는 `QUNO_CORS_ALLOWED_ORIGINS`(콤마 구분 리스트, 필수 — B-1과 같은 fail-fast 패턴)로 덮어씀
+- [x] 33.2 보안 헤더 — `SecurityConfig`의 `headers {}` DSL에 `contentTypeOptions`(`X-Content-Type-Options: nosniff`), `frameOptions { deny = true }`(`X-Frame-Options: DENY`), `referrerPolicy`(`strict-origin-when-cross-origin`), `httpStrictTransportSecurity`(1년, subdomain 포함 — HTTPS 응답에만 실제로 실림) 추가
+- [x] 33.3 Rate limiting — `RateLimitFilter`(신규, `infrastructure/security`) 도입. Bucket4j 인메모리 토큰 버킷으로 `POST /api/v1/auth/{signup,login,refresh}`와 `POST /api/v1/direct-asks/payments/confirm`을 클라이언트 IP당 제한. `JwtAuthenticationFilter`와 동일하게 `@Component`로 등록하지 않고 `SecurityConfig`가 직접 생성해 체인에 끼워 넣는다(빈으로 등록하면 Spring Boot가 서블릿 필터로 한 번 더 자동 등록해 중복 실행됨). 한도는 `RateLimitProperties`(`quno.rate-limit.*`)로 분리 — 처음에는 로그인/회원가입/결제확인마다 다른 한도(10/10/20/5)로 하드코딩했으나, E2E 테스트 스위트가 같은 Spring 컨텍스트를 공유하며 로그인·회원가입을 테스트마다 반복 호출한다는 것을 뒤늦게 확인해 로컬/테스트 기본값을 사실상 무제한(1000/분)으로, prod만 엄격하게(10/분) 프로필로 분리하는 구조로 다시 설계함. 인메모리라 단일 인스턴스 기준 — 다중 인스턴스 스케일아웃 시 Redis 백엔드 필요(B-2에 남겨둠)
+- [x] 33.4 의존성 취약점 스캔 — `.github/dependabot.yml` 신설(Gradle/npm/GitHub Actions, 주간 스캔)
+- [x] 33.5 Actuator/시크릿 재점검 — 별도 코드 변경 없이 기존 상태가 이미 안전함을 확인만 함: Actuator는 `health,info`만 노출되고 `show-details`는 prod에서 베이스 기본값(`never`)을 유지, 시크릿 fail-fast는 Phase 32에서 이미 커버됨
+- [x] 33.6 검증 — 로컬에서 임시 백엔드 인스턴스(8092 포트)를 띄워 실측: 허용 오리진은 CORS preflight 200 + 헤더 정상, 비허용 오리진은 403, 보안 헤더(X-Content-Type-Options/X-Frame-Options/Referrer-Policy) 응답에 포함, `/api/v1/auth/login`에 12연속 요청 시 11번째부터 429. 전체 백엔드 테스트 스위트(339개, 실패/에러/스킵 0) 재실행해 회귀 없음 확인
+- [x] 33.7 문서화 — [production-readiness.md](docs/product/production-readiness.md) B-2 체크박스 전부 갱신
+
+## Phase 34+ — 상용 전환/품질 개선 잔여 항목 (착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[production-readiness.md](docs/product/production-readiness.md) B-3~B-6, 이후 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) 순으로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 

@@ -2,6 +2,8 @@ package com.quno.qunobackend.infrastructure.config
 
 import com.quno.qunobackend.application.user.TokenProvider
 import com.quno.qunobackend.infrastructure.security.JwtAuthenticationFilter
+import com.quno.qunobackend.infrastructure.security.RateLimitFilter
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -14,14 +16,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 /** Baseline chain for a stateless, JWT-authenticated API (see docs/architecture/api-design.md). */
 @Configuration
+@EnableConfigurationProperties(CorsProperties::class, RateLimitProperties::class)
 class SecurityConfig(
     private val tokenProvider: TokenProvider,
+    private val corsProperties: CorsProperties,
+    private val rateLimitProperties: RateLimitProperties,
 ) {
 
     @Bean
@@ -31,7 +37,7 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration().apply {
-            allowedOrigins = listOf("http://localhost:3000")
+            allowedOrigins = corsProperties.allowedOrigins
             allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             allowedHeaders = listOf("*")
             allowCredentials = true
@@ -44,12 +50,22 @@ class SecurityConfig(
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.addFilterBefore(JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter::class.java)
+        http.addFilterBefore(RateLimitFilter(rateLimitProperties), UsernamePasswordAuthenticationFilter::class.java)
         http {
             cors { configurationSource = corsConfigurationSource() }
             csrf { disable() }
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             httpBasic { disable() }
             formLogin { disable() }
+            headers {
+                contentTypeOptions { }
+                frameOptions { deny = true }
+                referrerPolicy { policy = ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN }
+                httpStrictTransportSecurity {
+                    includeSubDomains = true
+                    maxAgeInSeconds = 31536000
+                }
+            }
             exceptionHandling {
                 authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
             }

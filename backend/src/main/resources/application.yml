@@ -19,6 +19,13 @@ management:
       show-details: never
 
 quno:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+  rate-limit:
+    # 로컬 개발·테스트 기본값(사실상 무제한) — 운영은 application-prod.yml이 좁게 덮어쓴다.
+    capacity: 1000
+    refill-period-seconds: 60
   jwt:
     # Dev-only default. Override via QUNO_JWT_SECRET outside local dev.
     secret: "change-me-quno-dev-secret-please-override-in-real-environments-0123456789"

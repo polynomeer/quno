@@ -31,6 +31,11 @@ spring:
             enable: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:true}
 
 quno:
+  cors:
+    allowed-origins: ${QUNO_CORS_ALLOWED_ORIGINS}
+  rate-limit:
+    capacity: 10
+    refill-period-seconds: 60
   jwt:
     secret: ${QUNO_JWT_SECRET}
   toss:
