@@ -18,7 +18,10 @@ const labels: Record<QuestionStatus, string> = {
 const toneClasses: Record<QuestionStatus, string> = {
   OPEN: "bg-surface-subtle text-text-secondary",
   NEEDS_INFO: "bg-warning-subtle text-warning",
-  UPDATED: "bg-brand/10 text-brand",
+  // bg-brand/10(불투명도 트릭)은 text-brand와 4.48:1로 WCAG AA(4.5:1) 기준을 아슬아슬하게
+  // 밑돌았다(axe-core로 발견, quality-improvement-plan.md Q-3) — 다른 세 톤처럼 전용 subtle
+  // 배경 토큰(--brand-subtle)을 둬서 4.7:1 이상으로 여유를 확보했다.
+  UPDATED: "bg-brand-subtle text-brand",
   RESOLVED: "bg-success-subtle text-success",
   OUTDATED: "bg-danger-subtle text-danger",
 };

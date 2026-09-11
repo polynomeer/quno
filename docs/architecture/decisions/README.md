@@ -75,3 +75,4 @@
 | [0048](0048-openapi-docs-public-and-runbook.md) | springdoc-openapi로 API 문서 자동 생성(공개), 운영 런북은 배포 대상 미정 전제로 작성 | 승인됨 |
 | [0049](0049-code-quality-gates-ktlint-jacoco-eslint.md) | ktlint 전체 재포맷(intellij_idea 스타일) 후 CI 게이트화, detekt는 Kotlin 2.2 비호환으로 보류, 커버리지 가시화 | 승인됨 |
 | [0050](0050-performance-code-splitting-n-plus-1-caching.md) | Live Chat 코드 스플리팅, N+1 4곳 배치화, 조직 검색만 캐싱(태그는 위키 편집 충돌로 제외), 검색 인덱스는 추가했으나 쿼리 재작성 전까지 미사용 확인 | 승인됨 |
+| [0051](0051-accessibility-axe-core-e2e.md) | axe-core로 8개 페이지 자동 접근성 검사(CI 자동 편입), 브랜드 배지 명도 대비·인라인 링크 밑줄 수정, 키보드 전용 E2E 신설 | 승인됨 |

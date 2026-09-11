@@ -11,6 +11,7 @@
   --text-secondary: #5b6270;
   --brand: #2563eb;
   --brand-foreground: #ffffff;
+  --brand-subtle: #eff6ff;
   --success: #15803d;
   --success-subtle: #ecfdf3;
   --warning: #b45309;
@@ -31,6 +32,7 @@
     --text-secondary: #9aa1ad;
     --brand: #60a5fa;
     --brand-foreground: #0e0f12;
+    --brand-subtle: #182a45;
     --success: #4ade80;
     --success-subtle: #0f2417;
     --warning: #fbbf24;
@@ -48,6 +50,7 @@
   --color-text-secondary: var(--text-secondary);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-subtle: var(--brand-subtle);
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
   --color-warning: var(--warning);

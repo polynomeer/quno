@@ -55,7 +55,7 @@ function LoginForm() {
       </Button>
       <p className="text-center text-sm text-text-secondary">
         계정이 없으신가요?{" "}
-        <Link href="/signup" className="text-brand hover:underline">
+        <Link href="/signup" className="text-brand underline hover:no-underline">
           회원가입
         </Link>
       </p>

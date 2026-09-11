@@ -23,10 +23,10 @@
 
 ## Q-3. 접근성(a11y)
 
-- [ ] 시맨틱 HTML/ARIA 속성 전수 점검 — 버튼/링크/폼 요소가 스크린 리더에 올바르게 읽히는지
-- [ ] 키보드만으로 전체 플로우 완주 가능한지 점검(질문 작성, 투표, Direct Ask 결제까지)
-- [ ] 명도 대비 — 디자인 시스템 색상 팔레트가 WCAG AA 기준을 만족하는지
-- [ ] 자동 검사 도구 CI 연동 — axe-core 등을 E2E 테스트에 결합
+- [x] 시맨틱 HTML/ARIA 속성 전수 점검 — axe-core 자동 스캔(8페이지) + `onClick` 수동 grep 스팟체크(3건, 전부 정상). 별도 이슈 없음(ADR-0051)
+- [x] 키보드만으로 전체 플로우 완주 가능한지 점검 — `e2e/keyboard-navigation.spec.ts`(신규, `.click()` 미사용)로 회원가입→질문 작성 완주 확인. Direct Ask 결제는 토스 체크아웃 의존성으로 E2E 범위 밖(ADR-0047/0051)
+- [x] 명도 대비 — 핵심 디자인 토큰 9쌍을 WCAG 공식으로 직접 계산해 전수 통과 확인(최저 5.02:1). axe 스캔에서 `bg-brand/10` 배지 2곳(StatusBadge UPDATED, BadgeChip GOLD)이 4.48:1로 미달인 것을 발견해 전용 `--brand-subtle` 토큰으로 교체(ADR-0051)
+- [x] 자동 검사 도구 CI 연동 — `@axe-core/playwright` 도입, `e2e/accessibility.spec.ts`가 `playwright.config.ts`의 기존 testDir 설정으로 CI에 자동 편입(별도 설정 불필요)
 
 ## Q-4. UX 완성도
 

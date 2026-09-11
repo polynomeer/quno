@@ -517,9 +517,21 @@ Phase 38(코드 품질 게이트)에 이어 진행한다([ADR-0050](docs/archite
 - [x] 39.6 검증 — 배치 쿼리 교체 후 백엔드 전체 테스트 스위트(348개, 회귀 없음) 재확인, 프론트엔드 lint/test/build 통과, Live Chat 지연 로드와 조직 검색 캐싱 둘 다 실제 서버로 라이브 검증
 - [x] 39.7 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-2 체크박스 전부 갱신
 
-## Phase 40+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 40 — 품질 개선: 접근성 (quality-improvement-plan.md Q-3)
 
-[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-3(접근성)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 39(성능)에 이어 진행한다([ADR-0051](docs/architecture/decisions/0051-accessibility-axe-core-e2e.md)).
+
+- [x] 40.1 자동 접근성 검사 도입 — `@axe-core/playwright` 추가, `e2e/accessibility.spec.ts`(신규)가 공개 페이지 6개 + 질문 상세(비로그인) + `/ask`(로그인) 총 8개 페이지를 WCAG A/AA 룰셋으로 검사. 기존 `playwright.config.ts`가 `e2e/` 전체를 실행해 CI에 별도 설정 없이 자동 편입
+- [x] 40.2 (발견) 첫 실행에서 실제 위반 2건 — `/login`·`/signup`·질문 상세의 로그인 인라인 링크가 `hover:underline`만 써서 평상시 색상에만 의존(`link-in-text-block`, 1.18:1) → 상시 `underline`으로 수정. `StatusBadge`(UPDATED)/`BadgeChip`(GOLD)가 `bg-brand/10 text-brand`로 4.48:1(AA 기준 4.5:1 미달) → 전용 `--brand-subtle` 토큰(라이트 `#eff6ff`/다크 `#182a45`) 신설로 4.7:1 이상 확보
+- [x] 40.3 명도 대비 전수 확인 — 핵심 디자인 토큰 9쌍(text-primary/secondary, brand, success/warning/danger × surface/surface-subtle)을 WCAG 공식으로 라이트/다크 양쪽 직접 계산, 전부 4.5:1 이상(최저 5.02:1) 확인 — 위 2건은 토큰이 아니라 파생 배경(불투명도 트릭)에서만 발생
+- [x] 40.4 키보드 전용 플로우 — `e2e/keyboard-navigation.spec.ts`(신규, `.click()` 전혀 안 씀)로 회원가입→질문 작성을 Tab 이동+키보드 타이핑+Enter 제출만으로 완주 확인. Direct Ask 결제는 토스 체크아웃 의존성으로 범위 밖(기존 E2E 골든 패스와 동일한 판단)
+- [x] 40.5 시맨틱 HTML/ARIA — `onClick`이 있는데 시맨틱 버튼/링크가 아닌 패턴을 grep으로 찾아 3건 확인, 전부 실제 `<button>`/`<Link>` 위 부가 동작이라 문제없음
+- [x] 40.6 검증 — 프론트엔드 lint/유닛테스트 18개/build 통과, E2E 3개 스펙(golden-path/accessibility/keyboard-navigation) 전체 실행에서 golden-path 1회 일시적 flake 재현 후 격리 재실행으로 통과 확인(회귀 아님 — Q-3 변경은 CSS 토큰과 링크 스타일만 건드림)
+- [x] 40.7 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-3 체크박스 전부 갱신
+
+## Phase 41+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-4(UX 완성도)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 

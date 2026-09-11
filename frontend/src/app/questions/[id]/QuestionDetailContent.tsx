@@ -188,7 +188,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
           <AnswerComposer questionId={questionId} />
         ) : (
           <p className="text-sm text-text-secondary">
-            <Link href={`/login?redirectTo=/questions/${questionId}`} className="text-brand hover:underline">
+            <Link href={`/login?redirectTo=/questions/${questionId}`} className="text-brand underline hover:no-underline">
               로그인
             </Link>
             하고 답변을 작성하세요.
