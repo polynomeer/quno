@@ -567,7 +567,16 @@ Phase 43에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 44.3 검증 — 전체 스위트 14→18개 파일, 55→75개 테스트로 확충, 전부 통과. 라인 커버리지 11.75%→18.2%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 44.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 45+ — 잔여 후속 후보
+## Phase 45 — 품질 개선: 프론트엔드 테스트 확충 3 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 44에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 45.1 대상 선정 — 전역 `AppHeader`(이번 세션에 반응형 햄버거 메뉴와 언어 스위처를 직접 추가했는데 커버리지 0%였다), `ReportButton`(세션 의존 폼+뮤테이션), `BadgeChip`(순수 프레젠테이션이지만 룩업 테이블 `describeBadge`를 함께 검증)
+- [x] 45.2 구현 — `AppHeader`는 `useSession`/`useLogout`/`useNotifications`를 훅 레벨에서 직접 `vi.mock`(내부 react-query 배선은 이미 다른 테스트로 검증돼 있어 헤더 자체의 분기 로직만 격리), `LocaleProvider`로 감싸 언어 스위처까지 함께 렌더링. 비로그인/로그인/안읽음 배지/로그아웃 클릭/모바일 메뉴 열기·닫기·링크 클릭 시 자동 닫힘/언어 스위처 노출까지 7개 케이스. 작성 중 `render()`의 반환 타입을 `ReactElement`로 잘못 명시해 tsc 에러가 난 것을 발견해 타입 어노테이션 제거로 수정
+- [x] 45.3 검증 — 전체 스위트 18→21개 파일, 75→91개 테스트로 확충, 전부 통과. 라인 커버리지 18.2%→25.11%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 45.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 46+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
