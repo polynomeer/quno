@@ -549,9 +549,18 @@ Phase 41(UX 완성도)에 이어 진행한다([ADR-0053](docs/architecture/decis
 - [x] 42.4 검증 — 프론트엔드 tsc/eslint(신규 이슈 0건)/유닛테스트 18개/프로덕션 빌드 전부 통과. Browser 도구로 홈/로그인/회원가입 3개 화면에서 KO→EN 전환, 페이지 이동 후에도 유지, EN→KO 재전환까지 실제 렌더링으로 확인 — 기본 로케일(ko)의 문자열이 전환 전 원본과 완전히 동일해 기존 E2E(`keyboard-navigation.spec.ts` 등)에 회귀가 없음을 코드로 보장. `/ask`는 인증이 필요해 로그인 상태를 못 만들어 실제 로그인 후 화면까지는 확인 못 했고, 코드 리뷰(schema factory의 `useMemo` 의존성 등)로 대체
 - [x] 42.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-5 체크박스 전부 갱신
 
-## Phase 43+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 43 — 품질 개선: 프론트엔드 테스트 확충 (quality-improvement-plan.md Q-1, 지속 항목)
 
-[quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 완료됐다 — 남은 것은 Q-1의 "프론트엔드 테스트 실질적 확충"(지속 진행 항목, 전체 커버리지가 여전히 낮음)뿐이다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 42(국제화)에 이어 진행한다. Q-1의 "프론트엔드 테스트 실질적 확충"은 완료 체크가 불가능한 지속 항목이라, 이번 phase는 "한 번에 끝내기"가 아니라 "의미 있는 한 묶음을 추가"하는 것을 목표로 한다.
+
+- [x] 43.1 대상 선정 — 순수 유틸/훅(`relativeTime`, `useDebouncedValue` — 로직이 단순하고 테스트 비용이 낮음), 이번 세션에 새로 만들어 테스트가 전혀 없던 코드(`LocaleProvider`, `FormError`, `LanguageSwitcher`), 여러 화면에서 재사용되는 프레젠테이션 컴포넌트(`StatusBadge`, `TagChip`, `QuestionCard`, `QuestionList`) 순으로 우선순위를 뒀다 — 페이지 컴포넌트(`app/**/page.tsx`)는 `vitest.config.ts`가 커버리지 집계에서 이미 제외하고 있어 대상에서 뺐다
+- [x] 43.2 구현 — 8개 파일에 신규 테스트 작성. `useDebouncedValue`는 페이크 타이머 기반 상태 업데이트라 `act()`로 감싸지 않으면 타이머만 진행되고 리렌더가 반영되기 전에 assert가 실행되는 것을 발견해 전부 `act(() => vi.advanceTimersByTime(...))`로 수정. `relativeTime`은 diff가 정확히 0일 때 "곧"으로 분기하는 걸 몰라서 "방금 전" 테스트가 처음에 실패 — 과거 30초 시점으로 바꿔 의도한 분기를 탐
+- [x] 43.3 검증 — 전체 스위트 6→14개 파일, 18→55개 테스트로 확충, 전부 통과. 라인 커버리지 5.5%→11.75%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 43.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 항목을 "완료 체크"가 아니라 "진행 중(`[~]`)"으로 표시하고 수치 갱신 — 지속 항목이라 앞으로도 계속 늘려가야 한다
+
+## Phase 44+ — 잔여 후속 후보
+
+[quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
