@@ -8,6 +8,7 @@ import { useNotifications } from "@/features/notification/hooks/useNotifications
 import { Button } from "@/shared/ui/Button";
 import { cn } from "@/shared/lib/cn";
 import { SearchBox } from "./SearchBox";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const navLinkClass = "text-sm font-medium text-text-secondary hover:text-text-primary";
 
@@ -58,6 +59,7 @@ export function AppHeader() {
           <Link href="/ask">
             <Button variant="primary">Ask</Button>
           </Link>
+          <LanguageSwitcher />
           {isLoading ? null : me ? (
             <div className="flex items-center gap-3">
               <Link href={`/users/${me.id}`} className="text-sm font-medium text-text-primary">
@@ -128,6 +130,9 @@ export function AppHeader() {
               Ask
             </Button>
           </Link>
+          <div className="py-2">
+            <LanguageSwitcher />
+          </div>
           {isLoading ? null : me ? (
             <div className="flex items-center justify-between py-2">
               <Link href={`/users/${me.id}`} className="text-sm font-medium text-text-primary" onClick={closeMenu}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -17,15 +17,19 @@ import { Button } from "@/shared/ui/Button";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { FormError } from "@/shared/ui/FormError";
+import { useLocale } from "@/shared/i18n/LocaleProvider";
+import type { Dictionary } from "@/shared/i18n/dictionary";
 
-const askSchema = z.object({
-  title: z.string().trim().min(1, "제목을 입력하세요").max(300, "제목은 300자를 넘을 수 없습니다"),
-  body: z.string().trim().min(1, "본문을 입력하세요"),
-  environment: z.string().optional(),
-  logs: z.string().optional(),
-});
+function buildAskSchema(t: Dictionary) {
+  return z.object({
+    title: z.string().trim().min(1, t.ask.titleRequired).max(300, t.ask.titleTooLong),
+    body: z.string().trim().min(1, t.ask.bodyRequired),
+    environment: z.string().optional(),
+    logs: z.string().optional(),
+  });
+}
 
-type AskFormValues = z.infer<typeof askSchema>;
+type AskFormValues = z.infer<ReturnType<typeof buildAskSchema>>;
 
 const DRAFT_KEY = "quno:ask-draft";
 
@@ -34,10 +38,12 @@ interface AskDraft extends AskFormValues {
 }
 
 export default function AskPage() {
+  const { t } = useLocale();
   const { isLoading: authLoading } = useRequireAuth();
   const router = useRouter();
   const createQuestion = useCreateQuestion();
   const [tags, setTags] = useState<string[]>([]);
+  const askSchema = useMemo(() => buildAskSchema(t), [t]);
 
   const {
     register,
@@ -109,7 +115,7 @@ export default function AskPage() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <h1 className="text-xl font-semibold">Ask a question</h1>
+        <h1 className="text-xl font-semibold">{t.ask.heading}</h1>
 
         <div>
           <Input placeholder="Title" {...register("title")} />
@@ -121,40 +127,40 @@ export default function AskPage() {
             control={control}
             name="body"
             render={({ field }) => (
-              <MarkdownEditor value={field.value} onChange={field.onChange} rows={12} placeholder="본문을 작성하세요 (Markdown 지원)" />
+              <MarkdownEditor value={field.value} onChange={field.onChange} rows={12} placeholder={t.ask.bodyPlaceholder} />
             )}
           />
           {errors.body && <p className="mt-1 text-sm text-danger">{errors.body.message}</p>}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-text-secondary">Environment (선택)</label>
-          <Textarea rows={2} placeholder="예: Spring Boot 4.0.8, Kotlin 2.1" {...register("environment")} />
+          <label className="mb-1 block text-sm font-medium text-text-secondary">{t.ask.environmentLabel}</label>
+          <Textarea rows={2} placeholder={t.ask.environmentPlaceholder} {...register("environment")} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-text-secondary">Logs (선택)</label>
-          <Textarea rows={4} placeholder="에러 로그를 붙여넣으세요" {...register("logs")} />
+          <label className="mb-1 block text-sm font-medium text-text-secondary">{t.ask.logsLabel}</label>
+          <Textarea rows={4} placeholder={t.ask.logsPlaceholder} {...register("logs")} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-text-secondary">Tags</label>
+          <label className="mb-1 block text-sm font-medium text-text-secondary">{t.ask.tagsLabel}</label>
           <TagInput value={tags} onChange={setTags} />
         </div>
 
-        <FormError error={createQuestion.error} fallback="질문을 등록하지 못했습니다." />
+        <FormError error={createQuestion.error} fallback={t.ask.failed} />
 
         <Button type="submit" disabled={createQuestion.isPending}>
-          {createQuestion.isPending ? "등록 중..." : "Post"}
+          {createQuestion.isPending ? t.ask.submitting : t.ask.submit}
         </Button>
       </form>
 
       <aside className="space-y-3">
-        <h2 className="text-sm font-semibold text-text-secondary">Similar Questions</h2>
+        <h2 className="text-sm font-semibold text-text-secondary">{t.ask.similarQuestions}</h2>
         {similarQuery ? (
-          <QuestionList questions={similarQuestions ?? []} emptyMessage="비슷한 질문이 없습니다." />
+          <QuestionList questions={similarQuestions ?? []} emptyMessage={t.ask.noSimilarQuestions} />
         ) : (
-          <p className="text-sm text-text-secondary">제목을 3자 이상 입력하면 비슷한 질문을 보여줍니다.</p>
+          <p className="text-sm text-text-secondary">{t.ask.similarQuestionsHint}</p>
         )}
       </aside>
     </div>

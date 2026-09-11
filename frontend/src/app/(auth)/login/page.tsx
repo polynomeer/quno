@@ -7,8 +7,10 @@ import { useLogin } from "@/features/auth/hooks/useLogin";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { FormError } from "@/shared/ui/FormError";
+import { useLocale } from "@/shared/i18n/LocaleProvider";
 
 function LoginForm() {
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const login = useLogin();
@@ -28,7 +30,7 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-sm space-y-4 py-12">
-      <h1 className="text-xl font-semibold">로그인</h1>
+      <h1 className="text-xl font-semibold">{t.login.title}</h1>
       <Input
         type="email"
         placeholder="Email"
@@ -45,14 +47,14 @@ function LoginForm() {
         autoComplete="current-password"
         required
       />
-      <FormError error={login.error} fallback="로그인에 실패했습니다." />
+      <FormError error={login.error} fallback={t.login.failed} />
       <Button type="submit" className="w-full" disabled={login.isPending}>
-        {login.isPending ? "로그인 중..." : "로그인"}
+        {login.isPending ? t.login.submitting : t.login.submit}
       </Button>
       <p className="text-center text-sm text-text-secondary">
-        계정이 없으신가요?{" "}
+        {t.login.noAccount}{" "}
         <Link href="/signup" className="text-brand underline hover:no-underline">
-          회원가입
+          {t.login.signUpLink}
         </Link>
       </p>
     </form>

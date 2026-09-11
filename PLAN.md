@@ -539,9 +539,19 @@ Phase 40(접근성)에 이어 진행한다([ADR-0052](docs/architecture/decision
 - [x] 41.4 검증 — 프론트엔드 tsc/eslint 통과(기존에도 있던 react-hook-form 관련 경고 1건 외 신규 이슈 없음), 로그인 폼에서 실제 제출 실패를 재현해 `FormError` 렌더링 확인, 모바일 헤더 햄버거 메뉴 열림/링크 접근 확인
 - [x] 41.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-4 체크박스 전부 갱신
 
-## Phase 42+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 42 — 품질 개선: 국제화 (quality-improvement-plan.md Q-5)
 
-[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-5(국제화)가 남았다 — 다국어 지원 범위 자체가 사용자 의사결정을 먼저 필요로 한다(ADR 대상). mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 41(UX 완성도)에 이어 진행한다([ADR-0053](docs/architecture/decisions/0053-i18n-core-flow-ko-en-no-routing.md)). 착수 전 사용자에게 직접 확인: 다국어 지원 필요(한국어+영어), 범위는 "핵심 플로우만"(전체 화면 일괄 번역은 별도 작업).
+
+- [x] 42.1 설계 — Next.js 16 App Router 공식 가이드가 권장하는 `app/[lang]/` 경로 기반 라우팅은 기존 라우트 그룹(`(auth)`, `questions/[id]` 등)을 전부 재구성해야 해 "핵심 플로우만" 범위와 맞지 않는다고 판단, 클라이언트 Context+`localStorage` 방식으로 결정(ADR-0053). 외부 i18n 라이브러리(next-intl 등)도 화면 4개뿐이라 도입하지 않고 자체 dictionary로 구현
+- [x] 42.2 구현 — `shared/i18n/dictionary.ts`(ko 원본 + en, `Dictionary` 타입으로 키 누락 시 컴파일 에러), `shared/i18n/LocaleProvider.tsx`(`useSyncExternalStore`로 SSR 스냅샷(ko 고정)과 클라이언트 `localStorage` 읽기를 분리 — 이펙트에서 직접 setState하면 React Compiler ESLint(`react-hooks/set-state-in-effect`)가 cascading render 에러로 막아 채택), `widgets/app-header/LanguageSwitcher.tsx`(헤더 데스크톱/모바일 메뉴 양쪽에 배치). 홈/로그인/회원가입/질문 작성 4개 화면의 하드코딩 문자열을 `useLocale().t`로 교체, Ask 페이지는 zod 스키마를 모듈 스코프에서 컴포넌트 내부 `useMemo(() => buildAskSchema(t), [t])`로 옮겨 유효성 메시지도 로케일을 반영
+- [x] 42.3 (발견) `AppHeader`의 내비게이션 라벨(Tags/Ask/Sign up/Log in 등)은 원래도 전부 영어라 번역 대상이 없었다 — 대신 언어를 실제로 바꿀 수 있는 스위처 UI 자체가 필요해 추가. 질문 상세는 `AnswerCard`/`CommentSection`/`ClusterPanel` 등 수십 개 하위 컴포넌트로 뻗어 있어 "핵심 플로우"를 넘어선다고 보고 이번 범위에서 제외
+- [x] 42.4 검증 — 프론트엔드 tsc/eslint(신규 이슈 0건)/유닛테스트 18개/프로덕션 빌드 전부 통과. Browser 도구로 홈/로그인/회원가입 3개 화면에서 KO→EN 전환, 페이지 이동 후에도 유지, EN→KO 재전환까지 실제 렌더링으로 확인 — 기본 로케일(ko)의 문자열이 전환 전 원본과 완전히 동일해 기존 E2E(`keyboard-navigation.spec.ts` 등)에 회귀가 없음을 코드로 보장. `/ask`는 인증이 필요해 로그인 상태를 못 만들어 실제 로그인 후 화면까지는 확인 못 했고, 코드 리뷰(schema factory의 `useMemo` 의존성 등)로 대체
+- [x] 42.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-5 체크박스 전부 갱신
+
+## Phase 43+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 완료됐다 — 남은 것은 Q-1의 "프론트엔드 테스트 실질적 확충"(지속 진행 항목, 전체 커버리지가 여전히 낮음)뿐이다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
