@@ -558,7 +558,16 @@ Phase 42(국제화)에 이어 진행한다. Q-1의 "프론트엔드 테스트 �
 - [x] 43.3 검증 — 전체 스위트 6→14개 파일, 18→55개 테스트로 확충, 전부 통과. 라인 커버리지 5.5%→11.75%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 43.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 항목을 "완료 체크"가 아니라 "진행 중(`[~]`)"으로 표시하고 수치 갱신 — 지속 항목이라 앞으로도 계속 늘려가야 한다
 
-## Phase 44+ — 잔여 후속 후보
+## Phase 44 — 품질 개선: 프론트엔드 테스트 확충 2 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 43에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 44.1 대상 선정 — `VoteControl`/`WatchButton`/`SaveButton`/`FollowTagButton` — 전부 "로그인 세션 + 내 상태 조회 + 토글 mutation" 구조가 같은 패밀리라 한 묶음으로 처리. 질문/답변/태그 상세 어디서든 보이는 핵심 인터랙션인데 4개 다 커버리지 0%였다
+- [x] 44.2 구현 — `AccountDangerZone.test.tsx`(Phase 36)에서 쓴 "api 모듈을 `vi.mock`하고 `QueryClientProvider`로 감싸기" 패턴을 재사용. 추가로 `tokenStorage.setTokens(...)`로 로그인 상태를 만들어 `useSession`이 실제로 `authApi.me`를 호출하게 만들었다(비로그인/로그인/이미 토글된 상태 3갈래를 전부 검증). 4개 파일에 각 5개씩, 총 20개 테스트
+- [x] 44.3 검증 — 전체 스위트 14→18개 파일, 55→75개 테스트로 확충, 전부 통과. 라인 커버리지 11.75%→18.2%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 44.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 45+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
