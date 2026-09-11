@@ -16,7 +16,7 @@ import { MarkdownEditor } from "@/shared/ui/MarkdownEditor";
 import { Button } from "@/shared/ui/Button";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 const askSchema = z.object({
   title: z.string().trim().min(1, "제목을 입력하세요").max(300, "제목은 300자를 넘을 수 없습니다"),
@@ -142,11 +142,7 @@ export default function AskPage() {
           <TagInput value={tags} onChange={setTags} />
         </div>
 
-        {createQuestion.isError && (
-          <p className="text-sm text-danger">
-            {createQuestion.error instanceof ApiError ? createQuestion.error.message : "질문을 등록하지 못했습니다."}
-          </p>
-        )}
+        <FormError error={createQuestion.error} fallback="질문을 등록하지 못했습니다." />
 
         <Button type="submit" disabled={createQuestion.isPending}>
           {createQuestion.isPending ? "등록 중..." : "Post"}

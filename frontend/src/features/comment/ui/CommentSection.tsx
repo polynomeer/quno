@@ -7,7 +7,7 @@ import { useCreateComment } from "../hooks/useCreateComment";
 import { CommentItem } from "./CommentItem";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import { MAX_COMMENT_BODY_LENGTH, type CommentTargetType } from "../api/comment.types";
 
 /** Up to one level of reply nesting, editable with inline history, @mention highlighting
@@ -71,11 +71,7 @@ export function CommentSection({ targetType, targetId }: { targetType: CommentTa
             placeholder="댓글을 입력하세요"
             autoFocus
           />
-          {createComment.isError && (
-            <p className="text-xs text-danger">
-              {createComment.error instanceof ApiError ? createComment.error.message : "댓글을 등록하지 못했습니다."}
-            </p>
-          )}
+          <FormError error={createComment.error} fallback="댓글을 등록하지 못했습니다." size="xs" />
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"

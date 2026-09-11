@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCreateAnswer } from "../hooks/useCreateAnswer";
 import { MarkdownEditor } from "@/shared/ui/MarkdownEditor";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 export function AnswerComposer({ questionId }: { questionId: number }) {
   const [body, setBody] = useState("");
@@ -24,11 +24,7 @@ export function AnswerComposer({ questionId }: { questionId: number }) {
     <div className="space-y-3">
       <h2 className="text-lg font-semibold">Your Answer</h2>
       <MarkdownEditor value={body} onChange={setBody} rows={8} placeholder="답변을 작성하세요 (Markdown 지원)" />
-      {createAnswer.isError && (
-        <p className="text-sm text-danger">
-          {createAnswer.error instanceof ApiError ? createAnswer.error.message : "답변을 등록하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={createAnswer.error} fallback="답변을 등록하지 못했습니다." />
       <Button onClick={handleSubmit} disabled={createAnswer.isPending || !body.trim()}>
         {createAnswer.isPending ? "등록 중..." : "Post Answer"}
       </Button>

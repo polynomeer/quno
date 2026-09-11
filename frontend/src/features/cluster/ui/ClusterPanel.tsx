@@ -7,7 +7,7 @@ import { useDesignateSuperAnswer } from "../hooks/useDesignateSuperAnswer";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { Input } from "@/shared/ui/Input";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 /**
  * Cluster/Super Answer — like QPR, this has no design.md precedent (ADR-0016, api-design.md
@@ -57,13 +57,7 @@ export function ClusterPanel({
               {designateSuperAnswer.isPending ? "지정 중..." : "채택된 답변을 Super Answer로 지정"}
             </Button>
           )}
-          {designateSuperAnswer.isError && (
-            <p className="text-sm text-danger">
-              {designateSuperAnswer.error instanceof ApiError
-                ? designateSuperAnswer.error.message
-                : "Super Answer 지정에 실패했습니다."}
-            </p>
-          )}
+          <FormError error={designateSuperAnswer.error} fallback="Super Answer 지정에 실패했습니다." />
         </div>
       )}
 
@@ -78,11 +72,7 @@ export function ClusterPanel({
           {markAsSameProblem.isPending ? "표시 중..." : "같은 문제로 표시"}
         </Button>
       </div>
-      {markAsSameProblem.isError && (
-        <p className="text-sm text-danger">
-          {markAsSameProblem.error instanceof ApiError ? markAsSameProblem.error.message : "표시하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={markAsSameProblem.error} fallback="표시하지 못했습니다." />
     </section>
   );
 }

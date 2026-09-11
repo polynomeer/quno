@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useLogin } from "@/features/auth/hooks/useLogin";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -45,11 +45,7 @@ function LoginForm() {
         autoComplete="current-password"
         required
       />
-      {login.isError && (
-        <p className="text-sm text-danger">
-          {login.error instanceof ApiError ? login.error.message : "로그인에 실패했습니다."}
-        </p>
-      )}
+      <FormError error={login.error} fallback="로그인에 실패했습니다." />
       <Button type="submit" className="w-full" disabled={login.isPending}>
         {login.isPending ? "로그인 중..." : "로그인"}
       </Button>

@@ -7,7 +7,7 @@ import { useCreateOrganization } from "../hooks/useCreateOrganization";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 /** Same trust level as creating a Tag (ADR-0034) — no approval step, just a name collision
  * check the backend enforces (DuplicateOrganizationNameException, surfaced via createOrganization.error).
@@ -56,11 +56,7 @@ export function CreateOrganizationForm() {
         placeholder="설명 (선택)"
         maxLength={2000}
       />
-      {createOrganization.isError && (
-        <p className="text-sm text-danger">
-          {createOrganization.error instanceof ApiError ? createOrganization.error.message : "조직을 만들지 못했습니다."}
-        </p>
-      )}
+      <FormError error={createOrganization.error} fallback="조직을 만들지 못했습니다." />
       <div className="flex gap-2">
         <Button onClick={handleSubmit} disabled={createOrganization.isPending || !name.trim()}>
           {createOrganization.isPending ? "만드는 중..." : "만들기"}

@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { relativeTime } from "@/shared/lib/relative-time";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import { useDeleteComment } from "../hooks/useDeleteComment";
 import { useEditComment } from "../hooks/useEditComment";
 import { useCreateComment } from "../hooks/useCreateComment";
@@ -82,11 +82,7 @@ export function CommentItem({
               rows={2}
               autoFocus
             />
-            {editComment.isError && (
-              <p className="text-xs text-danger">
-                {editComment.error instanceof ApiError ? editComment.error.message : "수정하지 못했습니다."}
-              </p>
-            )}
+            <FormError error={editComment.error} fallback="수정하지 못했습니다." size="xs" />
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"
@@ -178,11 +174,7 @@ export function CommentItem({
             placeholder="답글을 입력하세요"
             autoFocus
           />
-          {createComment.isError && (
-            <p className="text-xs text-danger">
-              {createComment.error instanceof ApiError ? createComment.error.message : "답글을 등록하지 못했습니다."}
-            </p>
-          )}
+          <FormError error={createComment.error} fallback="답글을 등록하지 못했습니다." size="xs" />
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"

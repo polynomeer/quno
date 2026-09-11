@@ -5,7 +5,7 @@ import { useSession } from "@/features/auth/hooks/useSession";
 import { useFileReport } from "../hooks/useFileReport";
 import { Button } from "@/shared/ui/Button";
 import { Textarea } from "@/shared/ui/Textarea";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import type { ReportReason, ReportTargetType } from "../api/report.types";
 
 const reasonLabels: Record<ReportReason, string> = {
@@ -62,11 +62,7 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
         placeholder="추가 설명 (선택)"
         className="text-xs"
       />
-      {fileReport.isError && (
-        <p className="text-danger">
-          {fileReport.error instanceof ApiError ? fileReport.error.message : "신고를 접수하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={fileReport.error} fallback="신고를 접수하지 못했습니다." size="xs" />
       <div className="flex items-center gap-2">
         <Button
           variant="secondary"

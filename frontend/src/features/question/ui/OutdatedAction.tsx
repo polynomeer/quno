@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMarkOutdated } from "../hooks/useMarkOutdated";
 import { Input } from "@/shared/ui/Input";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import type { QuestionStatus } from "@/shared/ui/StatusBadge";
 
 /** No permission restriction on the backend — anyone, including the author, can mark a question
@@ -45,11 +45,7 @@ export function OutdatedAction({ questionId, status }: { questionId: number; sta
       <Button variant="ghost" onClick={() => setOpen(false)}>
         취소
       </Button>
-      {markOutdated.isError && (
-        <p className="w-full text-sm text-danger">
-          {markOutdated.error instanceof ApiError ? markOutdated.error.message : "표시하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={markOutdated.error} fallback="표시하지 못했습니다." className="w-full" />
     </div>
   );
 }

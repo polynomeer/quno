@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSignUp } from "@/features/auth/hooks/useSignUp";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 function SignUpForm() {
   const [email, setEmail] = useState("");
@@ -58,11 +58,7 @@ function SignUpForm() {
         maxLength={100}
         required
       />
-      {signUp.isError && (
-        <p className="text-sm text-danger">
-          {signUp.error instanceof ApiError ? signUp.error.message : "회원가입에 실패했습니다."}
-        </p>
-      )}
+      <FormError error={signUp.error} fallback="회원가입에 실패했습니다." />
       <Button type="submit" className="w-full" disabled={signUp.isPending}>
         {signUp.isPending ? "가입 중..." : "회원가입"}
       </Button>

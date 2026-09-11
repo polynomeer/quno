@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuestionGraph } from "../hooks/useQuestionGraph";
 import { useForkQuestion } from "../hooks/useForkQuestion";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 /**
  * Fork/lineage view backed by `GET /questions/{id}/graph` (Phase 18, ADR-0030). Only reads the
@@ -37,11 +37,7 @@ export function ForkPanel({ questionId }: { questionId: number }) {
         </Button>
       </div>
 
-      {forkQuestion.isError && (
-        <p className="text-sm text-danger">
-          {forkQuestion.error instanceof ApiError ? forkQuestion.error.message : "포크하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={forkQuestion.error} fallback="포크하지 못했습니다." />
 
       {graph?.forkedFrom && (
         <p className="text-sm text-text-secondary">

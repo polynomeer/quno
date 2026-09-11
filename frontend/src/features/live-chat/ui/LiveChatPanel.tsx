@@ -6,7 +6,7 @@ import { useSession } from "@/features/auth/hooks/useSession";
 import { useLiveChatRoom } from "../hooks/useLiveChatRoom";
 import { useOpenLiveChatRoom } from "../hooks/useOpenLiveChatRoom";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 // stompjs를 실제로 쓰는 코드는 LiveChatSession 하나뿐이라, "채팅 참여하기"를 누르기 전까지는
 // 그 청크 자체를 내려받지 않는다(quality-improvement-plan.md Q-2). WebSocket UI라 서버 렌더링할
@@ -47,11 +47,7 @@ export function LiveChatPanel({ questionId }: { questionId: number }) {
           {openRoom.isPending ? "여는 중..." : "실시간 질문방 시작하기"}
         </Button>
       )}
-      {openRoom.isError && (
-        <p className="text-sm text-danger">
-          {openRoom.error instanceof ApiError ? openRoom.error.message : "질문방을 열지 못했습니다."}
-        </p>
-      )}
+      <FormError error={openRoom.error} fallback="질문방을 열지 못했습니다." />
 
       {room && !joined && (
         <Button variant="secondary" onClick={() => setJoined(true)}>

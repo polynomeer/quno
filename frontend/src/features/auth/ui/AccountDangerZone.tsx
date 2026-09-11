@@ -7,7 +7,7 @@ import { authApi } from "@/features/auth/api/auth.api";
 import { useWithdrawAccount } from "@/features/auth/hooks/useWithdrawAccount";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 /** 개인정보 다운로드 + 회원 탈퇴(ADR-0046). 둘 다 본인 프로필에서만 렌더링된다(호출부에서
  * isOwnProfile로 가드) — 별도 self-guard는 두지 않는다. */
@@ -49,6 +49,7 @@ export function AccountDangerZone() {
           {exportData.isPending ? "준비 중..." : "내 데이터 다운로드"}
         </Button>
       </div>
+      <FormError error={exportData.error} fallback="데이터를 내려받지 못했습니다." size="xs" />
 
       {!showWithdrawForm ? (
         <Button variant="danger" onClick={() => setShowWithdrawForm(true)}>
@@ -68,11 +69,7 @@ export function AccountDangerZone() {
             autoComplete="current-password"
             required
           />
-          {withdraw.isError && (
-            <p className="text-sm text-danger">
-              {withdraw.error instanceof ApiError ? withdraw.error.message : "탈퇴에 실패했습니다."}
-            </p>
-          )}
+          <FormError error={withdraw.error} fallback="탈퇴에 실패했습니다." />
           <div className="flex gap-2">
             <Button type="submit" variant="danger" disabled={withdraw.isPending}>
               {withdraw.isPending ? "처리 중..." : "탈퇴 확정"}

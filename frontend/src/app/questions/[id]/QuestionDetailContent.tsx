@@ -25,7 +25,7 @@ import { StatusBadge } from "@/shared/ui/StatusBadge";
 import { TagChip } from "@/shared/ui/TagChip";
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Skeleton } from "@/shared/ui/Skeleton";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 type AnswerSort = "best" | "newest" | "oldest" | "score";
 
@@ -160,11 +160,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
             )}
           </div>
 
-          {acceptAnswer.isError && (
-            <p className="text-sm text-danger">
-              {acceptAnswer.error instanceof ApiError ? acceptAnswer.error.message : "답변을 채택하지 못했습니다."}
-            </p>
-          )}
+          <FormError error={acceptAnswer.error} fallback="답변을 채택하지 못했습니다." />
 
           {sortedAnswers.length === 0 ? (
             <p className="text-sm text-text-secondary">아직 답변이 없습니다.</p>

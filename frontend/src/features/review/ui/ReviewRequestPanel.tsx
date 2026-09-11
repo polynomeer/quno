@@ -7,7 +7,7 @@ import { useReRequestReview } from "../hooks/useReRequestReview";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 /**
  * QPR (Question Progress Review) — this UI has no design.md precedent, it's built directly from
@@ -86,11 +86,7 @@ export function ReviewRequestPanel({
         </ul>
       )}
 
-      {reRequest.isError && (
-        <p className="text-sm text-danger">
-          {reRequest.error instanceof ApiError ? reRequest.error.message : "재요청 처리에 실패했습니다."}
-        </p>
-      )}
+      <FormError error={reRequest.error} fallback="재요청 처리에 실패했습니다." />
 
       {!isAuthor && (
         <div className="space-y-2">
@@ -100,11 +96,7 @@ export function ReviewRequestPanel({
             rows={2}
             placeholder="이 질문에 추가로 필요한 정보를 요청하세요"
           />
-          {createRequest.isError && (
-            <p className="text-sm text-danger">
-              {createRequest.error instanceof ApiError ? createRequest.error.message : "정보 요청을 보내지 못했습니다."}
-            </p>
-          )}
+          <FormError error={createRequest.error} fallback="정보 요청을 보내지 못했습니다." />
           <Button variant="secondary" onClick={handleCreate} disabled={createRequest.isPending || !message.trim()}>
             {createRequest.isPending ? "요청 중..." : "정보 요청"}
           </Button>

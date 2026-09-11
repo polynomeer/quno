@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRespondDirectAsk } from "../hooks/useRespondDirectAsk";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import type { DirectAskRequestListItem } from "../api/direct-ask.types";
 
 const statusLabels: Record<DirectAskRequestListItem["status"], string> = {
@@ -53,11 +53,7 @@ function DirectAskRequestRow({ item, role }: { item: DirectAskRequestListItem; r
       </Link>
       {item.message && <p className="mt-1 text-sm text-text-secondary">{item.message}</p>}
 
-      {respond.isError && (
-        <p className="mt-2 text-sm text-danger">
-          {respond.error instanceof ApiError ? respond.error.message : "응답을 처리하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={respond.error} fallback="응답을 처리하지 못했습니다." className="mt-2" />
 
       {canRespond && (
         <div className="mt-3 flex gap-2">

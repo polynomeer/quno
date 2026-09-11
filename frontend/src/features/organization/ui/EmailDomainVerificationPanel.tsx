@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRequestEmailDomainVerification, useConfirmEmailDomainVerification } from "../hooks/useEmailDomainVerification";
 import { Input } from "@/shared/ui/Input";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 /**
  * Business/school email → Verified organization (Phase 23, ADR-0035). Confirming finds-or-creates
@@ -63,11 +63,7 @@ export function EmailDomainVerificationPanel({ viewerId }: { viewerId: number | 
           {requestVerification.isPending ? "발송 중..." : "인증 코드 보내기"}
         </Button>
       </div>
-      {requestVerification.isError && (
-        <p className="text-sm text-danger">
-          {requestVerification.error instanceof ApiError ? requestVerification.error.message : "인증 코드를 보내지 못했습니다."}
-        </p>
-      )}
+      <FormError error={requestVerification.error} fallback="인증 코드를 보내지 못했습니다." />
       {sent && !requestVerification.isError && (
         <p className="text-sm text-success">인증 코드를 보냈습니다. 메일함을 확인하세요.</p>
       )}
@@ -86,11 +82,7 @@ export function EmailDomainVerificationPanel({ viewerId }: { viewerId: number | 
           </Button>
         </div>
       )}
-      {confirmVerification.isError && (
-        <p className="text-sm text-danger">
-          {confirmVerification.error instanceof ApiError ? confirmVerification.error.message : "코드 확인에 실패했습니다."}
-        </p>
-      )}
+      <FormError error={confirmVerification.error} fallback="코드 확인에 실패했습니다." />
     </div>
   );
 }

@@ -76,3 +76,4 @@
 | [0049](0049-code-quality-gates-ktlint-jacoco-eslint.md) | ktlint 전체 재포맷(intellij_idea 스타일) 후 CI 게이트화, detekt는 Kotlin 2.2 비호환으로 보류, 커버리지 가시화 | 승인됨 |
 | [0050](0050-performance-code-splitting-n-plus-1-caching.md) | Live Chat 코드 스플리팅, N+1 4곳 배치화, 조직 검색만 캐싱(태그는 위키 편집 충돌로 제외), 검색 인덱스는 추가했으나 쿼리 재작성 전까지 미사용 확인 | 승인됨 |
 | [0051](0051-accessibility-axe-core-e2e.md) | axe-core로 8개 페이지 자동 접근성 검사(CI 자동 편입), 브랜드 배지 명도 대비·인라인 링크 밑줄 수정, 키보드 전용 E2E 신설 | 승인됨 |
+| [0052](0052-ux-responsive-header-shared-form-error.md) | 전역 헤더를 모바일 햄버거 메뉴로 반응형화, 27곳에 중복된 폼 제출 에러 표시를 `FormError` 컴포넌트로 통일(role="alert" 추가), 폼별 실시간 검증 통일은 후속으로 이연 | 승인됨 |

@@ -6,7 +6,7 @@ import { useUpdateTagDetails } from "../hooks/useUpdateTagDetails";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Input } from "@/shared/ui/Input";
 import { Button } from "@/shared/ui/Button";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import type { Tag } from "@/entities/tag/model/tag.types";
 
 /** Wiki-style — any logged-in user can edit (ADR-0040), same trust level as CreateOrganizationForm
@@ -67,11 +67,7 @@ export function TagDetailsEditor({ tag }: { tag: Tag }) {
         placeholder="공식 문서 URL (선택)"
         maxLength={500}
       />
-      {updateDetails.isError && (
-        <p className="text-sm text-danger">
-          {updateDetails.error instanceof ApiError ? updateDetails.error.message : "저장하지 못했습니다."}
-        </p>
-      )}
+      <FormError error={updateDetails.error} fallback="저장하지 못했습니다." />
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={updateDetails.isPending}>
           {updateDetails.isPending ? "저장 중..." : "저장"}

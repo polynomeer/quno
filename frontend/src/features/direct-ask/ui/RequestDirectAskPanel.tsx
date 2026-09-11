@@ -7,7 +7,7 @@ import { useCreateDirectAsk } from "../hooks/useCreateDirectAsk";
 import { useTossPayments } from "../lib/toss";
 import { Button } from "@/shared/ui/Button";
 import { Textarea } from "@/shared/ui/Textarea";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 
 interface PendingCheckout {
   orderId: string;
@@ -114,12 +114,8 @@ export function RequestDirectAskPanel({ targetUserId }: { targetUserId: number }
             placeholder="전달할 메시지 (선택)"
             maxLength={1000}
           />
-          {createDirectAsk.isError && (
-            <p className="text-sm text-danger">
-              {createDirectAsk.error instanceof ApiError ? createDirectAsk.error.message : "요청을 보내지 못했습니다."}
-            </p>
-          )}
-          {launchError && <p className="text-sm text-danger">{launchError}</p>}
+          <FormError error={createDirectAsk.error} fallback="요청을 보내지 못했습니다." />
+          <FormError error={launchError} fallback="결제창을 여는 데 실패했습니다." />
           <div className="flex gap-2">
             <Button onClick={handleSubmit} disabled={createDirectAsk.isPending || !questionId || Boolean(pendingCheckout)}>
               {createDirectAsk.isPending || pendingCheckout ? "결제창 여는 중..." : "요청하고 결제하기"}

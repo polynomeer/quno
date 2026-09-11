@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useConfirmDirectAskPayment } from "@/features/direct-ask/hooks/useConfirmDirectAskPayment";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import { Skeleton } from "@/shared/ui/Skeleton";
 
 /**
@@ -61,9 +61,7 @@ function DirectAskCheckoutContent() {
     return (
       <div className="space-y-4">
         <h1 className="text-xl font-semibold">결제 확인에 실패했습니다</h1>
-        <p className="text-sm text-danger">
-          {confirmPayment.error instanceof ApiError ? confirmPayment.error.message : "잠시 후 다시 시도해주세요."}
-        </p>
+        <FormError error={confirmPayment.error} fallback="잠시 후 다시 시도해주세요." />
         <Link href="/direct-asks?role=sent" className="text-sm text-brand hover:underline">
           보낸 요청으로 돌아가기
         </Link>

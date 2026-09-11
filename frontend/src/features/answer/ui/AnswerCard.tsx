@@ -13,7 +13,7 @@ import { ReportButton } from "@/features/report/ui/ReportButton";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useAnswerVersions } from "../hooks/useAnswerVersions";
 import { useReviseAnswer } from "../hooks/useReviseAnswer";
-import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/ui/FormError";
 import type { Answer } from "../api/answer.types";
 
 export function AnswerCard({
@@ -113,11 +113,7 @@ export function AnswerCard({
           {isEditing ? (
             <div className="space-y-2">
               <MarkdownEditor value={draft} onChange={setDraft} rows={6} />
-              {reviseAnswer.isError && (
-                <p className="text-sm text-danger">
-                  {reviseAnswer.error instanceof ApiError ? reviseAnswer.error.message : "수정하지 못했습니다."}
-                </p>
-              )}
+              <FormError error={reviseAnswer.error} fallback="수정하지 못했습니다." />
               <div className="flex gap-2">
                 <Button className="px-2 py-1 text-xs" onClick={handleSave} disabled={reviseAnswer.isPending || !draft.trim()}>
                   {reviseAnswer.isPending ? "저장 중..." : "Save"}

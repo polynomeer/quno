@@ -529,9 +529,19 @@ Phase 39(성능)에 이어 진행한다([ADR-0051](docs/architecture/decisions/0
 - [x] 40.6 검증 — 프론트엔드 lint/유닛테스트 18개/build 통과, E2E 3개 스펙(golden-path/accessibility/keyboard-navigation) 전체 실행에서 golden-path 1회 일시적 flake 재현 후 격리 재실행으로 통과 확인(회귀 아님 — Q-3 변경은 CSS 토큰과 링크 스타일만 건드림)
 - [x] 40.7 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-3 체크박스 전부 갱신
 
-## Phase 41+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+## Phase 41 — 품질 개선: UX 완성도 (quality-improvement-plan.md Q-4)
 
-[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-4(UX 완성도)부터 순서대로 진행한다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
+Phase 40(접근성)에 이어 진행한다([ADR-0052](docs/architecture/decisions/0052-ux-responsive-header-shared-form-error.md)).
+
+- [x] 41.1 로딩/에러/빈 상태 일관성 3항목 — 프론트엔드 전체를 grep으로 전수 점검, 스켈레톤/에러 톤/빈 상태 화면이 이미 일관되게 구현돼 있음을 확인. 수정 대상 없음
+- [x] 41.2 (발견) 반응형 디자인 — `src/app`+`src/widgets`에서 반응형 브레이크포인트 클래스를 쓰는 파일이 5개뿐임을 grep으로 확인. 전역 `AppHeader`가 로고·검색·전체 메뉴를 반응형 클래스 없이 한 줄에 배치해 375px 뷰포트에서 우측 메뉴 전체가 화면 밖으로 밀려나는 것을 Browser 도구로 실측 확인 — 데스크톱(`md:` 이상)은 기존 한 줄 레이아웃 유지, 모바일은 로고+검색+햄버거만 남기고 나머지 메뉴를 토글형 드롭다운으로 이동. 375px/768px/데스크톱 3개 뷰포트로 검증
+- [x] 41.3 (발견) 폼 유효성 검사 피드백 — 조사 중 폼 제출 실패 메시지가 27곳에서 거의 동일한 JSX로 복붙돼 있는 것을 발견(폰트 크기 `text-xs`/`text-sm` 혼재, `role="alert"` 전무). 신규 `shared/ui/FormError` 컴포넌트로 27곳 전부 통일하고 `role="alert"` 추가. `cn()`이 `tailwind-merge`가 아니라 순수 `clsx`라 폰트 크기를 className 병기로 넘기면 CSS 소스 순서에 좌우되는 문제가 있어 `size: "xs" | "sm"` prop으로 분리. 폼별 실시간 검증 방식 통일(react-hook-form+zod 1곳/네이티브 HTML5 2곳/버튼 비활성화만 6곳)은 결제·모더레이션과 맞물려 회귀 위험이 커 후속 과제로 이연
+- [x] 41.4 검증 — 프론트엔드 tsc/eslint 통과(기존에도 있던 react-hook-form 관련 경고 1건 외 신규 이슈 없음), 로그인 폼에서 실제 제출 실패를 재현해 `FormError` 렌더링 확인, 모바일 헤더 햄버거 메뉴 열림/링크 접근 확인
+- [x] 41.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-4 체크박스 전부 갱신
+
+## Phase 42+ — 품질 개선 잔여 항목 (quality-improvement-plan.md, 착수 시점에 각 Phase 세부 계획을 이 문서에 다시 전개한다)
+
+[quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-5(국제화)가 남았다 — 다국어 지원 범위 자체가 사용자 의사결정을 먼저 필요로 한다(ADR 대상). mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
 ## 진행 방식
 
