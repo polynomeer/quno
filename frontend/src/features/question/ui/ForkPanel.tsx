@@ -19,8 +19,12 @@ export function ForkPanel({ questionId }: { questionId: number }) {
   const router = useRouter();
 
   async function handleFork() {
-    const result = await forkQuestion.mutateAsync();
-    router.push(`/questions/${result.id}`);
+    try {
+      const result = await forkQuestion.mutateAsync();
+      router.push(`/questions/${result.id}`);
+    } catch {
+      // error surfaced below via forkQuestion.error
+    }
   }
 
   return (

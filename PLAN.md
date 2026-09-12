@@ -576,7 +576,17 @@ Phase 44에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 45.3 검증 — 전체 스위트 18→21개 파일, 75→91개 테스트로 확충, 전부 통과. 라인 커버리지 18.2%→25.11%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 45.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 46+ — 잔여 후속 후보
+## Phase 46 — 품질 개선: 프론트엔드 테스트 확충 4 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 45에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 46.1 대상 선정 — `MarkdownContent`(질문/답변 본문 어디서나 쓰이는데 XSS 안전성 관련 주석만 있고 검증하는 테스트가 없었다), `OutdatedAction`/`ForkPanel`(세션 불필요, api 모듈만 mock하면 되는 간단한 폼+뮤테이션), `AnswerCard`(답변 카드 자체 로직 — 배지/수정 토글/저장/취소)
+- [x] 46.2 (발견) `ForkPanel.handleFork`와 `AnswerCard.handleSave`가 `mutateAsync()`를 try/catch 없이 호출하고 있어, 실패 시 `FormError`가 뜨는 것과 별개로 unhandled promise rejection이 나는 버그를 테스트 작성 중 실제로 vitest가 잡아냈다(`Unhandled Rejection` 리포트) — 다른 모든 mutation 핸들러가 따르는 "`try { await mutateAsync(...) } catch { /* error surfaced below */ }`" 패턴을 이 두 곳에도 적용해 수정
+- [x] 46.3 구현 — `MarkdownContent`는 실제 `react-markdown`+`remark-gfm`으로 헤딩/강조/GFM 테이블 렌더링과 "raw HTML/스크립트가 실행되지 않고 그대로 무시된다"는 보안 특성을 함께 검증(4개). `OutdatedAction`/`ForkPanel`은 api 모듈만 mock(각 6/5개). `AnswerCard`는 `VoteControl`/`CommentSection`/`ReportButton`을 `vi.mock`으로 스텁 처리해 카드 자체 로직만 격리하고, `useAnswerVersions`/`useReviseAnswer`는 실제 훅 그대로 두고 `answerApi`만 mock(react-query의 실제 재렌더링 구독이 필요해서 — 훅 자체를 mock하면 mutation 성공/실패에 따른 재렌더가 반영되지 않는 것을 시행착오로 확인) — 10개
+- [x] 46.4 검증 — 전체 스위트 21→25개 파일, 91→116개 테스트로 확충, 전부 통과. 라인 커버리지 25.11%→31.95%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 46.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중, 발견한 버그 2건도 함께 기록)
+
+## Phase 47+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 

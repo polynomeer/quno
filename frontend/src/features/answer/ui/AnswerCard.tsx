@@ -47,8 +47,12 @@ export function AnswerCard({
 
   async function handleSave() {
     if (!draft.trim()) return;
-    await reviseAnswer.mutateAsync(draft.trim());
-    setIsEditing(false);
+    try {
+      await reviseAnswer.mutateAsync(draft.trim());
+      setIsEditing(false);
+    } catch {
+      // error surfaced below via reviseAnswer.error
+    }
   }
 
   return (

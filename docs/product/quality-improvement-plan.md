@@ -11,7 +11,7 @@
 - [x] 백엔드 정적 분석 도입 — ktlint 도입, 기존 코드 전체(174개 파일, 순수 포맷팅) 재포맷 후 CI 게이트화(ADR-0049). detekt는 Kotlin 2.2.21과의 하드 호환성 문제(우회 불가 확인)로 새 릴리스가 나올 때까지 보류
 - [x] 프론트엔드 ESLint 규칙 강화 — `no-explicit-any`/`no-unused-vars`를 warn에서 error로 상향(기존 `any` 사용 0건이라 즉시 고칠 것 없었음). 검증 중 `coverage/` 리포트 산출물이 lint 대상에 잡히던 것을 발견해 무시 목록에 추가
 - [x] 테스트 커버리지 측정 도구 도입 — 백엔드 Jacoco(내장, 도입 시점 라인 커버리지 81.8% 확인), 프론트엔드 `@vitest/coverage-v8`. 둘 다 CI 아티팩트로만 업로드하고 임계값 실패는 두지 않음(ADR-0049)
-- [~] 프론트엔드 테스트 실질적 확충 — [production-readiness.md](production-readiness.md) B-5(Phase 36)에서 1→6개 파일로 늘렸지만 전체 커버리지는 여전히 5.5% 수준이었다(도입한 커버리지 도구로 실측). Phase 43(순수 유틸/훅, 이번 세션 신규 코드, 재사용 프레젠테이션 컴포넌트) → Phase 44(로그인 세션 기반 토글 버튼 4종) → Phase 45(전역 `AppHeader`, `ReportButton`, `BadgeChip`)로 이어서 6→21개 파일, 18→91개 테스트, 라인 커버리지 5.5%→25.11%로 올렸다. 여전히 낮은 수준이라 지속적 확충이 계속 필요하다(끝나지 않는 항목이라 완료 체크 대신 진행 중으로 표시)
+- [~] 프론트엔드 테스트 실질적 확충 — [production-readiness.md](production-readiness.md) B-5(Phase 36)에서 1→6개 파일로 늘렸지만 전체 커버리지는 여전히 5.5% 수준이었다(도입한 커버리지 도구로 실측). Phase 43~45에 이어 Phase 46(`MarkdownContent`/`OutdatedAction`/`ForkPanel`/`AnswerCard`)까지 6→25개 파일, 18→116개 테스트, 라인 커버리지 5.5%→31.95%로 올렸다. 테스트 작성 중 `ForkPanel`/`AnswerCard`의 `mutateAsync` 호출에 try/catch가 빠져 있어 실패 시 unhandled promise rejection이 나는 실제 버그 2건을 발견해 함께 고쳤다. 여전히 낮은 수준이라 지속적 확충이 계속 필요하다(끝나지 않는 항목이라 완료 체크 대신 진행 중으로 표시)
 
 ## Q-2. 성능
 
