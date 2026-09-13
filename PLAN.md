@@ -586,7 +586,16 @@ Phase 45에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 46.4 검증 — 전체 스위트 21→25개 파일, 91→116개 테스트로 확충, 전부 통과. 라인 커버리지 25.11%→31.95%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 46.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중, 발견한 버그 2건도 함께 기록)
 
-## Phase 47+ — 잔여 후속 후보
+## Phase 47 — 품질 개선: 프론트엔드 테스트 확충 5 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 46에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 47.1 대상 선정 — `CommentSection`+`CommentItem` — 질문/답변 어디서나 보이는 핵심 상호작용(작성/대댓글/수정/삭제/삭제된 댓글 표시)인데 둘 다 커버리지 0%였다. `CommentSection`이 실제로 `CommentItem`을 렌더링하므로 한 테스트 파일로 둘 다 함께 검증
+- [x] 47.2 구현 — `useSession` 훅 mock + `commentApi` 모듈 mock(list/create/edit/remove) + `QueryClientProvider`. 최상위 댓글 목록 표시, 대댓글 중첩, 삭제된 댓글의 "삭제된 댓글입니다" 플레이스홀더, 비로그인 시 작성 토글 숨김, 작성/취소/작성 실패 에러 표시, 본인 댓글만 수정·삭제 가능(타인 댓글엔 버튼 자체가 없음)까지 10개. 작성 중 대댓글 본문을 "답글"로만 지어 같은 텍스트의 답글 버튼과 겹쳐 `findByText`가 여러 요소를 찾아 실패한 것을 발견해 "답글 내용입니다"로 구체화해 수정
+- [x] 47.3 검증 — 전체 스위트 25→26개 파일, 116→126개 테스트로 확충, 전부 통과. 라인 커버리지 31.95%→38.15%(v8 provider 실측) — 한 파일치고 큰 폭 상승은 `CommentItem`이 대댓글까지 재귀 렌더링되며 함께 커버된 덕분. tsc/eslint 신규 이슈 0건
+- [x] 47.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 48+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
