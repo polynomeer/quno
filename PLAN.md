@@ -595,7 +595,16 @@ Phase 46에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 47.3 검증 — 전체 스위트 25→26개 파일, 116→126개 테스트로 확충, 전부 통과. 라인 커버리지 31.95%→38.15%(v8 provider 실측) — 한 파일치고 큰 폭 상승은 `CommentItem`이 대댓글까지 재귀 렌더링되며 함께 커버된 덕분. tsc/eslint 신규 이슈 0건
 - [x] 47.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 48+ — 잔여 후속 후보
+## Phase 48 — 품질 개선: 프론트엔드 테스트 확충 6 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 47에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 48.1 대상 선정 — `TagDetailsEditor`(위키형 태그 설명 편집, ADR-0040)와 `CreateOrganizationForm`(조직 생성, ADR-0034) — 둘 다 "본인 확인 없이 로그인만 하면 편집 가능"이라는 같은 신뢰 수준을 공유하는 폼인데 커버리지 0%였다
+- [x] 48.2 구현 — 둘 다 `useSession` mock + 대상 api 모듈만 mock(`tagApi.updateDetails`, `organizationApi.create`) + `QueryClientProvider`. `TagDetailsEditor`는 표시/편집 전환, 취소 시 원복, 저장 시 trim 후 전송, 저장 실패 시 에러 표시+편집 모드 유지까지 7개. `CreateOrganizationForm`은 접힌 트리거/펼침/이름 없으면 버튼 비활성화/생성 성공 시 상세 페이지로 이동/설명 비워두면 undefined로 전송/취소/생성 실패까지 8개
+- [x] 48.3 검증 — 전체 스위트 26→28개 파일, 126→141개 테스트로 확충, 전부 통과. 라인 커버리지 38.15%→41.96%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 48.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 49+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
