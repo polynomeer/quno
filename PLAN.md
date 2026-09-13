@@ -604,7 +604,16 @@ Phase 47에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 48.3 검증 — 전체 스위트 26→28개 파일, 126→141개 테스트로 확충, 전부 통과. 라인 커버리지 38.15%→41.96%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 48.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 49+ — 잔여 후속 후보
+## Phase 49 — 품질 개선: 프론트엔드 테스트 확충 7 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 48에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 49.1 대상 선정 — `ClusterPanel`(같은 문제 표시/Super Answer 지정, ADR-0016)과 `EmailDomainVerificationPanel`(업무 이메일 인증 → Verified 조직 가입, ADR-0035) — 둘 다 design.md 선례가 없는 뮤테이션 중심 패널인데 커버리지 0%였다
+- [x] 49.2 구현 — `ClusterPanel`은 `clusterApi` 모듈만 mock(`getForQuestion`/`markAsSameProblem`/`designateSuperAnswer`) — `useCluster`가 404를 정상 상태(클러스터 없음)로 변환하는 것까지 포함해 8개. `EmailDomainVerificationPanel`은 `organizationApi.requestEmailVerification`/`confirmEmailVerification` mock — 코드 발송 전엔 코드 입력창이 없다가 발송 성공 시에만 나타나는 단계 전환, 확인 성공 시 조직 상세로 이동까지 7개
+- [x] 49.3 검증 — 전체 스위트 28→30개 파일, 141→156개 테스트로 확충, 전부 통과. 라인 커버리지 41.96%→46.46%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 49.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 50+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
