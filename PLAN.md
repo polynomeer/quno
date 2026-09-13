@@ -622,7 +622,16 @@ Phase 49에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 50.3 검증 — 전체 스위트 30→32개 파일, 156→174개 테스트로 확충, 전부 통과. 라인 커버리지 46.46%→51.32%로 처음으로 절반을 넘겼다(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 50.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 51+ — 잔여 후속 후보
+## Phase 51 — 품질 개선: 프론트엔드 테스트 확충 9 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 50에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 51.1 대상 선정 — `AnswerComposer`(답변 작성, `AnswerCard`와 자매 컴포넌트)와 `RequestDirectAskPanel`(유료 Direct Ask 요청+결제 개시, ADR-0037) — 둘 다 커버리지 0%였다
+- [x] 51.2 구현 — `AnswerComposer`는 `answerApi.create`만 mock, 3개(제출 버튼 비활성화/제출 성공 시 초기화/실패 시 초안 유지+에러 표시). `RequestDirectAskPanel`은 `useTossPayments`를 `() => null`로 mock해 토스 호스팅 체크아웃 리디렉션 자체는 범위 밖으로 뒀다(E2E 골든 패스·ADR-0047과 같은 판단) — 본인 프로필 숨김/질문 목록 표시/질문 미선택 시 버튼 비활성화/요청 제출/실패 에러까지 8개
+- [x] 51.3 검증 — 전체 스위트 32→34개 파일, 174→185개 테스트로 확충, 전부 통과. 라인 커버리지 51.32%→54.49%(v8 provider 실측). 테스트 작성 중 `DirectAskRequest` 타입의 `respondedAt` 필드를 빠뜨려 tsc 에러가 난 것을 발견해 수정
+- [x] 51.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 52+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
