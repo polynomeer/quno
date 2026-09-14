@@ -704,7 +704,16 @@ Phase 58에 이어 같은 지속 항목을 계속 진행한다. 지금까지는 
 - [x] 59.3 검증 — 전체 스위트 53→54개 파일, 270→284개 테스트로 확충, 전부 통과. 라인 커버리지 68.26%→72.91%로 크게 상승(단일 페이지가 여러 분기를 담고 있었기 때문). tsc/eslint 신규 이슈 0건
 - [x] 59.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 60+ — 잔여 후속 후보
+## Phase 60 — 품질 개선: 프론트엔드 테스트 확충 18 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 59에 이어 같은 지속 항목을 계속 진행한다. 이번엔 그동안 미뤄왔던 실시간 질문방(WebSocket/STOMP) 도메인에 처음 손을 댔다.
+
+- [x] 60.1 대상 선정 — `getLiveChatWebSocketUrl`(순수 함수)과 `useLiveChatSocket`(STOMP 연결을 직접 소유하는 핵심 훅, ADR-0036) — 둘 다 커버리지 0%였다
+- [x] 60.2 구현 — `getLiveChatWebSocketUrl`은 환경변수 기반 http→ws/https→wss 치환 3개. `useLiveChatSocket`은 `@stomp/stompjs`의 `Client`를 `vi.mock` 팩토리 내부에서 통째로 가짜 클래스로 교체(`activate()`가 `onConnect`를 직접 트리거하도록 `simulateConnect()` 헬퍼 제공, 구독 콜백을 `emit()`으로 수동 호출) — enabled/roomId/토큰 부재 시 연결 자체를 안 만드는 것, 연결 성공 시 상태 전이, 메시지 토픽 중복 방지, 프레즌스 토픽 반영, 연결 전 sendMessage 무시, 연결 후 publish, 언마운트 시 deactivate까지 11개
+- [x] 60.3 검증 — 전체 스위트 54→56개 파일, 284→298개 테스트로 확충, 전부 통과. 라인 커버리지 72.91%→74.17%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 60.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 61+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
