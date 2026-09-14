@@ -659,7 +659,16 @@ Phase 53에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 54.4 검증 — 전체 스위트 38→40개 파일, 216→221개 테스트로 확충, 전부 통과. 라인 커버리지 58.37%→59.4%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 54.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 55+ — 잔여 후속 후보
+## Phase 55 — 품질 개선: 프론트엔드 테스트 확충 13 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 54에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 55.1 대상 선정 — `TagInput`(질문 작성 시 태그 입력, design.md #11)과 `SearchFilters`(검색 결과의 클라이언트 사이드 Tags/Status 필터, ADR-0022) — 둘 다 상태를 부모가 들고 있는 순수 controlled 컴포넌트인데 커버리지 0%였다
+- [x] 55.2 구현 — `TagInput`은 `useState`로 감싼 테스트 전용 wrapper 컴포넌트를 만들어 실제 controlled 사용을 재현 — Enter로 추가/쉼표로 추가/중복 방지/빈 값 무시/Backspace로 마지막 태그 삭제/×버튼으로 특정 태그 삭제/최대 5개 도달 시 비활성화/blur 시 초안 추가까지 8개. `SearchFilters`는 콜백만 검증하는 완전한 stateless 컴포넌트라 `vi.fn()`으로 상태 토글/선택 시각 표현(고리 강조, 배경색)/태그 없을 때 Tags 행 자체가 안 보이는 것까지 5개
+- [x] 55.3 검증 — 전체 스위트 40→42개 파일, 221→234개 테스트로 확충, 전부 통과. 라인 커버리지 59.4%→62.08%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 55.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 56+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
