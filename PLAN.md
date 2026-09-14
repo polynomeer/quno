@@ -649,7 +649,17 @@ Phase 52에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 53.3 검증 — 전체 스위트 36→38개 파일, 198→216개 테스트로 확충, 전부 통과. 라인 커버리지 56.52%→58.37%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 53.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 54+ — 잔여 후속 후보
+## Phase 54 — 품질 개선: 프론트엔드 테스트 확충 12 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 53에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 54.1 대상 선정 — `DiffView`(질문/답변 리비전 diff 렌더링, 순수 프레젠테이션)와 `QuestionMeta`(작성/수정 시각 표시, `relativeTime` 재사용) — 둘 다 커버리지 0%였다
+- [x] 54.2 (시행착오) `DiffView`의 `{prefix} {text}` JSX가 별도 텍스트 노드 3개(EQUAL의 경우 공백 2개 + 본문)로 렌더링돼 `getByText`의 기본 정규화로는 못 찾는 것을 발견 — `container.querySelectorAll` + 수동 공백 정규화로 우회
+- [x] 54.3 구현 — `DiffView`는 줄 종류별 접두사(+/-/공백)와 톤 클래스, 빈 diff까지 3개. `QuestionMeta`는 `vi.useFakeTimers`로 상대 시각을 고정해 버전 1(수정 이력 없음)과 버전 3(수정 이력 링크 노출)의 분기를 검증 2개
+- [x] 54.4 검증 — 전체 스위트 38→40개 파일, 216→221개 테스트로 확충, 전부 통과. 라인 커버리지 58.37%→59.4%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 54.5 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 55+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
