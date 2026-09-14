@@ -640,7 +640,16 @@ Phase 51에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 52.3 검증 — 전체 스위트 34→36개 파일, 185→198개 테스트로 확충, 전부 통과. 라인 커버리지 54.49%→56.52%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 52.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 53+ — 잔여 후속 후보
+## Phase 53 — 품질 개선: 프론트엔드 테스트 확충 11 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 52에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 53.1 대상 선정 — `NotificationItem`(15가지 알림 타입을 사람이 읽을 문구로 변환하는 `describeNotification`을 함께 검증할 수 있는 지점)과 `OrganizationCard`(단순 프레젠테이션이지만 Verified 배지 분기가 있음)
+- [x] 53.2 구현 — `NotificationItem`은 안읽음 표시/질문·답변 앵커 링크 분기와 함께, `it.each`로 QUESTION_REVISION(버전 번호 보간)/QUESTION_OUTDATED(사유 유무)/DIRECT_ASK 계열(질문이 아닌 `/direct-asks` 경로로 라우팅)/알 수 없는 타입(원본 문자열로 폴백)/손상된 JSON payload(예외 없이 기본값 처리)까지 13개로 매핑 로직 자체를 검증. `OrganizationCard`는 Verified 배지+이메일 도메인 노출 분기까지 5개
+- [x] 53.3 검증 — 전체 스위트 36→38개 파일, 198→216개 테스트로 확충, 전부 통과. 라인 커버리지 56.52%→58.37%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 53.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 54+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
