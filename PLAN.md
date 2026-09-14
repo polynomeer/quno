@@ -668,7 +668,16 @@ Phase 54에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 55.3 검증 — 전체 스위트 40→42개 파일, 221→234개 테스트로 확충, 전부 통과. 라인 커버리지 59.4%→62.08%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 55.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 56+ — 잔여 후속 후보
+## Phase 56 — 품질 개선: 프론트엔드 테스트 확충 14 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 55에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 56.1 대상 선정 — `RelatedTagList`/`TagContributorList`(태그 상세 페이지)와 `FlowFeed`/`TrendingTagsPanel`(홈 대시보드) — 4개 모두 API 결과를 그대로 렌더링만 하는 순수 프레젠테이션 컴포넌트인데 커버리지 0%였다
+- [x] 56.2 구현 — 빈 상태 메시지, 항목별 링크(사용자/태그/질문 상세로), 순위·개수·비율 같은 파생 표시값(예: `spikeRatio.toFixed(1)`), questionId 유무에 따라 링크로 감싸질지 갈리는 분기까지 각 컴포넌트마다 2~4개씩 총 17개
+- [x] 56.3 검증 — 전체 스위트 42→46개 파일, 234→247개 테스트로 확충, 전부 통과. 라인 커버리지 62.08%→64.35%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 56.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 57+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
