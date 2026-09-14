@@ -686,7 +686,16 @@ Phase 56에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 57.3 검증 — 전체 스위트 46→50개 파일, 247→261개 테스트로 확충, 전부 통과. 라인 커버리지 64.35%→67.52%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 57.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 58+ — 잔여 후속 후보
+## Phase 58 — 품질 개선: 프론트엔드 테스트 확충 16 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 57에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 58.1 대상 선정 — `errorReporting`(Sentry 지연 초기화 유틸, DSN 없으면 자동 비활성화 원칙), `Skeleton`(로딩 상태 전반에 쓰이는 원자 컴포넌트), `createQueryClient`(전역 QueryClient 기본 옵션 팩토리) — 셋 다 커버리지 0%였다
+- [x] 58.2 구현 — `errorReporting`은 모듈 스코프의 `sentryInitialized` 싱글턴 플래그 때문에 테스트 간 `vi.resetModules()`로 격리하고 동적 `import()`로 매번 새로 로드 — DSN 없으면 `@sentry/browser` 자체를 건드리지 않는 것, DSN 있으면 최초 1회만 `init` 호출하고 이후엔 `captureException`만 호출되는 것까지 4개. `Skeleton`/`createQueryClient`는 각 2~3개
+- [x] 58.3 검증 — 전체 스위트 50→53개 파일, 261→270개 테스트로 확충, 전부 통과. 라인 커버리지 67.52%→68.26%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 58.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 59+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
