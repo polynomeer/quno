@@ -722,7 +722,16 @@ Phase 60에 이어 같은 지속 항목을 계속 진행한다. 실시간 질문
 - [x] 61.3 검증 — 전체 스위트 56→58개 파일, 298→312개 테스트로 확충, 전부 통과. 라인 커버리지 74.17%→77.38%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 61.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 62+ — 잔여 후속 후보
+## Phase 62 — 품질 개선: 프론트엔드 테스트 확충 20 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 61에 이어 같은 지속 항목을 계속 진행한다. 지금까지 남아 있던 훅들 대부분은 queryKey+queryFn만 있는 얇은 react-query 래퍼라 개별 테스트 가치가 낮았는데, 인증 훅 3종은 리다이렉트·토큰 부수효과·체이닝 같은 진짜 로직이 있어 우선순위를 뒀다.
+
+- [x] 62.1 대상 선정 — `useRequireAuth`(비로그인 시 리다이렉트, `isFetched` 기반 판정 — `isLoading`만으로는 오탐 가능), `useLogin`/`useLogout`(토큰 저장·삭제, 세션 쿼리 무효화/초기화), `useSignUp`(가입 성공 시 `useLogin`을 재사용해 자동 로그인까지 체이닝)
+- [x] 62.2 구현 — `useRequireAuth`는 `useSession`을 훅 레벨 mock, `next/navigation`의 `useRouter`/`usePathname` mock — 토큰 없음(즉시 리다이렉트)/토큰 있고 미조회(대기)/조회 완료+정상 사용자(리다이렉트 안 함)/조회 완료+빈 응답(만료된 리프레시 토큰, 리다이렉트)까지 6개. `useLogin`/`useLogout`은 `authApi`만 mock, 실제 `tokenStorage`+`QueryClient` 사용 — 로그인 성공 시 토큰 저장+세션 쿼리 무효화, 실패 시 토큰 미저장, 로그아웃 시 토큰 삭제+세션 캐시 null 초기화까지 4개. `useSignUp`은 회원가입→로그인 체이닝 성공, 회원가입 자체 실패 시 로그인 시도 안 함, 회원가입은 성공했지만 로그인이 실패하는 경우까지 3개
+- [x] 62.3 검증 — 전체 스위트 58→61개 파일, 312→325개 테스트로 확충, 전부 통과. 라인 커버리지 77.38%→78.57%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 62.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 63+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
