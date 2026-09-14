@@ -695,7 +695,16 @@ Phase 57에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 58.3 검증 — 전체 스위트 50→53개 파일, 261→270개 테스트로 확충, 전부 통과. 라인 커버리지 67.52%→68.26%(v8 provider 실측). tsc/eslint 신규 이슈 0건
 - [x] 58.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 59+ — 잔여 후속 후보
+## Phase 59 — 품질 개선: 프론트엔드 테스트 확충 17 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 58에 이어 같은 지속 항목을 계속 진행한다. 지금까지는 개별 컴포넌트 단위로 진행했지만, 이번엔 여러 하위 기능을 조합하는 페이지 레벨 컴포넌트를 처음 다뤘다.
+
+- [x] 59.1 대상 선정 — `QuestionDetailContent`(질문 상세 페이지 전체) — `AnswerCard`/`CommentSection`/`VoteControl`/`ClusterPanel`/`ReviewRequestPanel`/`ForkPanel`/`OutdatedAction`/`ReportButton`/`WatchButton`/`SaveButton`/`AnswerComposer`/`LiveChatPanel` 11개 하위 컴포넌트를 조합하는 커버리지 0%의 페이지 컴포넌트. 이 페이지가 조합 로직 자체를 얼마나 잘 다루는지가 그동안 각각 테스트해온 하위 컴포넌트들과는 다른, 이 phase의 새로운 관점이었다
+- [x] 59.2 구현 — 11개 하위 컴포넌트를 전부 `vi.mock`으로 stub 처리(각자 이미 전용 테스트 파일이 있어 내부 동작은 재검증하지 않음), `AnswerCard`만 answer.id/body/isAccepted를 그대로 노출하는 stub으로 만들어 정렬 순서를 검증 가능하게 함. 훅(`useSession`/`useQuestion`/`useRelatedQuestions`/`useAnswers`/`useAcceptAnswer`)은 전부 훅 레벨 mock. 로딩/에러 상태, 정렬(best/score), 로그인 여부에 따른 각 패널 노출, 작성자만 답변 채택 가능, 환경/로그 정보 토글까지 14개
+- [x] 59.3 검증 — 전체 스위트 53→54개 파일, 270→284개 테스트로 확충, 전부 통과. 라인 커버리지 68.26%→72.91%로 크게 상승(단일 페이지가 여러 분기를 담고 있었기 때문). tsc/eslint 신규 이슈 0건
+- [x] 59.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 60+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
