@@ -631,7 +631,16 @@ Phase 50에 이어 같은 지속 항목을 계속 진행한다.
 - [x] 51.3 검증 — 전체 스위트 32→34개 파일, 174→185개 테스트로 확충, 전부 통과. 라인 커버리지 51.32%→54.49%(v8 provider 실측). 테스트 작성 중 `DirectAskRequest` 타입의 `respondedAt` 필드를 빠뜨려 tsc 에러가 난 것을 발견해 수정
 - [x] 51.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
 
-## Phase 52+ — 잔여 후속 후보
+## Phase 52 — 품질 개선: 프론트엔드 테스트 확충 10 (quality-improvement-plan.md Q-1, 지속 항목)
+
+Phase 51에 이어 같은 지속 항목을 계속 진행한다.
+
+- [x] 52.1 대상 선정 — `FollowUserButton`/`JoinOrganizationButton` — `VoteControl`/`WatchButton`/`SaveButton`/`FollowTagButton`(Phase 44)과 같은 "로그인 세션+내 상태 조회+토글 뮤테이션" 패밀리의 나머지 두 곳
+- [x] 52.2 구현 — `FollowUserButton`은 Phase 44와 동일하게 `authApi`+`followApi` mock, `tokenStorage`로 로그인 상태를 만드는 패턴 재사용 — 본인 프로필 숨김까지 6개. `JoinOrganizationButton`은 `useUserProfile` 기반이라 `userApi`+`organizationApi.join`/`leave` mock(Phase 45 `FollowTagButton`과 동일 패턴) — Verified 조직은 미가입 시 가입 버튼 대신 안내 문구만 보이고, 이미 가입한 뒤엔 Verified여도 탈퇴 버튼이 정상 노출되는 분기까지 7개
+- [x] 52.3 검증 — 전체 스위트 34→36개 파일, 185→198개 테스트로 확충, 전부 통과. 라인 커버리지 54.49%→56.52%(v8 provider 실측). tsc/eslint 신규 이슈 0건
+- [x] 52.4 문서화 — [quality-improvement-plan.md](docs/product/quality-improvement-plan.md) Q-1 수치 갱신(계속 진행 중)
+
+## Phase 53+ — 잔여 후속 후보
 
 [quality-improvement-plan.md](docs/product/quality-improvement-plan.md)의 Q-1~Q-5가 모두 최소 한 바퀴는 돌았다 — Q-1의 "프론트엔드 테스트 실질적 확충"만 지속 항목으로 계속 열려 있다. mvp-scope.md 로드맵(Phase 1~6)은 Phase 29~31에서 모두 구현이 끝났고, 남은 후속 후보는 질문/사용자 프로필의 sitemap 열거(전체 목록 API 필요, ADR-0043)뿐이다.
 
