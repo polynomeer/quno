@@ -4,6 +4,7 @@ Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이
 
 ## 문서 구조
 
+- [README.md](README.md): 저장소를 처음 방문하는 사람을 위한 진입점(스크린샷, 아키텍처 다이어그램, 빠른 시작, 문서 지도). Claude Code 세션용 문서가 아니라 사람이 읽는 문서다.
 - [PLAN.md](PLAN.md): **Claude Code가 순서대로 진행할 작업계획서.** 새 세션을 시작할 때 가장 먼저 확인한다.
 - [docs/product/vision.md](docs/product/vision.md): 제품 철학, 핵심 개념(Living Question Card), 차별화
 - [docs/product/mvp-scope.md](docs/product/mvp-scope.md): MVP 범위(P0/P1), 로드맵, 성공 지표
