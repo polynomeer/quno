@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ApiError } from "@/shared/api/api-error";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useQuestion } from "@/features/question/hooks/useQuestion";
 import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestions";
@@ -34,7 +35,7 @@ type AnswerSort = "best" | "newest" | "oldest" | "score";
  * behavior here changed, only where it lives. */
 export function QuestionDetailContent({ questionId }: { questionId: number }) {
   const { data: me, isLoading: authLoading } = useSession();
-  const { data: question, isLoading, isError } = useQuestion(questionId);
+  const { data: question, isLoading, isError, error } = useQuestion(questionId);
   const { data: related } = useRelatedQuestions(questionId);
   const { data: answers } = useAnswers(questionId);
   const acceptAnswer = useAcceptAnswer(questionId);
@@ -50,7 +51,9 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
   }
 
   if (isError || !question) {
-    return <p className="text-sm text-danger">질문을 찾을 수 없습니다.</p>;
+    const message =
+      error instanceof ApiError && error.status === 404 ? "질문을 찾을 수 없습니다." : "질문을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+    return <p className="text-sm text-danger">{message}</p>;
   }
 
   const sortedAnswers = [...(answers ?? [])].sort((a, b) => {

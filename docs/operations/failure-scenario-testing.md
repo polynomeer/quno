@@ -63,7 +63,7 @@
 
 ### F. 프론트엔드 회복력
 
-- [ ] F1. 백엔드를 완전히 내린 상태로 프론트엔드에 접속 — 홈/질문 상세/로그인 등 주요 페이지가 흰 화면이나 처리되지 않은 에러 대신 `error.tsx`/적절한 에러 상태를 보여주는지
+- [x] F1. 백엔드를 완전히 내린 상태로 프론트엔드에 접속 — 홈/질문 상세/로그인 등 주요 페이지가 흰 화면이나 처리되지 않은 에러 대신 `error.tsx`/적절한 에러 상태를 보여주는지
 - [ ] F2. 백엔드는 떠 있지만 응답이 느린 상태(`docker pause postgres`로 DB 의존 엔드포인트만 느리게)에서, 로딩 스켈레톤이 계속 보이는지 아니면 일정 시간 후 타임아웃 에러로 전환되는지(프론트 http-client에 타임아웃이 있는지 코드로 확인 안 됐음 — 있는지부터 확인)
 - [ ] F3. 만료되거나 서명이 틀린 JWT를 `localStorage`에 수동으로 심어두고 페이지를 새로고침 — `useSession`이 401을 어떻게 처리하는지(자동 로그아웃? 무한 재시도? 조용히 실패?), `http-client.test.ts`가 이미 다루는 "401 재발급/재시도" 로직이 실제 브라우저에서도 그대로 동작하는지
 
@@ -139,6 +139,14 @@
 - **관찰**: Mailpit 정지 후 `HTTP:500`(`INTERNAL_ERROR`)이 **1.57초** 만에 왔다 — `SmtpVerificationEmailSender.sendWithRetry`(`backend/src/main/kotlin/.../infrastructure/external/SmtpVerificationEmailSender.kt:32`)가 `MAX_ATTEMPTS=3`, 지수 아닌 선형 백오프(`RETRY_DELAY_MS(500) * attempt`, 즉 500ms→1000ms)로 정확히 3회 시도한 뒤 마지막 예외를 그대로 던졌다(로그에서 `Connection refused` 5회 확인 — 3회는 재시도 자체, 나머지는 Mailpit actuator 헬스 폴링). 최종 에러는 이메일 관련임을 알 수 없는 범용 `INTERNAL_ERROR` 메시지였지만, 코드 주석("인증 메일 발송은 재시도해도 안전하다")대로 인증 요청 자체(코드 생성·DB 저장)는 이미 커밋된 상태라 사용자가 같은 이메일로 재요청하면 새 코드가 이전 코드를 대체한다 — 무한 대기나 좀비 상태 없이 안전하게 재시도 가능한 실패 모드였다.
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. 재시도 3회, 최종 실패까지 총 1.57초(선형 백오프 1.5초 + 즉시 실패하는 연결거부 3회)로 사용자를 오래 붙잡지 않았고, 실패해도 재요청으로 복구 가능한 안전한 상태였다. 에러 메시지가 범용적인 점은 다른 모든 `INTERNAL_ERROR` 응답과 동일한 기존 관례([GlobalExceptionHandler](../../backend/src/main/kotlin/com/quno/qunobackend/interfaces/api/common/GlobalExceptionHandler.kt))라 이번 범위에서 별도로 고치지 않았다. Mailpit은 검증 후 재기동해 원상 복구했다.
+
+### F1. 백엔드 완전 다운 상태에서 프론트엔드 접속
+
+- **가설**: 홈/질문 상세/로그인 등 주요 페이지가 흰 화면이나 처리되지 않은 예외 대신 적절한 에러 상태를 보여줘야 한다.
+- **주입 방법**: 백엔드 프로세스를 완전히 종료한 채 프론트엔드 dev 서버(`localhost:3000`)에서 홈(`/`, 비로그인), 질문 상세(`/questions/887`), 로그인(`/login`, 실제 로그인 시도)을 브라우저로 직접 확인.
+- **관찰**: 홈(비로그인 게스트 뷰)은 백엔드 데이터 없이도 정적 콘텐츠라 정상 렌더링됐다. 로그인 페이지는 폼 제출 시 `FormError` 컴포넌트를 통해 "로그인에 실패했습니다."를 보여주고 크래시나 흰 화면 없이 정상 처리됐다. 하지만 질문 상세 페이지(`QuestionDetailContent.tsx:52`)는 `useQuestion`의 `isError || !question` 조건만으로 "질문을 찾을 수 없습니다."를 띄우고 있었다 — 백엔드가 완전히 죽어 `ERR_CONNECTION_REFUSED`가 나는 상황과, 질문이 실제로 삭제/존재하지 않는 404 상황을 구분하지 않아, 일시적 장애를 "이 질문은 삭제됐다"처럼 잘못 전달하고 있었다.
+- **판정**: PARTIAL(홈/로그인은 PASS, 질문 상세는 FAIL) → 조치 후 PASS
+- **발견 및 조치**: `error instanceof ApiError && error.status === 404`일 때만 "질문을 찾을 수 없습니다."를 보여주고, 그 외 에러(네트워크 실패, 5xx 등)는 "질문을 불러오지 못했습니다. 잠시 후 다시 시도해주세요."로 구분했다 — `moderation/page.tsx`가 이미 쓰던 것과 같은 패턴(`error instanceof ApiError && error.status === ...`)이다. 기존 테스트(`QuestionDetailContent.test.tsx`)가 "에러면 무조건 찾을 수 없음"을 전제로 하고 있어 404 케이스와 비404 케이스로 나눠 갱신했다(15개 테스트 통과, `tsc`/`eslint` 클린). 참고: 이 저장소의 브라우저 자동화 도구(Claude Browser pane)에서는 TanStack Query의 `networkMode`가 실제 사용자 브라우저와 다르게 동작해(재시도 후 `fetchStatus: "paused"`로 멈춤, `navigator.onLine`은 `true`인데도) 라이브 브라우저로 404 케이스를 직접 재현하지 못했다 — 이 로직은 목(mock) 기반 단위 테스트로 검증했다.
 
 ## 관련 문서
 
