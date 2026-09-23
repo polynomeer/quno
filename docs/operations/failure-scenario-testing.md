@@ -1,6 +1,38 @@
-# 장애 시나리오 테스트 — 기획
+# 장애 시나리오 테스트 — 기획 및 실행 결과
 
-[운영 런북](runbook.md)의 "컴포넌트별 흔한 원인" 표(2.2절)는 "Mongo가 죽으면 Live Chat만 영향받고 다른 기능은 정상이다" 같은 **주장**을 담고 있다. 이 문서는 그 주장들을 실제로 장애를 주입해 검증하고, 검증 과정에서 드러나는 실제 버그(런북의 주장과 실제 동작이 다른 지점)를 찾아 고치기 위한 계획이다.
+[운영 런북](runbook.md)의 "컴포넌트별 흔한 원인" 표(2.2절)는 "Mongo가 죽으면 Live Chat만 영향받고 다른 기능은 정상이다" 같은 **주장**을 담고 있다. 이 문서는 그 주장들을 실제로 장애를 주입해 검증하고, 검증 과정에서 드러나는 실제 버그(런북의 주장과 실제 동작이 다른 지점)를 찾아 고치기 위한 계획이자, 2026-09-23 하루 동안 계획된 21개 시나리오를 전부 실행한 결과 리포트다.
+
+## 요약
+
+21개 시나리오 전부 실행 완료, 최종적으로 전부 PASS(5건은 버그를 발견해 수정한 뒤 PASS로 전환). 상세 내역은 [실행 결과](#실행-결과) 절 참고.
+
+| 카테고리 | 시나리오 | 최초 판정 | 최종 판정 | 비고 |
+|---|---|---|---|---|
+| A. 인프라 완전 장애 | A1 PostgreSQL 기동 실패 | PASS | PASS | |
+| A. 인프라 완전 장애 | A2 PostgreSQL 런타임 장애 | FAIL | PASS | HikariCP connection-timeout 30s→3s ([ADR-0054](../architecture/decisions/0054-hikari-connection-timeout-fast-fail.md)) |
+| A. 인프라 완전 장애 | A3 MongoDB 장애 | PARTIAL | PASS | MongoDB serverSelectionTimeout 30s→3s ([ADR-0055](../architecture/decisions/0055-mongo-server-selection-timeout-fast-fail.md)) |
+| A. 인프라 완전 장애 | A4 Redis 장애 | PARTIAL | PASS | 캐시-aside 3곳 DB 폴백 처리 ([ADR-0056](../architecture/decisions/0056-redis-cache-aside-graceful-degradation.md)) |
+| A. 인프라 완전 장애 | A5 Mailpit 장애 | PASS | PASS | |
+| F. 프론트엔드 회복력 | F1 백엔드 완전 다운 | PARTIAL | PASS | 질문 상세: 네트워크 오류를 404로 오인하던 버그 수정 |
+| F. 프론트엔드 회복력 | F2 DB 응답 없음(pause) | PASS | PASS | client-side 타임아웃 부재는 후속 과제로 분리 |
+| F. 프론트엔드 회복력 | F3 JWT 변조 | PASS | PASS | |
+| B. 지연과 타임아웃 | B1 HikariCP 풀 고갈 | PASS | PASS | ADR-0054 재검증 |
+| B. 지연과 타임아웃 | B2 DB 응답 없음(pause) | PASS | PASS | F2와 같은 주입, 교차 참조 |
+| B. 지연과 타임아웃 | B3 Toss 확인 지연 | PASS | PASS | |
+| B. 지연과 타임아웃 | B4 Mailpit 응답 없음(pause) | PASS | PASS | |
+| C. 부하와 레이트 리미팅 | C1 로그인 Rate Limiting | PASS | PASS | |
+| C. 부하와 레이트 리미팅 | C2 k6 스파이크(VUs 50) | PASS | PASS | |
+| C. 부하와 레이트 리미팅 | C3 동시 리비전 폭주 | PASS | PASS | |
+| E. 프로세스 생명주기 | E1 `kill -TERM`(graceful) | PASS | PASS | `server.shutdown: graceful` 명시 고정 ([ADR-0057](../architecture/decisions/0057-explicit-graceful-shutdown.md)) |
+| E. 프로세스 생명주기 | E2 `kill -9`(강제 종료) | PASS | PASS | |
+| E. 프로세스 생명주기 | E3 Outbox 백로그 재기동 | PASS | PASS | |
+| D. 외부 의존성(결제) 실패 | D1 Toss 결제 거절(500) | PASS | PASS | |
+| D. 외부 의존성(결제) 실패 | D2 결제 확인 도중 강제 종료 | PASS | PASS | |
+| G. 데이터 복구 | G1 백업/복구 리허설 | PASS | PASS | 런북 리허설 날짜 갱신 |
+
+**발견해 즉시 고친 버그(5건)**: A2/A3(DB 장애 감지 지연 30초→3초), A4(Redis 장애 시 캐시-aside가 기능 전체를 죽이던 문제), F1(프론트가 네트워크 오류를 "삭제됨"으로 오인), E1(암묵적으로만 동작하던 graceful shutdown을 명시적으로 고정).
+
+**후속 과제로 분리(1건)**: F2에서 발견한 프론트엔드 `http-client.ts`의 클라이언트 자체 타임아웃 부재 — 지금은 백엔드 타임아웃에 암묵적으로 의존해 문제가 안 되지만, 별도 세션으로 분리해 추적한다.
 
 ## 목적과 원칙
 
@@ -69,7 +101,7 @@
 
 ### G. 데이터 복구
 
-- [ ] G1. `scripts/db-backup.sh`로 백업 → 임의로 데이터 일부 삭제(테스트 데이터에 한정) → `scripts/db-restore.sh`로 복구 → 삭제 이전 상태로 정확히 돌아오는지(런북에 "마지막 리허설 2026-09-10"이라고 적혀있는 것을 재검증)
+- [x] G1. `scripts/db-backup.sh`로 백업 → 임의로 데이터 일부 삭제(테스트 데이터에 한정) → `scripts/db-restore.sh`로 복구 → 삭제 이전 상태로 정확히 돌아오는지(런북에 "마지막 리허설 2026-09-10"이라고 적혀있는 것을 재검증)
 
 ## 우선순위 제안
 
@@ -258,6 +290,14 @@
 - **관찰**: kill -9 시점의 curl은 `HTTP:000`(응답 없이 연결 끊김)이었고, 그 직후 DB를 확인하니 `direct_ask_payments.status`가 여전히 `PENDING`이었다(트랜잭션 롤백, E2와 같은 메커니즘). 재기동 후 같은 `orderId`/`amount`로 재시도하자 `HTTP:200`으로 정상 성공했고, `direct_ask_payments.status`는 `PAID`로, `direct_ask_requests.status`는 `PENDING`(결제 완료 후 대상자 응답 대기 상태)으로 정확히 전이됐다 — `PaymentAlreadyProcessedException` 같은 가드에 걸리지 않고 깔끔하게 멱등한 재시도가 성공했다.
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. `@Transactional`과 "PENDING일 때만 진행" 가드(`ConfirmDirectAskPaymentUseCase`)의 조합이 결제 확인 도중의 강제 종료에도 정확히 안전한 재시도를 보장했다. 테스트에 쓴 목 서버들과 재정의한 `api-base-url`은 검증 후 전부 원상 복구했다.
+
+### G1. 백업/복구 리허설
+
+- **가설**: `scripts/db-backup.sh`/`db-restore.sh`(런북에 "마지막 리허설 2026-09-10"이라고 기록됨)가 지금도 실제로 동작해, 백업 이후 삭제한 데이터가 복구 후 정확히 되돌아와야 한다.
+- **주입 방법**: `./scripts/db-backup.sh`로 현재 상태 백업(`quno-20260923-223213.dump`) 후, C3에서 만든 질문 910(리비전 16개 보유)을 FK 순서대로(`question_tags` → `question_versions` → `questions`) 완전히 삭제. `./scripts/db-restore.sh`로 방금 만든 백업에서 복구.
+- **관찰**: 삭제 직후 `SELECT count(*) FROM questions WHERE id=910`이 0으로 삭제를 확인했고, 복구 후에는 `id=910`이 제목("C3 동시성 테스트 질문")·`latest_version_id`(1584)·`status`(UPDATED)까지 정확히 동일하게 돌아왔으며 `question_versions`도 16개 그대로 복구됐다. 복구 직후 `GET /api/v1/questions/910`과 `GET /api/v1/tags`가 모두 `HTTP:200`으로 정상 응답해, 애플리케이션이 살아있는 상태에서 `pg_restore --clean`이 실행돼도 재기동 없이 정상 동작함을 확인했다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. 런북의 백업/복구 절차가 지금도 정확히 동작함을 재검증했다.
 
 ## 관련 문서
 

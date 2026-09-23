@@ -75,7 +75,7 @@ CD 파이프라인은 아직 없다(production-readiness.md B-1, 배포 대상 �
 ### 정기 점검(주간 권장)
 
 - [ ] DB 백업이 실제로 실행되고 있는가([scripts/db-backup.sh](../../scripts/db-backup.sh) 스케줄 확인 — 스케줄링 자체는 인프라 구성의 몫)
-- [ ] 백업으로부터 실제 복구가 되는지 리허설했는가(마지막 리허설: 2026-09-10, Phase 35 도입 시)
+- [ ] 백업으로부터 실제 복구가 되는지 리허설했는가(마지막 리허설: 2026-09-23, [failure-scenario-testing.md](failure-scenario-testing.md) G1)
 - [ ] Dependabot이 올린 의존성 업데이트 PR이 쌓여있지 않은가
 - [ ] `/actuator/prometheus`가 외부에 그대로 노출돼 있지 않은지(인프라 레벨 접근 통제 확인)
 
