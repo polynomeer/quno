@@ -41,7 +41,7 @@
 
 - [x] B1. `psql`로 다수의 `pg_sleep(60)` 세션을 열어 HikariCP 커넥션 풀(기본 10개, 명시적 설정 없음을 확인함)을 고갈시켰을 때, 풀을 못 받은 요청이 무한 대기하는지 타임아웃 후 에러를 반환하는지
 - [x] B2. `docker pause postgres`(정지가 아니라 응답 없음)로 "연결은 됐는데 응답이 없는" 상태를 만들어 A2와 다른 실패 모드로 재현
-- [ ] B3. 로컬 Toss 목 서버가 확인 요청에 응답하지 않도록(sleep) 만들어 `TossPaymentGateway`의 타임아웃 설정이 실제로 있는지, 없다면 어떻게 되는지
+- [x] B3. 로컬 Toss 목 서버가 확인 요청에 응답하지 않도록(sleep) 만들어 `TossPaymentGateway`의 타임아웃 설정이 실제로 있는지, 없다면 어떻게 되는지
 - [x] B4. Mailpit을 `docker pause`해 `application-local.yml`의 `connectiontimeout`/`timeout`/`writetimeout`(5000ms)이 실제로 5초 뒤에 발동하는지 시간을 재서 확인
 
 ### C. 부하와 레이트 리미팅
@@ -186,6 +186,14 @@
 - **관찰**: `HTTP:500`이 **16.64초** 만에 왔다 — A5(연결거부, 1.57초)보다 훨씬 길다. `connectiontimeout=5000ms`짜리 시도 3번(3×5s=15s) + 재시도 사이 선형 백오프(500ms+1000ms=1.5s) ≈ 16.5초로 계산이 거의 정확히 들어맞아, 설정된 타임아웃 값이 실제로 그대로 적용되고 있음을 확인했다. 무한 대기는 아니었지만, "응답 없음"이 "연결 거부"보다 실패를 확정 짓는 데 10배 이상 오래 걸린다는 것이 이번에 드러났다.
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음(설계대로 동작). 16.6초는 사용자 입장에서 체감상 길지만, 이 값(5초×3회)은 A2/A3의 30초 사례처럼 "아무도 설정한 적 없는 기본값"이 아니라 이미 누군가 명시적으로 정한 값이고, 로컬 Mailpit이 아닌 실제 외부 SMTP 릴레이(운영 환경)를 향한 왕복이라면 5초가 딱히 과한 값도 아니다 — A2/A3와 달리 "고쳐야 할 방치된 기본값"이 아니라 "이미 내려진 트레이드오프"라 판단해 이번 범위에서 값을 바꾸지 않았다. Mailpit은 검증 후 `docker compose unpause`로 정상화했다.
+
+### B3. Toss 결제 확인 지연(로컬 목 서버)
+
+- **가설**: `TossPaymentGateway`에 타임아웃 설정이 있는지 코드로 먼저 확인한 뒤(사전 확인 결과 `SimpleClientHttpRequestFactory`에 `connectTimeout=5000ms`, `readTimeout=10000ms`가 이미 명시돼 있음을 발견), 실제로 응답 없는 Toss 서버에 대해 그 타임아웃이 발동하는지, 발동 시 결제 상태가 어중간하게 남지 않는지 확인한다.
+- **주입 방법**: 15초간 응답을 지연시키는 로컬 Python HTTP 목 서버(`127.0.0.1:9999`)를 띄우고 `quno.toss.api-base-url=http://localhost:9999`로 백엔드를 재기동([ADR-0037](../architecture/decisions/0037-paid-direct-ask-toss-payments-test-mode.md)이 쓴 것과 같은 방식, 실제 Toss 서버에는 요청하지 않음). 신규 테스트 계정(`b3-target@quno.dev`, `acceptsDirectAsk=true`)을 만들어 질문 887에 실제로 Direct Ask 요청(`POST /questions/887/direct-asks`)을 생성해 진짜 `orderId`를 확보한 뒤 `POST /direct-asks/payments/confirm`을 호출.
+- **관찰**: 정확히 **10.30초** 후 `HTTP:500`(`INTERNAL_ERROR`)이 왔다 — 코드에 명시된 `readTimeout=10000ms`가 그대로 발동한 것이다. `TossPaymentGateway.confirm()`은 `RestClientResponseException`(4xx/5xx 응답)만 잡아 `PaymentConfirmationFailedException`으로 바꾸는데, 타임아웃은 `ResourceAccessException`이라 이 catch에 안 걸리고 그대로 위로 전파돼 `GlobalExceptionHandler`의 범용 500이 됐다 — 하지만 `ConfirmDirectAskPaymentUseCase.execute()`가 `@Transactional`이고 `directAskPaymentRepository.save(payment.confirm(...))`가 Toss 호출 *이후*에 실행되므로, 어떤 예외 타입이든 트랜잭션이 통째로 롤백돼 `direct_ask_payments.status`가 계속 `PENDING`으로 남아 있음을 DB에서 직접 확인했다(재시도 시 `PaymentAlreadyProcessedException` 가드에도 안 걸림 — 안전하게 재시도 가능).
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. 타임아웃이 설정대로 작동하고, 실패해도 결제 상태가 어중간하게 남지 않아 D1/D2가 우려하는 "좀비 상태"가 되지 않음을 확인했다. `ResourceAccessException`을 `RestClientResponseException`과 함께 잡아 `PaymentConfirmationFailedException`으로 통일하면 에러 메시지 일관성은 조금 나아지겠지만, 트랜잭션 안전성에는 차이가 없어(Spring 기본 롤백 규칙이 unchecked exception 전체에 적용됨) 이번 범위에서는 고치지 않았다. 목 서버와 재정의한 `api-base-url`은 검증 후 원상 복구했다.
 
 ## 관련 문서
 
