@@ -29,8 +29,8 @@
 
 런북 2.2절이 "이것만 영향받고 나머지는 정상"이라고 주장하는 부분을 정면으로 검증한다.
 
-- [ ] A1. PostgreSQL 정지 상태에서 백엔드를 새로 기동 — 기동 자체가 실패하는지, 실패 메시지가 원인을 알 수 있게 나오는지
-- [ ] A2. 정상 기동 후 PostgreSQL을 정지 — 이미 처리 중이던 요청과 새 요청 모두 어떤 응답(500? 503? 타임아웃?)을 받는지, `/actuator/health`가 즉시 `DOWN`으로 바뀌는지
+- [x] A1. PostgreSQL 정지 상태에서 백엔드를 새로 기동 — 기동 자체가 실패하는지, 실패 메시지가 원인을 알 수 있게 나오는지
+- [x] A2. 정상 기동 후 PostgreSQL을 정지 — 이미 처리 중이던 요청과 새 요청 모두 어떤 응답(500? 503? 타임아웃?)을 받는지, `/actuator/health`가 즉시 `DOWN`으로 바뀌는지
 - [ ] A3. MongoDB 정지 — 런북 주장("Live Chat 메시지 저장만 영향")대로 질문 작성/답변/검색/투표 등 Mongo를 안 쓰는 기능이 실제로 전부 정상인지, Live Chat 메시지 전송 시도는 어떤 에러가 나는지
 - [ ] A4. Redis 정지 — 런북 주장("Live Chat 접속자 표시·인증/일반 API는 영향 없음")을 검증. 추가로 Rate Limiting(Bucket4j, 인메모리)과 조직 검색 캐시(Redis cache-aside)가 실제로 Redis 장애와 무관하게 동작하는지 — 특히 캐시 read가 Redis 장애 시 예외를 던지는지 DB로 우회하는지 확인(코드 리뷰로는 아직 확인 안 됨)
 - [ ] A5. Mailpit(SMTP) 정지 — Verified Organization 이메일 인증 요청 시 재시도 로직(ADR-0046)이 실제로 3회 재시도하는지, 최종 실패 시 사용자에게 어떤 에러 메시지가 가는지
@@ -97,6 +97,24 @@
 ```
 
 전체 시나리오를 마치면 문서 최상단에 요약표(카테고리별 PASS/FAIL 개수, 발견한 버그 목록과 수정 여부)를 추가해 실행 결과 전체를 한눈에 보게 한다 — 이것이 최종 "리포트"가 된다.
+
+## 실행 결과
+
+### A1. PostgreSQL 정지 상태에서 백엔드 기동
+
+- **가설**: DB에 붙지 못하면 애플리케이션 기동이 빠르게 실패하고, 원인이 로그에서 바로 보여야 한다.
+- **주입 방법**: `docker compose stop postgres`로 정지시킨 채 `./gradlew --no-daemon bootRun` 실행.
+- **관찰**: 약 10초 만에 `BUILD FAILED`. 예외 체인이 `BeanCreationException(flywayInitializer)` → `FlywaySqlUnableToConnectToDbException` → `PSQLException: Connection to localhost:5442 refused` → `ConnectException`으로 정확히 이어져, 로그만 보고도 "Postgres에 못 붙어서 Flyway가 실패했다"를 바로 알 수 있었다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. Spring Boot의 기본 fail-fast 동작(Flyway → HikariCP 초기 연결 실패 시 컨텍스트 기동 중단)이 그대로 잘 작동한다.
+
+### A2. 정상 기동 후 PostgreSQL 정지
+
+- **가설**: 이미 떠 있는 상태에서 DB가 죽으면 `/actuator/health`가 곧바로 `db: DOWN`으로 바뀌고, DB 의존 API는 타임아웃 없이 명확한 에러(500/503)를 즉시 반환해야 한다.
+- **주입 방법**: Postgres/백엔드를 정상 기동한 뒤 `docker compose stop postgres`, 이어서 `GET /actuator/health`와 `GET /api/v1/tags` 호출.
+- **관찰**: **수정 전**에는 둘 다 정확히 30초 뒤에야 응답이 왔다 — `/actuator/health`가 `HTTP:503 TIME:30.035s`(`db.status: DOWN`, `CannotGetJdbcConnectionException`), `/api/v1/tags`가 `HTTP:500 TIME:30.035s`(`{"code":"INTERNAL_ERROR","message":"예기치 못한 오류가 발생했습니다."}`). 두 응답이 같은 30.035초라는 점에서 원인이 동일함(HikariCP `connectionTimeout` 기본값 30초)을 특정했다. `/actuator/health` 자체가 30초씩 걸리는 것은 오케스트레이터 헬스체크 probe의 일반적인 타임아웃(5~10초)보다 길어, probe가 먼저 타임아웃돼 "정상 프로세스인데 응답 없음"으로 오판될 위험이 있었다.
+- **판정**: FAIL → 조치 후 PASS
+- **발견 및 조치**: `spring.datasource.hikari.connection-timeout`이 어느 프로필에도 설정돼 있지 않아 HikariCP 기본값(30초)이 그대로 쓰이고 있었다. `backend/src/main/resources/application.yml`에 `connection-timeout: 3000`(3초)을 추가해 모든 프로필에 적용했다. **수정 후 동일한 방법으로 재현**한 결과 `/actuator/health`가 `HTTP:503 TIME:3.038s`, `/api/v1/tags`가 `HTTP:500 TIME:3.113s`로 단축됨을 확인했다. Postgres를 다시 살리자 별도 재시작 없이 `db.status`가 자동으로 `UP`으로 복귀함도 확인(HikariCP가 자체적으로 재연결). 정책 결정이라 [ADR-0054](../architecture/decisions/0054-hikari-connection-timeout-fast-fail.md)로 남겼다.
 
 ## 관련 문서
 
