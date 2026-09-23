@@ -39,8 +39,8 @@
 
 완전히 죽는 것보다 "느려지는 것"이 실제 운영에서는 더 흔하고 더 위험하다 — 타임아웃이 없으면 스레드 풀이 서서히 고갈된다.
 
-- [ ] B1. `psql`로 다수의 `pg_sleep(60)` 세션을 열어 HikariCP 커넥션 풀(기본 10개, 명시적 설정 없음을 확인함)을 고갈시켰을 때, 풀을 못 받은 요청이 무한 대기하는지 타임아웃 후 에러를 반환하는지
-- [ ] B2. `docker pause postgres`(정지가 아니라 응답 없음)로 "연결은 됐는데 응답이 없는" 상태를 만들어 A2와 다른 실패 모드로 재현
+- [x] B1. `psql`로 다수의 `pg_sleep(60)` 세션을 열어 HikariCP 커넥션 풀(기본 10개, 명시적 설정 없음을 확인함)을 고갈시켰을 때, 풀을 못 받은 요청이 무한 대기하는지 타임아웃 후 에러를 반환하는지
+- [x] B2. `docker pause postgres`(정지가 아니라 응답 없음)로 "연결은 됐는데 응답이 없는" 상태를 만들어 A2와 다른 실패 모드로 재현
 - [ ] B3. 로컬 Toss 목 서버가 확인 요청에 응답하지 않도록(sleep) 만들어 `TossPaymentGateway`의 타임아웃 설정이 실제로 있는지, 없다면 어떻게 되는지
 - [ ] B4. Mailpit을 `docker pause`해 `application-local.yml`의 `connectiontimeout`/`timeout`/`writetimeout`(5000ms)이 실제로 5초 뒤에 발동하는지 시간을 재서 확인
 
@@ -163,6 +163,21 @@
 - **관찰**: ① access token만 깨졌을 때는 홈 대시보드가 로그인 상태 그대로(인기 질문·Ward 업데이트·관심 태그 피드) 정상 렌더링됐고, `localStorage`를 재확인하니 access token 값이 내가 심은 변조 문자열과 달라져 있었다 — 401 → `refreshAccessToken()` → 재시도가 사용자가 눈치채지 못하게 조용히 성공한 것. ② 두 토큰을 모두 깨자 홈이 게스트 뷰("로그인하면 인기 질문과 Ward 업데이트를 볼 수 있습니다")로 즉시 전환됐고, `localStorage`의 두 키가 모두 `null`로 지워져 있었다 — `refreshAccessToken()`이 갱신 요청 자체의 401을 받아 `tokenStorage.clear()`를 호출한 경로(`http-client.ts:34`)가 그대로 동작했다. 콘솔에는 예상된 401 두 건(원 요청 1회 + 리프레시 시도 1회)만 있었고, 무한 재시도나 처리되지 않은 예외는 없었다.
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. 기존 유닛 테스트(`http-client.test.ts`)가 검증한 대로 실제 브라우저에서도 동일하게 동작함을 확인했다.
+
+### B1. HikariCP 커넥션 풀 고갈
+
+- **가설**: 명시적 풀 크기 설정이 없어 기본값(10개)인 HikariCP 풀이 전부 소진되면, 풀을 못 받은 초과 요청은 무한 대기가 아니라 [ADR-0054](../architecture/decisions/0054-hikari-connection-timeout-fast-fail.md)의 `connection-timeout`(3초) 안에 명확한 에러로 실패해야 한다.
+- **주입 방법**: `psql`로 `BEGIN; LOCK TABLE questions IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(25); COMMIT;`를 실행해 `questions` 테이블에 배타 락을 25초간 걸어둔 뒤, `GET /api/v1/questions/887`(이 테이블을 읽는 엔드포인트)로 **12개 동시 요청**을 발사해 풀(10개)보다 많은 커넥션을 요구하게 만들었다.
+- **관찰**: 10개 요청은 풀에서 커넥션을 받아 락이 풀릴 때까지 블로킹된 채 대기하다 락 해제 시점(약 17.5초 후)에 전부 `HTTP:200`으로 정상 완료됐다. 풀 용량을 초과한 나머지 2개 요청은 **정확히 3.0초**(`3.026794s`, `3.026898s`) 만에 `HTTP:500`으로 실패했다 — 로그에서 `java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 3011ms (total=10, active=10, idle=0, waiting=0)`을 확인해 풀이 정확히 10/10 소진된 상태에서 `connection-timeout`이 발동했음을 검증했다. 무한 대기나 스레드 고갈로 이어지는 연쇄 장애 없이, 초과분만 깔끔하게 빠른 실패로 처리됐다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. A2에서 고친 `connection-timeout`(ADR-0054)이 "DB 자체가 죽었을 때"뿐 아니라 "커넥션 풀이 정상 DB에 대해 고갈됐을 때"도 동일하게 3초 안에 빠른 실패를 보장한다는 것을 확인했다 — ADR-0054의 결과 섹션이 예고했던 재검증이다. 테스트 후 `pg_terminate_backend`로 락 세션을 정리해 원상 복구했다.
+
+### B2. `docker pause postgres`(응답 없음 상태)
+
+- **가설**: `docker compose stop`(연결 자체 거부)과 다르게, `docker pause`는 TCP 연결은 유지된 채 응답만 없는 상태를 만든다 — 이 경우도 무한 대기 없이 유한한 시간 안에 실패해야 한다.
+- **주입 방법 및 관찰**: 이 시나리오는 F2([위 F2 항목](#f2-백엔드는-살아있지만-db-응답이-없는-상태docker-pause) 참고) 실행 중 이미 동일한 방법(`docker compose pause postgres`)으로 재현하고 관찰했다 — 프론트엔드 회복력 검증과 백엔드의 실제 실패 모드 검증이 같은 주입으로 동시에 답이 나오는 경우라 별도로 반복하지 않았다. 백엔드 직접 호출은 5.06초 후 `HTTP:500`으로 응답했다(`connection-timeout` 3초가 아니라 커넥션 유효성 검사 단계의 `validationTimeout` 기본값 5초에 걸린 것으로 보임 — 이미 풀에 있던 연결을 꺼내 쓰려다 응답 없는 DB에 막힌 경우와 새 연결을 맺으려는 경우가 서로 다른 타임아웃 설정의 적용을 받는다).
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. `docker pause`도 무한 대기로 이어지지 않고 5초 안에 실패한다. 다만 이 5초는 `connection-timeout`(3초, ADR-0054)이 아니라 HikariCP `validationTimeout` 기본값이 우연히 맞아떨어진 것이라, 정확히 어떤 코드 경로가 어떤 타임아웃에 걸리는지는 이번 범위에서 더 파고들지 않았다 — 필요해지면 `validationTimeout`도 명시적으로 낮추는 것을 후속 과제로 남긴다.
 
 ## 관련 문서
 
