@@ -42,7 +42,7 @@
 - [x] B1. `psql`로 다수의 `pg_sleep(60)` 세션을 열어 HikariCP 커넥션 풀(기본 10개, 명시적 설정 없음을 확인함)을 고갈시켰을 때, 풀을 못 받은 요청이 무한 대기하는지 타임아웃 후 에러를 반환하는지
 - [x] B2. `docker pause postgres`(정지가 아니라 응답 없음)로 "연결은 됐는데 응답이 없는" 상태를 만들어 A2와 다른 실패 모드로 재현
 - [ ] B3. 로컬 Toss 목 서버가 확인 요청에 응답하지 않도록(sleep) 만들어 `TossPaymentGateway`의 타임아웃 설정이 실제로 있는지, 없다면 어떻게 되는지
-- [ ] B4. Mailpit을 `docker pause`해 `application-local.yml`의 `connectiontimeout`/`timeout`/`writetimeout`(5000ms)이 실제로 5초 뒤에 발동하는지 시간을 재서 확인
+- [x] B4. Mailpit을 `docker pause`해 `application-local.yml`의 `connectiontimeout`/`timeout`/`writetimeout`(5000ms)이 실제로 5초 뒤에 발동하는지 시간을 재서 확인
 
 ### C. 부하와 레이트 리미팅
 
@@ -178,6 +178,14 @@
 - **주입 방법 및 관찰**: 이 시나리오는 F2([위 F2 항목](#f2-백엔드는-살아있지만-db-응답이-없는-상태docker-pause) 참고) 실행 중 이미 동일한 방법(`docker compose pause postgres`)으로 재현하고 관찰했다 — 프론트엔드 회복력 검증과 백엔드의 실제 실패 모드 검증이 같은 주입으로 동시에 답이 나오는 경우라 별도로 반복하지 않았다. 백엔드 직접 호출은 5.06초 후 `HTTP:500`으로 응답했다(`connection-timeout` 3초가 아니라 커넥션 유효성 검사 단계의 `validationTimeout` 기본값 5초에 걸린 것으로 보임 — 이미 풀에 있던 연결을 꺼내 쓰려다 응답 없는 DB에 막힌 경우와 새 연결을 맺으려는 경우가 서로 다른 타임아웃 설정의 적용을 받는다).
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. `docker pause`도 무한 대기로 이어지지 않고 5초 안에 실패한다. 다만 이 5초는 `connection-timeout`(3초, ADR-0054)이 아니라 HikariCP `validationTimeout` 기본값이 우연히 맞아떨어진 것이라, 정확히 어떤 코드 경로가 어떤 타임아웃에 걸리는지는 이번 범위에서 더 파고들지 않았다 — 필요해지면 `validationTimeout`도 명시적으로 낮추는 것을 후속 과제로 남긴다.
+
+### B4. Mailpit을 `docker pause`(응답 없음 상태)로 만들어 SMTP 타임아웃 검증
+
+- **가설**: `application-local.yml`에 명시된 `connectiontimeout`/`timeout`/`writetimeout`(5000ms)이 실제로 각 시도마다 5초 뒤 발동해야 하고, A5(정지=연결거부)와 다른 실패 모드(응답없음)에서도 재시도 로직이 무한 대기 없이 끝나야 한다.
+- **주입 방법**: `docker compose pause mailpit`으로 SMTP 포트는 열려 있지만 응답이 없는 상태를 만든 뒤 `POST /api/v1/organizations/verify-email`을 호출.
+- **관찰**: `HTTP:500`이 **16.64초** 만에 왔다 — A5(연결거부, 1.57초)보다 훨씬 길다. `connectiontimeout=5000ms`짜리 시도 3번(3×5s=15s) + 재시도 사이 선형 백오프(500ms+1000ms=1.5s) ≈ 16.5초로 계산이 거의 정확히 들어맞아, 설정된 타임아웃 값이 실제로 그대로 적용되고 있음을 확인했다. 무한 대기는 아니었지만, "응답 없음"이 "연결 거부"보다 실패를 확정 짓는 데 10배 이상 오래 걸린다는 것이 이번에 드러났다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음(설계대로 동작). 16.6초는 사용자 입장에서 체감상 길지만, 이 값(5초×3회)은 A2/A3의 30초 사례처럼 "아무도 설정한 적 없는 기본값"이 아니라 이미 누군가 명시적으로 정한 값이고, 로컬 Mailpit이 아닌 실제 외부 SMTP 릴레이(운영 환경)를 향한 왕복이라면 5초가 딱히 과한 값도 아니다 — A2/A3와 달리 "고쳐야 할 방치된 기본값"이 아니라 "이미 내려진 트레이드오프"라 판단해 이번 범위에서 값을 바꾸지 않았다. Mailpit은 검증 후 `docker compose unpause`로 정상화했다.
 
 ## 관련 문서
 
