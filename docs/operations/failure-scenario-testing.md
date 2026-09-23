@@ -57,7 +57,7 @@
 
 ### E. 프로세스 생명주기
 
-- [ ] E1. 진행 중인 요청(예: 느린 대시보드 집계 쿼리)이 있는 상태에서 `kill -TERM`(graceful shutdown 유도) — 그 요청이 정상 완료되는지 즉시 끊기는지
+- [x] E1. 진행 중인 요청(예: 느린 대시보드 집계 쿼리)이 있는 상태에서 `kill -TERM`(graceful shutdown 유도) — 그 요청이 정상 완료되는지 즉시 끊기는지
 - [ ] E2. `kill -9`(강제 종료) 직후 재기동 — Flyway가 다시 정상적으로 "마이그레이션 없음"을 확인하는지, 커밋 안 된 트랜잭션의 흔적(예: 잠긴 row)이 남아있는지
 - [ ] E3. Outbox 이벤트가 쌓인 상태(리비전 여러 개를 빠르게 만들어 outbox_events에 미처리 row를 남김)에서 백엔드를 죽였다가 재기동 — 재기동 후 스케줄러가 밀린 이벤트를 마저 처리해 알림이 (지연됐을 뿐) 결국 전부 가는지, 유실되는 게 있는지
 
@@ -218,6 +218,14 @@
 - **관찰**: 15개 요청이 전부 성공(`status: UPDATED`)했고, 응답으로 돌아온 `versionNumber`가 2~16까지 정확히 15개의 서로 다른 값으로 나뉘어졌다. 이후 `GET /api/v1/questions/910/versions`로 전체 버전 목록을 조회해 1~16번이 중복이나 누락 없이 정확히 존재함을 확인했다.
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. 단위 테스트가 검증한 동시성 방어가 실제 서버 스레드 풀 환경에서도 동일하게 성립함을 확인했다.
+
+### E1. 요청 처리 중 `kill -TERM`(graceful shutdown)
+
+- **가설**: 처리 중인 요청이 있을 때 `SIGTERM`을 받으면, 그 요청은 강제로 끊기지 않고 끝까지 완료된 뒤에 프로세스가 종료돼야 한다.
+- **주입 방법**: `questions` 테이블에 `LOCK TABLE ... IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(8)`로 8초짜리 지연을 만들고, 그 락에 걸려 블로킹될 `GET /api/v1/questions/887` 요청을 백그라운드로 먼저 쏜 뒤 1초 뒤 백엔드 프로세스에 `kill -TERM`을 보냈다.
+- **관찰**: `kill -TERM` 직후 로그에 `Commencing graceful shutdown. Waiting for active requests to complete`가 찍혔고, curl 요청은 끊기지 않고 **7.03초** 뒤(락이 풀리는 시점과 일치) `HTTP:200`으로 정상 완료됐다. 그 직후 `Graceful shutdown complete`가 찍히며 프로세스가 종료됐다. 이 저장소의 `application.yml`/`application-{local,prod}.yml` 어디에도 `server.shutdown: graceful`을 명시한 곳이 없는데도 이렇게 동작했다 — Spring Boot 4의 기본값이거나 다른 자동 설정이 관여하는 것으로 보이나, 정확한 원인까지는 이번 범위에서 추적하지 않았다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. 명시적으로 설정한 적이 없는데도 graceful shutdown이 실제로 동작하는 것은 좋은 결과이지만, "왜 되는지 아무도 모른다"는 상태 자체가 위험 요소다 — 향후 Spring Boot를 업그레이드하다 이 기본값이 바뀌면 아무도 모르게 조용히 회귀할 수 있다. 그래서 `server.shutdown: graceful`을 `application.yml`에 명시적으로 추가해 동작을 코드로 고정했다(공통 설정이라 모든 프로필에 적용).
 
 ## 관련 문서
 

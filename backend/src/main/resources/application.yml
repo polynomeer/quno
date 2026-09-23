@@ -1,6 +1,8 @@
 spring:
   application:
     name: qunobackend
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   datasource:
     hikari:
       # 기본값(30s)이면 PostgreSQL 장애 시 헬스체크·API 요청이 모두 30초씩 멈춘 뒤에야 실패로
@@ -58,3 +60,9 @@ sentry:
   # 빈 값이면 SDK가 스스로 비활성화된다(Sentry 공식 동작) — 계정 개설·DSN 발급은 사람이 할 일
   # (production-readiness.md A)이라 이 값이 없어도 기동에 지장이 없어야 한다.
   dsn: ""
+
+server:
+  # SIGTERM을 받아도 처리 중인 요청은 끝까지 완료한 뒤 종료한다 — 명시하지 않아도 이미 이렇게
+  # 동작하고 있었지만(장애 시나리오 E1), 향후 Spring Boot 업그레이드로 기본값이 바뀌어도 조용히
+  # 회귀하지 않도록 명시적으로 고정한다.
+  shutdown: graceful
