@@ -33,7 +33,7 @@
 - [x] A2. 정상 기동 후 PostgreSQL을 정지 — 이미 처리 중이던 요청과 새 요청 모두 어떤 응답(500? 503? 타임아웃?)을 받는지, `/actuator/health`가 즉시 `DOWN`으로 바뀌는지
 - [x] A3. MongoDB 정지 — 런북 주장("Live Chat 메시지 저장만 영향")대로 질문 작성/답변/검색/투표 등 Mongo를 안 쓰는 기능이 실제로 전부 정상인지, Live Chat 메시지 전송 시도는 어떤 에러가 나는지
 - [x] A4. Redis 정지 — 런북 주장("Live Chat 접속자 표시·인증/일반 API는 영향 없음")을 검증. 추가로 Rate Limiting(Bucket4j, 인메모리)과 조직 검색 캐시(Redis cache-aside)가 실제로 Redis 장애와 무관하게 동작하는지 — 특히 캐시 read가 Redis 장애 시 예외를 던지는지 DB로 우회하는지 확인(코드 리뷰로는 아직 확인 안 됨)
-- [ ] A5. Mailpit(SMTP) 정지 — Verified Organization 이메일 인증 요청 시 재시도 로직(ADR-0046)이 실제로 3회 재시도하는지, 최종 실패 시 사용자에게 어떤 에러 메시지가 가는지
+- [x] A5. Mailpit(SMTP) 정지 — Verified Organization 이메일 인증 요청 시 재시도 로직(ADR-0046)이 실제로 3회 재시도하는지, 최종 실패 시 사용자에게 어떤 에러 메시지가 가는지
 
 ### B. 지연과 타임아웃
 
@@ -131,6 +131,14 @@
 - **관찰**: 로그인(200, 160ms)과 태그 조회(200, 13ms)는 예상대로 Redis와 무관하게 즉시 정상 — Explore 서브에이전트로 `RateLimitFilter`(`ConcurrentHashMap` 기반 순수 인메모리, `production-readiness.md` B-2가 이미 알려진 단순화로 남겨둠)를 먼저 확인해 근거를 세웠다. 반면 `GET /api/v1/organizations?q=quno`는 즉시(4.6ms) `HTTP:500`(`INTERNAL_ERROR`) — `redisTemplate.opsForValue().get()`이 `RedisSystemException`을 그대로 던졌다. 같은 패턴을 쓰는 `DashboardRepositoryAdapter`와, 로그 스택트레이스로 추가 발견한 `SpikeDetectionRepositoryAdapter`(호출 경로: `GetDashboardUseCase` → `GetActivityFeedUseCase` → `SpikeDetectionRepositoryAdapter.findSpikingTags`)도 `GET /api/v1/dashboard`에서 동일하게 `RedisConnectionFailureException`으로 500이 났다. 세 곳 모두 DB에 완전한 정답이 있는 cache-aside 구조였는데도 캐시 실패가 기능 전체를 죽였다.
 - **판정**: PARTIAL(Rate Limiting/일반 API 격리는 PASS, 캐시-aside 3곳은 FAIL) → 조치 후 PASS
 - **발견 및 조치**: `infrastructure/persistence/redis/RedisCacheSupport.kt`에 `safeCacheGet`/`safeCacheSet` 확장 함수(`DataAccessException`을 잡아 캐시 미스로 취급)를 추가하고, `OrganizationRepositoryAdapter`/`DashboardRepositoryAdapter`/`SpikeDetectionRepositoryAdapter` 세 곳의 직접 호출을 전부 교체했다. **수정 후 동일하게 재현**한 결과 `GET /api/v1/organizations?q=quno`(200, 45ms), `GET /api/v1/dashboard`(200, 377ms) 모두 DB 폴백으로 정상 응답함을 확인했다. Redis가 유일한 원본인 `RedisLiveChatPresenceTracker`(Live Chat 접속자 표시)는 의도적으로 제외했다 — 이건 런북이 이미 예상한 "영향받는 게 정상"인 부분이다. [ADR-0056](../architecture/decisions/0056-redis-cache-aside-graceful-degradation.md)으로 남겼다.
+
+### A5. Mailpit(SMTP) 정지
+
+- **가설**: [ADR-0046](../architecture/decisions/0046-reliability-account-withdrawal-data-export-n-plus-1.md)이 도입한 이메일 발송 재시도 로직이 실제로 3회 시도하고, 최종 실패 시 사용자에게 어떤 형태로든 응답이 가야 한다(무한 대기가 아니어야 한다).
+- **주입 방법**: Mailpit이 정상일 때 `POST /api/v1/organizations/verify-email`(`{"email":"demo@quno.dev"}`)로 기준 응답(200)을 확인한 뒤 `docker compose stop mailpit`으로 정지시키고 동일 요청을 재호출.
+- **관찰**: Mailpit 정지 후 `HTTP:500`(`INTERNAL_ERROR`)이 **1.57초** 만에 왔다 — `SmtpVerificationEmailSender.sendWithRetry`(`backend/src/main/kotlin/.../infrastructure/external/SmtpVerificationEmailSender.kt:32`)가 `MAX_ATTEMPTS=3`, 지수 아닌 선형 백오프(`RETRY_DELAY_MS(500) * attempt`, 즉 500ms→1000ms)로 정확히 3회 시도한 뒤 마지막 예외를 그대로 던졌다(로그에서 `Connection refused` 5회 확인 — 3회는 재시도 자체, 나머지는 Mailpit actuator 헬스 폴링). 최종 에러는 이메일 관련임을 알 수 없는 범용 `INTERNAL_ERROR` 메시지였지만, 코드 주석("인증 메일 발송은 재시도해도 안전하다")대로 인증 요청 자체(코드 생성·DB 저장)는 이미 커밋된 상태라 사용자가 같은 이메일로 재요청하면 새 코드가 이전 코드를 대체한다 — 무한 대기나 좀비 상태 없이 안전하게 재시도 가능한 실패 모드였다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. 재시도 3회, 최종 실패까지 총 1.57초(선형 백오프 1.5초 + 즉시 실패하는 연결거부 3회)로 사용자를 오래 붙잡지 않았고, 실패해도 재요청으로 복구 가능한 안전한 상태였다. 에러 메시지가 범용적인 점은 다른 모든 `INTERNAL_ERROR` 응답과 동일한 기존 관례([GlobalExceptionHandler](../../backend/src/main/kotlin/com/quno/qunobackend/interfaces/api/common/GlobalExceptionHandler.kt))라 이번 범위에서 별도로 고치지 않았다. Mailpit은 검증 후 재기동해 원상 복구했다.
 
 ## 관련 문서
 
