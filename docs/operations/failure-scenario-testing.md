@@ -46,7 +46,7 @@
 
 ### C. 부하와 레이트 리미팅
 
-- [ ] C1. 로그인 엔드포인트에 짧은 시간 안에 반복 요청을 보내 Rate Limiting(prod 기준 분당 10회)이 로컬 프로필에서는 사실상 무제한임을 확인 → prod 프로필로 임시 기동해 실제로 429가 11번째부터 나오는지, 1분 경과 후 다시 허용되는지
+- [x] C1. 로그인 엔드포인트에 짧은 시간 안에 반복 요청을 보내 Rate Limiting(prod 기준 분당 10회)이 로컬 프로필에서는 사실상 무제한임을 확인 → prod 프로필로 임시 기동해 실제로 429가 11번째부터 나오는지, 1분 경과 후 다시 허용되는지
 - [ ] C2. k6로 순간적으로 동시 요청 스파이크(예: VUs 50, 5초)를 짧게 걸어 응답 지연·에러율이 [production-readiness.md](../product/production-readiness.md) B-5가 검증한 정상 부하(VUs=3)와 어떻게 달라지는지
 - [ ] C3. 같은 질문에 대한 동시 리비전 요청을 실제 HTTP 레벨(curl 병렬 실행 또는 k6)로 폭주시켜, 단위 테스트(`ReviseQuestionConcurrencyIntegrationTest`)가 이미 검증한 락 방어가 실제 서버 스레드 풀 위에서도 동일하게 버전 번호 중복 없이 동작하는지
 
@@ -194,6 +194,14 @@
 - **관찰**: 정확히 **10.30초** 후 `HTTP:500`(`INTERNAL_ERROR`)이 왔다 — 코드에 명시된 `readTimeout=10000ms`가 그대로 발동한 것이다. `TossPaymentGateway.confirm()`은 `RestClientResponseException`(4xx/5xx 응답)만 잡아 `PaymentConfirmationFailedException`으로 바꾸는데, 타임아웃은 `ResourceAccessException`이라 이 catch에 안 걸리고 그대로 위로 전파돼 `GlobalExceptionHandler`의 범용 500이 됐다 — 하지만 `ConfirmDirectAskPaymentUseCase.execute()`가 `@Transactional`이고 `directAskPaymentRepository.save(payment.confirm(...))`가 Toss 호출 *이후*에 실행되므로, 어떤 예외 타입이든 트랜잭션이 통째로 롤백돼 `direct_ask_payments.status`가 계속 `PENDING`으로 남아 있음을 DB에서 직접 확인했다(재시도 시 `PaymentAlreadyProcessedException` 가드에도 안 걸림 — 안전하게 재시도 가능).
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. 타임아웃이 설정대로 작동하고, 실패해도 결제 상태가 어중간하게 남지 않아 D1/D2가 우려하는 "좀비 상태"가 되지 않음을 확인했다. `ResourceAccessException`을 `RestClientResponseException`과 함께 잡아 `PaymentConfirmationFailedException`으로 통일하면 에러 메시지 일관성은 조금 나아지겠지만, 트랜잭션 안전성에는 차이가 없어(Spring 기본 롤백 규칙이 unchecked exception 전체에 적용됨) 이번 범위에서는 고치지 않았다. 목 서버와 재정의한 `api-base-url`은 검증 후 원상 복구했다.
+
+### C1. 로그인 엔드포인트 Rate Limiting (prod 기준 값)
+
+- **가설**: 로컬 프로필 기본값(`capacity: 1000`)은 사실상 무제한이라 개발 중 E2E 테스트에 방해가 안 되지만, prod 값(`capacity: 10`, `refill-period-seconds: 60`)을 적용하면 11번째 요청부터 `429`가 나야 하고, 일정 시간 뒤에는 다시 허용돼야 한다.
+- **주입 방법**: 전체 `prod` 프로필로 전환하지 않고(필수 환경변수 다수 때문에 로컬에서 기동 불가) `quno.rate-limit.capacity`/`refill-period-seconds`만 prod 값(10, 60)으로 오버라이드해 `local` 프로필로 재기동. `POST /api/v1/auth/login`(틀린 비밀번호)을 12회 연속 호출.
+- **관찰**: 1~10번째 요청은 전부 `HTTP:401`(비밀번호가 틀렸을 뿐 레이트리밋에는 안 걸림)이었고, **11번째부터 정확히** `HTTP:429`(`TOO_MANY_REQUESTS`)로 바뀌었다 — `capacity=10`이 정확히 적용됨을 확인했다. 이어서 **7초**만 기다린 뒤 재시도하니 2건이 다시 `401`(통과)로, 3번째가 다시 `429`였다 — Bucket4j의 `refillGreedy`가 "60초마다 10개를 한 번에 채우는" 방식이 아니라 시간에 비례해 점진적으로 토큰을 채우는 방식이라, 원래 계획 문서가 표현한 "1분 경과 후 다시 허용"이라는 문구보다 훨씬 빨리(이론상 토큰 1개당 약 6초) 부분적으로 회복된다는 것이 실측으로 드러났다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음, 오히려 계획 문서의 가설(1분 뒤 회복)보다 실제 동작(수 초 단위로 점진적 회복)이 사용자에게 더 유리한 방향이었다. 코드 수정은 필요 없어 관찰 내용만 기록해둔다. 검증 후 rate-limit 오버라이드 없이 재기동해 원상 복구했다.
 
 ## 관련 문서
 
