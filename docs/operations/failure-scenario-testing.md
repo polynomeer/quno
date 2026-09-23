@@ -32,7 +32,7 @@
 - [x] A1. PostgreSQL 정지 상태에서 백엔드를 새로 기동 — 기동 자체가 실패하는지, 실패 메시지가 원인을 알 수 있게 나오는지
 - [x] A2. 정상 기동 후 PostgreSQL을 정지 — 이미 처리 중이던 요청과 새 요청 모두 어떤 응답(500? 503? 타임아웃?)을 받는지, `/actuator/health`가 즉시 `DOWN`으로 바뀌는지
 - [x] A3. MongoDB 정지 — 런북 주장("Live Chat 메시지 저장만 영향")대로 질문 작성/답변/검색/투표 등 Mongo를 안 쓰는 기능이 실제로 전부 정상인지, Live Chat 메시지 전송 시도는 어떤 에러가 나는지
-- [ ] A4. Redis 정지 — 런북 주장("Live Chat 접속자 표시·인증/일반 API는 영향 없음")을 검증. 추가로 Rate Limiting(Bucket4j, 인메모리)과 조직 검색 캐시(Redis cache-aside)가 실제로 Redis 장애와 무관하게 동작하는지 — 특히 캐시 read가 Redis 장애 시 예외를 던지는지 DB로 우회하는지 확인(코드 리뷰로는 아직 확인 안 됨)
+- [x] A4. Redis 정지 — 런북 주장("Live Chat 접속자 표시·인증/일반 API는 영향 없음")을 검증. 추가로 Rate Limiting(Bucket4j, 인메모리)과 조직 검색 캐시(Redis cache-aside)가 실제로 Redis 장애와 무관하게 동작하는지 — 특히 캐시 read가 Redis 장애 시 예외를 던지는지 DB로 우회하는지 확인(코드 리뷰로는 아직 확인 안 됨)
 - [ ] A5. Mailpit(SMTP) 정지 — Verified Organization 이메일 인증 요청 시 재시도 로직(ADR-0046)이 실제로 3회 재시도하는지, 최종 실패 시 사용자에게 어떤 에러 메시지가 가는지
 
 ### B. 지연과 타임아웃
@@ -123,6 +123,14 @@
 - **관찰**: Mongo 정지 후 `/api/v1/questions/887`(200, 46ms), `/api/v1/tags`(200, 11ms), `/api/v1/search?q=kotlin`(200, 59ms) 모두 즉시 정상 응답 — 런북의 "Mongo 미사용 기능은 무관" 주장은 확인됨(PASS). 하지만 `GET /api/v1/live-chat/2/messages`는 **수정 전** 정확히 30초 뒤에야 `HTTP:500`(`INTERNAL_ERROR`)을 반환했다 — A2에서 본 것과 같은 패턴(드라이버 기본 타임아웃 30초, 이번엔 MongoDB 드라이버의 `serverSelectionTimeoutMS`)이었다. `/actuator/health`의 `mongo` 컴포넌트도 30초 뒤에야 `DOWN`으로 바뀌었다.
 - **판정**: PARTIAL(비-Mongo 기능 격리는 PASS, 장애 감지 속도는 FAIL) → 조치 후 PASS
 - **발견 및 조치**: `infrastructure/config/MongoConfig.kt`에 `MongoClientSettingsBuilderCustomizer` 빈을 추가해 `serverSelectionTimeout`을 3초로 낮췄다. **수정 후 동일하게 재현**한 결과 `/api/v1/live-chat/2/messages`가 `HTTP:500 TIME:3.24s`, `/actuator/health`가 `HTTP:503 TIME:3.36s`로 단축됨을 확인했다. [ADR-0055](../architecture/decisions/0055-mongo-server-selection-timeout-fast-fail.md)로 남겼다. 테스트에 쓴 임시 Mongo 컨테이너(`quno-mongo-a3-test`)는 검증 후 삭제했다.
+
+### A4. Redis 정지
+
+- **가설**: 런북 주장대로 Rate Limiting(인메모리)과 인증/일반 API는 Redis 장애와 무관해야 하고, Live Chat 접속자 표시만 영향받아야 한다. 코드 리뷰로 미확인이었던 지점 — 조직 검색 등 Redis cache-aside 캐시가 Redis 장애 시 예외를 던지는지 DB로 우회하는지 — 을 실제로 확인한다.
+- **주입 방법**: `docker compose stop redis`. `POST /api/v1/auth/login`(레이트리밋 필터 경유), `GET /api/v1/tags`(Mongo/Redis 미사용), `GET /api/v1/organizations?q=quno`(조직 검색 캐시), `GET /api/v1/dashboard`(인기 질문/트렌딩 태그 + qunobot 스파이크 감지 캐시)를 순서대로 호출.
+- **관찰**: 로그인(200, 160ms)과 태그 조회(200, 13ms)는 예상대로 Redis와 무관하게 즉시 정상 — Explore 서브에이전트로 `RateLimitFilter`(`ConcurrentHashMap` 기반 순수 인메모리, `production-readiness.md` B-2가 이미 알려진 단순화로 남겨둠)를 먼저 확인해 근거를 세웠다. 반면 `GET /api/v1/organizations?q=quno`는 즉시(4.6ms) `HTTP:500`(`INTERNAL_ERROR`) — `redisTemplate.opsForValue().get()`이 `RedisSystemException`을 그대로 던졌다. 같은 패턴을 쓰는 `DashboardRepositoryAdapter`와, 로그 스택트레이스로 추가 발견한 `SpikeDetectionRepositoryAdapter`(호출 경로: `GetDashboardUseCase` → `GetActivityFeedUseCase` → `SpikeDetectionRepositoryAdapter.findSpikingTags`)도 `GET /api/v1/dashboard`에서 동일하게 `RedisConnectionFailureException`으로 500이 났다. 세 곳 모두 DB에 완전한 정답이 있는 cache-aside 구조였는데도 캐시 실패가 기능 전체를 죽였다.
+- **판정**: PARTIAL(Rate Limiting/일반 API 격리는 PASS, 캐시-aside 3곳은 FAIL) → 조치 후 PASS
+- **발견 및 조치**: `infrastructure/persistence/redis/RedisCacheSupport.kt`에 `safeCacheGet`/`safeCacheSet` 확장 함수(`DataAccessException`을 잡아 캐시 미스로 취급)를 추가하고, `OrganizationRepositoryAdapter`/`DashboardRepositoryAdapter`/`SpikeDetectionRepositoryAdapter` 세 곳의 직접 호출을 전부 교체했다. **수정 후 동일하게 재현**한 결과 `GET /api/v1/organizations?q=quno`(200, 45ms), `GET /api/v1/dashboard`(200, 377ms) 모두 DB 폴백으로 정상 응답함을 확인했다. Redis가 유일한 원본인 `RedisLiveChatPresenceTracker`(Live Chat 접속자 표시)는 의도적으로 제외했다 — 이건 런북이 이미 예상한 "영향받는 게 정상"인 부분이다. [ADR-0056](../architecture/decisions/0056-redis-cache-aside-graceful-degradation.md)으로 남겼다.
 
 ## 관련 문서
 

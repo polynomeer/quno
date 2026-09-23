@@ -4,6 +4,8 @@ import com.quno.qunobackend.domain.organization.Organization
 import com.quno.qunobackend.domain.organization.OrganizationRepository
 import com.quno.qunobackend.infrastructure.persistence.jpa.entity.OrganizationJpaEntity
 import com.quno.qunobackend.infrastructure.persistence.jpa.repository.OrganizationJpaRepository
+import com.quno.qunobackend.infrastructure.persistence.redis.safeCacheGet
+import com.quno.qunobackend.infrastructure.persistence.redis.safeCacheSet
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
@@ -48,11 +50,13 @@ class OrganizationRepositoryAdapter(
      * `GET /organizations`가 공개 엔드포인트(ADR-0042)라 캐싱 이득이 실제 트래픽에 반영된다
      * (quality-improvement-plan.md Q-2). 도메인 객체(`Organization`)는 private 생성자라
      * Jackson이 바로 역직렬화할 수 없어, [CachedOrganization]이라는 평범한 데이터 클래스를
-     * 캐시에 넣고 읽을 때 `reconstitute`로 되돌린다.
+     * 캐시에 넣고 읽을 때 `reconstitute`로 되돌린다. Redis가 죽어도 검색 자체는 DB로
+     * 대체돼야 하므로 캐시 read/write는 [safeCacheGet]/[safeCacheSet]로 감싼다(장애 시나리오
+     * A4, ADR-0056) — 캐시는 최적화이지 하드 디펜던시가 아니다.
      */
     override fun search(query: String?, limit: Int): List<Organization> {
         val key = "$SEARCH_CACHE_KEY:${query.orEmpty()}:$limit"
-        redisTemplate.opsForValue().get(key)?.let { cached ->
+        redisTemplate.safeCacheGet(key)?.let { cached ->
             return objectMapper.readValue(cached, Array<CachedOrganization>::class.java).map { it.toDomain() }
         }
 
@@ -65,7 +69,7 @@ class OrganizationRepositoryAdapter(
         val result = entities.map { it.toDomain() }
 
         val cacheable = result.map { CachedOrganization(it.id!!, it.name, it.slug, it.description, it.createdBy, it.emailDomain, it.createdAt) }
-        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(cacheable), CACHE_TTL)
+        redisTemplate.safeCacheSet(key, objectMapper.writeValueAsString(cacheable), CACHE_TTL)
         return result
     }
 
