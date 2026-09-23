@@ -31,7 +31,7 @@
 
 - [x] A1. PostgreSQL 정지 상태에서 백엔드를 새로 기동 — 기동 자체가 실패하는지, 실패 메시지가 원인을 알 수 있게 나오는지
 - [x] A2. 정상 기동 후 PostgreSQL을 정지 — 이미 처리 중이던 요청과 새 요청 모두 어떤 응답(500? 503? 타임아웃?)을 받는지, `/actuator/health`가 즉시 `DOWN`으로 바뀌는지
-- [ ] A3. MongoDB 정지 — 런북 주장("Live Chat 메시지 저장만 영향")대로 질문 작성/답변/검색/투표 등 Mongo를 안 쓰는 기능이 실제로 전부 정상인지, Live Chat 메시지 전송 시도는 어떤 에러가 나는지
+- [x] A3. MongoDB 정지 — 런북 주장("Live Chat 메시지 저장만 영향")대로 질문 작성/답변/검색/투표 등 Mongo를 안 쓰는 기능이 실제로 전부 정상인지, Live Chat 메시지 전송 시도는 어떤 에러가 나는지
 - [ ] A4. Redis 정지 — 런북 주장("Live Chat 접속자 표시·인증/일반 API는 영향 없음")을 검증. 추가로 Rate Limiting(Bucket4j, 인메모리)과 조직 검색 캐시(Redis cache-aside)가 실제로 Redis 장애와 무관하게 동작하는지 — 특히 캐시 read가 Redis 장애 시 예외를 던지는지 DB로 우회하는지 확인(코드 리뷰로는 아직 확인 안 됨)
 - [ ] A5. Mailpit(SMTP) 정지 — Verified Organization 이메일 인증 요청 시 재시도 로직(ADR-0046)이 실제로 3회 재시도하는지, 최종 실패 시 사용자에게 어떤 에러 메시지가 가는지
 
@@ -115,6 +115,14 @@
 - **관찰**: **수정 전**에는 둘 다 정확히 30초 뒤에야 응답이 왔다 — `/actuator/health`가 `HTTP:503 TIME:30.035s`(`db.status: DOWN`, `CannotGetJdbcConnectionException`), `/api/v1/tags`가 `HTTP:500 TIME:30.035s`(`{"code":"INTERNAL_ERROR","message":"예기치 못한 오류가 발생했습니다."}`). 두 응답이 같은 30.035초라는 점에서 원인이 동일함(HikariCP `connectionTimeout` 기본값 30초)을 특정했다. `/actuator/health` 자체가 30초씩 걸리는 것은 오케스트레이터 헬스체크 probe의 일반적인 타임아웃(5~10초)보다 길어, probe가 먼저 타임아웃돼 "정상 프로세스인데 응답 없음"으로 오판될 위험이 있었다.
 - **판정**: FAIL → 조치 후 PASS
 - **발견 및 조치**: `spring.datasource.hikari.connection-timeout`이 어느 프로필에도 설정돼 있지 않아 HikariCP 기본값(30초)이 그대로 쓰이고 있었다. `backend/src/main/resources/application.yml`에 `connection-timeout: 3000`(3초)을 추가해 모든 프로필에 적용했다. **수정 후 동일한 방법으로 재현**한 결과 `/actuator/health`가 `HTTP:503 TIME:3.038s`, `/api/v1/tags`가 `HTTP:500 TIME:3.113s`로 단축됨을 확인했다. Postgres를 다시 살리자 별도 재시작 없이 `db.status`가 자동으로 `UP`으로 복귀함도 확인(HikariCP가 자체적으로 재연결). 정책 결정이라 [ADR-0054](../architecture/decisions/0054-hikari-connection-timeout-fast-fail.md)로 남겼다.
+
+### A3. MongoDB 정지
+
+- **가설**: 런북 2.2절 주장대로 Mongo 장애는 Live Chat 메시지 관련 기능에만 영향을 주고, 질문/답변/검색/투표 등 나머지 기능은 정상이어야 한다. 영향받는 범위 안에서는 명확한 에러가 빠르게 와야 한다.
+- **주입 방법**: 로컬 27017 포트가 이 머신에서 상시 다른 프로젝트 컨테이너에 점유돼 있어(`monticker-mongodb`), Quno 자체 Mongo로 "정상 → 장애"를 온전히 재현하기 위해 임시로 `docker run -d --name quno-mongo-a3-test -p 27018:27017 mongo:7`을 띄우고 `SPRING_MONGODB_PORT=27018`로 백엔드를 재기동해 정상 동작을 먼저 확인한 뒤, `docker stop quno-mongo-a3-test`로 정지시켰다. 질문 887에 라이브챗 룸(`POST /api/v1/questions/887/live-chat`, roomId=2)을 만들고 `GET /api/v1/live-chat/2/messages`(Mongo 조회)와 `GET /api/v1/questions/887`·`GET /api/v1/tags`·`GET /api/v1/search?q=kotlin`(Mongo 미사용)을 비교했다.
+- **관찰**: Mongo 정지 후 `/api/v1/questions/887`(200, 46ms), `/api/v1/tags`(200, 11ms), `/api/v1/search?q=kotlin`(200, 59ms) 모두 즉시 정상 응답 — 런북의 "Mongo 미사용 기능은 무관" 주장은 확인됨(PASS). 하지만 `GET /api/v1/live-chat/2/messages`는 **수정 전** 정확히 30초 뒤에야 `HTTP:500`(`INTERNAL_ERROR`)을 반환했다 — A2에서 본 것과 같은 패턴(드라이버 기본 타임아웃 30초, 이번엔 MongoDB 드라이버의 `serverSelectionTimeoutMS`)이었다. `/actuator/health`의 `mongo` 컴포넌트도 30초 뒤에야 `DOWN`으로 바뀌었다.
+- **판정**: PARTIAL(비-Mongo 기능 격리는 PASS, 장애 감지 속도는 FAIL) → 조치 후 PASS
+- **발견 및 조치**: `infrastructure/config/MongoConfig.kt`에 `MongoClientSettingsBuilderCustomizer` 빈을 추가해 `serverSelectionTimeout`을 3초로 낮췄다. **수정 후 동일하게 재현**한 결과 `/api/v1/live-chat/2/messages`가 `HTTP:500 TIME:3.24s`, `/actuator/health`가 `HTTP:503 TIME:3.36s`로 단축됨을 확인했다. [ADR-0055](../architecture/decisions/0055-mongo-server-selection-timeout-fast-fail.md)로 남겼다. 테스트에 쓴 임시 Mongo 컨테이너(`quno-mongo-a3-test`)는 검증 후 삭제했다.
 
 ## 관련 문서
 

@@ -79,3 +79,4 @@
 | [0052](0052-ux-responsive-header-shared-form-error.md) | 전역 헤더를 모바일 햄버거 메뉴로 반응형화, 27곳에 중복된 폼 제출 에러 표시를 `FormError` 컴포넌트로 통일(role="alert" 추가), 폼별 실시간 검증 통일은 후속으로 이연 | 승인됨 |
 | [0053](0053-i18n-core-flow-ko-en-no-routing.md) | 국제화는 경로 기반 라우팅 없이 클라이언트 Context+`localStorage`로, 외부 라이브러리 없이 홈/로그인/회원가입/질문 작성 4곳만 한/영 지원, 나머지 화면과 백엔드 에러 메시지는 범위 밖 | 승인됨 |
 | [0054](0054-hikari-connection-timeout-fast-fail.md) | 장애 시나리오 테스트(A2) 중 HikariCP connection-timeout 기본값(30s)이 DB 장애 시 헬스체크·API 응답을 30초씩 지연시키는 것을 발견, 3초로 단축 | 승인됨 |
+| [0055](0055-mongo-server-selection-timeout-fast-fail.md) | 장애 시나리오 테스트(A3) 중 MongoDB 드라이버 serverSelectionTimeout 기본값(30s)도 같은 문제를 일으키는 것을 발견, `MongoClientSettingsBuilderCustomizer`로 3초로 단축 | 승인됨 |
