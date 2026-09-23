@@ -52,8 +52,8 @@
 
 ### D. 외부 의존성(결제) 실패
 
-- [ ] D1. Toss 결제 확인 요청에 목 서버가 500을 반환하도록 만들어, `ConfirmDirectAskPaymentUseCase`가 사용자에게 어떤 응답을 주는지, `DirectAskPayment` 상태가 어중간하게 남는지
-- [ ] D2. 결제 확인 도중(요청은 갔지만 응답 전) 백엔드를 강제 종료 → 재기동 후 그 결제/요청의 상태가 일관적인지(멱등하게 재시도 가능한지, 아니면 영구히 `AWAITING_PAYMENT`로 남는지 — 이미 ADR-0037이 "만료 처리 없음"을 알려진 단순화로 남겨뒀는데, 그 상태에서 실제로 뭐가 보이는지 확인)
+- [x] D1. Toss 결제 확인 요청에 목 서버가 500을 반환하도록 만들어, `ConfirmDirectAskPaymentUseCase`가 사용자에게 어떤 응답을 주는지, `DirectAskPayment` 상태가 어중간하게 남는지
+- [x] D2. 결제 확인 도중(요청은 갔지만 응답 전) 백엔드를 강제 종료 → 재기동 후 그 결제/요청의 상태가 일관적인지(멱등하게 재시도 가능한지, 아니면 영구히 `AWAITING_PAYMENT`로 남는지 — 이미 ADR-0037이 "만료 처리 없음"을 알려진 단순화로 남겨뒀는데, 그 상태에서 실제로 뭐가 보이는지 확인)
 
 ### E. 프로세스 생명주기
 
@@ -242,6 +242,22 @@
 - **관찰**: 재기동 5초 이내(스케줄러 주기 2~3회분)에 8건 모두 `published_at`이 채워졌다(미처리 0건). 다만 `actorId == questionAuthorId`로 만든 페이로드라 알림은 0건이었는데, 이게 버그인지 설계인지 확실히 하려고 `actorId`를 다른 사용자(1418)로 바꾼 이벤트 1건을 추가로 넣어보니 정확히 1건의 알림이 생성됐다 — `dispatch()`의 "행위자 본인은 제외" 로직(`actorId?.let(recipients::remove)`)이 의도대로 작동한 것이지 유실이 아니었다.
 - **판정**: PASS
 - **발견 및 조치**: 버그 없음. 백로그가 유실·중복 없이 전부 처리됐고, 알림이 0건이었던 것도 실제로는 "자기 행동에는 알림 안 감" 설계가 정확히 반영된 결과임을 별도 이벤트로 교차 검증해 확인했다.
+
+### D1. Toss 결제 확인 요청에 목 서버가 500 응답
+
+- **가설**: Toss가 결제를 거절(500 응답)하면 `ConfirmDirectAskPaymentUseCase`가 사용자에게 이유를 알 수 있는 응답을 주고, `DirectAskPayment` 상태가 `PENDING`도 `PAID`도 아닌 어중간한 상태로 남지 않아야 한다.
+- **주입 방법**: B3에서 만든 미확정 결제(orderId `e766fe08-...`, 여전히 `PENDING`)를 재사용. 항상 `HTTP 500`과 카드사 거절 사유를 반환하는 로컬 목 서버를 세우고 `POST /direct-asks/payments/confirm`을 호출.
+- **관찰**: `HTTP:409 CONFLICT`가 즉시(63ms) 왔고, 메시지에 Toss가 실제로 응답한 원문("카드사에서 결제를 거절했습니다.")이 그대로 포함돼 있었다 — `TossPaymentGateway`가 `RestClientResponseException`을 잡아 `PaymentConfirmationFailedException`으로 감싸며 원인 메시지를 보존하기 때문이다. `direct_ask_payments.status`는 여전히 `PENDING`으로, 어중간한 상태 없이 안전하게 재시도 가능했다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. 결제 거절이 명확한 사유와 함께 안전한 상태로 실패했다.
+
+### D2. 결제 확인 요청 도중(응답 전) 강제 종료
+
+- **가설**: Toss 응답을 기다리는 도중 프로세스가 죽어도, 재기동 후 같은 결제를 다시 시도하면 멱등하게 성공해야 한다 — `AWAITING_PAYMENT`에 영원히 갇히면 안 된다.
+- **주입 방법**: 15초 지연 응답 목 서버로 같은 결제(`e766fe08-...`)의 확인 요청을 보내고, Toss 응답을 기다리는 도중(3초 후) 백엔드에 `kill -9`. 재기동 후 항상 성공 응답을 주는 목 서버로 바꿔 같은 `orderId`로 재시도.
+- **관찰**: kill -9 시점의 curl은 `HTTP:000`(응답 없이 연결 끊김)이었고, 그 직후 DB를 확인하니 `direct_ask_payments.status`가 여전히 `PENDING`이었다(트랜잭션 롤백, E2와 같은 메커니즘). 재기동 후 같은 `orderId`/`amount`로 재시도하자 `HTTP:200`으로 정상 성공했고, `direct_ask_payments.status`는 `PAID`로, `direct_ask_requests.status`는 `PENDING`(결제 완료 후 대상자 응답 대기 상태)으로 정확히 전이됐다 — `PaymentAlreadyProcessedException` 같은 가드에 걸리지 않고 깔끔하게 멱등한 재시도가 성공했다.
+- **판정**: PASS
+- **발견 및 조치**: 버그 없음. `@Transactional`과 "PENDING일 때만 진행" 가드(`ConfirmDirectAskPaymentUseCase`)의 조합이 결제 확인 도중의 강제 종료에도 정확히 안전한 재시도를 보장했다. 테스트에 쓴 목 서버들과 재정의한 `api-base-url`은 검증 후 전부 원상 복구했다.
 
 ## 관련 문서
 
