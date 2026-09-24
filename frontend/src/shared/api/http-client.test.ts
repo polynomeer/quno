@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { httpClient } from "./http-client";
-import { ApiError } from "./api-error";
+import { ApiError, RequestTimeoutError } from "./api-error";
 import { tokenStorage } from "@/shared/lib/token-storage";
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -83,5 +83,32 @@ describe("httpClient", () => {
     const result = await httpClient.delete("/api/v1/me");
 
     expect(result).toBeUndefined();
+  });
+
+  it("passes a default AbortSignal to fetch so a hung dependency can't hang the UI forever (see ADR-0058)", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+
+    await httpClient.get("/api/v1/me");
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("surfaces a client-side timeout as a distinguishable RequestTimeoutError, not an ApiError", async () => {
+    // AbortSignal.timeout() rejects fetch with a DOMException named "TimeoutError" — simulate
+    // that directly rather than waiting out the real 15s default timeout.
+    vi.mocked(fetch).mockRejectedValueOnce(new DOMException("The operation timed out.", "TimeoutError"));
+
+    const promise = httpClient.get("/api/v1/questions/1");
+
+    await expect(promise).rejects.toBeInstanceOf(RequestTimeoutError);
+    await expect(promise).rejects.not.toBeInstanceOf(ApiError);
+  });
+
+  it("re-throws non-timeout fetch failures (e.g. the backend is fully unreachable) unchanged", async () => {
+    const networkError = new TypeError("Failed to fetch");
+    vi.mocked(fetch).mockRejectedValueOnce(networkError);
+
+    await expect(httpClient.get("/api/v1/me")).rejects.toBe(networkError);
   });
 });

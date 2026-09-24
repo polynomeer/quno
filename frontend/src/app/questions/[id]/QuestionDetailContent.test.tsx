@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QuestionDetailContent } from "./QuestionDetailContent";
+import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useQuestion } from "@/features/question/hooks/useQuestion";
 import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestions";
@@ -103,13 +104,53 @@ describe("QuestionDetailContent", () => {
     expect(screen.queryByRole("heading")).not.toBeInTheDocument();
   });
 
-  it("shows an error message when the question fails to load", () => {
+  it("shows a not-found message when the question genuinely doesn't exist (404)", () => {
     vi.mocked(useSession).mockReturnValue({ data: undefined, isLoading: false } as ReturnType<typeof useSession>);
-    vi.mocked(useQuestion).mockReturnValue({ data: undefined, isLoading: false, isError: true } as unknown as ReturnType<typeof useQuestion>);
+    vi.mocked(useQuestion).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new ApiError(404, "QUESTION_NOT_FOUND", "not found"),
+    } as unknown as ReturnType<typeof useQuestion>);
 
     render(<QuestionDetailContent questionId={10} />);
 
     expect(screen.getByText("질문을 찾을 수 없습니다.")).toBeInTheDocument();
+  });
+
+  // 장애 시나리오 F1(백엔드 완전 다운) — 연결 자체가 안 되면 fetch가 순수 TypeError를 던지고
+  // ApiError가 아니므로, "삭제된 질문"과는 다른 메시지를 보여줘야 한다.
+  it("shows a generic retry message when the question fails to load for a non-404 reason", () => {
+    vi.mocked(useSession).mockReturnValue({ data: undefined, isLoading: false } as ReturnType<typeof useSession>);
+    vi.mocked(useQuestion).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new TypeError("Failed to fetch"),
+    } as unknown as ReturnType<typeof useQuestion>);
+
+    render(<QuestionDetailContent questionId={10} />);
+
+    expect(screen.getByText("질문을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.")).toBeInTheDocument();
+    expect(screen.queryByText("질문을 찾을 수 없습니다.")).not.toBeInTheDocument();
+  });
+
+  // 장애 시나리오 F2 후속 — 클라이언트 자체 타임아웃(httpClient의 기본 AbortSignal.timeout)이
+  // 다른 실패와 구분되는 "시간 초과" 메시지로 보여야 한다.
+  it("shows a timeout-specific message when the request times out", () => {
+    vi.mocked(useSession).mockReturnValue({ data: undefined, isLoading: false } as ReturnType<typeof useSession>);
+    vi.mocked(useQuestion).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new RequestTimeoutError("Request to /api/v1/questions/10 timed out after 15000ms"),
+    } as unknown as ReturnType<typeof useQuestion>);
+
+    render(<QuestionDetailContent questionId={10} />);
+
+    expect(screen.getByText("요청 시간이 초과됐습니다. 네트워크 상태를 확인하고 다시 시도해주세요.")).toBeInTheDocument();
+    expect(screen.queryByText("질문을 찾을 수 없습니다.")).not.toBeInTheDocument();
+    expect(screen.queryByText("질문을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.")).not.toBeInTheDocument();
   });
 
   it("renders the question title and body once loaded", () => {

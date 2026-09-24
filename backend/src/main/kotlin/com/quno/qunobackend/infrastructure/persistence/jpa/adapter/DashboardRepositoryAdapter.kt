@@ -3,6 +3,8 @@ package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 import com.quno.qunobackend.domain.dashboard.DashboardRepository
 import com.quno.qunobackend.domain.dashboard.TagTrend
 import com.quno.qunobackend.infrastructure.persistence.jpa.repository.DashboardJpaRepository
+import com.quno.qunobackend.infrastructure.persistence.redis.safeCacheGet
+import com.quno.qunobackend.infrastructure.persistence.redis.safeCacheSet
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -13,7 +15,8 @@ import java.time.Duration
  * "Redis 캐시 (Phase 3.4)". Only the two sections that are the *same for every user*
  * (popular questions, trending tags) are cached; per-user sections (Ward updates, the
  * following-tags feed) are not, since staleness there reads as a correctness bug, not
- * just a slightly-behind trend.
+ * just a slightly-behind trend. Cache read/write go through [safeCacheGet]/[safeCacheSet]
+ * so a Redis outage falls back to the DB instead of failing the request (ADR-0056).
  */
 @Component
 class DashboardRepositoryAdapter(
@@ -24,24 +27,24 @@ class DashboardRepositoryAdapter(
 
     override fun findPopularQuestionIds(limit: Int): List<Long> {
         val key = "$POPULAR_QUESTIONS_KEY:$limit"
-        redisTemplate.opsForValue().get(key)?.let { cached ->
+        redisTemplate.safeCacheGet(key)?.let { cached ->
             return objectMapper.readValue(cached, Array<Long>::class.java).toList()
         }
 
         val result = jpaRepository.findPopularQuestionIds(limit)
-        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(result), CACHE_TTL)
+        redisTemplate.safeCacheSet(key, objectMapper.writeValueAsString(result), CACHE_TTL)
         return result
     }
 
     override fun findTrendingTags(limit: Int): List<TagTrend> {
         val key = "$TRENDING_TAGS_KEY:$limit"
-        redisTemplate.opsForValue().get(key)?.let { cached ->
+        redisTemplate.safeCacheGet(key)?.let { cached ->
             return objectMapper.readValue(cached, Array<TagTrend>::class.java).toList()
         }
 
         val result = jpaRepository.findTrendingTags(limit)
             .map { TagTrend(it.getId(), it.getName(), it.getSlug(), it.getQuestionCount()) }
-        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(result), CACHE_TTL)
+        redisTemplate.safeCacheSet(key, objectMapper.writeValueAsString(result), CACHE_TTL)
         return result
     }
 
