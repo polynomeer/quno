@@ -82,5 +82,6 @@
 | [0055](0055-mongo-server-selection-timeout-fast-fail.md) | 장애 시나리오 테스트(A3) 중 MongoDB 드라이버 serverSelectionTimeout 기본값(30s)도 같은 문제를 일으키는 것을 발견, `MongoClientSettingsBuilderCustomizer`로 3초로 단축 | 승인됨 |
 | [0056](0056-redis-cache-aside-graceful-degradation.md) | 장애 시나리오 테스트(A4) 중 조직 검색·대시보드·스파이크 감지 캐시가 Redis 장애 시 예외를 그대로 던져 기능 자체가 죽는 것을 발견, `safeCacheGet`/`safeCacheSet`로 DB 폴백 처리 | 승인됨 |
 | [0057](0057-explicit-graceful-shutdown.md) | 장애 시나리오 테스트(E1) 중 아무 설정 없이도 graceful shutdown이 동작하고 있음을 발견, `server.shutdown: graceful`을 명시적으로 고정해 프레임워크 기본값 변경에 대비 | 승인됨 |
-| [0058](0058-archunit-layering-guardrail.md) | 백엔드 코드 아키텍처 개선: system-architecture.md의 DDD 계층 규칙(위반 0건 확인)을 ArchUnit 테스트로 코드에 고정, driving adapter(스케줄러/WebSocket) 예외를 규칙에 반영 | 승인됨 |
-| [0059](0059-declarative-cache-for-value-object-caches.md) | 백엔드 아키텍처 개선: 값 객체를 캐싱하는 Dashboard/SpikeDetection은 `@Cacheable`로, 도메인 애그리거트(private 생성자)를 캐싱하는 Organization은 ADR-0056의 수동 cache-aside 그대로 유지 | 승인됨 |
+| [0058](0058-frontend-http-client-default-timeout.md) | 장애 시나리오 테스트(F2) 후속 — 프론트 `httpClient`에 클라이언트 자체 타임아웃이 전혀 없던 것을 발견, `AbortSignal.timeout(15s)`와 구분 가능한 `RequestTimeoutError`를 추가 | 승인됨 |
+| [0059](0059-archunit-layering-guardrail.md) | 백엔드 코드 아키텍처 개선: system-architecture.md의 DDD 계층 규칙(위반 0건 확인)을 ArchUnit 테스트로 코드에 고정, driving adapter(스케줄러/WebSocket) 예외를 규칙에 반영 | 승인됨 |
+| [0060](0060-declarative-cache-for-value-object-caches.md) | 백엔드 아키텍처 개선: 값 객체를 캐싱하는 Dashboard/SpikeDetection은 `@Cacheable`로, 도메인 애그리거트(private 생성자)를 캐싱하는 Organization은 ADR-0056의 수동 cache-aside 그대로 유지 | 승인됨 |

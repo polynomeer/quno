@@ -90,7 +90,7 @@ LayeringArchitectureTest > layers only depend in the documented direction() FAIL
 
 - 테스트 3개 신규 추가(348→351), 전부 통과.
 - 앞으로 레이어링을 어기는 코드는 `./gradlew test` 단계에서 특정 클래스·필드까지 정확히 짚어주는 에러로 즉시 드러난다.
-- 결정 자체는 [ADR-0058](../architecture/decisions/0058-archunit-layering-guardrail.md)에 남겼다.
+- 결정 자체는 [ADR-0059](../architecture/decisions/0059-archunit-layering-guardrail.md)에 남겼다.
 
 ### 다루지 않은 것 / 다음 후보
 
@@ -144,7 +144,7 @@ LayeringArchitectureTest > layers only depend in the documented direction() FAIL
 
 - `Dashboard`/`SpikeDetection` 세 캐시 메서드에서 캐시 키 조합·직렬화·TTL 상수·Redis 장애 처리 코드가 전부 사라지고 어노테이션 한 줄만 남았다.
 - `Organization`은 여전히 수동 방식이라 두 가지 캐싱 패턴이 공존한다 — "캐싱 대상이 순수 값 객체인가 도메인 애그리거트인가"가 어느 쪽을 쓸지 가르는 기준이다.
-- 결정 자체는 [ADR-0059](../architecture/decisions/0059-declarative-cache-for-value-object-caches.md)에 남겼고, [ADR-0056](../architecture/decisions/0056-redis-cache-aside-graceful-degradation.md)은 "부분 대체됨"으로 갱신했다.
+- 결정 자체는 [ADR-0060](../architecture/decisions/0060-declarative-cache-for-value-object-caches.md)에 남겼고, [ADR-0056](../architecture/decisions/0056-redis-cache-aside-graceful-degradation.md)은 "부분 대체됨"으로 갱신했다.
 
 ### 다루지 않은 것 / 다음 후보
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ApiError } from "@/shared/api/api-error";
+import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useQuestion } from "@/features/question/hooks/useQuestion";
 import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestions";
@@ -52,7 +52,11 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
 
   if (isError || !question) {
     const message =
-      error instanceof ApiError && error.status === 404 ? "질문을 찾을 수 없습니다." : "질문을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+      error instanceof ApiError && error.status === 404
+        ? "질문을 찾을 수 없습니다."
+        : error instanceof RequestTimeoutError
+          ? "요청 시간이 초과됐습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
+          : "질문을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
     return <p className="text-sm text-danger">{message}</p>;
   }
 

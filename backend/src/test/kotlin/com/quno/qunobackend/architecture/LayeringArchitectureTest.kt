@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 /**
  * docs/architecture/system-architecture.md의 "계층 규칙" 표(domain/application/infrastructure/
  * interfaces)를 문서로만 남기지 않고 빌드가 강제하도록 만든다. 도입 시점(2026-09-24) 기준 규칙
- * 위반은 없었다 — 이 테스트는 새 위반을 *만들지 못하게* 막는 회귀 방지 장치다(ADR-0058).
+ * 위반은 없었다 — 이 테스트는 새 위반을 *만들지 못하게* 막는 회귀 방지 장치다(ADR-0059).
  *
  * infrastructure가 application을 참조하는 지점(예: [com.quno.qunobackend.infrastructure.messaging.OutboxDispatchScheduler],
  * WebSocket 핸들러, JWT 필터)이 실제로 존재한다 — 이건 위반이 아니라 의도된 구조다. HTTP가 아닌

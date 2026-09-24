@@ -1,7 +1,7 @@
 # ADR-0056: Redis cache-aside 읽기/쓰기는 Redis 장애 시 DB로 조용히 대체한다
 
 - 날짜: 2026-09-23
-- 상태: 부분 대체됨(ADR-0059로) — `DashboardRepositoryAdapter`/`SpikeDetectionRepositoryAdapter`는 `@Cacheable` 기반으로 옮겨졌다. `OrganizationRepositoryAdapter`는 여기 남긴 `safeCacheGet`/`safeCacheSet` 방식 그대로다(사유는 ADR-0059 참고).
+- 상태: 부분 대체됨(ADR-0060로) — `DashboardRepositoryAdapter`/`SpikeDetectionRepositoryAdapter`는 `@Cacheable` 기반으로 옮겨졌다. `OrganizationRepositoryAdapter`는 여기 남긴 `safeCacheGet`/`safeCacheSet` 방식 그대로다(사유는 ADR-0060 참고).
 
 ## 배경 (Context)
 

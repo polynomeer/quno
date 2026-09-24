@@ -14,7 +14,7 @@
 | A. 인프라 완전 장애 | A4 Redis 장애 | PARTIAL | PASS | 캐시-aside 3곳 DB 폴백 처리 ([ADR-0056](../architecture/decisions/0056-redis-cache-aside-graceful-degradation.md)) |
 | A. 인프라 완전 장애 | A5 Mailpit 장애 | PASS | PASS | |
 | F. 프론트엔드 회복력 | F1 백엔드 완전 다운 | PARTIAL | PASS | 질문 상세: 네트워크 오류를 404로 오인하던 버그 수정 |
-| F. 프론트엔드 회복력 | F2 DB 응답 없음(pause) | PASS | PASS | client-side 타임아웃 부재는 후속 과제로 분리 |
+| F. 프론트엔드 회복력 | F2 DB 응답 없음(pause) | PASS | PASS | client-side 타임아웃 부재 발견 → 후속 세션에서 해결 ([ADR-0058](../architecture/decisions/0058-frontend-http-client-default-timeout.md)) |
 | F. 프론트엔드 회복력 | F3 JWT 변조 | PASS | PASS | |
 | B. 지연과 타임아웃 | B1 HikariCP 풀 고갈 | PASS | PASS | ADR-0054 재검증 |
 | B. 지연과 타임아웃 | B2 DB 응답 없음(pause) | PASS | PASS | F2와 같은 주입, 교차 참조 |
@@ -32,7 +32,7 @@
 
 **발견해 즉시 고친 버그(5건)**: A2/A3(DB 장애 감지 지연 30초→3초), A4(Redis 장애 시 캐시-aside가 기능 전체를 죽이던 문제), F1(프론트가 네트워크 오류를 "삭제됨"으로 오인), E1(암묵적으로만 동작하던 graceful shutdown을 명시적으로 고정).
 
-**후속 과제로 분리(1건)**: F2에서 발견한 프론트엔드 `http-client.ts`의 클라이언트 자체 타임아웃 부재 — 지금은 백엔드 타임아웃에 암묵적으로 의존해 문제가 안 되지만, 별도 세션으로 분리해 추적한다.
+**후속 과제로 분리했다가 해결(1건)**: F2에서 발견한 프론트엔드 `http-client.ts`의 클라이언트 자체 타임아웃 부재 — 당시엔 백엔드 타임아웃(ADR-0054/0055)에 암묵적으로 의존해 문제가 안 됐지만, 그 의존을 명시적인 방어선으로 바꿔야 한다고 판단해 별도 세션에서 `AbortSignal.timeout(15s)` 기본 타임아웃과 이를 구분 가능하게 하는 `RequestTimeoutError`를 추가했다([ADR-0058](../architecture/decisions/0058-frontend-http-client-default-timeout.md)).
 
 ## 목적과 원칙
 

@@ -1,11 +1,11 @@
-# ADR-0059: 값 객체를 캐싱하는 곳은 `@Cacheable`로, 도메인 애그리거트를 캐싱하는 곳은 수동 cache-aside로 남긴다
+# ADR-0060: 값 객체를 캐싱하는 곳은 `@Cacheable`로, 도메인 애그리거트를 캐싱하는 곳은 수동 cache-aside로 남긴다
 
 - 날짜: 2026-09-24
 - 상태: 승인됨
 
 ## 배경 (Context)
 
-[ADR-0058](0058-archunit-layering-guardrail.md)에 이어 백엔드 아키텍처를 계속 개선하면서, [ADR-0056](0056-redis-cache-aside-graceful-degradation.md)이 도입한 `safeCacheGet`/`safeCacheSet` 패턴이 `OrganizationRepositoryAdapter`/`DashboardRepositoryAdapter`/`SpikeDetectionRepositoryAdapter` 세 곳에 거의 동일한 형태로 반복되고 있는 것을 다음 개선 후보로 다뤘다(자세한 조사 과정은 [backend-architecture-improvements.md](../../engineering/backend-architecture-improvements.md) 2절). Spring의 `@Cacheable`/`@CacheEvict` 선언적 캐싱으로 옮기면 이 반복(키 조합, `objectMapper.writeValueAsString`/`readValue`, TTL 상수)을 어노테이션 한 줄로 줄일 수 있다는 게 출발점이었다.
+[ADR-0059](0059-archunit-layering-guardrail.md)에 이어 백엔드 아키텍처를 계속 개선하면서, [ADR-0056](0056-redis-cache-aside-graceful-degradation.md)이 도입한 `safeCacheGet`/`safeCacheSet` 패턴이 `OrganizationRepositoryAdapter`/`DashboardRepositoryAdapter`/`SpikeDetectionRepositoryAdapter` 세 곳에 거의 동일한 형태로 반복되고 있는 것을 다음 개선 후보로 다뤘다(자세한 조사 과정은 [backend-architecture-improvements.md](../../engineering/backend-architecture-improvements.md) 2절). Spring의 `@Cacheable`/`@CacheEvict` 선언적 캐싱으로 옮기면 이 반복(키 조합, `objectMapper.writeValueAsString`/`readValue`, TTL 상수)을 어노테이션 한 줄로 줄일 수 있다는 게 출발점이었다.
 
 바로 전체를 옮기기 전에 실제로 안전한지부터 조사했다. 핵심 발견 두 가지:
 
@@ -35,5 +35,5 @@
 ## 관련 문서
 
 - [ADR-0056](0056-redis-cache-aside-graceful-degradation.md) — 이 결정이 부분적으로 대체하는 원래 결정
-- [ADR-0058](0058-archunit-layering-guardrail.md) — 같은 "백엔드 아키텍처 개선" 흐름의 앞선 결정
+- [ADR-0059](0059-archunit-layering-guardrail.md) — 같은 "백엔드 아키텍처 개선" 흐름의 앞선 결정
 - [docs/engineering/backend-architecture-improvements.md](../../engineering/backend-architecture-improvements.md) 2절 — 조사부터 검증까지의 상세 과정

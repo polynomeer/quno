@@ -13,3 +13,16 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
+
+/**
+ * The client aborted the request itself (see `httpClient`'s default `AbortSignal.timeout`)
+ * before any response arrived. Deliberately NOT an `ApiError` subclass — there is no HTTP
+ * status/code from the server to carry, and callers that branch on `instanceof ApiError`
+ * (e.g. to show a 404-specific message) must not treat a timeout as one of those cases.
+ */
+export class RequestTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RequestTimeoutError";
+  }
+}
