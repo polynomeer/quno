@@ -3,45 +3,26 @@ package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 import com.quno.qunobackend.domain.qunobot.SpikeDetectionRepository
 import com.quno.qunobackend.domain.qunobot.TagSpike
 import com.quno.qunobackend.infrastructure.persistence.jpa.repository.SpikeDetectionJpaRepository
-import com.quno.qunobackend.infrastructure.persistence.redis.safeCacheGet
-import com.quno.qunobackend.infrastructure.persistence.redis.safeCacheSet
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
-import tools.jackson.databind.ObjectMapper
-import java.time.Duration
 
 /** Cache-aside, same pattern as DashboardRepositoryAdapter (ADR-0009) — same result for every
- * caller. Cache read/write go through [safeCacheGet]/[safeCacheSet] so a Redis outage falls back
- * to the DB instead of failing the request (ADR-0056). */
+ * caller. `@Cacheable`(CacheConfig)이 TTL·직렬화·Redis 장애 시 DB 폴백을 전부 대신 처리한다 —
+ * 예전엔 이 클래스가 직접 `safeCacheGet`/`safeCacheSet`으로 구현했었다(ADR-0056). */
 @Component
 class SpikeDetectionRepositoryAdapter(
     private val jpaRepository: SpikeDetectionJpaRepository,
-    private val redisTemplate: StringRedisTemplate,
-    private val objectMapper: ObjectMapper,
 ) : SpikeDetectionRepository {
 
-    override fun findSpikingTags(limit: Int): List<TagSpike> {
-        val key = "$SPIKING_TAGS_KEY:$limit"
-        redisTemplate.safeCacheGet(key)?.let { cached ->
-            return objectMapper.readValue(cached, Array<TagSpike>::class.java).toList()
-        }
-
-        val result = jpaRepository.findSpikingTags(limit).map {
-            TagSpike(
-                id = it.getId(),
-                name = it.getName(),
-                slug = it.getSlug(),
-                recentCount = it.getRecentCount(),
-                baselineAveragePerDay = it.getBaselineAveragePerDay(),
-                spikeRatio = it.getSpikeRatio(),
-            )
-        }
-        redisTemplate.safeCacheSet(key, objectMapper.writeValueAsString(result), CACHE_TTL)
-        return result
-    }
-
-    companion object {
-        private const val SPIKING_TAGS_KEY = "qunobot:tag-spikes"
-        private val CACHE_TTL = Duration.ofSeconds(60)
+    @Cacheable(cacheNames = ["qunobot-tag-spikes"], key = "#limit")
+    override fun findSpikingTags(limit: Int): List<TagSpike> = jpaRepository.findSpikingTags(limit).map {
+        TagSpike(
+            id = it.getId(),
+            name = it.getName(),
+            slug = it.getSlug(),
+            recentCount = it.getRecentCount(),
+            baselineAveragePerDay = it.getBaselineAveragePerDay(),
+            spikeRatio = it.getSpikeRatio(),
+        )
     }
 }
