@@ -12,10 +12,9 @@ import java.util.concurrent.TimeUnit
 class MongoConfig {
 
     @Bean
-    fun mongoClientSettingsBuilderCustomizer(): MongoClientSettingsBuilderCustomizer =
-        MongoClientSettingsBuilderCustomizer { builder ->
-            builder.applyToClusterSettings {
-                it.serverSelectionTimeout(3, TimeUnit.SECONDS)
-            }
+    fun mongoClientSettingsBuilderCustomizer(): MongoClientSettingsBuilderCustomizer = MongoClientSettingsBuilderCustomizer { builder ->
+        builder.applyToClusterSettings {
+            it.serverSelectionTimeout(3, TimeUnit.SECONDS)
         }
+    }
 }
