@@ -13,6 +13,7 @@ Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이
 - [docs/architecture/api-design.md](docs/architecture/api-design.md): REST API 설계
 - [docs/architecture/decisions/](docs/architecture/decisions/README.md): ADR(Architecture Decision Record). "현재 상태가 무엇인가"는 위 문서들이, "왜 지금 이 상태인가"는 여기가 답한다.
 - [docs/engineering/technical-deep-dives.md](docs/engineering/technical-deep-dives.md): ADR과 달리 "결정"이 아니라 "진단"의 기록 — 증상과 실제 원인이 멀리 떨어져 있던 버그를 어떻게 추적해 찾았는지(증상 → 왜 안 보였는가 → 틀린 시도 → 실제 원인 → 해결 → 검증). 비슷한 유형의 어려운 버그를 새로 발견하면 이 문서에 같은 형식으로 추가한다.
+- [docs/engineering/backend-architecture-improvements.md](docs/engineering/backend-architecture-improvements.md): technical-deep-dives.md의 자매 문서로, "버그 진단"이 아니라 "버그가 없는 상태에서 진행한 아키텍처 개선"의 과정을 배경 → 조사 → 설계 → 구현 → 검증 → 결과 순서로 기록한다. ADR이 결정의 결과만 남긴다면 여기는 그 결정에 이르는 조사 과정 자체를 남긴다. 새 백엔드 아키텍처 개선을 진행하면 이 문서에 같은 형식으로 추가한다.
 - [docs/frontend/](docs/frontend/README.md): 프론트엔드 UX/디자인 시스템/기술 아키텍처 설계(React+Next.js). **화면별로 현재 백엔드가 지원하는지 격차가 정리돼 있으니 프론트엔드 작업 전 반드시 확인한다** — 이 설계서가 전제한 투표/댓글/배지/모더레이션/저장/사용자 팔로우/답변 리비전은 Phase 11~20에서, Organization/Direct Ask는 Phase 26에서, 실시간 질문방은 Phase 27에서, 태그 상세 정보는 Phase 28에서, 질문 비로그인 공개 열람은 Phase 29에서 모두 구현됐다([roadmap.md 7절](docs/frontend/roadmap.md#7-백엔드-격차-요약과-착수-전-확인-사항) 참고) — 더 이상 남은 프론트엔드 격차가 없다. 태그/조직/프로필 공개 확대와 SEO는 ADR-0041이 남겨둔 후속 후보다.
 - [docs/archive/](docs/archive/README.md): 초기 브레인스토밍 원본(.docx 등). 현재 방향과 다른 대안 탐색안(StackNext, MySQL+Kafka 백엔드안)도 여기 보관되어 있으며 활성 기준 문서가 아니다.
 
