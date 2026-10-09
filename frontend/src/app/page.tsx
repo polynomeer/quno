@@ -7,6 +7,7 @@ import { useFlow } from "@/features/dashboard/hooks/useFlow";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { TrendingTagsPanel } from "@/widgets/activity-panel/TrendingTagsPanel";
 import { FlowFeed } from "@/widgets/activity-panel/FlowFeed";
+import { SideNav } from "@/widgets/side-nav/SideNav";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { useLocale } from "@/shared/i18n/LocaleProvider";
 
@@ -40,7 +41,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    // Three columns from xl up (design.md #8: nav + main + aside at ≥1280px). Below that the left
+    // nav folds away — the header's own links and mobile menu already cover the same routes.
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[180px_minmax(0,1fr)_300px]">
+      <div className="hidden xl:block">
+        <div className="sticky top-24">
+          <SideNav wardChangeCount={dashboard.wardUpdates.filter((update) => !update.isRead).length} />
+        </div>
+      </div>
       <div className="min-w-0 space-y-8">
         {dashboard.headline && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-surface px-5 py-3.5">
@@ -87,7 +95,7 @@ export default function HomePage() {
           </section>
         )}
 
-        <section className="space-y-3">
+        <section id="quno-flow" className="scroll-mt-24 space-y-3">
           <h2 className="text-base font-semibold">{t.home.flow}</h2>
           {flowLoading ? <Skeleton className="h-24 w-full" /> : <FlowFeed cards={flow ?? []} />}
         </section>
