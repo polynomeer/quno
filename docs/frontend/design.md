@@ -162,7 +162,7 @@ Quno의 질문 카드는 등록 시점의 정적인 문서가 아니라, 답변�
 
 ### 7.1 시각 방향
 
-Quno는 개발자 도구와 기술 문서의 정돈된 분위기를 지향한다. 과도한 카드 박스, 그라디언트, 장식적 아이콘을 줄이고 타이포그래피, 간격, 테두리, 상태 배지와 코드 블록으로 정보 위계를 만든다. 실제 톤앤매너 참고는 [quno-design-sample.png](quno-design-sample.png)의 목업(홈/질문 상세/작성/태그/알림/프로필/모바일).
+Quno는 개발자 도구와 기술 문서의 정돈된 분위기를 지향한다. 과도한 카드 박스, 그라디언트, 장식적 아이콘을 줄이고 타이포그래피, 간격, 테두리, 상태 배지와 코드 블록으로 정보 위계를 만든다. 실제 톤앤매너 참고는 [quno-design-sample.png](quno-design-sample.png)의 목업(홈/질문 상세/작성/태그/알림/프로필/모바일). 2026-10-09부터 실제 토큰 값·폰트·주요 화면 레이아웃은 Claude Design 캔버스 "Quno 디자인 시안"(라이트/다크)을 따른다 — [ADR-0061](../architecture/decisions/0061-frontend-visual-refresh-from-design-canvas.md).
 
 ### 7.2 Color Token
 
