@@ -6,6 +6,7 @@ import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useQuestion } from "@/features/question/hooks/useQuestion";
 import { useRelatedQuestions } from "@/features/question/hooks/useRelatedQuestions";
+import { useRecordQuestionView } from "@/features/question/hooks/useRecordQuestionView";
 import { useAnswers } from "@/features/answer/hooks/useAnswers";
 import { useAcceptAnswer } from "@/features/answer/hooks/useAcceptAnswer";
 import { QuestionMeta } from "@/features/question/ui/QuestionMeta";
@@ -41,6 +42,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
   const { data: answers } = useAnswers(questionId);
   const acceptAnswer = useAcceptAnswer(questionId);
   const [sort, setSort] = useState<AnswerSort>("best");
+  useRecordQuestionView(questionId);
 
   if (authLoading || isLoading) {
     return (
@@ -88,6 +90,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
               createdAt={question.createdAt}
               updatedAt={question.updatedAt}
               versionNumber={question.versionNumber}
+              viewCount={question.viewCount}
             />
             {me && me.id !== question.authorId && <ReportButton targetType="QUESTION" targetId={question.id} />}
           </div>

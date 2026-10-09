@@ -12,6 +12,7 @@ export interface QuestionSummary {
   answerCount: number;
   hasAcceptedAnswer: boolean;
   versionNumber: number;
+  viewCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +48,8 @@ export interface QuestionDetail {
   createdAt: string;
   updatedAt: string;
   score: number;
+  /** Distinct viewers, deduplicated server-side per 30 minutes (ADR-0063). */
+  viewCount: number;
 }
 
 export interface QuestionVersionSummary {

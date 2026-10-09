@@ -41,4 +41,14 @@ describe("QuestionMeta", () => {
     const link = screen.getByRole("link", { name: /edited 1시간 전 · revision 3/ });
     expect(link).toHaveAttribute("href", "/questions/1/versions");
   });
+
+  it("shows the view count only when it is provided", () => {
+    const { rerender } = render(
+      <QuestionMeta questionId={1} createdAt={NOW.toISOString()} updatedAt={NOW.toISOString()} versionNumber={1} viewCount={1834} />,
+    );
+    expect(screen.getByText("1,834")).toBeInTheDocument();
+
+    rerender(<QuestionMeta questionId={1} createdAt={NOW.toISOString()} updatedAt={NOW.toISOString()} versionNumber={1} />);
+    expect(screen.queryByText(/조회/)).not.toBeInTheDocument();
+  });
 });
