@@ -20,6 +20,7 @@ import { ReportButton } from "@/features/report/ui/ReportButton";
 import { ReviewRequestPanel } from "@/features/review/ui/ReviewRequestPanel";
 import { ClusterPanel } from "@/features/cluster/ui/ClusterPanel";
 import { ForkPanel } from "@/features/question/ui/ForkPanel";
+import { QuestionTimeline } from "@/features/question/ui/QuestionTimeline";
 import { LiveChatPanel } from "@/features/live-chat/ui/LiveChatPanel";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
@@ -220,9 +221,12 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
           )}
         </div>
 
-        <aside className="space-y-3">
-          <h2 className="text-sm font-semibold text-text-primary">Related Questions</h2>
-          <QuestionList questions={related ?? []} emptyMessage="관련 질문이 없습니다." />
+        <aside className="space-y-6">
+          <QuestionTimeline questionId={question.id} />
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-text-primary">Related Questions</h2>
+            <QuestionList questions={related ?? []} emptyMessage="관련 질문이 없습니다." />
+          </div>
         </aside>
       </div>
     </div>

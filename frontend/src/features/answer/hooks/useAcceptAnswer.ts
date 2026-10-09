@@ -13,6 +13,7 @@ export function useAcceptAnswer(questionId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: answerKeys.list(questionId) });
       queryClient.invalidateQueries({ queryKey: questionKeys.detail(questionId) });
+      queryClient.invalidateQueries({ queryKey: questionKeys.timeline(questionId) });
     },
   });
 }

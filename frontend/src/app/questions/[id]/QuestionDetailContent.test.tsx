@@ -25,6 +25,7 @@ vi.mock("@/features/answer/ui/AnswerComposer", () => ({ AnswerComposer: () => <d
 vi.mock("@/features/watch/ui/WatchButton", () => ({ WatchButton: () => <div data-testid="watch-button" /> }));
 vi.mock("@/features/save/ui/SaveButton", () => ({ SaveButton: () => <div data-testid="save-button" /> }));
 vi.mock("@/features/vote/ui/VoteControl", () => ({ VoteControl: () => <div data-testid="vote-control" /> }));
+vi.mock("@/features/question/ui/QuestionTimeline", () => ({ QuestionTimeline: () => <div data-testid="question-timeline" /> }));
 vi.mock("@/features/comment/ui/CommentSection", () => ({ CommentSection: () => <div data-testid="comment-section" /> }));
 vi.mock("@/features/report/ui/ReportButton", () => ({ ReportButton: () => <div data-testid="report-button" /> }));
 vi.mock("@/features/review/ui/ReviewRequestPanel", () => ({ ReviewRequestPanel: () => <div data-testid="review-panel" /> }));

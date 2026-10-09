@@ -8,6 +8,30 @@ export interface QuestionSummary {
   status: QuestionStatus;
   tags: string[];
   score: number;
+  /** Movement signals for the Living Question Card (ADR-0062). */
+  answerCount: number;
+  hasAcceptedAnswer: boolean;
+  versionNumber: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** "질문의 생애" panel — `GET /questions/{id}/timeline`, newest first (ADR-0062). Acceptance is the
+ * `accepted` flag on an ANSWER_POSTED event; the backend doesn't record when it happened. */
+export type QuestionTimelineEventType =
+  | "QUESTION_CREATED"
+  | "QUESTION_REVISED"
+  | "ANSWER_POSTED"
+  | "REVIEW_REQUESTED"
+  | "REVIEW_ADDRESSED";
+
+export interface QuestionTimelineEvent {
+  type: QuestionTimelineEventType;
+  occurredAt: string;
+  actorId: number | null;
+  versionNumber: number | null;
+  answerId: number | null;
+  accepted: boolean;
 }
 
 export interface QuestionDetail {

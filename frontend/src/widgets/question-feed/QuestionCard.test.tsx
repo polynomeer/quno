@@ -9,6 +9,11 @@ const question: QuestionSummary = {
   status: "OPEN",
   tags: ["spring-boot", "kotlin"],
   score: 7,
+  answerCount: 3,
+  hasAcceptedAnswer: false,
+  versionNumber: 4,
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-02T00:00:00Z",
 };
 
 describe("QuestionCard", () => {
@@ -22,7 +27,7 @@ describe("QuestionCard", () => {
     expect(screen.getByRole("link", { name: question.title })).toHaveAttribute("href", "/questions/42");
   });
 
-  it("shows the status badge and score", () => {
+  it("shows the status badge, score, answer count and revision", () => {
     render(
       <ul>
         <QuestionCard question={question} />
@@ -31,7 +36,18 @@ describe("QuestionCard", () => {
 
     expect(screen.getByText("Open")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("score")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("rev 4")).toBeInTheDocument();
+  });
+
+  it("hides the revision chip for an unrevised question", () => {
+    render(
+      <ul>
+        <QuestionCard question={{ ...question, versionNumber: 1 }} />
+      </ul>,
+    );
+
+    expect(screen.queryByText(/^rev /)).not.toBeInTheDocument();
   });
 
   it("renders a tag chip for every tag", () => {

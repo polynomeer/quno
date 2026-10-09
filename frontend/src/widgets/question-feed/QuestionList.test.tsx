@@ -4,8 +4,8 @@ import { QuestionList } from "./QuestionList";
 import type { QuestionSummary } from "@/features/question/api/question.types";
 
 const questions: QuestionSummary[] = [
-  { id: 1, title: "첫 번째 질문", status: "OPEN", tags: [], score: 1 },
-  { id: 2, title: "두 번째 질문", status: "RESOLVED", tags: [], score: 5 },
+  { id: 1, title: "첫 번째 질문", status: "OPEN", tags: [], score: 1, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" },
+  { id: 2, title: "두 번째 질문", status: "RESOLVED", tags: [], score: 5, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" },
 ];
 
 describe("QuestionList", () => {

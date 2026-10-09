@@ -5,6 +5,7 @@ import type {
   QuestionGraph,
   QuestionMutationResult,
   QuestionSummary,
+  QuestionTimelineEvent,
   QuestionVersionDetail,
   QuestionVersionDiff,
   QuestionVersionSummary,
@@ -20,6 +21,7 @@ export const questionApi = {
     const query = from !== undefined ? `?from=${from}` : "";
     return httpClient.get<QuestionVersionDiff>(`/api/v1/questions/${id}/versions/${version}/diff${query}`);
   },
+  timeline: (id: number) => httpClient.get<QuestionTimelineEvent[]>(`/api/v1/questions/${id}/timeline`),
   related: (id: number, limit = 5) =>
     httpClient.get<QuestionSummary[]>(`/api/v1/questions/${id}/related?limit=${limit}`),
   markOutdated: (id: number, reason: string) =>

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { relativeTime } from "./relative-time";
+import { isWithin, relativeTime } from "./relative-time";
 
 const NOW = new Date("2026-01-15T12:00:00.000Z");
 
@@ -36,5 +36,13 @@ describe("relativeTime", () => {
   it("returns '곧' for a future timestamp under a minute away", () => {
     const in30Seconds = new Date(NOW.getTime() + 30 * 1000).toISOString();
     expect(relativeTime(in30Seconds)).toBe("곧");
+  });
+});
+
+describe("isWithin", () => {
+  it("is true inside the window and false outside it", () => {
+    const now = Date.now();
+    expect(isWithin(new Date(now - 60_000).toISOString(), 5 * 60_000)).toBe(true);
+    expect(isWithin(new Date(now - 10 * 60_000).toISOString(), 5 * 60_000)).toBe(false);
   });
 });
