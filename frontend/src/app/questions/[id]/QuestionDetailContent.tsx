@@ -225,7 +225,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
           <QuestionTimeline questionId={question.id} />
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-text-primary">Related Questions</h2>
-            <QuestionList questions={related ?? []} emptyMessage="관련 질문이 없습니다." />
+            <QuestionList questions={related ?? []} emptyMessage="관련 질문이 없습니다." compact />
           </div>
         </aside>
       </div>
