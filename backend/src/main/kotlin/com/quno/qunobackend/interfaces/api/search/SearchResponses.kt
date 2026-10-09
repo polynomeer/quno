@@ -13,6 +13,7 @@ data class QuestionSearchResultResponse(
     val answerCount: Int,
     val hasAcceptedAnswer: Boolean,
     val versionNumber: Int,
+    val viewCount: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
 )
@@ -26,6 +27,7 @@ fun QuestionSearchResult.toResponse() = QuestionSearchResultResponse(
     answerCount = answerCount,
     hasAcceptedAnswer = hasAcceptedAnswer,
     versionNumber = versionNumber,
+    viewCount = viewCount,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )

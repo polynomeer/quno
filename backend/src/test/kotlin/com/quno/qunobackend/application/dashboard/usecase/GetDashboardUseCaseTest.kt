@@ -11,6 +11,7 @@ import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionRepository
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
+import com.quno.qunobackend.application.question.usecase.InMemoryQuestionViewCountRepository
 import com.quno.qunobackend.application.qunobot.usecase.InMemorySpikeDetectionRepository
 import com.quno.qunobackend.application.recommendation.usecase.InMemoryRecommendationRepository
 import com.quno.qunobackend.application.recommendation.usecase.RecommendQuestionsUseCase
@@ -37,7 +38,7 @@ class GetDashboardUseCaseTest {
     private val dashboardRepository = InMemoryDashboardRepository()
     private val notificationRepository = InMemoryNotificationRepository()
     private val recommendationRepository = InMemoryRecommendationRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository())
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository(), InMemoryQuestionViewCountRepository())
     private val flowRepository = InMemoryFlowRepository()
     private val spikeDetectionRepository = InMemorySpikeDetectionRepository()
     private val getActivityFeedUseCase = GetActivityFeedUseCase(

@@ -3,6 +3,7 @@ package com.quno.qunobackend.application.common
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionRepository
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
+import com.quno.qunobackend.application.question.usecase.InMemoryQuestionViewCountRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
@@ -25,7 +26,8 @@ class QuestionSummaryHydratorTest {
     private val voteRepository = InMemoryVoteRepository()
     private val answerRepository = InMemoryAnswerRepository()
     private val questionVersionRepository = InMemoryQuestionVersionRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, voteRepository, answerRepository, questionVersionRepository)
+    private val viewCountRepository = InMemoryQuestionViewCountRepository()
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, voteRepository, answerRepository, questionVersionRepository, viewCountRepository)
 
     @Test
     fun `hydrates in the given id order, dropping ids that no longer resolve`() {

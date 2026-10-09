@@ -4,6 +4,8 @@ import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersion
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.question.QuestionViewCountRepository
+import com.quno.qunobackend.domain.question.QuestionViewDeduplicator
 
 class InMemoryQuestionRepository : QuestionRepository {
     private val byId = mutableMapOf<Long, Question>()
@@ -79,4 +81,23 @@ class InMemoryQuestionVersionRepository : QuestionVersionRepository {
     override fun findByQuestionIdAndVersionNumber(questionId: Long, versionNumber: Int): QuestionVersion? = byId.values.find { it.questionId == questionId && it.versionNumber == versionNumber }
 
     override fun findAllByQuestionIdOrderByVersionNumberAsc(questionId: Long): List<QuestionVersion> = byId.values.filter { it.questionId == questionId }.sortedBy { it.versionNumber }
+}
+
+class InMemoryQuestionViewCountRepository : QuestionViewCountRepository {
+    private val counts = mutableMapOf<Long, Long>()
+
+    override fun increment(questionId: Long) {
+        counts[questionId] = (counts[questionId] ?: 0L) + 1
+    }
+
+    override fun countByQuestionId(questionId: Long): Long = counts[questionId] ?: 0L
+
+    override fun countsByQuestionIds(questionIds: List<Long>): Map<Long, Long> = counts.filterKeys { it in questionIds }
+}
+
+/** Same contract as the Redis one minus expiry — a (question, viewer) pair counts once. */
+class InMemoryQuestionViewDeduplicator : QuestionViewDeduplicator {
+    private val seen = mutableSetOf<Pair<Long, String>>()
+
+    override fun isFirstView(questionId: Long, viewerKey: String): Boolean = seen.add(questionId to viewerKey)
 }

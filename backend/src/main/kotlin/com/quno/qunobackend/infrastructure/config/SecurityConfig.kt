@@ -101,6 +101,8 @@ class SecurityConfig(
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/versions/{version}/diff", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/related", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/timeline", permitAll)
+                // A public POST on a question path (ADR-0063): counting a view must work for anonymous readers.
+                authorize(HttpMethod.POST, "/api/v1/questions/{id}/views", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{questionId}/answers", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{questionId}/comments", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/versions", permitAll)

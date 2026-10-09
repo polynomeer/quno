@@ -12,6 +12,7 @@ const question: QuestionSummary = {
   answerCount: 3,
   hasAcceptedAnswer: false,
   versionNumber: 4,
+  viewCount: 1834,
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-02T00:00:00Z",
 };
@@ -38,6 +39,7 @@ describe("QuestionCard", () => {
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getByText("rev 4")).toBeInTheDocument();
+    expect(screen.getByText("1.8k")).toBeInTheDocument();
   });
 
   it("hides the revision chip for an unrevised question", () => {

@@ -23,6 +23,7 @@ data class QuestionSummaryResult(
     val logs: String?,
     val tags: List<String>,
     val score: Long,
+    val viewCount: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

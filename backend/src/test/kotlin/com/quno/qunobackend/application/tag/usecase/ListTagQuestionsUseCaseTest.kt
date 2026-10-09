@@ -6,6 +6,7 @@ import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionRepository
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
+import com.quno.qunobackend.application.question.usecase.InMemoryQuestionViewCountRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.tag.Tag
 import com.quno.qunobackend.domain.tag.TagNotFoundException
@@ -26,7 +27,7 @@ class ListTagQuestionsUseCaseTest {
         questionTagRepository,
     )
     private val tagStatsRepository = InMemoryTagStatsRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository())
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository(), InMemoryQuestionViewCountRepository())
     private val useCase = ListTagQuestionsUseCase(tagRepository, tagStatsRepository, hydrator)
 
     private fun question(title: String): Long = createQuestionUseCase.execute(

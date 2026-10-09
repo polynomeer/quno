@@ -20,6 +20,7 @@
 | POST | `/api/v1/questions/{id}/versions` | 새 질문 리비전 생성 (작성자만) |
 | GET | `/api/v1/questions/{id}/versions/{version}/diff?from={version}` | 두 버전의 본문 라인 diff (기본: 직전 버전과 비교) |
 | GET | `/api/v1/questions/{id}/related?limit=` | 태그 중첩 기반 유사 질문 추천 (공유 태그 수 내림차순) |
+| POST | `/api/v1/questions/{id}/views` | 조회 1회 기록 — 같은 viewer 30분 내 중복 제외, 비로그인 허용 (ADR-0063) |
 | GET | `/api/v1/questions/{id}/timeline` | "질문의 생애" — 버전·답변·QPR 요청 이벤트 최신순 (공개, ADR-0062) |
 | POST | `/api/v1/questions/{id}/answers` | 답변 등록 |
 | GET | `/api/v1/questions/{id}/answers` | 답변 목록 |
@@ -443,6 +444,14 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
   - 댓글은 제외한다(design.md 3.3절 — 질문의 의미가 바뀐 이벤트만).
   - 수락은 별도 이벤트가 아니라 답변 이벤트의 플래그다. Answer와 Question 모두 "언제 수락됐는지"를 저장하지 않기 때문이다(두 엔티티의 `updatedAt`은 이후 수정 때 또 바뀐다).
   - 질문 상세와 같은 이유로 비로그인 공개(`PublicReadAccessE2ETest`에 케이스 추가).
+
+## 질문 조회수 (ADR-0063)
+
+- `POST /questions/{id}/views` → 204. 프론트 질문 상세가 마운트될 때 한 번 호출한다. `GET /questions/{id}`는 조회수를 세지 않는다(서버 측 `generateMetadata`·크롤러 호출이 섞이기 때문).
+- 같은 viewer의 30분 내 재조회는 Redis `SET NX EX`로 한 번만 센다. viewer key는 로그인 사용자는 user id, 비로그인 방문자는 IP+User-Agent의 SHA-256 앞부분이다(원본 IP 미저장). Redis 장애 시에는 중복 제거 없이 센다.
+- 저장은 `question_view_counts`(V24) 별도 테이블에 원자적 upsert로 한다. `questions.updated_at`은 움직이지 않는다.
+- `viewCount`가 질문 상세 응답과 질문 요약 응답(일괄 조회)에 포함된다.
+- 존재하지 않는 질문은 404다.
 
 ## 입력 검증 공통 원칙
 

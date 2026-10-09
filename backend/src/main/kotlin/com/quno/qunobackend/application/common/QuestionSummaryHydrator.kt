@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.search.dto.QuestionSearchResult
 import com.quno.qunobackend.domain.answer.AnswerRepository
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.question.QuestionViewCountRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import com.quno.qunobackend.domain.vote.VoteRepository
 import com.quno.qunobackend.domain.vote.VoteTargetType
@@ -22,6 +23,7 @@ class QuestionSummaryHydrator(
     private val voteRepository: VoteRepository,
     private val answerRepository: AnswerRepository,
     private val questionVersionRepository: QuestionVersionRepository,
+    private val questionViewCountRepository: QuestionViewCountRepository,
 ) {
     /** Silently drops ids that no longer resolve to a question (e.g. deleted since ranking ran).
      * Batches every lookup instead of querying per id — `ids` is often a ranked list
@@ -35,6 +37,7 @@ class QuestionSummaryHydrator(
         val scoresByQuestionId = voteRepository.sumScoresByTargets(VoteTargetType.QUESTION, ids)
         val answerCountsByQuestionId = answerRepository.countByQuestionIds(ids)
         val versionNumbersByQuestionId = questionVersionRepository.findLatestVersionNumbersByQuestionIds(ids)
+        val viewCountsByQuestionId = questionViewCountRepository.countsByQuestionIds(ids)
 
         return ids.mapNotNull { id ->
             val question = questionsById[id] ?: return@mapNotNull null
@@ -47,6 +50,7 @@ class QuestionSummaryHydrator(
                 answerCount = answerCountsByQuestionId[id] ?: 0,
                 hasAcceptedAnswer = question.acceptedAnswerId != null,
                 versionNumber = versionNumbersByQuestionId[id] ?: 1,
+                viewCount = viewCountsByQuestionId[id] ?: 0L,
                 createdAt = question.createdAt,
                 updatedAt = question.updatedAt,
             )

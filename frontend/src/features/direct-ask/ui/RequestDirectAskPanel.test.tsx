@@ -87,7 +87,7 @@ describe("RequestDirectAskPanel", () => {
   it("lists the viewer's own questions to choose from", async () => {
     vi.mocked(useSession).mockReturnValue({ data: ME } as ReturnType<typeof useSession>);
     vi.mocked(userApi.getProfile).mockResolvedValue(
-      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
+      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, viewCount: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
     );
     renderWithClient(<RequestDirectAskPanel targetUserId={TARGET_ID} />);
     await userEvent.click(screen.getByRole("button", { name: "Direct Ask 요청" }));
@@ -98,7 +98,7 @@ describe("RequestDirectAskPanel", () => {
   it("keeps 요청하고 결제하기 disabled until a question is selected", async () => {
     vi.mocked(useSession).mockReturnValue({ data: ME } as ReturnType<typeof useSession>);
     vi.mocked(userApi.getProfile).mockResolvedValue(
-      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
+      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, viewCount: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
     );
     renderWithClient(<RequestDirectAskPanel targetUserId={TARGET_ID} />);
     await userEvent.click(screen.getByRole("button", { name: "Direct Ask 요청" }));
@@ -114,7 +114,7 @@ describe("RequestDirectAskPanel", () => {
   it("submits the selected question and message to directAskApi.create", async () => {
     vi.mocked(useSession).mockReturnValue({ data: ME } as ReturnType<typeof useSession>);
     vi.mocked(userApi.getProfile).mockResolvedValue(
-      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
+      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, viewCount: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
     );
     vi.mocked(directAskApi.create).mockResolvedValue(RESULT);
     renderWithClient(<RequestDirectAskPanel targetUserId={TARGET_ID} />);
@@ -133,7 +133,7 @@ describe("RequestDirectAskPanel", () => {
   it("shows the backend's error message when the request fails", async () => {
     vi.mocked(useSession).mockReturnValue({ data: ME } as ReturnType<typeof useSession>);
     vi.mocked(userApi.getProfile).mockResolvedValue(
-      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
+      profileWithQuestions([{ id: 10, title: "내 질문", status: "OPEN", tags: [], score: 0, answerCount: 0, hasAcceptedAnswer: false, versionNumber: 1, viewCount: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]),
     );
     vi.mocked(directAskApi.create).mockRejectedValue(new ApiError(403, "DIRECT_ASK_DISABLED", "이 사용자는 Direct Ask를 받지 않습니다."));
     renderWithClient(<RequestDirectAskPanel targetUserId={TARGET_ID} />);

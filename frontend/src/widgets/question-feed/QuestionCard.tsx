@@ -7,6 +7,12 @@ import type { QuestionSummary } from "@/features/question/api/question.types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** "1.8k" style from 1,000 up — the design canvas's compact view count. */
+function formatCount(count: number): string {
+  if (count < 1000) return String(count);
+  return `${(count / 1000).toFixed(count >= 10_000 ? 0 : 1).replace(/\.0$/, "")}k`;
+}
+
 /** Card info priority per design.md #9: title/status/tags first. Score (Phase 11) is shown as
  * plain text, not an interactive VoteControl — voting from a list card is out of scope.
  *
@@ -37,6 +43,9 @@ export function QuestionCard({ question, compact = false }: { question: Question
             )}
           >
             <span className="font-mono text-sm font-semibold">{question.answerCount}</span> 답변
+          </span>
+          <span>
+            <span className="font-mono">{formatCount(question.viewCount)}</span> 조회
           </span>
         </div>
       )}

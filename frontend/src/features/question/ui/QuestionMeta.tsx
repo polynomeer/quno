@@ -6,16 +6,23 @@ export function QuestionMeta({
   createdAt,
   updatedAt,
   versionNumber,
+  viewCount,
 }: {
   questionId: number;
   createdAt: string;
   updatedAt: string;
   versionNumber: number;
+  viewCount?: number;
 }) {
   const edited = versionNumber > 1;
   return (
     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-text-secondary">
       <span>asked {relativeTime(createdAt)}</span>
+      {viewCount !== undefined && (
+        <span>
+          조회 <span className="font-mono text-text-primary">{viewCount.toLocaleString("ko-KR")}</span>
+        </span>
+      )}
       {edited && (
         // "Knowledge moved recently" outranks "when it was created" (design.md #3.2), so the
         // revision gets the brand chip from the design canvas instead of a plain underline.

@@ -26,6 +26,7 @@ vi.mock("@/features/watch/ui/WatchButton", () => ({ WatchButton: () => <div data
 vi.mock("@/features/save/ui/SaveButton", () => ({ SaveButton: () => <div data-testid="save-button" /> }));
 vi.mock("@/features/vote/ui/VoteControl", () => ({ VoteControl: () => <div data-testid="vote-control" /> }));
 vi.mock("@/features/question/ui/QuestionTimeline", () => ({ QuestionTimeline: () => <div data-testid="question-timeline" /> }));
+vi.mock("@/features/question/hooks/useRecordQuestionView", () => ({ useRecordQuestionView: vi.fn() }));
 vi.mock("@/features/comment/ui/CommentSection", () => ({ CommentSection: () => <div data-testid="comment-section" /> }));
 vi.mock("@/features/report/ui/ReportButton", () => ({ ReportButton: () => <div data-testid="report-button" /> }));
 vi.mock("@/features/review/ui/ReviewRequestPanel", () => ({ ReviewRequestPanel: () => <div data-testid="review-panel" /> }));
@@ -61,6 +62,7 @@ const QUESTION: QuestionDetail = {
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
   score: 3,
+  viewCount: 42,
 };
 
 function answer(overrides: Partial<Answer> = {}): Answer {
