@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.tag.usecase
 
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
@@ -25,7 +26,7 @@ class ListTagQuestionsUseCaseTest {
         questionTagRepository,
     )
     private val tagStatsRepository = InMemoryTagStatsRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository())
     private val useCase = ListTagQuestionsUseCase(tagRepository, tagStatsRepository, hydrator)
 
     private fun question(title: String): Long = createQuestionUseCase.execute(

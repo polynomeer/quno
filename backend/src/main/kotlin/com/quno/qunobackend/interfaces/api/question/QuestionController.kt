@@ -8,6 +8,7 @@ import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.ForkQuestionUseCase
+import com.quno.qunobackend.application.question.usecase.GetQuestionTimelineUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionDiffUseCase
 import com.quno.qunobackend.application.question.usecase.GetQuestionVersionUseCase
@@ -44,6 +45,7 @@ class QuestionController(
     private val forkQuestionUseCase: ForkQuestionUseCase,
     private val listQuestionForksUseCase: ListQuestionForksUseCase,
     private val getQuestionGraphUseCase: GetQuestionGraphUseCase,
+    private val getQuestionTimelineUseCase: GetQuestionTimelineUseCase,
 ) {
 
     @PostMapping
@@ -140,6 +142,19 @@ class QuestionController(
             fromVersion = result.fromVersion,
             toVersion = result.toVersion,
             lines = result.lines.map { DiffLineResponse(type = it.type, text = it.text) },
+        )
+    }
+
+    /** "질문의 생애" panel (ADR-0062) — newest first. */
+    @GetMapping("/{id}/timeline")
+    fun timeline(@PathVariable id: Long): List<QuestionTimelineEventResponse> = getQuestionTimelineUseCase.execute(id).map {
+        QuestionTimelineEventResponse(
+            type = it.type,
+            occurredAt = it.occurredAt,
+            actorId = it.actorId,
+            versionNumber = it.versionNumber,
+            answerId = it.answerId,
+            accepted = it.accepted,
         )
     }
 

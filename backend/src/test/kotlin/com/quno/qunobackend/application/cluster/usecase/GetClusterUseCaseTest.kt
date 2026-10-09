@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.cluster.usecase
 
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
@@ -32,7 +33,7 @@ class GetClusterUseCaseTest {
     private val useCase = GetClusterUseCase(
         questionClusterRepository,
         questionRepository,
-        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository()),
     )
 
     private fun questionAskedBy(authorId: Long): Long = createQuestionUseCase.execute(

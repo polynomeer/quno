@@ -120,9 +120,14 @@ class QuestionClusterLifecycleE2ETest {
                 .content("""{"answerId":$answerId}"""),
         ).andExpect(status().isOk).andExpect(jsonPath("$.representativeAnswerId").value(answerId))
 
+        // Members are hydrated by QuestionSummaryHydrator — this also exercises its batched
+        // answer-count / latest-version native queries against real PostgreSQL (ADR-0062).
         mockMvc.perform(get("/api/v1/clusters/$clusterId").header("Authorization", "Bearer $authorBToken"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.representativeAnswerId").value(answerId))
+            .andExpect(jsonPath("$.members[?(@.id == $q1)].answerCount").value(1))
+            .andExpect(jsonPath("$.members[?(@.id == $q1)].hasAcceptedAnswer").value(true))
+            .andExpect(jsonPath("$.members[?(@.id == $q1)].versionNumber").value(1))
     }
 
     private fun createQuestion(bearerToken: String, title: String): Long {

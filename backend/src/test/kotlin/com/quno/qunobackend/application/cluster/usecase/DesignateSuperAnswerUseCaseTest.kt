@@ -52,7 +52,7 @@ class DesignateSuperAnswerUseCaseTest {
     private val getClusterUseCase = GetClusterUseCase(
         questionClusterRepository,
         questionRepository,
-        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository()),
     )
     private val useCase = DesignateSuperAnswerUseCase(questionClusterRepository, questionRepository, answerRepository, getClusterUseCase)
 

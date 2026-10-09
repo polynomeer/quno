@@ -71,6 +71,11 @@ class InMemoryQuestionVersionRepository : QuestionVersionRepository {
 
     override fun findById(id: Long): QuestionVersion? = byId[id]
 
+    override fun findLatestVersionNumbersByQuestionIds(questionIds: List<Long>): Map<Long, Int> = byId.values
+        .filter { it.questionId in questionIds }
+        .groupBy { it.questionId }
+        .mapValues { (_, versions) -> versions.maxOf { it.versionNumber } }
+
     override fun findByQuestionIdAndVersionNumber(questionId: Long, versionNumber: Int): QuestionVersion? = byId.values.find { it.questionId == questionId && it.versionNumber == versionNumber }
 
     override fun findAllByQuestionIdOrderByVersionNumberAsc(questionId: Long): List<QuestionVersion> = byId.values.filter { it.questionId == questionId }.sortedBy { it.versionNumber }

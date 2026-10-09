@@ -13,4 +13,8 @@ interface AnswerRepository {
 
     /** Most recent first. */
     fun findAllByAuthorId(authorId: Long): List<Answer>
+
+    /** Non-deleted answer count per question, batched for list views (ADR-0062). Questions
+     * with no answers are absent from the map. */
+    fun countByQuestionIds(questionIds: List<Long>): Map<Long, Int>
 }

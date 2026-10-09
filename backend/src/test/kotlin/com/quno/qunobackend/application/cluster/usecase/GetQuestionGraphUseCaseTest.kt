@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.cluster.usecase
 
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
@@ -25,7 +26,7 @@ class GetQuestionGraphUseCaseTest {
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val questionClusterRepository = InMemoryQuestionClusterRepository()
     private val searchRepository = InMemorySearchRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository())
 
     private val createQuestionUseCase = CreateQuestionUseCase(questionRepository, questionVersionRepository, tagRepository, questionTagRepository)
     private val forkQuestionUseCase = ForkQuestionUseCase(questionRepository, questionVersionRepository, questionTagRepository)

@@ -8,4 +8,7 @@ interface QuestionVersionRepository {
 
     /** Ordered oldest-first (Qv1, Qv2, ...). */
     fun findAllByQuestionIdOrderByVersionNumberAsc(questionId: Long): List<QuestionVersion>
+
+    /** Highest version number per question, batched for list views (ADR-0062). */
+    fun findLatestVersionNumbersByQuestionIds(questionIds: List<Long>): Map<Long, Int>
 }

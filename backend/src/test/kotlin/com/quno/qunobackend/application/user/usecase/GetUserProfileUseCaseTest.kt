@@ -61,7 +61,7 @@ class GetUserProfileUseCaseTest {
         tagRepository,
         organizationRepository,
         organizationMembershipRepository,
-        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository()),
         answerResultAssembler,
     )
 
