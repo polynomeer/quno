@@ -20,6 +20,7 @@
 | POST | `/api/v1/questions/{id}/versions` | 새 질문 리비전 생성 (작성자만) |
 | GET | `/api/v1/questions/{id}/versions/{version}/diff?from={version}` | 두 버전의 본문 라인 diff (기본: 직전 버전과 비교) |
 | GET | `/api/v1/questions/{id}/related?limit=` | 태그 중첩 기반 유사 질문 추천 (공유 태그 수 내림차순) |
+| GET | `/api/v1/questions/{id}/timeline` | "질문의 생애" — 버전·답변·QPR 요청 이벤트 최신순 (공개, ADR-0062) |
 | POST | `/api/v1/questions/{id}/answers` | 답변 등록 |
 | GET | `/api/v1/questions/{id}/answers` | 답변 목록 |
 | POST | `/api/v1/answers/{id}/accept` | 답변 채택 및 질문 RESOLVED 전환 |
@@ -427,6 +428,21 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - 프론트엔드 `/questions/[id]`가 Server Component(`page.tsx`, `generateMetadata`) + Client Component(`QuestionDetailContent.tsx`, 기존 상호작용 전부)로 나뉘었다. `generateMetadata`는 이제 공개된 `GET /questions/{id}`를 인증 없이 `fetch`해 제목/본문 요약으로 title·description·Open Graph·Twitter Card를 채운다. 실패(404/네트워크 오류)는 조용히 기본 제목으로 대체 — 메타데이터 생성 실패가 페이지를 깨뜨리지 않는다.
 - 루트 레이아웃에 사이트 전역 `openGraph`/`twitter` 기본값과 `metadataBase`(`NEXT_PUBLIC_SITE_URL`, 기본값 `http://localhost:3000` — 배포 시 실제 도메인으로 오버라이드 필요, JWT secret/Toss 키와 같은 패턴)를 추가했다. `title.template`이 `%s - Quno`라 질문 상세는 원본 제목만 반환하고 접미사는 템플릿이 붙인다.
 - `app/sitemap.ts`: 정적 라우트(`/`, `/tags`, `/organizations`) + `GET /tags`/`GET /organizations`를 `limit=1000`으로 호출해 얻은 전체 태그·조직 상세 URL. 질문/사용자 프로필은 **포함하지 않는다** — 전체 목록을 열거할 API가 없다(검색은 `q` 필수, 프로필은 목록 자체가 없음). `app/robots.ts`: 전체 허용 + sitemap 위치.
+
+## Living Question Card 신호와 질문 타임라인 (ADR-0062)
+
+디자인 시안([ADR-0061](decisions/0061-frontend-visual-refresh-from-design-canvas.md))이 필요로 했지만 API에 없던 데이터를 [ADR-0062](decisions/0062-question-activity-signals-and-timeline.md)로 추가했다.
+
+- 질문 요약(`QuestionSearchResultResponse` — 검색/대시보드/관련/클러스터/태그/프로필 등 `QuestionSummaryHydrator`를 거치는 모든 목록)에 다음 필드를 추가했다. 답변 수와 최신 버전 번호는 질문 id 목록당 집계 쿼리 1회씩으로 가져온다(N+1 없음).
+  - `answerCount`: 삭제되지 않은 답변 수
+  - `hasAcceptedAnswer`
+  - `versionNumber`: 최신 리비전 번호
+  - `createdAt`
+  - `updatedAt`: 질문의 어떤 변화(리비전·수락·클러스터·Outdated)에도 바뀌므로 "최근 활동"으로 읽는다
+- `GET /questions/{id}/timeline`: 질문 버전(QUESTION_CREATED/QUESTION_REVISED), 답변(ANSWER_POSTED, `accepted` 플래그), QPR 요청(REVIEW_REQUESTED/REVIEW_ADDRESSED)을 최신순으로 합친다.
+  - 댓글은 제외한다(design.md 3.3절 — 질문의 의미가 바뀐 이벤트만).
+  - 수락은 별도 이벤트가 아니라 답변 이벤트의 플래그다. Answer와 Question 모두 "언제 수락됐는지"를 저장하지 않기 때문이다(두 엔티티의 `updatedAt`은 이후 수정 때 또 바뀐다).
+  - 질문 상세와 같은 이유로 비로그인 공개(`PublicReadAccessE2ETest`에 케이스 추가).
 
 ## 입력 검증 공통 원칙
 
