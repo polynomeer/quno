@@ -14,6 +14,7 @@ data class QuestionSearchResult(
     val answerCount: Int,
     val hasAcceptedAnswer: Boolean,
     val versionNumber: Int,
+    val viewCount: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

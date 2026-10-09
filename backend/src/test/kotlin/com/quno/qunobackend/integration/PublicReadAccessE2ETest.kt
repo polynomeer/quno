@@ -62,6 +62,7 @@ class PublicReadAccessE2ETest {
             jdbcTemplate.update("DELETE FROM answer_versions WHERE answer_id IN (SELECT id FROM answers WHERE question_id = ?)", id)
             jdbcTemplate.update("DELETE FROM answers WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM question_tags WHERE question_id = ?", id)
+            jdbcTemplate.update("DELETE FROM question_view_counts WHERE question_id = ?", id)
             jdbcTemplate.update("UPDATE questions SET latest_version_id = NULL WHERE id = ?", id)
             jdbcTemplate.update("DELETE FROM question_versions WHERE question_id = ?", id)
             jdbcTemplate.update("DELETE FROM questions WHERE id = ?", id)
@@ -107,6 +108,15 @@ class PublicReadAccessE2ETest {
         mockMvc.perform(get("/api/v1/questions/$questionId/versions/1")).andExpect(status().isOk)
         mockMvc.perform(get("/api/v1/questions/$questionId/versions/1/diff")).andExpect(status().isNotFound) // no earlier version to diff against — proves the route itself isn't blocked by auth
         mockMvc.perform(get("/api/v1/questions/$questionId/related")).andExpect(status().isOk)
+        // Views (ADR-0063): anonymous POST is allowed; the same anonymous viewer counts once, a
+        // signed-in viewer is a different viewer.
+        mockMvc.perform(post("/api/v1/questions/$questionId/views")).andExpect(status().isNoContent)
+        mockMvc.perform(post("/api/v1/questions/$questionId/views")).andExpect(status().isNoContent)
+        mockMvc.perform(post("/api/v1/questions/$questionId/views").header("Authorization", "Bearer $authorToken"))
+            .andExpect(status().isNoContent)
+        mockMvc.perform(get("/api/v1/questions/$questionId")).andExpect(jsonPath("$.viewCount").value(2))
+        mockMvc.perform(post("/api/v1/questions/999999999/views")).andExpect(status().isNotFound)
+
         mockMvc.perform(get("/api/v1/questions/$questionId/timeline"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))

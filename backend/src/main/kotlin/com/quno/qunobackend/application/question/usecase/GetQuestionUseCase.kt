@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.question.dto.QuestionSummaryResult
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.question.QuestionViewCountRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import com.quno.qunobackend.domain.vote.VoteRepository
 import com.quno.qunobackend.domain.vote.VoteTargetType
@@ -15,6 +16,7 @@ class GetQuestionUseCase(
     private val questionVersionRepository: QuestionVersionRepository,
     private val questionTagRepository: QuestionTagRepository,
     private val voteRepository: VoteRepository,
+    private val questionViewCountRepository: QuestionViewCountRepository,
 ) {
     fun execute(questionId: Long): QuestionSummaryResult {
         val question = questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
@@ -35,6 +37,7 @@ class GetQuestionUseCase(
             logs = latestVersion.logs,
             tags = questionTagRepository.findTagsByQuestionId(questionId).map { it.name },
             score = voteRepository.sumScore(VoteTargetType.QUESTION, questionId),
+            viewCount = questionViewCountRepository.countByQuestionId(questionId),
             createdAt = question.createdAt,
             updatedAt = question.updatedAt,
         )
