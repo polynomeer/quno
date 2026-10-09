@@ -35,4 +35,9 @@ class InMemoryAnswerRepository : AnswerRepository {
     override fun findAcceptedByQuestionId(questionId: Long): Answer? = byId.values.find { it.questionId == questionId && it.isAccepted && it.deletedAt == null }
 
     override fun findAllByAuthorId(authorId: Long): List<Answer> = byId.values.filter { it.authorId == authorId && it.deletedAt == null }.sortedByDescending { it.createdAt }
+
+    override fun countByQuestionIds(questionIds: List<Long>): Map<Long, Int> = byId.values
+        .filter { it.questionId in questionIds && it.deletedAt == null }
+        .groupingBy { it.questionId }
+        .eachCount()
 }

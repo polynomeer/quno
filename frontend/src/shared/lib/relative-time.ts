@@ -18,3 +18,8 @@ export function relativeTime(isoDate: string): string {
   }
   return diffMs >= 0 ? "곧" : "방금 전";
 }
+
+/** True when [isoDate] falls within the last [windowMs] — e.g. the feed card's "moved recently" dot. */
+export function isWithin(isoDate: string, windowMs: number): boolean {
+  return Date.now() - new Date(isoDate).getTime() < windowMs;
+}

@@ -18,7 +18,14 @@ export function WatchButton({ questionId }: { questionId: number }) {
 
   return (
     <Button
-      variant={isWatching ? "secondary" : "primary"}
+      variant="ghost"
+      aria-pressed={isWatching}
+      // Toggle styling from the design canvas: an outlined chip that turns brand-subtle when on.
+      className={
+        isWatching
+          ? "border border-brand bg-brand-subtle font-semibold text-brand-on-subtle hover:bg-brand-subtle hover:text-brand-on-subtle"
+          : "border border-border-strong bg-surface"
+      }
       onClick={() => toggleWatch.mutate(isWatching)}
       disabled={isLoading || toggleWatch.isPending}
     >

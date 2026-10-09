@@ -18,7 +18,14 @@ export function SaveButton({ questionId }: { questionId: number }) {
 
   return (
     <Button
-      variant={isSaved ? "secondary" : "primary"}
+      variant="ghost"
+      aria-pressed={isSaved}
+      // Toggle styling from the design canvas: an outlined chip that turns brand-subtle when on.
+      className={
+        isSaved
+          ? "border border-brand bg-brand-subtle font-semibold text-brand-on-subtle hover:bg-brand-subtle hover:text-brand-on-subtle"
+          : "border border-border-strong bg-surface"
+      }
       onClick={() => toggleSave.mutate(isSaved)}
       disabled={isLoading || toggleSave.isPending}
     >

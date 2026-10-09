@@ -37,7 +37,7 @@ class GetDashboardUseCaseTest {
     private val dashboardRepository = InMemoryDashboardRepository()
     private val notificationRepository = InMemoryNotificationRepository()
     private val recommendationRepository = InMemoryRecommendationRepository()
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository())
     private val flowRepository = InMemoryFlowRepository()
     private val spikeDetectionRepository = InMemorySpikeDetectionRepository()
     private val getActivityFeedUseCase = GetActivityFeedUseCase(

@@ -29,14 +29,16 @@ export default function OrganizationsPage() {
 
       {isLoading && <Skeleton className="h-40 w-full" />}
 
-      {!isLoading && (
+      {/* Empty state outside the <ul> — see the same note on the tags page (axe `list` rule). */}
+      {!isLoading && organizations && organizations.length === 0 && (
+        <p className="text-sm text-text-secondary">조직이 없습니다.</p>
+      )}
+
+      {!isLoading && organizations && organizations.length > 0 && (
         <ul className="space-y-3">
-          {(organizations ?? []).map((organization) => (
+          {organizations.map((organization) => (
             <OrganizationCard key={organization.id} organization={organization} />
           ))}
-          {organizations && organizations.length === 0 && (
-            <p className="text-sm text-text-secondary">조직이 없습니다.</p>
-          )}
         </ul>
       )}
     </div>

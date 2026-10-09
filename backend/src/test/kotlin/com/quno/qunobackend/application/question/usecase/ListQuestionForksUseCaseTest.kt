@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
@@ -18,7 +19,7 @@ class ListQuestionForksUseCaseTest {
     private val questionTagRepository = InMemoryQuestionTagRepository(tagRepository)
     private val createQuestionUseCase = CreateQuestionUseCase(questionRepository, questionVersionRepository, tagRepository, questionTagRepository)
     private val forkQuestionUseCase = ForkQuestionUseCase(questionRepository, questionVersionRepository, questionTagRepository)
-    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository())
+    private val hydrator = QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository())
     private val listQuestionForksUseCase = ListQuestionForksUseCase(questionRepository, hydrator)
 
     private fun aQuestion(title: String = "t"): Long = createQuestionUseCase.execute(

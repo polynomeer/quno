@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.recommendation.usecase
 
+import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerRepository
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
@@ -25,7 +26,7 @@ class RecommendQuestionsUseCaseTest {
     private val recommendationRepository = InMemoryRecommendationRepository()
     private val useCase = RecommendQuestionsUseCase(
         recommendationRepository,
-        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository()),
+        QuestionSummaryHydrator(questionRepository, questionTagRepository, InMemoryVoteRepository(), InMemoryAnswerRepository(), InMemoryQuestionVersionRepository()),
     )
 
     @Test

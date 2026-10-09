@@ -50,3 +50,22 @@ data class QuestionVersionDiffResult(
     val toVersion: Int,
     val lines: List<DiffLine>,
 )
+
+enum class QuestionTimelineEventType {
+    QUESTION_CREATED,
+    QUESTION_REVISED,
+    ANSWER_POSTED,
+    REVIEW_REQUESTED,
+    REVIEW_ADDRESSED,
+}
+
+data class QuestionTimelineEventResult(
+    val type: QuestionTimelineEventType,
+    val occurredAt: Instant,
+    /** Null for REVIEW_ADDRESSED — addressing happens implicitly through the author's revision. */
+    val actorId: Long?,
+    /** The version created (QUESTION_*), targeted (ANSWER_POSTED) or reviewed (REVIEW_REQUESTED). */
+    val versionNumber: Int? = null,
+    val answerId: Long? = null,
+    val accepted: Boolean = false,
+)

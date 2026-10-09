@@ -27,7 +27,7 @@ test("a new user can sign up, ask a question, and answer it", async ({ page }) =
 
   await test.step("ask a question", async () => {
     await page.goto("/ask");
-    await page.getByPlaceholder("Title").fill(questionTitle);
+    await page.locator("#ask-title").fill(questionTitle);
     await page.getByPlaceholder("본문을 작성하세요 (Markdown 지원)").fill(questionBody);
     await page.getByRole("button", { name: "Post" }).click();
 

@@ -14,6 +14,7 @@ export function useCreateReviewRequest(questionId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reviewKeys.list(questionId) });
       queryClient.invalidateQueries({ queryKey: questionKeys.detail(questionId) });
+      queryClient.invalidateQueries({ queryKey: questionKeys.timeline(questionId) });
     },
   });
 }

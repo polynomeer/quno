@@ -112,56 +112,140 @@ export default function AskPage() {
     return <Skeleton className="h-40 w-full" />;
   }
 
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <h1 className="text-xl font-semibold">{t.ask.heading}</h1>
+  // Suggestions, not blocking errors (design.md #11 Quality Check) — derived from what's typed.
+  const checklist = [
+    { label: t.ask.checklistTitle, done: watched.title.trim().length >= 15 },
+    { label: t.ask.checklistEnvironment, done: Boolean(watched.environment?.trim()) },
+    { label: t.ask.checklistCode, done: watched.body.includes("```") },
+    { label: t.ask.checklistLogs, done: Boolean(watched.logs?.trim()) },
+    { label: t.ask.checklistTags, done: tags.length > 0 },
+  ];
+  const doneCount = checklist.filter((item) => item.done).length;
 
+  return (
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-7">
         <div>
-          <Input placeholder="Title" {...register("title")} />
+          <h1 className="text-[28px] font-bold tracking-tight">{t.ask.heading}</h1>
+          <p className="mt-1.5 text-text-body">{t.ask.subtitle}</p>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="ask-title" className="font-semibold">
+              {t.ask.titleLabel}
+            </label>
+            <span className="font-mono text-xs text-text-secondary">{watched.title.length} / 300</span>
+          </div>
+          <Input
+            id="ask-title"
+            placeholder={t.ask.titlePlaceholder}
+            className="h-12 text-base"
+            {...register("title")}
+          />
           {errors.title && <p className="mt-1 text-sm text-danger">{errors.title.message}</p>}
         </div>
 
-        <div>
+        {/* Similar questions sit right under the title — search first, ask second (design.md #2). */}
+        <section aria-label={t.ask.similarQuestions} className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-canvas px-4 py-3">
+            <h2 className="text-sm font-semibold">{t.ask.similarHeading}</h2>
+            {similarQuery && similarQuestions && (
+              <span className="font-mono text-xs text-text-secondary">{similarQuestions.length}</span>
+            )}
+          </div>
+          <div className="p-3">
+            {similarQuery ? (
+              <QuestionList questions={similarQuestions ?? []} emptyMessage={t.ask.noSimilarQuestions} />
+            ) : (
+              <p className="px-1 text-sm text-text-secondary">{t.ask.similarQuestionsHint}</p>
+            )}
+          </div>
+        </section>
+
+        <div className="space-y-2">
+          <label htmlFor="ask-body" className="block font-semibold">
+            {t.ask.bodyLabel}
+          </label>
           <Controller
             control={control}
             name="body"
             render={({ field }) => (
-              <MarkdownEditor value={field.value} onChange={field.onChange} rows={12} placeholder={t.ask.bodyPlaceholder} />
+              <MarkdownEditor
+                id="ask-body"
+                value={field.value}
+                onChange={field.onChange}
+                rows={12}
+                placeholder={t.ask.bodyPlaceholder}
+              />
             )}
           />
           {errors.body && <p className="mt-1 text-sm text-danger">{errors.body.message}</p>}
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-text-secondary">{t.ask.environmentLabel}</label>
-          <Textarea rows={2} placeholder={t.ask.environmentPlaceholder} {...register("environment")} />
+        <div className="space-y-2">
+          <label htmlFor="ask-environment" className="block font-semibold">
+            {t.ask.environmentLabel}
+          </label>
+          <Textarea id="ask-environment" rows={2} placeholder={t.ask.environmentPlaceholder} {...register("environment")} />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-text-secondary">{t.ask.logsLabel}</label>
-          <Textarea rows={4} placeholder={t.ask.logsPlaceholder} {...register("logs")} />
+        <div className="space-y-2">
+          <label htmlFor="ask-logs" className="block font-semibold">
+            {t.ask.logsLabel}
+          </label>
+          <Textarea
+            id="ask-logs"
+            rows={4}
+            placeholder={t.ask.logsPlaceholder}
+            className="font-mono text-[13px]"
+            {...register("logs")}
+          />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-text-secondary">{t.ask.tagsLabel}</label>
+        <div className="space-y-2">
+          <span className="block font-semibold">{t.ask.tagsLabel}</span>
           <TagInput value={tags} onChange={setTags} />
         </div>
 
         <FormError error={createQuestion.error} fallback={t.ask.failed} />
 
-        <Button type="submit" disabled={createQuestion.isPending}>
-          {createQuestion.isPending ? t.ask.submitting : t.ask.submit}
-        </Button>
+        <div className="flex justify-end border-t border-border pt-4">
+          <Button type="submit" className="h-11 px-6" disabled={createQuestion.isPending}>
+            {createQuestion.isPending ? t.ask.submitting : t.ask.submit}
+          </Button>
+        </div>
       </form>
 
-      <aside className="space-y-3">
-        <h2 className="text-sm font-semibold text-text-secondary">{t.ask.similarQuestions}</h2>
-        {similarQuery ? (
-          <QuestionList questions={similarQuestions ?? []} emptyMessage={t.ask.noSimilarQuestions} />
-        ) : (
-          <p className="text-sm text-text-secondary">{t.ask.similarQuestionsHint}</p>
-        )}
+      <aside>
+        <section className="rounded-xl border border-border bg-surface p-5 lg:sticky lg:top-24">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="text-[15px] font-semibold">{t.ask.checklistHeading}</h2>
+            <span className="font-mono text-xs text-success">
+              {doneCount} / {checklist.length}
+            </span>
+          </div>
+          <ul className="space-y-3 text-sm">
+            {checklist.map((item) => (
+              <li key={item.label} className="flex items-center gap-2.5">
+                <span
+                  aria-hidden="true"
+                  className={
+                    item.done
+                      ? "grid size-5 shrink-0 place-items-center rounded-full bg-success-strong text-[11px] font-bold text-surface"
+                      : "size-5 shrink-0 rounded-full border-[1.5px] border-border-strong"
+                  }
+                >
+                  {item.done ? "✓" : null}
+                </span>
+                <span className={item.done ? "text-text-secondary line-through" : "font-medium text-text-primary"}>
+                  {item.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 border-t border-border pt-4 text-xs text-text-secondary">{t.ask.checklistNote}</p>
+        </section>
       </aside>
     </div>
   );

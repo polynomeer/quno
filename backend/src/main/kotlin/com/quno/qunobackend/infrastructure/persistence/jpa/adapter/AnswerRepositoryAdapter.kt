@@ -35,6 +35,11 @@ class AnswerRepositoryAdapter(
 
     override fun findAllByAuthorId(authorId: Long): List<Answer> = jpaRepository.findAllByAuthorIdAndDeletedAtIsNullOrderByCreatedAtDesc(authorId).map { it.toDomain() }
 
+    override fun countByQuestionIds(questionIds: List<Long>): Map<Long, Int> {
+        if (questionIds.isEmpty()) return emptyMap()
+        return jpaRepository.countByQuestionIds(questionIds).associate { it.questionId to it.answerCount.toInt() }
+    }
+
     private fun AnswerJpaEntity.toDomain(): Answer = Answer.reconstitute(
         id = requireNotNull(id),
         questionId = questionId,

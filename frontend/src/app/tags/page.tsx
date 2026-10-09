@@ -19,9 +19,13 @@ export default function TagDirectoryPage() {
 
       {isLoading && <Skeleton className="h-40 w-full" />}
 
-      {!isLoading && (
+      {/* The empty state lives outside the <ul> — a <p> as a direct list child fails axe's
+          `list` rule, which only shows up when there are no tags (e.g. CI's empty database). */}
+      {!isLoading && tags && tags.length === 0 && <p className="text-sm text-text-secondary">태그가 없습니다.</p>}
+
+      {!isLoading && tags && tags.length > 0 && (
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {(tags ?? []).map((tag) => (
+          {tags.map((tag) => (
             <li key={tag.id}>
               <Link
                 href={`/tags/${encodeURIComponent(tag.name)}`}
@@ -32,7 +36,6 @@ export default function TagDirectoryPage() {
               </Link>
             </li>
           ))}
-          {tags && tags.length === 0 && <p className="text-sm text-text-secondary">태그가 없습니다.</p>}
         </ul>
       )}
     </div>

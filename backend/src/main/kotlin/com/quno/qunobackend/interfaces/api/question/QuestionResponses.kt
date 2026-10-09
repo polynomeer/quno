@@ -1,6 +1,7 @@
 package com.quno.qunobackend.interfaces.api.question
 
 import com.quno.qunobackend.application.cluster.dto.QuestionGraphResult
+import com.quno.qunobackend.application.question.dto.QuestionTimelineEventType
 import com.quno.qunobackend.domain.question.DiffLineType
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.interfaces.api.search.QuestionSearchResultResponse
@@ -70,4 +71,13 @@ fun QuestionGraphResult.toResponse() = QuestionGraphResponse(
     forkedFrom = forkedFrom?.toResponse(),
     forks = forks.map { it.toResponse() },
     relatedQuestions = relatedQuestions.map { it.toResponse() },
+)
+
+data class QuestionTimelineEventResponse(
+    val type: QuestionTimelineEventType,
+    val occurredAt: Instant,
+    val actorId: Long?,
+    val versionNumber: Int?,
+    val answerId: Long?,
+    val accepted: Boolean,
 )

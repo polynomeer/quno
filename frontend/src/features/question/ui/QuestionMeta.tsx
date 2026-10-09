@@ -14,15 +14,17 @@ export function QuestionMeta({
 }) {
   const edited = versionNumber > 1;
   return (
-    <p className="text-sm text-text-secondary">
-      asked {relativeTime(createdAt)}
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-text-secondary">
+      <span>asked {relativeTime(createdAt)}</span>
       {edited && (
-        <>
-          {" · "}
-          <Link href={`/questions/${questionId}/versions`} className="underline hover:text-text-primary">
-            edited {relativeTime(updatedAt)} · revision {versionNumber}
-          </Link>
-        </>
+        // "Knowledge moved recently" outranks "when it was created" (design.md #3.2), so the
+        // revision gets the brand chip from the design canvas instead of a plain underline.
+        <Link
+          href={`/questions/${questionId}/versions`}
+          className="inline-flex h-6 items-center rounded bg-brand-subtle px-2 font-mono text-xs font-semibold text-brand-on-subtle hover:underline"
+        >
+          edited {relativeTime(updatedAt)} · revision {versionNumber}
+        </Link>
       )}
     </p>
   );

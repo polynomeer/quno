@@ -22,8 +22,8 @@ export default function HomePage() {
 
   if (!me) {
     return (
-      <div className="rounded-lg border border-border p-8 text-center">
-        <h1 className="text-2xl font-semibold">{t.home.guestTitle}</h1>
+      <div className="rounded-xl border border-border bg-surface p-10 text-center">
+        <h1 className="text-2xl font-bold tracking-tight">{t.home.guestTitle}</h1>
         <p className="mt-2 text-text-secondary">{t.home.guestSubtitle}</p>
       </div>
     );
@@ -40,53 +40,60 @@ export default function HomePage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-      <div className="space-y-8">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-8">
         {dashboard.headline && (
-          <div className="rounded-lg border border-brand/30 bg-brand/5 p-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-surface px-5 py-3.5">
+            <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-wide text-brand">
+              <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
+              WARD
+            </span>
             {dashboard.headline.questionId ? (
-              <Link href={`/questions/${dashboard.headline.questionId}`} className="font-medium hover:underline">
+              <Link
+                href={`/questions/${dashboard.headline.questionId}`}
+                className="min-w-0 flex-1 text-sm font-medium text-text-body hover:text-brand"
+              >
                 {dashboard.headline.text}
               </Link>
             ) : (
-              <span className="font-medium">{dashboard.headline.text}</span>
+              <span className="min-w-0 flex-1 text-sm font-medium text-text-body">{dashboard.headline.text}</span>
             )}
           </div>
         )}
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">{t.home.popularQuestions}</h2>
+          <h2 className="text-base font-semibold">{t.home.popularQuestions}</h2>
           <QuestionList questions={dashboard.popularQuestions} emptyMessage={t.home.noQuestionsYet} />
         </section>
 
         {dashboard.followingTagsFeed.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">{t.home.followingTagsFeed}</h2>
+            <h2 className="text-base font-semibold">{t.home.followingTagsFeed}</h2>
             <QuestionList questions={dashboard.followingTagsFeed} emptyMessage="" />
           </section>
         )}
 
         {dashboard.resolvedToday.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">{t.home.resolvedToday}</h2>
+            <h2 className="text-base font-semibold">{t.home.resolvedToday}</h2>
             <QuestionList questions={dashboard.resolvedToday} emptyMessage="" />
           </section>
         )}
 
         {dashboard.reopenedKnowledge.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">{t.home.reopenedKnowledge}</h2>
+            <h2 className="text-base font-semibold">{t.home.reopenedKnowledge}</h2>
             <QuestionList questions={dashboard.reopenedKnowledge} emptyMessage="" />
           </section>
         )}
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">{t.home.flow}</h2>
+          <h2 className="text-base font-semibold">{t.home.flow}</h2>
           {flowLoading ? <Skeleton className="h-24 w-full" /> : <FlowFeed cards={flow ?? []} />}
         </section>
       </div>
 
-      <aside>
+      <aside className="space-y-5">
         <TrendingTagsPanel tags={dashboard.trendingTags} spikes={dashboard.trendingErrors} />
       </aside>
     </div>

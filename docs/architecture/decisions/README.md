@@ -85,3 +85,5 @@
 | [0058](0058-frontend-http-client-default-timeout.md) | 장애 시나리오 테스트(F2) 후속 — 프론트 `httpClient`에 클라이언트 자체 타임아웃이 전혀 없던 것을 발견, `AbortSignal.timeout(15s)`와 구분 가능한 `RequestTimeoutError`를 추가 | 승인됨 |
 | [0059](0059-archunit-layering-guardrail.md) | 백엔드 코드 아키텍처 개선: system-architecture.md의 DDD 계층 규칙(위반 0건 확인)을 ArchUnit 테스트로 코드에 고정, driving adapter(스케줄러/WebSocket) 예외를 규칙에 반영 | 승인됨 |
 | [0060](0060-declarative-cache-for-value-object-caches.md) | 백엔드 아키텍처 개선: 값 객체를 캐싱하는 Dashboard/SpikeDetection은 `@Cacheable`로, 도메인 애그리거트(private 생성자)를 캐싱하는 Organization은 ADR-0056의 수동 cache-aside 그대로 유지 | 승인됨 |
+| [0061](0061-frontend-visual-refresh-from-design-canvas.md) | 디자인 시안 캔버스대로 프론트 토큰 값(라이트/다크)·폰트(IBM Plex Sans KR + JetBrains Mono)·주요 화면 레이아웃을 교체, API에 없는 시안 요소(답변 수·타임라인 등)는 지어내지 않고 보류 | 승인됨 |
+| [0062](0062-question-activity-signals-and-timeline.md) | 디자인 시안의 누락 요소 구현: 질문 요약에 답변 수·수락 여부·최신 버전·생성/수정 시각을 일괄 집계로 추가, 기존 애그리거트를 합성한 공개 `GET /questions/{id}/timeline` 신설(수락 시각은 저장되지 않아 플래그로만 표시) | 승인됨 |

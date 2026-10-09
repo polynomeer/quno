@@ -29,7 +29,7 @@ test("a question can be asked using only the keyboard", async ({ page }) => {
   await expect(page.getByRole("link", { name: nickname })).toBeVisible();
 
   await page.goto("/ask");
-  await page.getByPlaceholder("Title").focus();
+  await page.locator("#ask-title").focus();
   await page.keyboard.type(title);
 
   // MarkdownEditor는 Write/Preview 탭 버튼 다음에 textarea가 온다 — Tab 순서를 가정하지 않고

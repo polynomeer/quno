@@ -6,15 +6,15 @@ export function TrendingTagsPanel({ tags, spikes }: { tags: TagTrend[]; spikes: 
     return null;
   }
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-5 rounded-xl border border-border bg-surface p-5">
       {tags.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-text-secondary">Trending Tags</h2>
+          <h2 className="mb-3 text-sm font-semibold text-text-primary">Trending Tags</h2>
           <ul className="space-y-2">
             {tags.map((tag) => (
               <li key={tag.id} className="flex items-center justify-between text-sm">
                 <TagChip name={tag.name} />
-                <span className="text-text-secondary">{tag.questionCount}개 질문</span>
+                <span className="font-mono text-xs text-text-secondary">{tag.questionCount}개 질문</span>
               </li>
             ))}
           </ul>
@@ -22,12 +22,12 @@ export function TrendingTagsPanel({ tags, spikes }: { tags: TagTrend[]; spikes: 
       )}
       {spikes.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-text-secondary">Trending Errors</h2>
+          <h2 className="mb-3 text-sm font-semibold text-text-primary">Trending Errors</h2>
           <ul className="space-y-2">
             {spikes.map((spike) => (
               <li key={spike.id} className="flex items-center justify-between text-sm">
                 <TagChip name={spike.name} />
-                <span className="text-warning">{spike.spikeRatio.toFixed(1)}x 급증</span>
+                <span className="font-mono text-xs text-warning">{spike.spikeRatio.toFixed(1)}x 급증</span>
               </li>
             ))}
           </ul>

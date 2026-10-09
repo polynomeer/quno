@@ -16,7 +16,7 @@ describe("StatusBadge", () => {
 
   it("uses the dedicated brand-subtle tone for UPDATED (WCAG AA fix, ADR-0051)", () => {
     render(<StatusBadge status="UPDATED" />);
-    expect(screen.getByText("Updated")).toHaveClass("bg-brand-subtle", "text-brand");
+    expect(screen.getByText("Updated")).toHaveClass("bg-brand-subtle", "text-brand-on-subtle");
   });
 
   it("merges an extra className", () => {
