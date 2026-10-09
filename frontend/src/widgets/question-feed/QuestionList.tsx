@@ -6,7 +6,7 @@ export function QuestionList({ questions, emptyMessage }: { questions: QuestionS
     return <p className="text-sm text-text-secondary">{emptyMessage}</p>;
   }
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {questions.map((question) => (
         <QuestionCard key={question.id} question={question} />
       ))}

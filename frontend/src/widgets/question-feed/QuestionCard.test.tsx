@@ -30,7 +30,8 @@ describe("QuestionCard", () => {
     );
 
     expect(screen.getByText("Open")).toBeInTheDocument();
-    expect(screen.getByText("score 7")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("score")).toBeInTheDocument();
   });
 
   it("renders a tag chip for every tag", () => {

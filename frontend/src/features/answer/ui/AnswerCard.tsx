@@ -59,8 +59,10 @@ export function AnswerCard({
     <li
       id={`answer-${answer.id}`}
       className={cn(
-        "scroll-mt-20 rounded-lg border p-4",
-        answer.isAccepted ? "border-success bg-success-subtle/30" : "border-border",
+        "scroll-mt-20 rounded-xl border p-4 sm:p-5",
+        // Accepted gets a light success edge, never a fill that drowns out the other answers
+        // (design.md #13.1, design canvas ADR-0061).
+        answer.isAccepted ? "border-success-border bg-success-subtle/25" : "border-border bg-surface",
       )}
     >
       {questionHref && (
@@ -70,21 +72,24 @@ export function AnswerCard({
       )}
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
         {answer.isAccepted && (
-          <span className="inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 font-medium text-success">
+          <span className="inline-flex h-[22px] items-center rounded bg-success-subtle px-2 font-semibold text-success">
             ✓ Accepted
           </span>
         )}
         {answer.isStale && (
-          <span className="inline-flex items-center rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning">
+          <Link
+            href={`/questions/${answer.questionId}/versions`}
+            className="inline-flex h-[22px] items-center rounded bg-warning-subtle px-2 font-semibold text-warning hover:underline"
+          >
             질문이 이후 수정됨 (v{answer.targetVersionNumber} 기준 답변)
-          </span>
+          </Link>
         )}
-        <span>사용자 #{answer.authorId}</span>
+        <span className="font-medium text-text-primary">사용자 #{answer.authorId}</span>
         <span>· {relativeTime(answer.createdAt)}</span>
         {isEdited && (
           <Link
             href={`/answers/${answer.id}/versions?questionId=${answer.questionId}`}
-            className="underline hover:text-text-primary"
+            className="font-mono hover:text-text-primary hover:underline"
           >
             edited · revision {latestVersionNumber}
           </Link>
@@ -101,7 +106,7 @@ export function AnswerCard({
           </Button>
         )}
       </div>
-      <div className="flex gap-4">
+      <div className="flex gap-4 sm:gap-5">
         {showEngagement ? (
           <VoteControl
             targetType="ANSWER"
@@ -111,9 +116,9 @@ export function AnswerCard({
             authorId={answer.authorId}
           />
         ) : (
-          <span className="text-sm font-semibold text-text-secondary">{answer.score}</span>
+          <span className="w-11 shrink-0 text-center font-mono text-lg font-semibold text-text-primary">{answer.score}</span>
         )}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {isEditing ? (
             <div className="space-y-2">
               <MarkdownEditor value={draft} onChange={setDraft} rows={6} />

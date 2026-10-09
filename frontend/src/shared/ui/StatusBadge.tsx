@@ -15,26 +15,31 @@ const labels: Record<QuestionStatus, string> = {
   OUTDATED: "Outdated",
 };
 
+// Tones follow the design canvas's state table (ADR-0061): color appears only to say what state a
+// question is in. Each pair keeps its own subtle background so contrast stays ≥4.5:1 in both
+// themes — the same reason UPDATED got --brand-subtle in ADR-0051.
 const toneClasses: Record<QuestionStatus, string> = {
-  OPEN: "bg-surface-subtle text-text-secondary",
-  NEEDS_INFO: "bg-warning-subtle text-warning",
-  // bg-brand/10(불투명도 트릭)은 text-brand와 4.48:1로 WCAG AA(4.5:1) 기준을 아슬아슬하게
-  // 밑돌았다(axe-core로 발견, quality-improvement-plan.md Q-3) — 다른 세 톤처럼 전용 subtle
-  // 배경 토큰(--brand-subtle)을 둬서 4.7:1 이상으로 여유를 확보했다.
-  UPDATED: "bg-brand-subtle text-brand",
+  OPEN: "border border-text-primary bg-surface text-text-primary",
+  NEEDS_INFO: "bg-danger-subtle text-danger",
+  UPDATED: "bg-brand-subtle text-brand-on-subtle",
   RESOLVED: "bg-success-subtle text-success",
-  OUTDATED: "bg-danger-subtle text-danger",
+  OUTDATED: "bg-surface-subtle text-text-body",
 };
 
 export function StatusBadge({ status, className }: { status: QuestionStatus; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex h-[22px] shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold",
         toneClasses[status],
         className,
       )}
     >
+      {status === "RESOLVED" && (
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m5 12 5 5L20 7" />
+        </svg>
+      )}
       {labels[status]}
     </span>
   );

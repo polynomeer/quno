@@ -10,7 +10,7 @@ import { cn } from "@/shared/lib/cn";
 import { SearchBox } from "./SearchBox";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
-const navLinkClass = "text-sm font-medium text-text-secondary hover:text-text-primary";
+const navLinkClass = "text-sm font-medium text-text-body hover:text-text-primary";
 
 /** 반응형 헤더 — 데스크톱은 한 줄, 모바일(md 미만)은 햄버거 메뉴로 접는다. */
 export function AppHeader() {
@@ -23,9 +23,14 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-        <Link href="/" className="text-lg font-semibold text-brand">
-          Quno
+      <div className="mx-auto flex max-w-[1360px] items-center gap-4 px-4 py-3 sm:gap-6 sm:px-6">
+        {/* The live dot is the "living question" mark from the design canvas (ADR-0061). */}
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2 font-mono text-xl font-semibold tracking-tight text-text-primary"
+        >
+          <span aria-hidden="true" className="size-2.5 rounded-full bg-live ring-4 ring-live-ring" />
+          quno
         </Link>
         <SearchBox />
         <nav className="hidden items-center gap-4 md:flex">
@@ -49,7 +54,7 @@ export function AppHeader() {
               <Link href="/notifications" className={cn("relative", navLinkClass)}>
                 Notifications
                 {unreadCount > 0 && (
-                  <span className="ml-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand px-1 text-xs font-semibold text-brand-foreground">
+                  <span className="ml-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand px-1 font-mono text-[11px] font-bold text-brand-foreground">
                     {unreadCount}
                   </span>
                 )}
@@ -57,12 +62,21 @@ export function AppHeader() {
             </>
           )}
           <Link href="/ask">
-            <Button variant="primary">Ask</Button>
+            <Button variant="secondary">Ask</Button>
           </Link>
           <LanguageSwitcher />
           {isLoading ? null : me ? (
             <div className="flex items-center gap-3">
-              <Link href={`/users/${me.id}`} className="text-sm font-medium text-text-primary">
+              <Link
+                href={`/users/${me.id}`}
+                className="flex items-center gap-2 rounded-full border border-border py-1 pr-3 pl-1 text-sm font-medium text-text-primary hover:border-border-strong"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid size-7 place-items-center rounded-full bg-text-primary text-xs font-semibold text-surface"
+                >
+                  {me.nickname.slice(0, 1).toUpperCase()}
+                </span>
                 {me.nickname}
               </Link>
               <Button variant="ghost" onClick={logout}>
@@ -126,7 +140,7 @@ export function AppHeader() {
             </>
           )}
           <Link href="/ask" className="py-2" onClick={closeMenu}>
-            <Button variant="primary" className="w-full">
+            <Button variant="secondary" className="w-full">
               Ask
             </Button>
           </Link>

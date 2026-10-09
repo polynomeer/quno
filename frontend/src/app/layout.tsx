@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Sans_KR, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { AppHeader } from "@/widgets/app-header/AppHeader";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Body type needs Hangul coverage, which Geist lacks — see ADR-0061. next/font self-hosts every
+// unicode-range slice Google serves; `subsets` only decides which slices get preloaded.
+const plexKr = IBM_Plex_Sans_KR({
+  variable: "--font-plex-kr",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
@@ -40,11 +43,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-surface text-text-primary">
+    <html lang="ko" className={`${plexKr.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-canvas text-text-primary">
         <Providers>
           <AppHeader />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+          <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-8 sm:px-6">{children}</main>
         </Providers>
       </body>
     </html>

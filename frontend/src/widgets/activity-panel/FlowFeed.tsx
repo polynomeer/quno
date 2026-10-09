@@ -16,20 +16,20 @@ export function FlowFeed({ cards }: { cards: FlowCard[] }) {
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {cards.map((card, index) => {
         const content = (
           <>
-            <span className="mr-2 inline-flex items-center rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-medium text-text-secondary">
+            <span className="mr-2 inline-flex h-[22px] items-center rounded border border-border-strong px-2 font-mono text-[11px] text-text-body">
               {typeLabels[card.type]}
             </span>
             {card.headline}
           </>
         );
         return (
-          <li key={index} className="rounded-md border border-border px-3 py-2 text-sm">
+          <li key={index} className="px-4 py-3 text-sm text-text-primary">
             {card.questionId ? (
-              <Link href={`/questions/${card.questionId}`} className="hover:underline">
+              <Link href={`/questions/${card.questionId}`} className="hover:text-brand">
                 {content}
               </Link>
             ) : (

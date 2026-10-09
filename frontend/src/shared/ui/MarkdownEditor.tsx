@@ -24,16 +24,18 @@ export function MarkdownEditor({
   const [tab, setTab] = useState<Tab>("write");
 
   return (
-    <div className="rounded-md border border-border">
-      <div className="flex border-b border-border text-sm">
+    <div className="overflow-hidden rounded-lg border border-border-strong bg-surface">
+      <div className="flex border-b border-border bg-canvas px-2 text-sm">
         {(["write", "preview"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              "px-3 py-2 font-medium capitalize",
-              tab === t ? "border-b-2 border-brand text-brand" : "text-text-secondary hover:text-text-primary",
+              "-mb-px border-b-2 px-3 py-2.5 capitalize",
+              tab === t
+                ? "border-text-primary font-semibold text-text-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary",
             )}
           >
             {t}
@@ -47,7 +49,7 @@ export function MarkdownEditor({
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           rows={rows}
-          className="rounded-none border-0 focus:ring-0"
+          className="rounded-none border-0 font-mono text-[13px] leading-relaxed focus:ring-0"
         />
       ) : (
         <div className="min-h-[8rem] p-3">

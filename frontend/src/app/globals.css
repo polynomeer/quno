@@ -4,73 +4,110 @@
  * Design tokens — see docs/frontend/design.md #7 디자인 시스템.
  * Semantic tokens stay the same name across light/dark; only the values change.
  */
+/*
+ * Values follow the "Quno 디자인 시안" canvas (ADR-0061): a quiet developer-tool palette where
+ * color is reserved for question state, and hierarchy comes from type, spacing and borders.
+ * `--canvas` is the page ground; `--surface` is the card/panel face that sits on it.
+ */
 :root {
+  --canvas: #f6f6f3;
   --surface: #ffffff;
-  --surface-subtle: #f5f6f8;
-  --text-primary: #16181d;
-  --text-secondary: #5b6270;
-  --brand: #2563eb;
+  --surface-subtle: #f0f0ec;
+  --text-primary: #15171c;
+  --text-body: #3d414c;
+  --text-secondary: #5b6070;
+  --brand: #2b4bdb;
   --brand-foreground: #ffffff;
-  --brand-subtle: #eff6ff;
-  --success: #15803d;
-  --success-subtle: #ecfdf3;
-  --warning: #b45309;
-  --warning-subtle: #fffaeb;
-  --danger: #b91c1c;
-  --danger-subtle: #fef2f2;
-  --border: #e2e5ea;
+  --brand-subtle: #e9edfd;
+  --brand-on-subtle: #2440b8;
+  --success: #17663f;
+  --success-strong: #1e7a4c;
+  --success-subtle: #e3f3ea;
+  --success-border: #bfe3cd;
+  --warning: #7a4a00;
+  --warning-subtle: #fcf0da;
+  --danger: #9a321b;
+  --danger-subtle: #fbe9e4;
+  --border: #e4e4de;
+  --border-strong: #d9d9d2;
+  --code-bg: #15171c;
+  --code-fg: #e6e8ee;
+  --live: #1e8a55;
+  --live-ring: #ddf1e5;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-kr);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface: #0e0f12;
-    --surface-subtle: #16181d;
-    --text-primary: #f2f3f5;
-    --text-secondary: #9aa1ad;
-    --brand: #60a5fa;
-    --brand-foreground: #0e0f12;
-    --brand-subtle: #182a45;
-    --success: #4ade80;
-    --success-subtle: #0f2417;
-    --warning: #fbbf24;
-    --warning-subtle: #2b2107;
-    --danger: #f87171;
-    --danger-subtle: #2a1414;
-    --border: #262a31;
+    --canvas: #0e1014;
+    --surface: #161920;
+    --surface-subtle: #222731;
+    --text-primary: #e7e9ee;
+    --text-body: #c4c8d2;
+    --text-secondary: #a0a6b3;
+    --brand: #8ea2ff;
+    --brand-foreground: #0e1014;
+    --brand-subtle: #1a2348;
+    --brand-on-subtle: #a9b8ff;
+    --success: #6fd49a;
+    --success-strong: #3fa86e;
+    --success-subtle: #123222;
+    --success-border: #1d4a32;
+    --warning: #f2b85b;
+    --warning-subtle: #36270b;
+    --danger: #f59a7e;
+    --danger-subtle: #3a1a12;
+    --border: #252a33;
+    --border-strong: #2e3440;
+    --code-bg: #08090c;
+    --code-fg: #e6e8ee;
+    --live: #3fc07f;
+    --live-ring: #143826;
   }
 }
 
 @theme inline {
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-surface-subtle: var(--surface-subtle);
   --color-text-primary: var(--text-primary);
+  --color-text-body: var(--text-body);
   --color-text-secondary: var(--text-secondary);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-subtle: var(--brand-subtle);
+  --color-brand-on-subtle: var(--brand-on-subtle);
   --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
   --color-success-subtle: var(--success-subtle);
+  --color-success-border: var(--success-border);
   --color-warning: var(--warning);
   --color-warning-subtle: var(--warning-subtle);
   --color-danger: var(--danger);
   --color-danger-subtle: var(--danger-subtle);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-code-bg: var(--code-bg);
+  --color-code-fg: var(--code-fg);
+  --color-live: var(--live);
+  --color-live-ring: var(--live-ring);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
 
 body {
-  background: var(--surface);
+  background: var(--canvas);
   color: var(--text-primary);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
 /* Markdown-rendered question/answer bodies — see shared/ui/MarkdownContent.tsx. */
 .markdown-body {
   line-height: 1.7;
+  font-size: 15px;
+  color: var(--text-body);
 }
 .markdown-body > * + * {
   margin-top: 0.9em;
@@ -108,14 +145,19 @@ body {
   font-size: 0.85em;
 }
 .markdown-body pre {
-  background: var(--surface-subtle);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
-  padding: 0.9em 1em;
+  padding: 1em;
   overflow-x: auto;
+  line-height: 1.7;
 }
 .markdown-body pre code {
   background: none;
   padding: 0;
+  color: inherit;
+  font-size: 13px;
 }
 .markdown-body table {
   border-collapse: collapse;

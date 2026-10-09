@@ -32,9 +32,9 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("applies the danger variant's background class", () => {
+  it("applies the danger variant's subtle background class", () => {
     render(<Button variant="danger">Delete</Button>);
 
-    expect(screen.getByRole("button", { name: "Delete" })).toHaveClass("bg-danger");
+    expect(screen.getByRole("button", { name: "Delete" })).toHaveClass("bg-danger-subtle", "text-danger");
   });
 });
