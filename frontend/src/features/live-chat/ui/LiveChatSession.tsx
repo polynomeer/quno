@@ -41,7 +41,7 @@ export function LiveChatSession({
   return (
     <div className="space-y-2">
       {viewerCount !== null && <span className="text-xs text-text-secondary">현재 {viewerCount}명이 보고 있습니다</span>}
-      <ul className="max-h-80 space-y-2 overflow-y-auto rounded-md border border-border bg-surface-subtle p-3">
+      <ul className="max-h-80 space-y-3 overflow-y-auto rounded-lg border border-border bg-canvas p-3">
         {allMessages.length === 0 ? (
           <li className="text-sm text-text-secondary">{status === "connected" ? "아직 메시지가 없습니다." : "연결 중..."}</li>
         ) : (
@@ -74,12 +74,12 @@ function LiveChatMessageRow({ message, isOwn }: { message: LiveChatMessage; isOw
   return (
     <li className="text-sm">
       <div className="flex items-baseline gap-2">
-        <Link href={`/users/${message.senderId}`} className="font-medium hover:underline">
+        <Link href={`/users/${message.senderId}`} className="font-medium text-text-primary hover:text-brand">
           {isOwn ? "나" : `사용자 #${message.senderId}`}
         </Link>
         <span className="text-xs text-text-secondary">{relativeTime(message.createdAt)}</span>
       </div>
-      <p className="whitespace-pre-wrap">{message.body}</p>
+      <p className="whitespace-pre-wrap text-text-body">{message.body}</p>
     </li>
   );
 }

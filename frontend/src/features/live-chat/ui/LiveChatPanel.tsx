@@ -35,8 +35,8 @@ export function LiveChatPanel({ questionId }: { questionId: number }) {
   }
 
   return (
-    <section id="live-chat" className="space-y-3 rounded-lg border border-border p-4">
-      <h2 className="text-sm font-semibold text-text-secondary">실시간 질문방</h2>
+    <section id="live-chat" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-surface p-5">
+      <h2 className="text-sm font-semibold text-text-primary">실시간 질문방</h2>
 
       {!room && !joined && (
         <Button

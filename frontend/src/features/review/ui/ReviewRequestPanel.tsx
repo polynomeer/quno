@@ -45,8 +45,8 @@ export function ReviewRequestPanel({
   }
 
   return (
-    <section className="space-y-3 rounded-lg border border-border p-4">
-      <h2 className="text-sm font-semibold text-text-secondary">정보 요청 (QPR)</h2>
+    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+      <h2 className="text-sm font-semibold text-text-primary">정보 요청 (QPR)</h2>
 
       {requests && requests.length > 0 && (
         <ul className="space-y-2">
@@ -54,13 +54,13 @@ export function ReviewRequestPanel({
             const canReRequest =
               isAuthor && request.status === "OPEN" && questionVersionNumber > request.questionVersionNumberAtRequest;
             return (
-              <li key={request.id} className="rounded-md border border-border p-3 text-sm">
+              <li key={request.id} className="rounded-lg border border-border bg-canvas p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
                   <span
                     className={
                       request.status === "OPEN"
-                        ? "inline-flex items-center rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning"
-                        : "inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 font-medium text-success"
+                        ? "inline-flex h-[22px] items-center rounded bg-warning-subtle px-2 font-semibold text-warning"
+                        : "inline-flex h-[22px] items-center rounded bg-success-subtle px-2 font-semibold text-success"
                     }
                   >
                     {request.status}
@@ -79,7 +79,7 @@ export function ReviewRequestPanel({
                     </Button>
                   )}
                 </div>
-                <p className="mt-2">{request.message}</p>
+                <p className="mt-2 text-text-body">{request.message}</p>
               </li>
             );
           })}
