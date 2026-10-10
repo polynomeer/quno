@@ -28,9 +28,9 @@ export function ForkPanel({ questionId }: { questionId: number }) {
   }
 
   return (
-    <section className="space-y-3 rounded-lg border border-border p-4">
+    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-secondary">Fork</h2>
+        <h2 className="text-sm font-semibold text-text-primary">Fork</h2>
         <Button
           variant="secondary"
           className="px-2 py-1 text-xs"
@@ -46,7 +46,7 @@ export function ForkPanel({ questionId }: { questionId: number }) {
       {graph?.forkedFrom && (
         <p className="text-sm text-text-secondary">
           Forked from{" "}
-          <Link href={`/questions/${graph.forkedFrom.id}`} className="underline hover:text-text-primary">
+          <Link href={`/questions/${graph.forkedFrom.id}`} className="font-medium text-text-primary hover:text-brand">
             {graph.forkedFrom.title}
           </Link>
         </p>
@@ -58,7 +58,7 @@ export function ForkPanel({ questionId }: { questionId: number }) {
           <ul className="space-y-1">
             {graph.forks.map((fork) => (
               <li key={fork.id}>
-                <Link href={`/questions/${fork.id}`} className="text-sm underline hover:text-text-primary">
+                <Link href={`/questions/${fork.id}`} className="text-sm font-medium text-text-primary hover:text-brand">
                   {fork.title}
                 </Link>
               </li>

@@ -37,8 +37,8 @@ export function ClusterPanel({
     cluster && acceptedAnswerId !== null && cluster.representativeAnswerId !== acceptedAnswerId;
 
   return (
-    <section className="space-y-3 rounded-lg border border-border p-4">
-      <h2 className="text-sm font-semibold text-text-secondary">Cluster (같은 문제로 표시된 질문)</h2>
+    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+      <h2 className="text-sm font-semibold text-text-primary">Cluster (같은 문제로 표시된 질문)</h2>
 
       {cluster && (
         <div className="space-y-2">
@@ -68,7 +68,12 @@ export function ClusterPanel({
           placeholder="같은 문제인 질문 ID"
           inputMode="numeric"
         />
-        <Button variant="secondary" onClick={handleJoin} disabled={markAsSameProblem.isPending || !relatedId}>
+        <Button
+          variant="secondary"
+          className="shrink-0 whitespace-nowrap"
+          onClick={handleJoin}
+          disabled={markAsSameProblem.isPending || !relatedId}
+        >
           {markAsSameProblem.isPending ? "표시 중..." : "같은 문제로 표시"}
         </Button>
       </div>
