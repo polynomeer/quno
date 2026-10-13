@@ -60,6 +60,14 @@ describe("AnswerCard", () => {
     expect(screen.getByText("original body")).toBeInTheDocument();
   });
 
+  it("links the author by nickname, falling back to the user id when there is none", () => {
+    const { rerender } = renderWithClient(<AnswerCard answer={{ ...ANSWER, authorNickname: "devGuru" }} />);
+    expect(screen.getByRole("link", { name: "devGuru" })).toHaveAttribute("href", `/users/${ME.id}`);
+
+    rerender(<AnswerCard answer={{ ...ANSWER, authorNickname: null }} />);
+    expect(screen.getByRole("link", { name: `사용자 #${ME.id}` })).toBeInTheDocument();
+  });
+
   it("shows the Accepted badge only when the answer is accepted", () => {
     const { rerender } = renderWithClient(<AnswerCard answer={ANSWER} showEngagement />);
     expect(screen.queryByText("✓ Accepted")).not.toBeInTheDocument();

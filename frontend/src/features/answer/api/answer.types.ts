@@ -4,6 +4,8 @@ export interface Answer {
   id: number;
   questionId: number;
   authorId: number;
+  /** Set by the list endpoint (ADR-0064); null/absent on create and edit responses. */
+  authorNickname?: string | null;
   body: string;
   isAccepted: boolean;
   targetVersionNumber: number;
@@ -22,6 +24,7 @@ export interface AnswerMutationResult {
 export interface AnswerVersionSummary {
   versionNumber: number;
   createdBy: number;
+  createdByNickname?: string | null;
   createdAt: string;
 }
 

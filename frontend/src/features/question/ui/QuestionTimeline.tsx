@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { relativeTime } from "@/shared/lib/relative-time";
+import { userLabel } from "@/shared/lib/user-label";
 import { cn } from "@/shared/lib/cn";
 import { useQuestionTimeline } from "../hooks/useQuestionTimeline";
 import type { QuestionTimelineEvent } from "../api/question.types";
@@ -68,7 +69,7 @@ export function QuestionTimeline({ questionId }: { questionId: number }) {
                   <span className="text-[13px] font-medium text-text-primary">{label}</span>
                 )}
                 <span className="font-mono text-[11px] text-text-secondary">
-                  {event.actorId !== null && `사용자 #${event.actorId} · `}
+                  {event.actorId !== null && `${userLabel(event.actorId, event.actorNickname)} · `}
                   {relativeTime(event.occurredAt)}
                 </span>
               </span>

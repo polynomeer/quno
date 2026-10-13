@@ -30,6 +30,7 @@ export interface QuestionTimelineEvent {
   type: QuestionTimelineEventType;
   occurredAt: string;
   actorId: number | null;
+  actorNickname?: string | null;
   versionNumber: number | null;
   answerId: number | null;
   accepted: boolean;
@@ -56,6 +57,7 @@ export interface QuestionVersionSummary {
   versionNumber: number;
   title: string;
   createdBy: number;
+  createdByNickname?: string | null;
   createdAt: string;
 }
 

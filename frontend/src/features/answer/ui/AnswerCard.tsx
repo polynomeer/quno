@@ -6,6 +6,7 @@ import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { MarkdownEditor } from "@/shared/ui/MarkdownEditor";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
+import { userLabel } from "@/shared/lib/user-label";
 import { cn } from "@/shared/lib/cn";
 import { VoteControl } from "@/features/vote/ui/VoteControl";
 import { CommentSection } from "@/features/comment/ui/CommentSection";
@@ -84,7 +85,9 @@ export function AnswerCard({
             질문이 이후 수정됨 (v{answer.targetVersionNumber} 기준 답변)
           </Link>
         )}
-        <span className="font-medium text-text-primary">사용자 #{answer.authorId}</span>
+        <Link href={`/users/${answer.authorId}`} className="font-medium text-text-primary hover:text-brand">
+          {userLabel(answer.authorId, answer.authorNickname)}
+        </Link>
         <span>· {relativeTime(answer.createdAt)}</span>
         {isEdited && (
           <Link
