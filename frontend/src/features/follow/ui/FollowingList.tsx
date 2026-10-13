@@ -7,13 +7,10 @@ export function FollowingList({ users, emptyMessage }: { users: Followee[]; empt
   }
 
   return (
-    <ul className="flex flex-wrap gap-2">
+    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {users.map((user) => (
-        <li key={user.userId}>
-          <Link
-            href={`/users/${user.userId}`}
-            className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm hover:bg-surface-subtle"
-          >
+        <li key={user.userId} className="px-4 py-3 text-sm transition-colors hover:bg-canvas/60 sm:px-5">
+          <Link href={`/users/${user.userId}`} className="font-medium text-text-primary hover:text-brand">
             {user.nickname}
           </Link>
         </li>

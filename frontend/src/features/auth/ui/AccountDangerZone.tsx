@@ -40,11 +40,11 @@ export function AccountDangerZone() {
   }
 
   return (
-    <section className="space-y-3 rounded-md border border-danger/30 p-4">
-      <h2 className="text-sm font-semibold text-text-secondary">계정 관리</h2>
+    <section className="space-y-3 rounded-xl border border-danger/30 bg-surface p-5">
+      <h2 className="text-sm font-semibold text-text-primary">계정 관리</h2>
 
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-text-secondary">내 프로필과 작성한 질문/답변을 파일로 내려받습니다.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[13px] text-text-secondary">내 프로필과 작성한 질문/답변을 파일로 내려받습니다.</p>
         <Button variant="secondary" onClick={() => exportData.mutate()} disabled={exportData.isPending}>
           {exportData.isPending ? "준비 중..." : "내 데이터 다운로드"}
         </Button>
@@ -56,8 +56,8 @@ export function AccountDangerZone() {
           회원 탈퇴
         </Button>
       ) : (
-        <form onSubmit={handleWithdraw} className="space-y-2">
-          <p className="text-xs text-text-secondary">
+        <form onSubmit={handleWithdraw} className="space-y-2 rounded-lg border border-border bg-canvas p-3">
+          <p className="text-[13px] text-text-body">
             탈퇴하면 로그인할 수 없게 되고 프로필이 익명화됩니다. 이미 작성한 질문/답변은 삭제되지
             않고 &ldquo;탈퇴한 사용자&rdquo;로 표시됩니다. 계속하려면 현재 비밀번호를 입력하세요.
           </p>

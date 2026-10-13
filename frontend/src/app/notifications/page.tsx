@@ -23,8 +23,8 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Notifications</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
         {unreadCount > 0 && (
           <Button variant="secondary" onClick={() => markAllRead.mutate()} disabled={markAllRead.isPending}>
             {markAllRead.isPending ? "처리 중..." : `Mark all as read (${unreadCount})`}
@@ -35,7 +35,7 @@ export default function NotificationsPage() {
       {sorted.length === 0 ? (
         <p className="text-sm text-text-secondary">알림이 없습니다.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           {sorted.map((notification) => (
             <NotificationItem key={notification.id} notification={notification} />
           ))}

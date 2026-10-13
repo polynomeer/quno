@@ -52,9 +52,9 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
+      <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-2xl font-semibold">{profile.nickname}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{profile.nickname}</h1>
           <div className="flex flex-wrap items-center gap-2">
             {isOwnProfile ? (
               me && <DirectAskSettingsToggle accepts={me.acceptsDirectAsk} />
@@ -65,12 +65,22 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
           </div>
         </div>
         {reputation && (
-          <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
-            <span className="text-lg font-semibold text-text-primary">{reputation.score} 평판</span>
-            <span>질문 {reputation.questionCount}</span>
-            <span>답변 {reputation.answerCount}</span>
-            <span>채택된 답변 {reputation.acceptedAnswerCount}</span>
-            <span>Super Answer {reputation.superAnswerCount}</span>
+          <div className="flex flex-wrap items-center gap-4 text-[13px] text-text-secondary">
+            <span className="text-lg font-semibold text-text-primary">
+              <span className="font-mono">{reputation.score}</span> 평판
+            </span>
+            <span>
+              질문 <span className="font-mono">{reputation.questionCount}</span>
+            </span>
+            <span>
+              답변 <span className="font-mono">{reputation.answerCount}</span>
+            </span>
+            <span>
+              채택된 답변 <span className="font-mono">{reputation.acceptedAnswerCount}</span>
+            </span>
+            <span>
+              Super Answer <span className="font-mono">{reputation.superAnswerCount}</span>
+            </span>
           </div>
         )}
         <BadgeList badges={badges ?? []} emptyMessage="아직 획득한 배지가 없습니다." />
@@ -78,32 +88,32 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
 
       {isOwnProfile && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Watching ({watches?.length ?? 0})</h2>
-          <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
+          <h2 className="text-lg font-semibold text-text-primary">Watching ({watches?.length ?? 0})</h2>
+          <p className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</p>
           <WatchedQuestionList questions={watches ?? []} emptyMessage="아직 Watch 중인 질문이 없습니다." />
         </section>
       )}
 
       {isOwnProfile && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Saved ({saves?.length ?? 0})</h2>
-          <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
+          <h2 className="text-lg font-semibold text-text-primary">Saved ({saves?.length ?? 0})</h2>
+          <p className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</p>
           <SavedQuestionList questions={saves ?? []} emptyMessage="아직 저장한 질문이 없습니다." />
         </section>
       )}
 
       {isOwnProfile && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Following ({following?.length ?? 0})</h2>
-          <p className="text-xs text-text-secondary">본인에게만 보이는 목록입니다.</p>
+          <h2 className="text-lg font-semibold text-text-primary">Following ({following?.length ?? 0})</h2>
+          <p className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</p>
           <FollowingList users={following ?? []} emptyMessage="아직 팔로우하는 사용자가 없습니다." />
         </section>
       )}
 
       {profile.followedTags.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-text-secondary">팔로우 태그</h2>
-          <div className="flex flex-wrap gap-1">
+        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-semibold text-text-primary">팔로우 태그</h2>
+          <div className="flex flex-wrap gap-1.5">
             {profile.followedTags.map((tag) => (
               <TagChip key={tag.id} name={tag.name} />
             ))}
@@ -112,14 +122,14 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
       )}
 
       {profile.organizations.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-text-secondary">소속 조직</h2>
+        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-semibold text-text-primary">소속 조직</h2>
           <div className="flex flex-wrap gap-2">
             {profile.organizations.map((organization) => (
               <Link
                 key={organization.id}
                 href={`/organizations/${organization.id}`}
-                className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-medium hover:border-text-secondary/40"
+                className="inline-flex h-[22px] items-center gap-1 rounded border border-border bg-canvas px-2 text-xs font-medium text-text-primary hover:text-brand"
               >
                 {organization.name}
                 {organization.verified && <span className="text-success">✓</span>}
@@ -130,12 +140,12 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">작성한 질문 ({profile.questions.length})</h2>
+        <h2 className="text-lg font-semibold text-text-primary">작성한 질문 ({profile.questions.length})</h2>
         <QuestionList questions={profile.questions} emptyMessage="작성한 질문이 없습니다." />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">작성한 답변 ({profile.answers.length})</h2>
+        <h2 className="text-lg font-semibold text-text-primary">작성한 답변 ({profile.answers.length})</h2>
         {profile.answers.length === 0 ? (
           <p className="text-sm text-text-secondary">작성한 답변이 없습니다.</p>
         ) : (
