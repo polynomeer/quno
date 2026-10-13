@@ -156,7 +156,7 @@ export default function AskPage() {
           </div>
           <div className="p-3">
             {similarQuery ? (
-              <QuestionList questions={similarQuestions ?? []} emptyMessage={t.ask.noSimilarQuestions} />
+              <QuestionList questions={similarQuestions ?? []} emptyMessage={t.ask.noSimilarQuestions} emptyInline />
             ) : (
               <p className="px-1 text-sm text-text-secondary">{t.ask.similarQuestionsHint}</p>
             )}

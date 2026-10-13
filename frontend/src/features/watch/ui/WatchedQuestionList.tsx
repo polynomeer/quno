@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
 import type { WatchedQuestion } from "../api/watch.types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 /** WatchedQuestionResponse has no tags, unlike QuestionSummary — a dedicated list instead of
  * reusing widgets/question-feed/QuestionCard, which requires a `tags` field. */
@@ -12,7 +13,7 @@ export function WatchedQuestionList({
   emptyMessage: string;
 }) {
   if (questions.length === 0) {
-    return <p className="text-sm text-text-secondary">{emptyMessage}</p>;
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (

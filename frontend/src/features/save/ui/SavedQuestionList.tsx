@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
 import type { SavedQuestion } from "../api/save.types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 /** SavedQuestionResponse has no tags, unlike QuestionSummary — a dedicated list instead of
  * reusing widgets/question-feed/QuestionCard, same reasoning as WatchedQuestionList. */
@@ -12,7 +13,7 @@ export function SavedQuestionList({
   emptyMessage: string;
 }) {
   if (questions.length === 0) {
-    return <p className="text-sm text-text-secondary">{emptyMessage}</p>;
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (

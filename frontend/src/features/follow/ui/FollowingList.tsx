@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { Followee } from "../api/follow.types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 export function FollowingList({ users, emptyMessage }: { users: Followee[]; emptyMessage: string }) {
   if (users.length === 0) {
-    return <p className="text-sm text-text-secondary">{emptyMessage}</p>;
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (

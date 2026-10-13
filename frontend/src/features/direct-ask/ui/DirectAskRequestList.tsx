@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
 import { FormError } from "@/shared/ui/FormError";
 import type { DirectAskRequestListItem } from "../api/direct-ask.types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 const statusLabels: Record<DirectAskRequestListItem["status"], string> = {
   AWAITING_PAYMENT: "결제 대기",
@@ -79,7 +80,7 @@ export function DirectAskRequestList({
   emptyMessage: string;
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-text-secondary">{emptyMessage}</p>;
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (

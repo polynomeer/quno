@@ -1,9 +1,10 @@
 import { BadgeChip } from "./BadgeChip";
 import type { Badge } from "../api/badge.types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 export function BadgeList({ badges, emptyMessage }: { badges: Badge[]; emptyMessage: string }) {
   if (badges.length === 0) {
-    return <p className="text-sm text-text-secondary">{emptyMessage}</p>;
+    return <EmptyState message={emptyMessage} inline />;
   }
 
   return (
