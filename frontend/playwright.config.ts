@@ -9,6 +9,12 @@ export default defineConfig({
   // 테스트마다 새로 회원가입하는 계정을 쓰지만, 그래도 백엔드 상태(질문 개수 등)를 공유하는
   // 테스트가 섞일 수 있어 순차 실행이 더 예측 가능하다.
   fullyParallel: false,
+  // fullyParallel: false는 "같은 파일 안"만 순차로 만든다 — 파일끼리는 CPU 코어 수만큼 병렬로
+  // 돌았다. 콜드 dev 서버에서 여러 워커가 서로 다른 라우트를 처음 열면 Turbopack이 그 컴파일마다
+  // 연결된 모든 탭에 Fast Refresh를 보내, 다른 탭에서 입력 중이던 /ask 폼이 비워졌다(로컬에서만
+  // 나던 golden-path/keyboard-navigation flaky의 원인, 기술 딥다이브 15절). 워커를 1개로 고정해
+  // 위 주석의 "순차 실행" 의도를 실제로 강제한다. CI 러너는 코어가 적어 원래도 사실상 1개였다.
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
   use: {

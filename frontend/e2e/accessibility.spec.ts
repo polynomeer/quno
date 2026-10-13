@@ -20,11 +20,27 @@ for (const path of PUBLIC_PAGES) {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8081";
 
 test("question detail (anonymous, with the login-to-answer inline link) has no WCAG A/AA violations", async ({ page, request }) => {
-  const search = await request.get(`${API_BASE_URL}/api/v1/search?q=a&limit=1`);
-  const [question] = (await search.json()) as Array<{ id: number }>;
-  test.skip(!question, "검색 결과가 없어 질문 상세 페이지를 찾을 수 없습니다");
+  // Creates its own question instead of searching for one: CI starts from an empty database, so a
+  // search-and-skip version silently skipped this test on every CI run until another spec happened
+  // to create data first.
+  const unique = `a11yanon${Date.now()}`;
+  const email = `${unique}@example.com`;
+  const signUp = await request.post(`${API_BASE_URL}/api/v1/auth/signup`, {
+    data: { email, nickname: unique, password: "password123" },
+  });
+  expect(signUp.ok(), await signUp.text()).toBeTruthy();
+  const login = await request.post(`${API_BASE_URL}/api/v1/auth/login`, { data: { email, password: "password123" } });
+  const { accessToken } = (await login.json()) as { accessToken: string };
+  const created = await request.post(`${API_BASE_URL}/api/v1/questions`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    data: { title: `Anonymous a11y check ${unique}`, body: "Body with `inline code`." },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  const question = (await created.json()) as { id: number };
 
+  // No tokens in this page's storage — an anonymous visitor.
   await page.goto(`/questions/${question.id}`);
+  await expect(page.getByRole("link", { name: "로그인" })).toBeVisible();
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 
   expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
