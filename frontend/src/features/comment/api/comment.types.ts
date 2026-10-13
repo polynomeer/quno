@@ -5,6 +5,8 @@ export interface Comment {
   targetType: CommentTargetType;
   targetId: number;
   authorId: number;
+  /** Set by the list endpoints (ADR-0064); null/absent on create and edit responses. */
+  authorNickname?: string | null;
   parentCommentId: number | null;
   body: string | null;
   versionNumber: number;

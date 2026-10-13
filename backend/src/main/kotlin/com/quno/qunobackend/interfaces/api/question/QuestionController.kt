@@ -1,10 +1,12 @@
 package com.quno.qunobackend.interfaces.api.question
 
 import com.quno.qunobackend.application.cluster.usecase.GetQuestionGraphUseCase
+import com.quno.qunobackend.application.common.NicknameResolver
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
 import com.quno.qunobackend.application.question.dto.MarkQuestionOutdatedCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
+import com.quno.qunobackend.application.question.dto.QuestionTimelineEventResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.question.usecase.CreateQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.ForkQuestionUseCase
@@ -50,6 +52,7 @@ class QuestionController(
     private val getQuestionGraphUseCase: GetQuestionGraphUseCase,
     private val getQuestionTimelineUseCase: GetQuestionTimelineUseCase,
     private val recordQuestionViewUseCase: RecordQuestionViewUseCase,
+    private val nicknameResolver: NicknameResolver,
 ) {
 
     @PostMapping
@@ -111,13 +114,18 @@ class QuestionController(
     }
 
     @GetMapping("/{id}/versions")
-    fun listVersions(@PathVariable id: Long): List<QuestionVersionSummaryResponse> = listQuestionVersionsUseCase.execute(id).map {
-        QuestionVersionSummaryResponse(
-            versionNumber = it.versionNumber,
-            title = it.title,
-            createdBy = it.createdBy,
-            createdAt = it.createdAt,
-        )
+    fun listVersions(@PathVariable id: Long): List<QuestionVersionSummaryResponse> {
+        val versions = listQuestionVersionsUseCase.execute(id)
+        val nicknames = nicknameResolver.nicknamesOf(versions.map { it.createdBy })
+        return versions.map {
+            QuestionVersionSummaryResponse(
+                versionNumber = it.versionNumber,
+                title = it.title,
+                createdBy = it.createdBy,
+                createdByNickname = nicknames[it.createdBy],
+                createdAt = it.createdAt,
+            )
+        }
     }
 
     @GetMapping("/{id}/versions/{version}")
@@ -167,16 +175,21 @@ class QuestionController(
 
     /** "질문의 생애" panel (ADR-0062) — newest first. */
     @GetMapping("/{id}/timeline")
-    fun timeline(@PathVariable id: Long): List<QuestionTimelineEventResponse> = getQuestionTimelineUseCase.execute(id).map {
-        QuestionTimelineEventResponse(
-            type = it.type,
-            occurredAt = it.occurredAt,
-            actorId = it.actorId,
-            versionNumber = it.versionNumber,
-            answerId = it.answerId,
-            accepted = it.accepted,
-        )
+    fun timeline(@PathVariable id: Long): List<QuestionTimelineEventResponse> {
+        val events = getQuestionTimelineUseCase.execute(id)
+        val nicknames = nicknameResolver.nicknamesOf(events.map { it.actorId })
+        return events.map { it.toResponse(nicknames[it.actorId]) }
     }
+
+    private fun QuestionTimelineEventResult.toResponse(actorNickname: String?) = QuestionTimelineEventResponse(
+        type = type,
+        occurredAt = occurredAt,
+        actorId = actorId,
+        actorNickname = actorNickname,
+        versionNumber = versionNumber,
+        answerId = answerId,
+        accepted = accepted,
+    )
 
     @GetMapping("/{id}/related")
     fun related(

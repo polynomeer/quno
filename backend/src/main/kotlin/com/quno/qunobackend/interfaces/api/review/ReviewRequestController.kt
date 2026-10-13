@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.review
 
+import com.quno.qunobackend.application.common.NicknameResolver
 import com.quno.qunobackend.application.review.dto.CreateReviewRequestCommand
 import com.quno.qunobackend.application.review.dto.ReRequestReviewCommand
 import com.quno.qunobackend.application.review.usecase.CreateReviewRequestUseCase
@@ -22,6 +23,7 @@ class ReviewRequestController(
     private val createReviewRequestUseCase: CreateReviewRequestUseCase,
     private val listReviewRequestsUseCase: ListReviewRequestsUseCase,
     private val reRequestReviewUseCase: ReRequestReviewUseCase,
+    private val nicknameResolver: NicknameResolver,
 ) {
 
     @PostMapping
@@ -38,7 +40,11 @@ class ReviewRequestController(
     }
 
     @GetMapping
-    fun list(@PathVariable questionId: Long): List<ReviewRequestResponse> = listReviewRequestsUseCase.execute(questionId).map { it.toResponse() }
+    fun list(@PathVariable questionId: Long): List<ReviewRequestResponse> {
+        val requests = listReviewRequestsUseCase.execute(questionId)
+        val nicknames = nicknameResolver.nicknamesOf(requests.map { it.requestedBy })
+        return requests.map { it.toResponse(requestedByNickname = nicknames[it.requestedBy]) }
+    }
 
     @PostMapping("/{reviewRequestId}/re-request")
     fun reRequest(

@@ -7,6 +7,7 @@ import { useQuestionVersions } from "@/features/question/hooks/useQuestionVersio
 import { useQuestionDiff } from "@/features/question/hooks/useQuestionDiff";
 import { DiffView } from "@/features/question/ui/DiffView";
 import { relativeTime } from "@/shared/lib/relative-time";
+import { userLabel } from "@/shared/lib/user-label";
 import { Skeleton } from "@/shared/ui/Skeleton";
 
 export default function QuestionVersionHistoryPage({ params }: PageProps<"/questions/[id]/versions">) {
@@ -51,7 +52,7 @@ export default function QuestionVersionHistoryPage({ params }: PageProps<"/quest
             <li key={version.versionNumber} className="px-4 py-4 text-sm transition-colors hover:bg-canvas/60 sm:px-5">
               <span className="font-mono font-semibold text-text-primary">revision {version.versionNumber}</span> · <span className="text-text-body">{version.title}</span>
               <span className="ml-2 text-[13px] text-text-secondary">
-                by 사용자 #{version.createdBy} · {relativeTime(version.createdAt)}
+                by {userLabel(version.createdBy, version.createdByNickname)} · {relativeTime(version.createdAt)}
               </span>
             </li>
           ))}

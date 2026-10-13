@@ -8,6 +8,8 @@ data class ReviewRequestResponse(
     val id: Long,
     val questionId: Long,
     val requestedBy: Long,
+    /** Filled by the list endpoint (ADR-0064); null where a response isn't enriched (e.g. create). */
+    val requestedByNickname: String?,
     val message: String,
     val status: ReviewRequestStatus,
     val questionVersionNumberAtRequest: Int,
@@ -15,10 +17,11 @@ data class ReviewRequestResponse(
     val addressedAt: Instant?,
 )
 
-fun ReviewRequestResult.toResponse() = ReviewRequestResponse(
+fun ReviewRequestResult.toResponse(requestedByNickname: String? = null) = ReviewRequestResponse(
     id = id,
     questionId = questionId,
     requestedBy = requestedBy,
+    requestedByNickname = requestedByNickname,
     message = message,
     status = status,
     questionVersionNumberAtRequest = questionVersionNumberAtRequest,

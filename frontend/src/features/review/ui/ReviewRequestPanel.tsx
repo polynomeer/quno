@@ -7,6 +7,7 @@ import { useReRequestReview } from "../hooks/useReRequestReview";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Button } from "@/shared/ui/Button";
 import { relativeTime } from "@/shared/lib/relative-time";
+import { userLabel } from "@/shared/lib/user-label";
 import { FormError } from "@/shared/ui/FormError";
 
 /**
@@ -65,7 +66,7 @@ export function ReviewRequestPanel({
                   >
                     {request.status}
                   </span>
-                  <span>사용자 #{request.requestedBy}</span>
+                  <span>{userLabel(request.requestedBy, request.requestedByNickname)}</span>
                   <span>· v{request.questionVersionNumberAtRequest} 기준</span>
                   <span>· {relativeTime(request.createdAt)}</span>
                   {canReRequest && (

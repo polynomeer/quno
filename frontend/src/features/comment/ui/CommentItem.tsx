@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { relativeTime } from "@/shared/lib/relative-time";
+import { userLabel } from "@/shared/lib/user-label";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Button } from "@/shared/ui/Button";
 import { FormError } from "@/shared/ui/FormError";
@@ -105,7 +106,7 @@ export function CommentItem({
               <span className="text-text-primary">{renderBodyWithMentions(comment.body ?? "")}</span>
             )}{" "}
             <span className="text-xs">
-              — 사용자 #{comment.authorId} · {relativeTime(comment.createdAt)}
+              — {userLabel(comment.authorId, comment.authorNickname)} · {relativeTime(comment.createdAt)}
               {isEdited && (
                 <>
                   {" · "}

@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.comment
 
+import com.quno.qunobackend.application.comment.dto.CommentResult
 import com.quno.qunobackend.application.comment.dto.CreateCommentCommand
 import com.quno.qunobackend.application.comment.dto.EditCommentCommand
 import com.quno.qunobackend.application.comment.usecase.CreateCommentUseCase
@@ -7,6 +8,7 @@ import com.quno.qunobackend.application.comment.usecase.DeleteCommentUseCase
 import com.quno.qunobackend.application.comment.usecase.EditCommentUseCase
 import com.quno.qunobackend.application.comment.usecase.ListCommentVersionsUseCase
 import com.quno.qunobackend.application.comment.usecase.ListCommentsUseCase
+import com.quno.qunobackend.application.common.NicknameResolver
 import com.quno.qunobackend.domain.comment.CommentTargetType
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -32,6 +34,7 @@ class CommentController(
     private val deleteCommentUseCase: DeleteCommentUseCase,
     private val editCommentUseCase: EditCommentUseCase,
     private val listCommentVersionsUseCase: ListCommentVersionsUseCase,
+    private val nicknameResolver: NicknameResolver,
 ) {
 
     @PostMapping("/questions/{questionId}/comments")
@@ -45,7 +48,7 @@ class CommentController(
     ).toResponse()
 
     @GetMapping("/questions/{questionId}/comments")
-    fun listQuestionComments(@PathVariable questionId: Long): List<CommentResponse> = listCommentsUseCase.execute(CommentTargetType.QUESTION, questionId).map { it.toResponse() }
+    fun listQuestionComments(@PathVariable questionId: Long): List<CommentResponse> = withNicknames(listCommentsUseCase.execute(CommentTargetType.QUESTION, questionId))
 
     @PostMapping("/answers/{answerId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
@@ -58,7 +61,7 @@ class CommentController(
     ).toResponse()
 
     @GetMapping("/answers/{answerId}/comments")
-    fun listAnswerComments(@PathVariable answerId: Long): List<CommentResponse> = listCommentsUseCase.execute(CommentTargetType.ANSWER, answerId).map { it.toResponse() }
+    fun listAnswerComments(@PathVariable answerId: Long): List<CommentResponse> = withNicknames(listCommentsUseCase.execute(CommentTargetType.ANSWER, answerId))
 
     @PutMapping("/comments/{commentId}")
     fun edit(
@@ -74,5 +77,10 @@ class CommentController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@AuthenticationPrincipal actorId: Long, @PathVariable commentId: Long) {
         deleteCommentUseCase.execute(commentId, actorId)
+    }
+
+    private fun withNicknames(comments: List<CommentResult>): List<CommentResponse> {
+        val nicknames = nicknameResolver.nicknamesOf(comments.map { it.authorId })
+        return comments.map { it.toResponse(authorNickname = nicknames[it.authorId]) }
     }
 }

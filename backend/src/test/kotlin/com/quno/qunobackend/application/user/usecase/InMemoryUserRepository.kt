@@ -33,6 +33,7 @@ class InMemoryUserRepository : UserRepository {
     override fun findByNickname(nickname: String): User? = usersById.values.find { it.nickname == nickname }
     override fun existsByEmail(email: String): Boolean = usersById.values.any { it.email == email }
     override fun existsByNickname(nickname: String): Boolean = usersById.values.any { it.nickname == nickname }
+    override fun findNicknamesByIds(ids: Collection<Long>): Map<Long, String> = ids.mapNotNull { id -> usersById[id]?.let { id to it.nickname } }.toMap()
 
     /** Test-only stand-in for the DB-direct promotion ADR-0028 relies on (no promotion API exists). */
     fun promoteToModerator(userId: Long) {

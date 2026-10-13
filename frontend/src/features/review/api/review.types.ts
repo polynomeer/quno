@@ -4,6 +4,7 @@ export interface ReviewRequest {
   id: number;
   questionId: number;
   requestedBy: number;
+  requestedByNickname?: string | null;
   message: string;
   status: ReviewRequestStatus;
   questionVersionNumberAtRequest: number;

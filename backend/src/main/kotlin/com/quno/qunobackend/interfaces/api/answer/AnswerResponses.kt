@@ -10,6 +10,8 @@ data class AnswerResponse(
     val id: Long,
     val questionId: Long,
     val authorId: Long,
+    /** Filled by list endpoints (ADR-0064); null where a response isn't enriched (e.g. create). */
+    val authorNickname: String?,
     val body: String,
     val isAccepted: Boolean,
     val targetVersionNumber: Int,
@@ -19,10 +21,11 @@ data class AnswerResponse(
     val updatedAt: Instant,
 )
 
-fun AnswerResult.toResponse() = AnswerResponse(
+fun AnswerResult.toResponse(authorNickname: String? = null) = AnswerResponse(
     id = id,
     questionId = questionId,
     authorId = authorId,
+    authorNickname = authorNickname,
     body = body,
     isAccepted = isAccepted,
     targetVersionNumber = targetVersionNumber,
@@ -57,6 +60,7 @@ data class AnswerVersionResponse(
 data class AnswerVersionSummaryResponse(
     val versionNumber: Int,
     val createdBy: Long,
+    val createdByNickname: String?,
     val createdAt: Instant,
 )
 
