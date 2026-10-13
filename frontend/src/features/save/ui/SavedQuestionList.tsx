@@ -16,15 +16,18 @@ export function SavedQuestionList({
   }
 
   return (
-    <ul className="space-y-3">
+    // Same shell as QuestionList (one card, divided rows) and the same state-above-title order as
+    // QuestionCard — minus its numeric column, since this response carries no score or counts.
+    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {questions.map((question) => (
-        <li key={question.questionId} className="rounded-lg border border-border p-4">
-          <Link href={`/questions/${question.questionId}`} className="font-medium hover:underline">
+        <li key={question.questionId} className="space-y-2 px-4 py-4 transition-colors hover:bg-canvas/60 sm:px-5">
+          <StatusBadge status={question.status} />
+          <Link
+            href={`/questions/${question.questionId}`}
+            className="block text-[17px] leading-snug font-semibold text-text-primary hover:text-brand"
+          >
             {question.title}
           </Link>
-          <div className="mt-2">
-            <StatusBadge status={question.status} />
-          </div>
         </li>
       ))}
     </ul>
