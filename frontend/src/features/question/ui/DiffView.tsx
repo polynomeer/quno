@@ -15,9 +15,9 @@ const prefix: Record<DiffLine["type"], string> = {
 
 export function DiffView({ lines }: { lines: DiffLine[] }) {
   return (
-    <pre className="overflow-x-auto rounded-md border border-border bg-surface-subtle p-3 font-mono text-xs">
+    <pre className="overflow-x-auto rounded-xl border border-border bg-surface p-3 font-mono text-[13px] leading-relaxed">
       {lines.map((line, index) => (
-        <div key={index} className={cn("whitespace-pre-wrap px-1", lineClasses[line.type])}>
+        <div key={index} className={cn("whitespace-pre-wrap rounded-sm px-2", lineClasses[line.type])}>
           {prefix[line.type]} {line.text}
         </div>
       ))}

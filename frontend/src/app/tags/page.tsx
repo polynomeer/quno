@@ -14,7 +14,7 @@ export default function TagDirectoryPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Tags</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Tags</h1>
       <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search tags..." />
 
       {isLoading && <Skeleton className="h-40 w-full" />}
@@ -24,15 +24,15 @@ export default function TagDirectoryPage() {
       {!isLoading && tags && tags.length === 0 && <p className="text-sm text-text-secondary">태그가 없습니다.</p>}
 
       {!isLoading && tags && tags.length > 0 && (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {tags.map((tag) => (
             <li key={tag.id}>
               <Link
                 href={`/tags/${encodeURIComponent(tag.name)}`}
-                className="block rounded-md border border-border px-3 py-2 text-sm hover:border-text-secondary/40"
+                className="block rounded-xl border border-border bg-surface p-4 text-sm transition-colors hover:border-border-strong"
               >
-                <span className="font-medium">{tag.name}</span>
-                {tag.description && <p className="mt-1 truncate text-xs text-text-secondary">{tag.description}</p>}
+                <span className="font-mono font-medium text-text-primary">{tag.name}</span>
+                {tag.description && <p className="mt-1.5 truncate text-[13px] text-text-secondary">{tag.description}</p>}
               </Link>
             </li>
           ))}

@@ -37,20 +37,20 @@ export default function QuestionVersionHistoryPage({ params }: PageProps<"/quest
   return (
     <div className="space-y-6">
       <div>
-        <Link href={`/questions/${questionId}`} className="text-sm text-text-secondary hover:underline">
+        <Link href={`/questions/${questionId}`} className="text-[13px] text-text-secondary hover:text-brand">
           ← 질문으로 돌아가기
         </Link>
-        <h1 className="mt-2 text-xl font-semibold">Revision History</h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">Revision History</h1>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
         {(versions ?? [])
           .slice()
           .sort((a, b) => b.versionNumber - a.versionNumber)
           .map((version) => (
-            <li key={version.versionNumber} className="rounded-md border border-border p-3 text-sm">
-              <span className="font-medium">revision {version.versionNumber}</span> · {version.title}
-              <span className="ml-2 text-text-secondary">
+            <li key={version.versionNumber} className="px-4 py-4 text-sm transition-colors hover:bg-canvas/60 sm:px-5">
+              <span className="font-mono font-semibold text-text-primary">revision {version.versionNumber}</span> · <span className="text-text-body">{version.title}</span>
+              <span className="ml-2 text-[13px] text-text-secondary">
                 by 사용자 #{version.createdBy} · {relativeTime(version.createdAt)}
               </span>
             </li>
@@ -60,12 +60,12 @@ export default function QuestionVersionHistoryPage({ params }: PageProps<"/quest
       {versions && versions.length < 2 ? (
         <p className="text-sm text-text-secondary">비교할 이전 리비전이 없습니다.</p>
       ) : (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <label className="flex items-center gap-1">
+        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+          <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-text-primary">
+            <label className="flex items-center gap-2">
               From
               <select
-                className="rounded-md border border-border bg-surface px-2 py-1"
+                className="h-9 rounded-lg border border-border-strong bg-surface px-2 font-mono font-normal text-text-primary"
                 value={fromVersion ?? ""}
                 onChange={(event) => setFromOverride(Number(event.target.value))}
               >
@@ -76,10 +76,10 @@ export default function QuestionVersionHistoryPage({ params }: PageProps<"/quest
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-1">
+            <label className="flex items-center gap-2">
               To
               <select
-                className="rounded-md border border-border bg-surface px-2 py-1"
+                className="h-9 rounded-lg border border-border-strong bg-surface px-2 font-mono font-normal text-text-primary"
                 value={toVersion ?? ""}
                 onChange={(event) => setToOverride(Number(event.target.value))}
               >

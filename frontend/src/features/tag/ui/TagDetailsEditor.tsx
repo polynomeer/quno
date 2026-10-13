@@ -32,9 +32,9 @@ export function TagDetailsEditor({ tag }: { tag: Tag }) {
   if (!editing) {
     return (
       <div className="space-y-2">
-        {tag.description && <p className="text-sm text-text-primary">{tag.description}</p>}
+        {tag.description && <p className="text-text-body">{tag.description}</p>}
         {tag.docsUrl && (
-          <a href={tag.docsUrl} target="_blank" rel="noreferrer" className="block text-sm text-brand hover:underline">
+          <a href={tag.docsUrl} target="_blank" rel="noreferrer" className="block text-sm font-medium text-brand hover:underline">
             공식 문서 →
           </a>
         )}

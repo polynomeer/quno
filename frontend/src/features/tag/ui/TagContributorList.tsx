@@ -7,14 +7,14 @@ export function TagContributorList({ contributors }: { contributors: TagContribu
   }
 
   return (
-    <ol className="space-y-1">
+    <ol className="space-y-2">
       {contributors.map((contributor, index) => (
         <li key={contributor.userId} className="flex items-center gap-2 text-sm">
-          <span className="w-4 text-text-secondary">{index + 1}</span>
-          <Link href={`/users/${contributor.userId}`} className="font-medium hover:underline">
+          <span className="w-4 font-mono text-[13px] text-text-secondary">{index + 1}</span>
+          <Link href={`/users/${contributor.userId}`} className="font-medium text-text-primary hover:text-brand">
             {contributor.nickname}
           </Link>
-          <span className="text-text-secondary">답변 {contributor.answerCount}개</span>
+          <span className="ml-auto text-[13px] text-text-secondary">답변 {contributor.answerCount}개</span>
         </li>
       ))}
     </ol>

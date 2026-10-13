@@ -7,7 +7,7 @@ export function RelatedTagList({ tags }: { tags: Tag[] }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1.5">
       {tags.map((tag) => (
         <TagChip key={tag.id} name={tag.name} />
       ))}
