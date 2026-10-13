@@ -47,7 +47,7 @@ export function ClusterPanel({
               ✓ Super Answer 지정됨 (답변 #{cluster.representativeAnswerId})
             </p>
           )}
-          <QuestionList questions={otherMembers} emptyMessage="같은 클러스터의 다른 질문이 없습니다." />
+          <QuestionList questions={otherMembers} emptyMessage="같은 클러스터의 다른 질문이 없습니다." emptyInline />
           {canDesignateSuperAnswer && (
             <Button
               variant="secondary"

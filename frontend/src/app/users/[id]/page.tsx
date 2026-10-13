@@ -20,6 +20,7 @@ import { AccountDangerZone } from "@/features/auth/ui/AccountDangerZone";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
 import { TagChip } from "@/shared/ui/TagChip";
 import { Skeleton } from "@/shared/ui/Skeleton";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import Link from "next/link";
 
 /** Publicly readable (Phase 30, ADR-0042) — `RequestDirectAskPanel`/`FollowUserButton` both
@@ -86,27 +87,36 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
         <BadgeList badges={badges ?? []} emptyMessage="아직 획득한 배지가 없습니다." />
       </header>
 
+      {/* The three private lists share one group and one "only you" notice instead of repeating
+          it per list. */}
       {isOwnProfile && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text-primary">Watching ({watches?.length ?? 0})</h2>
-          <p className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</p>
-          <WatchedQuestionList questions={watches ?? []} emptyMessage="아직 Watch 중인 질문이 없습니다." />
-        </section>
-      )}
-
-      {isOwnProfile && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text-primary">Saved ({saves?.length ?? 0})</h2>
-          <p className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</p>
-          <SavedQuestionList questions={saves ?? []} emptyMessage="아직 저장한 질문이 없습니다." />
-        </section>
-      )}
-
-      {isOwnProfile && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text-primary">Following ({following?.length ?? 0})</h2>
-          <p className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</p>
-          <FollowingList users={following ?? []} emptyMessage="아직 팔로우하는 사용자가 없습니다." />
+        <section aria-labelledby="my-activity-heading" className="space-y-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="my-activity-heading" className="text-base font-semibold text-text-primary">
+              내 활동
+            </h2>
+            <span className="text-[13px] text-text-secondary">본인에게만 보이는 목록입니다.</span>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-text-primary">
+                Watching <span className="font-mono text-text-secondary">{watches?.length ?? 0}</span>
+              </h3>
+              <WatchedQuestionList questions={watches ?? []} emptyMessage="아직 Watch 중인 질문이 없습니다." />
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-text-primary">
+                Saved <span className="font-mono text-text-secondary">{saves?.length ?? 0}</span>
+              </h3>
+              <SavedQuestionList questions={saves ?? []} emptyMessage="아직 저장한 질문이 없습니다." />
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-text-primary">
+                Following <span className="font-mono text-text-secondary">{following?.length ?? 0}</span>
+              </h3>
+              <FollowingList users={following ?? []} emptyMessage="아직 팔로우하는 사용자가 없습니다." />
+            </div>
+          </div>
         </section>
       )}
 
@@ -140,16 +150,21 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-text-primary">작성한 질문 ({profile.questions.length})</h2>
+        <h2 className="text-base font-semibold text-text-primary">
+          작성한 질문 <span className="font-mono text-text-secondary">{profile.questions.length}</span>
+        </h2>
         <QuestionList questions={profile.questions} emptyMessage="작성한 질문이 없습니다." />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-text-primary">작성한 답변 ({profile.answers.length})</h2>
+        <h2 className="text-base font-semibold text-text-primary">
+          작성한 답변 <span className="font-mono text-text-secondary">{profile.answers.length}</span>
+        </h2>
         {profile.answers.length === 0 ? (
-          <p className="text-sm text-text-secondary">작성한 답변이 없습니다.</p>
+          <EmptyState message="작성한 답변이 없습니다." />
         ) : (
-          <ul className="space-y-3">
+          // Separate cards on purpose — same as the question page's answer list.
+          <ul className="space-y-4">
             {profile.answers.map((answer) => (
               <AnswerCard key={answer.id} answer={answer} questionHref={`/questions/${answer.questionId}`} />
             ))}
