@@ -19,7 +19,7 @@ export default function OrganizationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Organizations</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
         <CreateOrganizationForm />
       </div>
 
@@ -35,7 +35,7 @@ export default function OrganizationsPage() {
       )}
 
       {!isLoading && organizations && organizations.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           {organizations.map((organization) => (
             <OrganizationCard key={organization.id} organization={organization} />
           ))}

@@ -20,24 +20,26 @@ export function ReportQueueItem({ report }: { report: Report }) {
   const isPending = dismissReport.isPending || hideReport.isPending;
 
   return (
-    <li className="space-y-2 rounded-lg border border-border p-4">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-        <span className="inline-flex items-center rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning">
+    <li className="space-y-2 px-4 py-4 transition-colors hover:bg-canvas/60 sm:px-5">
+      <div className="flex flex-wrap items-center gap-2 text-[13px] text-text-secondary">
+        <span className="inline-flex h-[22px] items-center rounded bg-warning-subtle px-2 text-xs font-semibold text-warning">
           {reasonLabels[report.reason]}
         </span>
         {report.targetType === "QUESTION" ? (
-          <Link href={`/questions/${report.targetId}`} className="underline hover:text-text-primary">
+          <Link href={`/questions/${report.targetId}`} className="font-mono font-medium text-text-primary underline hover:text-brand">
             Question #{report.targetId}
           </Link>
         ) : (
           // No single-answer-by-id page exists yet (the backend doesn't return the parent
           // question id from a bare answer lookup), so this can't deep-link like Question does.
-          <span>Answer #{report.targetId}</span>
+          <span className="font-mono">Answer #{report.targetId}</span>
         )}
-        <span>· 신고자 #{report.reporterId}</span>
+        <span>
+          · 신고자 <span className="font-mono">#{report.reporterId}</span>
+        </span>
         <span>· {relativeTime(report.createdAt)}</span>
       </div>
-      {report.message && <p className="text-sm">{report.message}</p>}
+      {report.message && <p className="text-sm text-text-body">{report.message}</p>}
       <div className="flex gap-2">
         <Button
           variant="secondary"

@@ -125,11 +125,13 @@ function QuestionsSearchContent() {
             onToggleStatus={toggleStatus}
           />
           <div className="flex items-center justify-between">
-            <p className="text-sm text-text-secondary">{filteredResults.length}개 결과</p>
-            <label className="flex items-center gap-1 text-sm text-text-secondary">
+            <p className="text-[13px] text-text-secondary">
+              <span className="font-mono">{filteredResults.length}</span>개 결과
+            </p>
+            <label className="flex items-center gap-2 text-[13px] text-text-secondary">
               sort:
               <select
-                className="rounded-md border border-border bg-surface px-2 py-1"
+                className="h-9 rounded-lg border border-border-strong bg-surface px-2 text-sm text-text-primary"
                 value={sort}
                 onChange={(event) => handleSortChange(event.target.value as SearchSort)}
               >

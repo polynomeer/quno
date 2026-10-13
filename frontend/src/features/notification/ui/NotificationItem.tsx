@@ -9,14 +9,21 @@ export function NotificationItem({ notification }: { notification: Notification 
   const { message, href } = describeNotification(notification);
 
   return (
-    <li className={cn("rounded-md border border-border p-3 text-sm", !notification.isRead && "border-brand/40")}>
-      <Link href={href} className="flex items-start gap-2 hover:underline">
+    <li className="text-sm transition-colors hover:bg-canvas/60">
+      <Link href={href} className="group flex items-start gap-3 px-4 py-4 sm:px-5">
         {!notification.isRead && (
-          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand" aria-label="읽지 않음" />
+          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-brand" aria-label="읽지 않음" />
         )}
-        <span className="flex-1">
-          <span className="block">{message}</span>
-          <span className="mt-1 block text-xs text-text-secondary no-underline">
+        <span className="min-w-0 flex-1">
+          <span
+            className={cn(
+              "block group-hover:text-brand",
+              notification.isRead ? "text-text-body" : "font-medium text-text-primary",
+            )}
+          >
+            {message}
+          </span>
+          <span className="mt-1 block text-[13px] text-text-secondary">
             {relativeTime(notification.createdAt)}
           </span>
         </span>

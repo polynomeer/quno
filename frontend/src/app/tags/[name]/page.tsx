@@ -43,9 +43,9 @@ function TagDetailContent({ tagName }: { tagName: string }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
       <div className="space-y-6">
-        <header className="space-y-3">
+        <header className="space-y-3 rounded-xl border border-border bg-surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-xl font-semibold">#{tag.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">#{tag.name}</h1>
             <FollowTagButton tagId={tag.id} />
           </div>
           <TagDetailsEditor tag={tag} />
@@ -58,8 +58,8 @@ function TagDetailContent({ tagName }: { tagName: string }) {
               onClick={() => router.push(`/tags/${encodeURIComponent(tagName)}?sort=${option}`)}
               className={
                 sort === option
-                  ? "rounded-md bg-surface-subtle px-3 py-1 text-sm font-medium text-text-primary"
-                  : "rounded-md px-3 py-1 text-sm text-text-secondary hover:text-text-primary"
+                  ? "rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-text-primary"
+                  : "rounded-lg border border-transparent px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary"
               }
             >
               {sortLabels[option]}
@@ -74,13 +74,13 @@ function TagDetailContent({ tagName }: { tagName: string }) {
         )}
       </div>
 
-      <aside className="space-y-6">
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-text-secondary">상위 기여자</h2>
+      <aside className="space-y-4">
+        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-semibold text-text-primary">상위 기여자</h2>
           <TagContributorList contributors={contributors ?? []} />
         </section>
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-text-secondary">관련 태그</h2>
+        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-semibold text-text-primary">관련 태그</h2>
           <RelatedTagList tags={relatedTags ?? []} />
         </section>
       </aside>

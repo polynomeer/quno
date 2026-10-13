@@ -19,9 +19,9 @@ export function SearchFilters({
   onToggleStatus: (status: QuestionStatus) => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-text-secondary">Status</span>
+        <span className="w-12 text-xs font-semibold text-text-primary">Status</span>
         {ALL_STATUSES.map((status) => (
           <button
             key={status}
@@ -35,17 +35,17 @@ export function SearchFilters({
       </div>
       {availableTags.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-text-secondary">Tags</span>
+          <span className="w-12 text-xs font-semibold text-text-primary">Tags</span>
           {availableTags.map((tag) => (
             <button
               key={tag}
               type="button"
               onClick={() => onToggleTag(tag)}
               className={cn(
-                "rounded-md px-2 py-0.5 text-xs font-medium",
+                "inline-flex h-[22px] items-center rounded px-2 font-mono text-xs font-semibold transition-colors",
                 selectedTags.includes(tag)
                   ? "bg-brand text-brand-foreground"
-                  : "bg-surface-subtle text-text-secondary hover:bg-border/40",
+                  : "bg-surface-subtle text-text-body hover:text-brand",
               )}
             >
               {tag}
