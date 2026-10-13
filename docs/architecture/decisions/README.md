@@ -89,3 +89,4 @@
 | [0062](0062-question-activity-signals-and-timeline.md) | 디자인 시안의 누락 요소 구현: 질문 요약에 답변 수·수락 여부·최신 버전·생성/수정 시각을 일괄 집계로 추가, 기존 애그리거트를 합성한 공개 `GET /questions/{id}/timeline` 신설(수락 시각은 저장되지 않아 플래그로만 표시) | 승인됨 |
 | [0063](0063-question-view-count-explicit-post-with-redis-dedup.md) | 질문 조회수: GET이 아닌 명시적 `POST /questions/{id}/views`로 집계(SSR·크롤러 제외), viewer별 30분 Redis SET NX 중복 제거(원본 IP 미저장), `question_view_counts` 별도 테이블 원자적 upsert | 승인됨 |
 | [0064](0064-list-responses-resolve-nicknames-in-one-batch.md) | "사용자 #id" 대신 닉네임 표시: 목록 컨트롤러가 `NicknameResolver`로 응답당 1회 일괄 조회(유스케이스·결과 DTO는 그대로), 생성/수정 응답과 실시간 질문방은 범위 밖 | 승인됨 |
+| [0065](0065-typed-redis-cache-serializers.md) | 대시보드 500 수정: `@Cacheable` 캐시가 타입 정보 없이 저장돼 캐시 히트에서 `LinkedHashMap`/`Integer`로 복원되던 문제를 캐시별 타입 지정 직렬화기로 해결(전역 default typing은 기각), Redis 왕복 통합 테스트 추가 | 승인됨 |

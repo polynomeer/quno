@@ -1,7 +1,7 @@
 # ADR-0060: 값 객체를 캐싱하는 곳은 `@Cacheable`로, 도메인 애그리거트를 캐싱하는 곳은 수동 cache-aside로 남긴다
 
 - 날짜: 2026-09-24
-- 상태: 승인됨
+- 상태: 승인됨 (직렬화 결함은 [ADR-0065](0065-typed-redis-cache-serializers.md)에서 보완)
 
 ## 배경 (Context)
 
