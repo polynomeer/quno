@@ -25,21 +25,25 @@ export default function OrganizationDetailPage({ params }: PageProps<"/organizat
       <header className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">{organization.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{organization.name}</h1>
             {organization.verified && (
-              <span className="inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success">
+              <span className="inline-flex h-[22px] items-center rounded bg-success-subtle px-2 text-xs font-semibold text-success">
                 Verified · {organization.emailDomain}
               </span>
             )}
           </div>
           <JoinOrganizationButton organization={organization} />
         </div>
-        <p className="text-sm text-text-secondary">
+        <p className="text-[13px] text-text-secondary">
           멤버 {organization.memberCount}명 · {relativeTime(organization.createdAt)} 생성
         </p>
       </header>
 
-      {organization.description && <p className="text-sm text-text-primary">{organization.description}</p>}
+      {organization.description && (
+        <section className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-text-body">{organization.description}</p>
+        </section>
+      )}
     </div>
   );
 }

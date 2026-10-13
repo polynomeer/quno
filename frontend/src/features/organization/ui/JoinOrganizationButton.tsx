@@ -21,7 +21,7 @@ export function JoinOrganizationButton({ organization }: { organization: Organiz
   const isMember = Boolean(myProfile?.organizations.some((o) => o.id === organization.id));
 
   if (organization.verified && !isMember) {
-    return <p className="text-xs text-text-secondary">업무/학교 이메일 인증으로만 가입할 수 있습니다.</p>;
+    return <p className="text-[13px] text-text-secondary">업무/학교 이메일 인증으로만 가입할 수 있습니다.</p>;
   }
 
   return (

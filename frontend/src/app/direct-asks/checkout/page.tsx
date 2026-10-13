@@ -40,9 +40,9 @@ function DirectAskCheckoutContent() {
   if (failMessage) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold">결제가 취소되었습니다</h1>
+        <h1 className="text-2xl font-bold tracking-tight">결제가 취소되었습니다</h1>
         <p className="text-sm text-danger">{failMessage}</p>
-        <Link href="/direct-asks?role=sent" className="text-sm text-brand hover:underline">
+        <Link href="/direct-asks?role=sent" className="inline-block text-sm font-medium text-text-primary hover:text-brand">
           보낸 요청으로 돌아가기
         </Link>
       </div>
@@ -60,9 +60,9 @@ function DirectAskCheckoutContent() {
   if (confirmPayment.isError) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold">결제 확인에 실패했습니다</h1>
+        <h1 className="text-2xl font-bold tracking-tight">결제 확인에 실패했습니다</h1>
         <FormError error={confirmPayment.error} fallback="잠시 후 다시 시도해주세요." />
-        <Link href="/direct-asks?role=sent" className="text-sm text-brand hover:underline">
+        <Link href="/direct-asks?role=sent" className="inline-block text-sm font-medium text-text-primary hover:text-brand">
           보낸 요청으로 돌아가기
         </Link>
       </div>
@@ -71,9 +71,9 @@ function DirectAskCheckoutContent() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Direct Ask 요청이 완료되었습니다</h1>
-      <p className="text-sm text-text-secondary">결제가 확인되어 상대방에게 요청이 전달되었습니다.</p>
-      <Link href="/direct-asks?role=sent" className="text-sm text-brand hover:underline">
+      <h1 className="text-2xl font-bold tracking-tight">Direct Ask 요청이 완료되었습니다</h1>
+      <p className="text-text-body">결제가 확인되어 상대방에게 요청이 전달되었습니다.</p>
+      <Link href="/direct-asks?role=sent" className="inline-block text-sm font-medium text-text-primary hover:text-brand">
         보낸 요청 보기
       </Link>
     </div>

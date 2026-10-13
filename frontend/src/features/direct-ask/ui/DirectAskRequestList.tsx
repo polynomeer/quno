@@ -15,7 +15,7 @@ const statusLabels: Record<DirectAskRequestListItem["status"], string> = {
 };
 
 const statusToneClasses: Record<DirectAskRequestListItem["status"], string> = {
-  AWAITING_PAYMENT: "bg-surface-subtle text-text-secondary",
+  AWAITING_PAYMENT: "bg-surface-subtle text-text-body",
   PENDING: "bg-warning-subtle text-warning",
   ACCEPTED: "bg-success-subtle text-success",
   DECLINED: "bg-danger-subtle text-danger",
@@ -26,32 +26,32 @@ function DirectAskRequestRow({ item, role }: { item: DirectAskRequestListItem; r
   const canRespond = role === "received" && item.status === "PENDING";
 
   return (
-    <li className="rounded-lg border border-border p-4">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${statusToneClasses[item.status]}`}>
+    <li className="px-4 py-4 transition-colors hover:bg-canvas/60 sm:px-5">
+      <div className="flex flex-wrap items-center gap-2 text-[13px] text-text-secondary">
+        <span className={`inline-flex h-[22px] items-center rounded px-2 text-xs font-semibold ${statusToneClasses[item.status]}`}>
           {statusLabels[item.status]}
         </span>
         {role === "received" ? (
           <span>
             요청자{" "}
-            <Link href={`/users/${item.requesterId}`} className="font-medium text-text-primary hover:underline">
+            <Link href={`/users/${item.requesterId}`} className="font-medium text-text-primary hover:text-brand">
               {item.requesterNickname}
             </Link>
           </span>
         ) : (
           <span>
             대상{" "}
-            <Link href={`/users/${item.targetUserId}`} className="font-medium text-text-primary hover:underline">
+            <Link href={`/users/${item.targetUserId}`} className="font-medium text-text-primary hover:text-brand">
               {item.targetUserNickname}
             </Link>
           </span>
         )}
         <span>· {relativeTime(item.createdAt)}</span>
       </div>
-      <Link href={`/questions/${item.questionId}`} className="mt-1 block font-medium hover:underline">
+      <Link href={`/questions/${item.questionId}`} className="mt-1.5 block font-semibold leading-snug text-text-primary hover:text-brand">
         {item.questionTitle}
       </Link>
-      {item.message && <p className="mt-1 text-sm text-text-secondary">{item.message}</p>}
+      {item.message && <p className="mt-1 text-sm text-text-body">{item.message}</p>}
 
       <FormError error={respond.error} fallback="응답을 처리하지 못했습니다." className="mt-2" />
 
@@ -83,7 +83,7 @@ export function DirectAskRequestList({
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {items.map((item) => (
         <DirectAskRequestRow key={item.id} item={item} role={role} />
       ))}

@@ -89,8 +89,8 @@ export function RequestDirectAskPanel({ targetUserId }: { targetUserId: number }
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-border p-4">
-      <h2 className="text-sm font-semibold text-text-secondary">이 사용자에게 Direct Ask 요청</h2>
+    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+      <h2 className="text-sm font-semibold text-text-primary">이 사용자에게 Direct Ask 요청</h2>
       {myQuestions.length === 0 ? (
         <p className="text-sm text-text-secondary">먼저 질문을 작성해야 Direct Ask를 요청할 수 있습니다.</p>
       ) : (
@@ -98,7 +98,7 @@ export function RequestDirectAskPanel({ targetUserId }: { targetUserId: number }
           <select
             value={questionId ?? ""}
             onChange={(event) => setQuestionId(event.target.value ? Number(event.target.value) : null)}
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand"
+            className="w-full rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-[15px] text-text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           >
             <option value="">질문 선택...</option>
             {myQuestions.map((question) => (
@@ -126,6 +126,6 @@ export function RequestDirectAskPanel({ targetUserId }: { targetUserId: number }
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }

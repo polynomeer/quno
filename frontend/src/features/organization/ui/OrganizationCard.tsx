@@ -3,19 +3,19 @@ import type { Organization } from "@/entities/organization/model/organization.ty
 
 export function OrganizationCard({ organization }: { organization: Organization }) {
   return (
-    <li className="rounded-lg border border-border p-4">
+    <li className="px-4 py-4 transition-colors hover:bg-canvas/60 sm:px-5">
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={`/organizations/${organization.id}`} className="font-medium hover:underline">
+        <Link href={`/organizations/${organization.id}`} className="font-medium text-text-primary hover:text-brand">
           {organization.name}
         </Link>
         {organization.verified && (
-          <span className="inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success">
+          <span className="inline-flex h-[22px] items-center rounded bg-success-subtle px-2 text-xs font-semibold text-success">
             Verified · {organization.emailDomain}
           </span>
         )}
       </div>
-      {organization.description && <p className="mt-1 text-sm text-text-secondary">{organization.description}</p>}
-      <p className="mt-2 text-xs text-text-secondary">멤버 {organization.memberCount}명</p>
+      {organization.description && <p className="mt-1 text-sm text-text-body">{organization.description}</p>}
+      <p className="mt-2 text-[13px] text-text-secondary">멤버 {organization.memberCount}명</p>
     </li>
   );
 }

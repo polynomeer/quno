@@ -21,7 +21,7 @@ function DirectAsksContent() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Direct Asks</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Direct Asks</h1>
       <div className="flex gap-2">
         <Button variant={role === "received" ? "primary" : "secondary"} onClick={() => router.push("/direct-asks?role=received")}>
           받은 요청
