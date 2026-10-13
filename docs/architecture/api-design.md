@@ -453,6 +453,16 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - `viewCount`가 질문 상세 응답과 질문 요약 응답(일괄 조회)에 포함된다.
 - 존재하지 않는 질문은 404다.
 
+## 목록 응답의 닉네임 (ADR-0064)
+
+- 다음 목록 응답에 사용자 닉네임 필드(nullable)가 추가됐다.
+  - 답변 목록·댓글 목록: `authorNickname`
+  - QPR 요청 목록: `requestedByNickname`
+  - 질문 타임라인: `actorNickname`
+  - 질문/답변 수정 이력 목록: `createdByNickname`
+- 컨트롤러가 `NicknameResolver`로 응답 하나당 한 번 일괄 조회해 붙인다. 유스케이스 결과에는 닉네임이 없다.
+- 생성·수정 응답과 실시간 질문방 메시지에는 닉네임이 없다(`null` 또는 필드 없음). 프론트는 `userLabel()`로 "사용자 #id"를 대신 표시한다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
