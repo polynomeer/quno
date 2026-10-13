@@ -47,6 +47,7 @@ data class QuestionVersionSummaryResponse(
     val versionNumber: Int,
     val title: String,
     val createdBy: Long,
+    val createdByNickname: String?,
     val createdAt: Instant,
 )
 
@@ -78,6 +79,7 @@ data class QuestionTimelineEventResponse(
     val type: QuestionTimelineEventType,
     val occurredAt: Instant,
     val actorId: Long?,
+    val actorNickname: String?,
     val versionNumber: Int?,
     val answerId: Long?,
     val accepted: Boolean,

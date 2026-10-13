@@ -1,5 +1,6 @@
 package com.quno.qunobackend.integration
 
+import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -122,12 +123,18 @@ class PublicReadAccessE2ETest {
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].type").value("ANSWER_POSTED"))
             .andExpect(jsonPath("$[1].type").value("QUESTION_CREATED"))
+            // Nicknames resolved in one batch per list response (ADR-0064), for anonymous readers too.
+            .andExpect(jsonPath("$[0].actorNickname").value(startsWith("public-read-author")))
         mockMvc.perform(get("/api/v1/questions/$questionId/answers"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].body").value("An answer for the public to read."))
+            .andExpect(jsonPath("$[0].authorNickname").value(startsWith("public-read-author")))
         mockMvc.perform(get("/api/v1/questions/$questionId/comments"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].body").value("A comment for the public to read."))
+            .andExpect(jsonPath("$[0].authorNickname").value(startsWith("public-read-author")))
+        mockMvc.perform(get("/api/v1/questions/$questionId/versions"))
+            .andExpect(jsonPath("$[0].createdByNickname").value(startsWith("public-read-author")))
         mockMvc.perform(get("/api/v1/answers/$answerId/versions")).andExpect(status().isOk)
         mockMvc.perform(get("/api/v1/answers/$answerId/comments")).andExpect(status().isOk)
         mockMvc.perform(get("/api/v1/search?q=public+read")).andExpect(status().isOk)

@@ -28,6 +28,11 @@ class UserRepositoryAdapter(
 
     override fun findById(id: Long): User? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
+    override fun findNicknamesByIds(ids: Collection<Long>): Map<Long, String> {
+        if (ids.isEmpty()) return emptyMap()
+        return jpaRepository.findAllById(ids.toSet()).associate { requireNotNull(it.id) to it.nickname }
+    }
+
     override fun findByEmail(email: String): User? = jpaRepository.findByEmail(email)?.toDomain()
 
     override fun findByNickname(nickname: String): User? = jpaRepository.findByNickname(nickname)?.toDomain()

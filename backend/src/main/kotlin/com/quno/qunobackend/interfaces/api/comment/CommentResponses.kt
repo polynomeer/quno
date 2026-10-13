@@ -10,6 +10,8 @@ data class CommentResponse(
     val targetType: CommentTargetType,
     val targetId: Long,
     val authorId: Long,
+    /** Filled by list endpoints (ADR-0064); null where a response isn't enriched (e.g. create). */
+    val authorNickname: String?,
     val parentCommentId: Long?,
     /** Null once deleted — see ADR-0024 #4 (the original text isn't kept in any response, tombstoned). */
     val body: String?,
@@ -19,11 +21,12 @@ data class CommentResponse(
     val updatedAt: Instant,
 )
 
-fun CommentResult.toResponse() = CommentResponse(
+fun CommentResult.toResponse(authorNickname: String? = null) = CommentResponse(
     id = id,
     targetType = targetType,
     targetId = targetId,
     authorId = authorId,
+    authorNickname = authorNickname,
     parentCommentId = parentCommentId,
     body = body,
     versionNumber = versionNumber,

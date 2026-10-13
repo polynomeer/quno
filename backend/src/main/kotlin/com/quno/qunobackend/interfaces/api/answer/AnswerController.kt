@@ -10,6 +10,7 @@ import com.quno.qunobackend.application.answer.usecase.ListAnswerVersionsUseCase
 import com.quno.qunobackend.application.answer.usecase.ListAnswersUseCase
 import com.quno.qunobackend.application.answer.usecase.ReviseAnswerUseCase
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
+import com.quno.qunobackend.application.common.NicknameResolver
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -32,6 +33,7 @@ class AnswerController(
     private val listAnswerVersionsUseCase: ListAnswerVersionsUseCase,
     private val getAnswerVersionUseCase: GetAnswerVersionUseCase,
     private val getAnswerVersionDiffUseCase: GetAnswerVersionDiffUseCase,
+    private val nicknameResolver: NicknameResolver,
 ) {
 
     @PostMapping("/questions/{questionId}/answers")
@@ -48,7 +50,11 @@ class AnswerController(
     }
 
     @GetMapping("/questions/{questionId}/answers")
-    fun list(@PathVariable questionId: Long): List<AnswerResponse> = listAnswersUseCase.execute(questionId).map { it.toResponse() }
+    fun list(@PathVariable questionId: Long): List<AnswerResponse> {
+        val answers = listAnswersUseCase.execute(questionId)
+        val nicknames = nicknameResolver.nicknamesOf(answers.map { it.authorId })
+        return answers.map { it.toResponse(authorNickname = nicknames[it.authorId]) }
+    }
 
     @PostMapping("/answers/{answerId}/accept")
     fun accept(@AuthenticationPrincipal actorId: Long, @PathVariable answerId: Long): AcceptAnswerResponse {
@@ -70,8 +76,17 @@ class AnswerController(
     ).toResponse()
 
     @GetMapping("/answers/{answerId}/versions")
-    fun listVersions(@PathVariable answerId: Long): List<AnswerVersionSummaryResponse> = listAnswerVersionsUseCase.execute(answerId).map {
-        AnswerVersionSummaryResponse(versionNumber = it.versionNumber, createdBy = it.createdBy, createdAt = it.createdAt)
+    fun listVersions(@PathVariable answerId: Long): List<AnswerVersionSummaryResponse> {
+        val versions = listAnswerVersionsUseCase.execute(answerId)
+        val nicknames = nicknameResolver.nicknamesOf(versions.map { it.createdBy })
+        return versions.map {
+            AnswerVersionSummaryResponse(
+                versionNumber = it.versionNumber,
+                createdBy = it.createdBy,
+                createdByNickname = nicknames[it.createdBy],
+                createdAt = it.createdAt,
+            )
+        }
     }
 
     @GetMapping("/answers/{answerId}/versions/{version}")
