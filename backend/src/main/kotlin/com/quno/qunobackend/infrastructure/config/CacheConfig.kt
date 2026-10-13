@@ -1,5 +1,7 @@
 package com.quno.qunobackend.infrastructure.config
 
+import com.quno.qunobackend.domain.dashboard.TagTrend
+import com.quno.qunobackend.domain.qunobot.TagSpike
 import org.slf4j.LoggerFactory
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
@@ -12,7 +14,9 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
+import tools.jackson.databind.JavaType
 import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
@@ -27,6 +31,13 @@ import java.time.Duration
  * `errorHandler()`는 Redis 장애 시 캐시 get/put을 조용한 미스/무시로 처리한다 — 어댑터마다
  * `safeCacheGet`/`safeCacheSet`을 기억해서 감싸야 했던 ADR-0056의 정책을 `@Cacheable`을 쓰는
  * 모든 캐시에 자동으로 적용한다.
+ *
+ * 캐시마다 값 타입을 명시한 [JacksonJsonRedisSerializer]를 쓴다(ADR-0065). 기본값인
+ * [GenericJacksonJsonRedisSerializer]는 앱 [ObjectMapper]에 타입 정보가 없어 캐시 히트 때
+ * `List<TagTrend>`를 `List<LinkedHashMap>`으로, 작은 `Long`을 `Integer`로 되돌려 TTL 안의 두 번째
+ * 요청부터 `ClassCastException`이 났다. 전역 default typing(`@class` 저장)은 역직렬화 공격면이
+ * 생기고, Kotlin data class는 final이라 기본 설정으로는 적용되지도 않아 쓰지 않는다.
+ * 새 `@Cacheable`을 추가하면 [typedCaches]에도 그 값 타입을 등록해야 한다.
  */
 @Configuration
 @EnableCaching
@@ -43,7 +54,25 @@ class CacheConfig(
             )
         return RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(
+                typedCaches().mapValues { (_, type) ->
+                    defaultConfig.serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(JacksonJsonRedisSerializer<Any>(objectMapper, type)),
+                    )
+                },
+            )
             .build()
+    }
+
+    /** Cache name → the exact value type its `@Cacheable` method returns. */
+    private fun typedCaches(): Map<String, JavaType> {
+        val types = objectMapper.typeFactory
+        fun listOf(element: Class<*>): JavaType = types.constructCollectionType(List::class.java, element)
+        return mapOf(
+            "dashboard-popular-questions" to listOf(java.lang.Long::class.java),
+            "dashboard-trending-tags" to listOf(TagTrend::class.java),
+            "qunobot-tag-spikes" to listOf(TagSpike::class.java),
+        )
     }
 
     override fun errorHandler(): CacheErrorHandler = LoggingCacheErrorHandler()
