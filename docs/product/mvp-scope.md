@@ -68,7 +68,7 @@ MVP 착수 시점(2026-08-25)의 결정이다. 이후 아래 항목 대부분이
 | Phase 5 | 신뢰 네트워크 | Organization, 전문가 평판, Direct Ask | 평판 점수만 완료(Vote 반영 포함), **Organization/Direct Ask는 핵심 설계 없어 미착수**([PLAN.md](../../PLAN.md) Phase 9/20) |
 | Phase 6 | 소비 경험 강화 | Quno Flow, Instant Question, 실시간 질문방, 고급 Daily Dashboard | Flow/Dashboard/Instant Question 완료, **실시간 질문방만 WebSocket 인프라 투자 필요로 미착수**([PLAN.md](../../PLAN.md) Phase 10) |
 
-Phase 1~6 이후의 차별화 로드맵(Stack Fingerprint, 에러 시그니처, CLI/MCP 등)은 [competitive-analysis.md](competitive-analysis.md)와 [PLAN.md](../../PLAN.md) Phase 63~70 참고.
+Phase 1~6 이후의 차별화 로드맵(Stack Fingerprint, 에러 시그니처, CLI/MCP 등)은 [competitive-analysis.md](competitive-analysis.md)와 [PLAN.md](../../PLAN.md) Phase 63~77 참고.
 
 Phase 1~6 로드맵에는 없었지만 이후 별도로 추가된 범위(Vote, Comment, Save, Follow User, Badge, Moderation, Answer Revision)는 [PLAN.md](../../PLAN.md) Phase 11~20 참고.
 
