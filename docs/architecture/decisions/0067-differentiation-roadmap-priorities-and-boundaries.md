@@ -1,7 +1,7 @@
 # ADR-0067: 차별화 로드맵의 우선순위와 경계 — Stack Fingerprint 먼저, AI는 구조화 보조만
 
 - 날짜: 2026-10-19
-- 상태: 승인됨
+- 상태: 일부 대체됨(ADR-0068로) — 결정 2(AI는 답변을 생성하지 않는다)와 결정 5(서버는 코드를 실행하지 않는다)는 [ADR-0068](0068-living-engine-runner-and-ai-first-responder.md)이 조건부로 바꿨다. 결정 1·3·4·6은 유효하다.
 
 ## 배경 (Context)
 
