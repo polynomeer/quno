@@ -275,7 +275,7 @@ cd frontend && npm run test:e2e
 | 시스템 아키텍처, 패키지 구조 | [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md) |
 | 도메인 모델, ERD, SQL 흐름 | [docs/architecture/domain-model.md](docs/architecture/domain-model.md) |
 | REST API 설계 | [docs/architecture/api-design.md](docs/architecture/api-design.md) |
-| **"왜 이렇게 결정했는가" (ADR 67개)** | [docs/architecture/decisions/](docs/architecture/decisions/README.md) |
+| **"왜 이렇게 결정했는가" (ADR 70개)** | [docs/architecture/decisions/](docs/architecture/decisions/README.md) |
 | **기술적으로 어려웠던 문제와 진단 과정** | [docs/engineering/technical-deep-dives.md](docs/engineering/technical-deep-dives.md) |
 | 프론트엔드 UX/디자인 시스템 | [docs/frontend/](docs/frontend/README.md) |
 | 운영 런북 | [docs/operations/runbook.md](docs/operations/runbook.md) |

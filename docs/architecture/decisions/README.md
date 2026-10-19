@@ -93,3 +93,5 @@
 | [0066](0066-playwright-single-worker.md) | 로컬 e2e 첫 실행 flaky 해결: `fullyParallel: false`가 파일 간 병렬을 막지 않아 콜드 dev 서버의 Fast Refresh가 다른 탭 폼을 비우던 문제를 `workers: 1`로 해결(프로덕션 빌드 기반 실행은 보류) | 승인됨 |
 | [0067](0067-differentiation-roadmap-priorities-and-boundaries.md) | 차별화 로드맵(Phase 63~70) 우선순위와 경계: Stack Fingerprint를 키스톤으로 먼저, AI는 구조화 보조만(답변 생성 안 함), MCP로 AI 에이전트를 유통 채널로, 자체 코드 실행 샌드박스 기각, 콜드 스타트는 한국어 백엔드 개발자로 좁게 | 일부 대체됨(ADR-0068) |
 | [0068](0068-living-engine-runner-and-ai-first-responder.md) | 살아있는 엔진: 원본 불변·제안만, 격리 러너로 재현 증명(외부 CI → 호스티드 샌드박스 → 자체 순), AI는 라벨 붙은 비-Answer 1차 응답자로 참여, 비공개 질문을 IDE 연동의 선행 조건으로, IntelliJ 먼저 | 승인됨 |
+| [0069](0069-agent-era-positioning-verified-fix-memory.md) | AI 에이전트 시대의 포지셔닝 전환(가설, Phase 91 실험으로 재검토): Q&A 사이트 → 증거가 붙은 해결 기록소 + AI→사람 에스컬레이션 통로, 주 소비자는 에이전트, 주 콘텐츠는 해결 기록, 사람 대상 UX(74~77, 87)는 보류, 기여 데이터 외부 라이선스 안 함 | 조건부 승인 |
+| [0070](0070-question-as-evidence-environment-snapshot-and-verification-tiers.md) | 질문은 증거 자료다: 환경 스냅샷을 이벤트 기반으로 로컬 정제 후 3계층·증상별 프로파일·기준선 델타로 자동 수집, 검증된 질문 L0~L4 등급과 Evidence Card | 승인됨 |
