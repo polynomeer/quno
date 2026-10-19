@@ -8,7 +8,7 @@ Quno는 개발자를 위한 Q&A 플랫폼으로, 질문을 "죽은 게시물"이
 - [PLAN.md](PLAN.md): **Claude Code가 순서대로 진행할 작업계획서.** 새 세션을 시작할 때 가장 먼저 확인한다.
 - [docs/product/vision.md](docs/product/vision.md): 제품 철학, 핵심 개념(Living Question Card), 차별화
 - [docs/product/mvp-scope.md](docs/product/mvp-scope.md): MVP 범위(P0/P1), 로드맵, 성공 지표
-- [docs/product/competitive-analysis.md](docs/product/competitive-analysis.md): Stack Overflow·범용 Q&A와의 비교, 현재 약점 진단, 차별화 로드맵(PLAN.md Phase 63~77)과 "하지 않는 것". 새 기능의 우선순위를 판단할 때 vision.md의 제품 원칙과 함께 본다.
+- [docs/product/competitive-analysis.md](docs/product/competitive-analysis.md): Stack Overflow·범용 Q&A와의 비교, 현재 약점 진단, 차별화 로드맵(PLAN.md Phase 63~90)과 "하지 않는 것". 새 기능의 우선순위를 판단할 때 vision.md의 제품 원칙과 함께 본다.
 - [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md): 확정 기술 스택, 시스템 아키텍처, 패키지 구조
 - [docs/architecture/domain-model.md](docs/architecture/domain-model.md): DDD Bounded Context, Aggregate, ERD, SQL 흐름
 - [docs/architecture/api-design.md](docs/architecture/api-design.md): REST API 설계
