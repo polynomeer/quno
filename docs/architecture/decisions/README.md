@@ -91,3 +91,4 @@
 | [0064](0064-list-responses-resolve-nicknames-in-one-batch.md) | "사용자 #id" 대신 닉네임 표시: 목록 컨트롤러가 `NicknameResolver`로 응답당 1회 일괄 조회(유스케이스·결과 DTO는 그대로), 생성/수정 응답과 실시간 질문방은 범위 밖 | 승인됨 |
 | [0065](0065-typed-redis-cache-serializers.md) | 대시보드 500 수정: `@Cacheable` 캐시가 타입 정보 없이 저장돼 캐시 히트에서 `LinkedHashMap`/`Integer`로 복원되던 문제를 캐시별 타입 지정 직렬화기로 해결(전역 default typing은 기각), Redis 왕복 통합 테스트 추가 | 승인됨 |
 | [0066](0066-playwright-single-worker.md) | 로컬 e2e 첫 실행 flaky 해결: `fullyParallel: false`가 파일 간 병렬을 막지 않아 콜드 dev 서버의 Fast Refresh가 다른 탭 폼을 비우던 문제를 `workers: 1`로 해결(프로덕션 빌드 기반 실행은 보류) | 승인됨 |
+| [0067](0067-differentiation-roadmap-priorities-and-boundaries.md) | 차별화 로드맵(Phase 63~70) 우선순위와 경계: Stack Fingerprint를 키스톤으로 먼저, AI는 구조화 보조만(답변 생성 안 함), MCP로 AI 에이전트를 유통 채널로, 자체 코드 실행 샌드박스 기각, 콜드 스타트는 한국어 백엔드 개발자로 좁게 | 승인됨 |

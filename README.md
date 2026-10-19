@@ -269,12 +269,13 @@ cd frontend && npm run test:e2e
 |---|---|
 | 제품 철학, Living Question Card 개념 | [docs/product/vision.md](docs/product/vision.md) |
 | MVP 범위, 로드맵, 성공 지표 | [docs/product/mvp-scope.md](docs/product/mvp-scope.md) |
+| 경쟁 서비스와의 차이, 차별화 로드맵 | [docs/product/competitive-analysis.md](docs/product/competitive-analysis.md) |
 | 상용화(배포/보안/관측성) 체크리스트 | [docs/product/production-readiness.md](docs/product/production-readiness.md) |
 | 성능/접근성/UX/i18n 품질 개선 계획 | [docs/product/quality-improvement-plan.md](docs/product/quality-improvement-plan.md) |
 | 시스템 아키텍처, 패키지 구조 | [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md) |
 | 도메인 모델, ERD, SQL 흐름 | [docs/architecture/domain-model.md](docs/architecture/domain-model.md) |
 | REST API 설계 | [docs/architecture/api-design.md](docs/architecture/api-design.md) |
-| **"왜 이렇게 결정했는가" (ADR 53개)** | [docs/architecture/decisions/](docs/architecture/decisions/README.md) |
+| **"왜 이렇게 결정했는가" (ADR 67개)** | [docs/architecture/decisions/](docs/architecture/decisions/README.md) |
 | **기술적으로 어려웠던 문제와 진단 과정** | [docs/engineering/technical-deep-dives.md](docs/engineering/technical-deep-dives.md) |
 | 프론트엔드 UX/디자인 시스템 | [docs/frontend/](docs/frontend/README.md) |
 | 운영 런북 | [docs/operations/runbook.md](docs/operations/runbook.md) |
