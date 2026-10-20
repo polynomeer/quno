@@ -1,0 +1,16 @@
+--- a/DIAGNOSIS.md	1970-01-01 09:00:00
++++ b/DIAGNOSIS.md	2026-10-20 12:31:14
+@@ -0,0 +1,13 @@
++## 원인
++
++Docker CLI는 `credHelpers`에 적힌 `gcloud`를 보고 `docker-credential-gcloud`를 실행하는데, Windows에서 이 헬퍼는 `docker-credential-gcloud.cmd`(배치 파일)로만 존재한다. `.cmd`는 실행 파일이 아니라 `cmd.exe`를 거쳐야 하는데, Java의 `ProcessBuilder`는 확장자 없는 이름 `docker-credential-gcloud`를 직접 실행하려다 `CreateProcess error=2`(파일 없음)로 실패한다. 플러그인에 Windows에서 `cmd /c`를 앞에 붙이려는 코드가 있지만 `command(...)`를 두 번 호출해 앞의 인자를 덮어써서 `cmd /c`가 실제로는 붙지 않는다. 그래서 자격 증명을 못 얻고 인증 없이 푸시를 시도한다.
++
++## 해결
++
++1. 이 결함이 수정된 Spring Boot 버전으로 올린다(수정은 3.5.11 마일스톤에 포함).
++2. 우회: 플러그인 설정(`docker.publishRegistry`)에 토큰/사용자·비밀번호를 직접 주거나, 헬퍼를 `.exe`로 제공하는 방법을 쓴다.
++3. 푸시를 `bootBuildImage`가 아닌 `docker push`로 분리한다.
++
++## 근거
++
++확신: 예외 메시지(`Cannot run program "docker-credential-gcloud"`)와 헬퍼가 `.cmd`라는 환경 정보. 추정: 우회 방법의 세부 설정(환경에 따라 다름).

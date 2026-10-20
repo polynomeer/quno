@@ -1,0 +1,8 @@
+(보고자가 `bootBuildImage` 푸시 단계에서 디버거로 확인한 예외. 이미지 빌드 자체는 성공함)
+java.io.IOException: Cannot run program "docker-credential-gcloud": CreateProcess error=2, The system cannot find the file specified
+	at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1112)
+	at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1046)
+	at org.gradle.internal.classpath.Instrumented.start(Instrumented.java:315)
+	at org.springframework.boot.buildpack.platform.docker.configuration.CredentialHelper.start(CredentialHelper.java:88)
+	at org.springframework.boot.buildpack.platform.docker.configuration.CredentialHelper.get(CredentialHelper.java:54)
+	at org.springframework.boot.buildpack.platform.docker.configuration.DockerRegistryConfigAuthentication.computeCredentialsFromHelper(DockerRegistryConfigAuthentication.java:129)

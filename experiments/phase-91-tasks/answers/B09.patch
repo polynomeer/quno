@@ -1,0 +1,16 @@
+--- a/DIAGNOSIS.md	1970-01-01 09:00:00
++++ b/DIAGNOSIS.md	2026-10-20 12:31:14
+@@ -0,0 +1,13 @@
++## 원인
++
++경고는 Gradle이 아니라 Kotlin Gradle 플러그인(KGP)에서 나온다. `build-logic`이 사용하는 `kotlin-dsl`에 내장된 Kotlin 버전은 JVM 25 바이트코드 타깃을 지원하지 않아, 컴파일 대상을 JVM 24로 낮춘다("falling back to Kotlin JVM_24"). 그 결과 Java 컴파일(25)과 Kotlin 컴파일(24)의 타깃이 달라져 "Inconsistent JVM Target Compatibility" 진단이 나온다. 빌드는 성공한다. 문구의 "Gradle 8.0에서 에러가 된다"는 오래된 템플릿 문구라 현재 동작과 무관하다.
++
++## 해결
++
++1. Java와 Kotlin 컴파일이 같은 타깃을 쓰도록, KGP가 지원하는 JDK(24 또는 21)로 JVM toolchain을 맞춘다.
++2. JVM 25 타깃을 지원하는 Kotlin(2.3.0 이상)을 쓰고, 내장 Kotlin이 그 버전인 Gradle(9.3 이상으로 논의됨)로 올리거나 `kotlin-dsl` 대신 `org.jetbrains.kotlin.jvm`을 직접 쓴다.
++3. 당장 영향이 없으므로 무시해도 된다.
++
++## 근거
++
++확신: 경고 출처가 KGP이고 타깃 불일치(25 vs 24)가 직접 원인이라는 점. 추정: 어느 Gradle 버전부터 내장 Kotlin이 JVM 25를 지원하는지(논의에서 의견이 갈림).

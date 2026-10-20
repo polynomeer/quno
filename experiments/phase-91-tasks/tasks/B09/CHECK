@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# 로그 재생형(L) 과제: 진단서(DIAGNOSIS.md)의 형식만 확인한다. 내용은 answers/<ID>.md 의 채점 기준으로 별도 채점한다.
+[ -s DIAGNOSIS.md ] || { echo "DIAGNOSIS.md가 없습니다 (작성 후 다시 실행)"; exit 1; }
+for h in '## 원인' '## 해결' '## 근거'; do
+  grep -q "^$h" DIAGNOSIS.md || { echo "DIAGNOSIS.md에 '$h' 절이 없습니다"; exit 1; }
+done
+echo "형식 확인 통과 (내용은 별도로 채점됩니다)"

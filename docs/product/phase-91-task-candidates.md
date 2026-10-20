@@ -51,7 +51,9 @@ Spring Boot 4.0.8(이 저장소의 버전) 주변에서 최근 3개월에 보고
 
 ## 4. B층 — 롱테일·환경 의존, 10개 + 예비
 
-환경·버전 조합이 맞아야 풀리고 답이 흩어져 있는 문제다. **정직한 한계**: 진짜 환경 의존 문제(Docker 엔진 버전, Colima, Podman, CI 러너)는 저장소만으로 재현할 수 없다. 그래서 B층은 재현 가능한 `R/D` 6개와 로그 재생형 `L` 4개로 나눈다. `L`은 성공 판정이 "정답 원인·해결과 일치하는가"라 `R`보다 엄밀성이 낮고, 이 점을 결과 보고에 명시해야 한다.
+환경·버전 조합이 맞아야 풀리고 답이 흩어져 있는 문제다. **정직한 한계**: 진짜 환경 의존 문제(Docker 엔진 버전, Colima, Podman, CI 러너)는 저장소만으로 재현할 수 없다. 그래서 B층은 재현 가능한 `R/D` 6개와 로그 재생형 `L` 4개로 나눈다.
+
+**L 4개의 선정 (2026-10-20)**: 처음 후보였던 Colima Ryuk(#12104)은 보고자도 원인을 모른 채 `colima delete --data`로 해결되어 정답이 없고, Podman 소켓(#11254)은 아직 열려 있어 정답이 없으며, buildpack Docker API(#48050)는 B07과 원인이 같아(Docker 29 최소 API) 독립성이 낮다. 그래서 **원인이 서로 다르고 이슈 안에 확인된 정답이 있는** 4개(Docker 29/Testcontainers, Apple Silicon `imagePlatform`, JDK 25/Kotlin, Windows `.cmd` 헬퍼)로 교체했다. L 과제의 환경 스냅샷·로그는 이슈 본문의 사실만 옮겼고 지어낸 로그 줄은 넣지 않았다. `L`은 성공 판정이 "정답 원인·해결과 일치하는가"라 `R`보다 엄밀성이 낮고, 이 점을 결과 보고에 명시해야 한다.
 
 | ID | 이슈 | 보고일 | 증상 | 환경·조건 | 형식 | 확인 |
 |---|---|---|---|---|---|---|
@@ -61,10 +63,10 @@ Spring Boot 4.0.8(이 저장소의 버전) 주변에서 최근 3개월에 보고
 | B04 | spring-boot#48653 | 2025-12-31 | `@SpringBootTest(RANDOM_PORT)`가 관리 서버에는 적용되지 않아 `PortInUseException: Port 8081 is already in use` | 관리 포트가 이미 점유된 상태에서 테스트(CHECK가 포트 점유, python3 필요). 수정 4.0.2, 재현은 4.0.1 고정 | R | 본문, **재현 확인** |
 | B05 | spring-boot#48240 | 2025-11-22 | Spring Data JDBC + AOT 사용 시 `JdbcDialect` 빈이 필요하다는 안내가 없음 | 문서화 이슈(4.0.1에서 닫힘)지만 관련 개선 이슈 #47781이 열려 있어 4.0.8에서도 `processAot`가 `AotProcessingException ... jdbcDialect ... Failed to determine a suitable driver class`로 실패. 버그 수정이 아니라 설계상 제약 유형 | R | 본문, **재현 확인(편차 있음)** |
 | B06 | spring-boot#48254 | 2025-11-23 | WAR 배포(외부 Tomcat)에서 `ApplicationServletEnvironment`가 구성되지 않음 | 실제 외부 Tomcat이 아니라 `MockServletContext` 기반 하네스에서 `PlaceholderResolutionException: Could not resolve placeholder`로 재현(4.0.0 고정, 내장 tomcat 제외로 WAR `providedRuntime` 모사) | R | 본문, **재현 확인(편차 있음)** |
-| B07 | testcontainers-java#11212 | 2025-11-11 | Docker 29.0.0에서 `Could not find a valid Docker environment` | Docker Engine 29.0.0. 댓글 40개 — 가장 많이 논의됨 | L | 제목 |
-| B08 | testcontainers-java#12104 | 2026-10-05 | Colima에서 Ryuk 컨테이너가 시작하지 않음 | macOS + Colima | L | 제목 |
-| B09 | spring-boot#48050 | 2025-11-11 | `bootBuildImage`가 최신 Docker에서 HTTP 400 Bad Request로 실패 | Docker API 버전이 코드에 하드코딩. 수정 3.4.12 이상 | L | 본문 |
-| B10 | testcontainers-java#11254 | 2025-12-01 | Testcontainers 2.0.2에서 Docker 소켓 경로 덮어쓰기가 안 되어 Podman이 동작하지 않음 | Podman + 2.0.2 | L | 제목 |
+| B07 | testcontainers-java#11212 | 2025-11-11 | Docker 29.0.0 업데이트 후 `Could not find a valid Docker environment` | Docker가 최소 API 버전을 1.44로 올림, Testcontainers 2.0.1의 고정 API 버전이 낮음. 해결: `api.version=1.44` 또는 Testcontainers 2.0.2+ | L | 본문+댓글, **구현 완료** |
+| B08 | spring-boot#46665 | 2025-08-04 | Apple Silicon에서 `imagePlatform=linux/amd64` 지정 시 `bootBuildImage`가 `Invalid buildpack reference`로 실패 | 외부 빌드팩을 읽는 호출에 플랫폼이 전달되지 않음. 수정 3.4.12 | L | 본문+댓글, **구현 완료** |
+| B09 | gradle#35204 | 2025-10-02 | JDK 25 + Gradle 9.1 빌드는 성공하나 `Inconsistent JVM Target Compatibility`(Java 25 / Kotlin 24) 경고 | Kotlin(KGP)이 JVM 25 타깃을 지원하지 않아 24로 폴백. 해결: 툴체인을 24/21로 맞추거나 Kotlin 2.3+. 해소되는 Gradle 버전은 스레드에서도 논쟁 | L | 본문+댓글, **구현 완료** |
+| B10 | spring-boot#48961 | 2026-01-24 | Windows에서 `bootBuildImage` 푸시가 인증 실패 (`Cannot run program "docker-credential-gcloud"`) | 자격 증명 헬퍼가 `.cmd`인데 `cmd /c`가 `ProcessBuilder.command()` 덮어쓰기로 붙지 않음. 수정 PR #48965(3.5.11) | L | 본문+댓글, **구현 완료** |
 
 ### B층 예비
 
@@ -117,3 +119,4 @@ C층 예비: Mockito `UnnecessaryStubbingException`, `HttpMessageNotReadableExce
 |---|---|---|
 | 2026-10-19 | 최초 작성 (A 10 + 예비 7, B 10 + 예비 5, C 10) | PLAN.md 91.2 |
 | 2026-10-20 | 재현 프로젝트 26개(A10, B6, C10) 완성·순차 검증. A05·A06 재현 조건 정정, B03·B05·B06 구현 편차 기록 | 재현 단계 |
+| 2026-10-20 | B07~B10(로그 재생형)을 원인이 서로 다른 4개로 교체·구현. 기존 Colima·Podman·buildpack-API 후보는 정답 부재/원인 중복으로 제외 | L 과제 제작 |

@@ -8,6 +8,8 @@ dest="${2:-$(mktemp -d "${TMPDIR:-/tmp}/quno-task-$id.XXXXXX")}"
 [ -d "$here/tasks/$id" ] || { echo "no such task: $id" >&2; exit 2; }
 mkdir -p "$dest"
 cp -R "$here/tasks/$id/." "$dest/"
-cp -R "$here/_common/wrapper/." "$dest/"
-chmod +x "$dest/gradlew"
+if [ -e "$dest/NO_WRAPPER" ]; then rm -f "$dest/NO_WRAPPER"; else
+  cp -R "$here/_common/wrapper/." "$dest/"
+  chmod +x "$dest/gradlew"
+fi
 echo "$dest"

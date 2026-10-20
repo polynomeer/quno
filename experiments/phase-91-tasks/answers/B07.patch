@@ -1,0 +1,16 @@
+--- a/DIAGNOSIS.md	1970-01-01 09:00:00
++++ b/DIAGNOSIS.md	2026-10-20 12:31:14
+@@ -0,0 +1,13 @@
++## 원인
++
++Docker Engine 29.0.0은 데몬이 받는 최소 API 버전을 1.44로 올렸다(환경 스냅샷의 `API version: 1.52 (minimum version 1.44)`). Testcontainers 2.0.1은 환경에 API 버전이 지정되지 않으면 그보다 낮은 고정 API 버전으로 요청하므로 데몬이 모든 전략의 요청을 거부하고, Testcontainers는 "유효한 Docker 환경을 찾지 못했다"고 보고한다.
++
++## 해결
++
++1. Testcontainers를 2.0.2 이상으로 올린다(기본 API 버전이 1.44로 바뀜).
++2. 올릴 수 없으면 클라이언트 API 버전을 명시한다: `~/.docker-java.properties` 또는 클래스패스의 `docker-java.properties`에 `api.version=1.44`(또는 `1.52`), 또는 시스템 속성/환경변수 `api.version`.
++3. 임시로 Docker Engine을 28.x로 되돌린다.
++
++## 근거
++
++확신: Docker Engine이 29.0.0에서 최소 API 버전을 1.44로 올렸다는 점, 업그레이드 전에는 동작했다는 점. 추정: Testcontainers 2.0.1의 고정 API 버전이 1.44 미만이라는 점(로그에는 거절 사유가 직접 나오지 않음).
