@@ -9,6 +9,7 @@ sig="$(cat "$here/answers/$id.signature")"
 log="$dir/verify.log"
 ( cd "$dir" && bash ./CHECK ) >"$log" 2>&1
 code=$?
+if grep -qE "(compile[A-Za-z]*|:compile[A-Za-z]*) FAILED|error: |^e: " "$log"; then echo "FAIL[$id]: 컴파일 오류 — 증상이 아니라 과제 코드 문제 ($log)"; exit 1; fi
 if [ $code -eq 0 ]; then echo "FAIL[$id]: 증상이 재현되지 않음 (명령이 성공함) — $log"; exit 1; fi
 if grep -qF -- "$sig" "$log"; then echo "OK[$id]: 증상 재현 확인 (exit=$code, signature 일치) — $log"; exit 0; fi
 echo "FAIL[$id]: 실패했지만 기대한 signature가 아님 (exit=$code) — $log"; echo "기대: $sig"; exit 1
