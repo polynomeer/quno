@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# 성공이면 종료 코드 0. Docker가 필요하다(PostgreSQL 18.1 컨테이너를 띄웠다가 끝나면 지운다).
+set -uo pipefail
+
+name="task-b01-pg-$$"
+docker run -d --rm --name "$name" \
+	-e POSTGRES_PASSWORD=app -e POSTGRES_USER=app -e POSTGRES_DB=app \
+	-p 127.0.0.1::5432 postgres:18.1 >/dev/null || { echo "PostgreSQL 컨테이너를 시작하지 못했습니다(Docker 확인)." >&2; exit 2; }
+trap 'docker rm -f "$name" >/dev/null 2>&1' EXIT
+
+for _ in $(seq 1 90); do
+	docker exec "$name" pg_isready -h 127.0.0.1 -U app -d app >/dev/null 2>&1 && break
+	sleep 1
+done
+port="$(docker port "$name" 5432/tcp | head -n1 | sed 's/.*://')"
+
+SPRING_DATASOURCE_URL="jdbc:postgresql://127.0.0.1:${port}/app" \
+SPRING_DATASOURCE_USERNAME=app \
+SPRING_DATASOURCE_PASSWORD=app \
+	./gradlew test --no-daemon --console=plain

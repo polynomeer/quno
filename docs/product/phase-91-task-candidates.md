@@ -55,12 +55,12 @@ Spring Boot 4.0.8(이 저장소의 버전) 주변에서 최근 3개월에 보고
 
 | ID | 이슈 | 보고일 | 증상 | 환경·조건 | 형식 | 확인 |
 |---|---|---|---|---|---|---|
-| B01 | spring-boot#49012 | 2026-01-28 | Flyway 사용 앱이 `Unsupported Database: PostgreSQL 18.1`로 기동 실패(`BeanCreationException`) | Boot 4.0.2 + PostgreSQL 18.1. 상태 `invalid`로 닫힘 — 정답은 이슈 댓글 확인 필요(`flyway-database-postgresql` 모듈 추정, 미확인) | D | 본문 |
-| B02 | spring-boot#49311 | 2026-02-24 | 3.5 → 4.0 업그레이드 후 다중 파트 업로드가 `413 Payload Too Large` | Tomcat 기본 `max-part-count`가 낮아짐. `server.tomcat.max-part-count`로 우회. 수정 4.0.4 | R | 본문 |
-| B03 | spring-boot#48880 | 2026-01-19 | `spring-boot-starter-kafka`만으로는 `TransactionAutoConfiguration`이 없음(4.0 모듈화) | 수정 4.0.2 | R | 본문 |
-| B04 | spring-boot#48653 | 2025-12-31 | `@SpringBootTest(RANDOM_PORT)`가 관리 서버에는 적용되지 않아 `PortInUseException: Port 8081 is already in use` | 로컬에서 앱이 떠 있는 상태에서 테스트. 수정 4.0.2 | R | 본문 |
-| B05 | spring-boot#48240 | 2025-11-22 | Spring Data JDBC + AOT 사용 시 `JdbcDialect` 빈이 필요하다는 안내가 없음 | 문서화 이슈. 실제 오류 메시지는 확정 전 확인 | R | 제목 |
-| B06 | spring-boot#48254 | 2025-11-23 | WAR 배포(외부 Tomcat)에서 `ApplicationServletEnvironment`가 구성되지 않음 | 외부 서블릿 컨테이너 필요. 수정 마일스톤 확인 필요 | D | 제목 |
+| B01 | spring-boot#49012 | 2026-01-28 | Flyway 사용 앱이 `Unsupported Database: PostgreSQL 18.1`로 기동 실패(`BeanCreationException`) | Boot 4.0.2 + PostgreSQL 18.1. 상태 `invalid`로 닫힘 — 정답은 이슈 댓글의 `flyway-database-postgresql` 모듈 추가(확인됨). 의존성 누락 유형이라 난이도 낮음, `postgres:18.1` 이미지 필요 | D | 본문, **재현 확인** |
+| B02 | spring-boot#49311 | 2026-02-24 | 3.5 → 4.0 업그레이드 후 다중 파트 업로드가 `413 Payload Too Large` | Tomcat 기본 `max-part-count`가 낮아짐. `server.tomcat.max-part-count`로 우회. 수정 4.0.4(재현은 4.0.3 고정, 파트 12개 → 413) | R | 본문, **재현 확인** |
+| B03 | spring-boot#48880 | 2026-01-19 | `spring-boot-starter-kafka`만으로는 `TransactionAutoConfiguration`이 없음(4.0 모듈화) | 수정 4.0.2. **구현은 `transaction-id-prefix`를 지정한 Kafka 발행에서 `@Transactional`이 조용히 무시되어 `No transaction is in process`가 나는 형태**(재현은 4.0.1 고정, 브로커 불필요) | R | 본문, **재현 확인** |
+| B04 | spring-boot#48653 | 2025-12-31 | `@SpringBootTest(RANDOM_PORT)`가 관리 서버에는 적용되지 않아 `PortInUseException: Port 8081 is already in use` | 관리 포트가 이미 점유된 상태에서 테스트(CHECK가 포트 점유, python3 필요). 수정 4.0.2, 재현은 4.0.1 고정 | R | 본문, **재현 확인** |
+| B05 | spring-boot#48240 | 2025-11-22 | Spring Data JDBC + AOT 사용 시 `JdbcDialect` 빈이 필요하다는 안내가 없음 | 문서화 이슈(4.0.1에서 닫힘)지만 관련 개선 이슈 #47781이 열려 있어 4.0.8에서도 `processAot`가 `AotProcessingException ... jdbcDialect ... Failed to determine a suitable driver class`로 실패. 버그 수정이 아니라 설계상 제약 유형 | R | 본문, **재현 확인(편차 있음)** |
+| B06 | spring-boot#48254 | 2025-11-23 | WAR 배포(외부 Tomcat)에서 `ApplicationServletEnvironment`가 구성되지 않음 | 실제 외부 Tomcat이 아니라 `MockServletContext` 기반 하네스에서 `PlaceholderResolutionException: Could not resolve placeholder`로 재현(4.0.0 고정, 내장 tomcat 제외로 WAR `providedRuntime` 모사) | R | 본문, **재현 확인(편차 있음)** |
 | B07 | testcontainers-java#11212 | 2025-11-11 | Docker 29.0.0에서 `Could not find a valid Docker environment` | Docker Engine 29.0.0. 댓글 40개 — 가장 많이 논의됨 | L | 제목 |
 | B08 | testcontainers-java#12104 | 2026-10-05 | Colima에서 Ryuk 컨테이너가 시작하지 않음 | macOS + Colima | L | 제목 |
 | B09 | spring-boot#48050 | 2025-11-11 | `bootBuildImage`가 최신 Docker에서 HTTP 400 Bad Request로 실패 | Docker API 버전이 코드에 하드코딩. 수정 3.4.12 이상 | L | 본문 |

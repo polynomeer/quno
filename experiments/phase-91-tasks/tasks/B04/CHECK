@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# 성공이면 종료 코드 0.
+# 개발 중 앱을 따로 띄워 둔 상황(관리 포트 18081 사용 중)에서 테스트를 돌리는 것을 재현하기 위해,
+# 테스트 동안 18081 포트를 점유하고 끝나면 해제한다.
+set -uo pipefail
+
+python3 -c '
+import socket, time
+s = socket.socket(socket.AF_INET6)
+s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+s.bind(("::", 18081))
+s.listen(5)
+time.sleep(900)
+' &
+holder=$!
+trap 'kill $holder 2>/dev/null; wait $holder 2>/dev/null' EXIT
+
+for _ in $(seq 1 50); do
+	(exec 3<>/dev/tcp/127.0.0.1/18081) 2>/dev/null && break
+	sleep 0.1
+done
+if ! kill -0 $holder 2>/dev/null; then
+	echo "18081 포트를 점유하지 못했습니다. 다른 프로세스가 이미 사용 중인지 확인하세요." >&2
+	exit 2
+fi
+
+./gradlew test --no-daemon --console=plain
