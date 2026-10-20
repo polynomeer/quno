@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-a01",
+    "title": "Spring Boot 4.0 bootRun NoClassDefFoundError in DevToolsDataSourceAutoConfiguration: restart classloader hides JDBC classes",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.NoClassDefFoundError: org/springframework/boot/jdbc/autoconfigure/DataSourceProperties\n\tat org.springframework.boot.devtools.autoconfigure.DevToolsDataSourceAutoConfiguration$DevToolsDataSourceCondition.getMatchOutcome(DevToolsDataSourceAutoConfiguration.java:202) ~[spring-boot-devtools-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.autoconfigure.condition.SpringBootCondition.matches(SpringBootCondition.java:47) ~[spring-boot-autoconfigure-4.0.8.jar:4.0.8]\n\t... 20 common frames omitted\nCaused by: java.lang.ClassNotFoundException: org.springframework.boot.jdbc.autoconfigure.DataSourceProperties\n\tat java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641) ~[na:na]\n\tat java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188) ~[na:na]\n\tat java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[na:na]\n\t... 22 common frames omitted",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.1.0"
+      },
+      {
+        "component": "spring-boot-devtools",
+        "versions": ">=4.0.0 <4.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3101",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-08-11",
+    "symptom": "The application fails to start under bootRun with 'Could not evaluate condition on DevToolsDataSourceAutoConfiguration' and a NoClassDefFoundError for org.springframework.boot.jdbc.autoconfigure.DataSourceProperties, although the project defines its own DataSource bean.",
+    "cause": "DevTools runs the application inside a separate restart classloader. The auto-configuration condition is evaluated while the restart classloader and the base classloader disagree about which one owns the JDBC classes, so the lookup of DataSourceProperties fails.",
+    "fixSummary": "Turn off the restart classloader so everything is loaded by a single classloader: set spring.devtools.restart.enabled=false in application.properties (or pass it as a system property to bootRun). The condition is then evaluated normally and the DataSource bean is picked up without errors."
+  }
+]

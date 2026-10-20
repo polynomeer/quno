@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { computeSignature, normalizeMessage, normalizeFrame } from '../src/signature.js';
+import { computeSignature, computeSignatures, normalizeMessage, normalizeFrame } from '../src/signature.js';
 
 const fx = (n) => readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8');
 
@@ -74,4 +74,11 @@ test('Gradle 로그의 태스크 이름(소문자 시작)을 예외로 착각하
 test('중첩 클래스·단순 이름도 파싱', () => {
   assert.equal(computeSignature('org.x.Outer$Inner$BoomException: bad').exceptionClass, 'org.x.Outer$Inner$BoomException');
   assert.equal(computeSignature('TypeError: x is not a function').exceptionClass, 'TypeError');
+});
+
+test('여러 예외 체인이 섞인 로그에서 모두 시그니처로 낸다', () => {
+  const log = "WARN x : failed\njava.lang.UnsatisfiedLinkError: no foo in java.library.path\n\tat a.B.c(B.java:1)\n> Task :test FAILED\njava.lang.AssertionError: expected 1 but was 2\n\tat a.D.e(D.java:2)\nCaused by: java.io.IOException: boom\n\tat a.F.g(F.java:3)";
+  const sigs = computeSignatures(log);
+  assert.deepEqual(sigs.map((s) => s.exceptionClass), ['java.lang.UnsatisfiedLinkError', 'java.io.IOException']);
+  assert.equal(computeSignature(log).exceptionClass, 'java.lang.UnsatisfiedLinkError');
 });

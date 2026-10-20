@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-a09",
+    "title": "ReactorClientHttpRequestFactory.setConnectTimeout throws 'Timeout must be a non-negative value' for very long timeouts: cap at Integer.MAX_VALUE seconds",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.IllegalArgumentException: Timeout must be a non-negative value\n\tat org.springframework.util.Assert.isTrue(Assert.java:117) ~[spring-core-7.0.9.jar:7.0.9]\n\tat org.springframework.http.client.ReactorClientHttpRequestFactory.setConnectTimeout(ReactorClientHttpRequestFactory.java:156) ~[spring-web-7.0.9.jar:7.0.9]\n\tat org.springframework.http.client.ReactorClientHttpRequestFactory.setConnectTimeout(ReactorClientHttpRequestFactory.java:169) ~[spring-web-7.0.9.jar:7.0.9]\n\tat task.PartnerApiConfig.partnerRestClient(Application.kt:30) ~[main/:na]",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": ">=6.1 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3109",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-10-02",
+    "symptom": "Building a RestClient on ReactorClientHttpRequestFactory fails with IllegalArgumentException: Timeout must be a non-negative value when the configured connect timeout is 30 days; 7 days works.",
+    "cause": "The factory stores timeouts as a 32-bit integer number of seconds, so a Duration above Integer.MAX_VALUE seconds is narrowed to a negative value and fails the non-negative assertion.",
+    "fixSummary": "Cap the configured Duration to the largest supported value before calling the setter: requestFactory.setConnectTimeout(minOf(properties.connectTimeout, Duration.ofSeconds(Int.MAX_VALUE.toLong()))). The configured 30d stays as the intent and larger values are limited instead of overflowing."
+  }
+]

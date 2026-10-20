@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c08",
+    "title": "LazyInitializationException on a lazy collection: wrap the service method in a read-only transaction",
+    "verification": "unverified",
+    "errorSample": "org.hibernate.LazyInitializationException: Cannot lazily initialize collection of role 'task.Order.items' with key '1' (no session)\n    at app//org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:647)\n    at app//org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:232)\n    at app//org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:159)\n    at app//org.hibernate.collection.spi.PersistentBag.size(PersistentBag.java:403)\n    at app//task.OrderServiceTests.주문 상세는 주문 품목을 함께 돌려준다(OrderServiceTests.kt:20)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "hibernate-orm",
+        "versions": ">=7.0 <7.3"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/47719",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-08-02",
+    "symptom": "Reading a lazy @OneToMany collection from an entity returned by a service throws LazyInitializationException \"no session\".",
+    "cause": "The repository call runs in its own short-lived session which is closed immediately, so any lazy proxy created by it is detached when the service method returns.",
+    "fixSummary": "Annotate the service method that loads the entity with @Transactional(readOnly = true). The session then stays open for the whole method, and lazy collections of the returned entity load normally; no other change is required."
+  }
+]

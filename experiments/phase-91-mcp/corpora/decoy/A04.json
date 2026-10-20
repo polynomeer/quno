@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-a04",
+    "title": "WebFlux multipart @RequestPart FilePart null for an empty file followed by other parts: raise the part reader buffering limits",
+    "verification": "unverified",
+    "errorSample": "java.lang.AssertionError: Response body expected:<received: test.txt> but was:<no file received>\n    at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)\n    at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:129)\n    at org.springframework.test.web.reactive.server.DefaultWebTestClient$DefaultBodySpec.lambda$isEqualTo$0(DefaultWebTestClient.java:585)\n    at org.springframework.test.web.reactive.server.ExchangeResult.assertWithDiagnostics(ExchangeResult.java:231)\n    at org.springframework.test.web.reactive.server.DefaultWebTestClient$DefaultBodySpec.isEqualTo(DefaultWebTestClient.java:584)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0.0 <7.1.0"
+      },
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3104",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-08-29",
+    "symptom": "In a WebFlux controller the @RequestPart FilePart parameter is null (the app answers 'no file received') when a 0-byte file part is followed by other parts, while the same file as the last part is received.",
+    "cause": "The default multipart reader keeps part headers and bodies in a size-limited buffer, and an empty part that is immediately followed by the next part's headers is lost when that buffering limit is reached.",
+    "fixSummary": "Install a custom multipart reader with larger buffering limits in a WebFluxConfigurer: create a DefaultPartHttpMessageReader, call setMaxInMemorySize(...) and setMaxHeadersSize(...) with higher values, wrap it in MultipartHttpMessageReader and register it through configurer.defaultCodecs().multipartReader(...). With larger limits the empty file part is kept and delivered as a FilePart."
+  }
+]

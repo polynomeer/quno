@@ -1,0 +1,32 @@
+[
+  {
+    "id": "decoy-c02",
+    "title": "Kotlin @Configuration class fails with \"may not be final\": make the @Bean methods open",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.parsing.BeanDefinitionParsingException: Configuration problem: @Configuration class 'PaymentConfig' may not be final. Remove the final modifier to continue.\nOffending resource: class path resource [task/PaymentConfig.class]\n\tat org.springframework.beans.factory.parsing.FailFastProblemReporter.error(FailFastProblemReporter.java:71) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClass.validate(ConfigurationClass.java:251) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClassParser.validate(ConfigurationClassParser.java:230) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:453) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:316) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:795) ~[spring-context-7.0.9.jar:7.0.9]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      },
+      {
+        "component": "kotlin",
+        "versions": "2.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/51907",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-02-27",
+    "symptom": "Context startup fails with BeanDefinitionParsingException saying the @Configuration class may not be final.",
+    "cause": "CGLIB intercepts @Bean method calls so that singleton semantics are preserved, and Kotlin functions are final by default. The final bean factory method cannot be overridden by the generated subclass, which Spring reports as a final configuration.",
+    "fixSummary": "Declare every @Bean factory method in the configuration class with the open modifier (for example \"@Bean open fun feePolicy(): FeePolicy\"). Once the bean methods are overridable CGLIB can create the subclass and the context starts."
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a09",
+    "title": "Spring Framework 7.0: ReactorClientHttpRequestFactory.setConnectTimeout(Duration) fails with 'Timeout must be a non-negative value' for timeouts above about 24.8 days",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.IllegalArgumentException: Timeout must be a non-negative value\n\tat org.springframework.util.Assert.isTrue(Assert.java:117) ~[spring-core-7.0.9.jar:7.0.9]\n\tat org.springframework.http.client.ReactorClientHttpRequestFactory.setConnectTimeout(ReactorClientHttpRequestFactory.java:156) ~[spring-web-7.0.9.jar:7.0.9]\n\tat org.springframework.http.client.ReactorClientHttpRequestFactory.setConnectTimeout(ReactorClientHttpRequestFactory.java:169) ~[spring-web-7.0.9.jar:7.0.9]\n\tat task.PartnerApiConfig.partnerRestClient(Application.kt:30) ~[main/:na]",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.x (7.0.9 in Spring Boot 4.0.8); fixed in 7.1.0-RC1, not backported to 7.0.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/37427",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-10-08",
+    "symptom": "Creating a RestClient with ReactorClientHttpRequestFactory fails with IllegalArgumentException: Timeout must be a non-negative value when the configured connect timeout is longer than about 25 days (30d fails, 7d works). With SimpleClientHttpRequestFactory the same value is silently ignored or turns into a wrong short timeout.",
+    "cause": "setConnectTimeout(Duration) narrows duration.toMillis() to int with a plain cast. Above Integer.MAX_VALUE milliseconds (about 24.8 days) the value overflows, 30 days becomes negative, and the int overload's non-negative assertion fails. Values such as 50 days wrap to an unrelated positive number.",
+    "fixSummary": "Clamp the duration in application code before passing it, for example setConnectTimeout(minOf(timeout, Duration.ofMillis(Int.MAX_VALUE.toLong()))), which keeps the setting effectively unbounded and leaves ReactorClientHttpRequestFactory in use. Fixed in Framework 7.1.0-RC1 only."
+  }
+]

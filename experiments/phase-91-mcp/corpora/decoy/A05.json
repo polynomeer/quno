@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-a05",
+    "title": "@Query with % operator rejected at startup: relax Hibernate JPQL compliance (BadJpqlGrammarException mismatched input '%')",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.data.jpa.repository.query.BadJpqlGrammarException: At 1:38 and token '%', mismatched input '%', expecting one of the following tokens: <EOF>, ',', '[', '/', '||', '.', '*', AND, BY, DAY, EPOCH, EXCEPT, FETCH, GROUP, HAVING, HOUR, INTERSECT, LIMIT, MINUTE, MONTH, NANOSECOND, OFFSET, OR, ORDER, QUARTER, SECOND, UNION, WEEK, YEAR, '+', '-'; Bad HQL grammar [select c from Call c where c.duration % 2 = 0 order by c.id]\n\tat org.springframework.data.jpa.repository.query.BadJpqlGrammarErrorListener.syntaxError(BadJpqlGrammarErrorListener.java:53) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.antlr.v4.runtime.DefaultErrorStrategy.reportInputMismatch(DefaultErrorStrategy.java:327) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.antlr.v4.runtime.DefaultErrorStrategy.reportError(DefaultErrorStrategy.java:139) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.springframework.data.jpa.repository.query.HqlParser.start(HqlParser.java:394) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer.parse(JpaQueryEnhancer.java:102) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser.<init>(JpaQueryEnhancer.java:286) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser.parseQuery(JpaQueryEnhancer.java:298) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer.forHql(JpaQueryEnhancer.java:159) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.QueryEnhancerFactories$BuiltinQueryEnhancerFactories$3.create(QueryEnhancerFactories.java:91) ~[spring-data-jpa-4.0.7.jar:4.0.7]",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": ">=4.0.0 <4.2.0"
+      },
+      {
+        "component": "hibernate-core",
+        "versions": ">=7.0 <7.5"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3105",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-04",
+    "symptom": "The application context fails to start with QueryCreationException caused by BadJpqlGrammarException: mismatched input '%' for an @Query that uses the modulo operator in a where clause.",
+    "cause": "Hibernate runs in a JPQL-compatibility mode in which only operators defined by the Jakarta Persistence specification are accepted, and the remainder operator % is not one of them, so the query is refused when the repository is created.",
+    "fixSummary": "Disable the JPQL compliance mode in application.properties: spring.jpa.properties.hibernate.jpa.compliance.query=false. Hibernate then parses the query with its full HQL grammar, which supports the % operator, and the repository bean is created."
+  }
+]

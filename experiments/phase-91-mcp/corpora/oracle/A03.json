@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a03",
+    "title": "Spring Framework 7.0: @CacheEvict on a method returning Flux emits only the first element",
+    "verification": "unverified",
+    "errorSample": "java.lang.AssertionError: expectation \"expectNext(two)\" failed (expected: onNext(two); actual: onComplete())\n    at reactor.test.MessageFormatter.assertionError(MessageFormatter.java:115)\n    at reactor.test.MessageFormatter.failPrefix(MessageFormatter.java:104)\n    at reactor.test.MessageFormatter.fail(MessageFormatter.java:73)\n    at reactor.test.MessageFormatter.failOptional(MessageFormatter.java:88)\n    at reactor.test.DefaultStepVerifierBuilder.lambda$addExpectedValue$0(DefaultStepVerifierBuilder.java:516)\n    at reactor.test.DefaultStepVerifierBuilder$SignalEvent.test(DefaultStepVerifierBuilder.java:2339)\n    at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onSignal(DefaultStepVerifierBuilder.java:1554)\n    at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onExpectation(DefaultStepVerifierBuilder.java:1501)\n    at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onComplete(DefaultStepVerifierBuilder.java:1138)\n    at reactor.core.publisher.MonoPeekTerminal$MonoTerminalPeekSubscriber.onComplete(MonoPeekTerminal.java:303)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.x (reported with 7.0.9 in Spring Boot 4.0.8); fixed in 7.0.10"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/37309",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-09-20",
+    "symptom": "A service method annotated with @CacheEvict that returns a Flux processes and saves every item, but the caller receives only the first element and then onComplete. A StepVerifier fails with expected onNext(two) but actual onComplete().",
+    "cause": "The cache interceptor's reactive handling for @CacheEvict-advised methods that return a Flux truncates the returned publisher to its first element. This is a Spring Framework bug fixed in 7.0.10.",
+    "fixSummary": "Remove @CacheEvict from the method and clear the cache inside the reactive pipeline instead: inject CacheManager and call cacheManager.getCache(\"items\")?.clear() from doOnComplete on the returned Flux, which keeps the full Flux and the eviction. Changing the return type to Mono<List<T>> also avoids it but changes the callers' contract. Upgrading to Framework 7.0.10 fixes it at the source."
+  }
+]

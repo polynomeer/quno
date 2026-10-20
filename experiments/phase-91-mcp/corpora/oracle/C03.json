@@ -1,0 +1,32 @@
+[
+  {
+    "id": "oracle-c03",
+    "title": "No default constructor for entity: Kotlin JPA entity without the no-arg plugin",
+    "verification": "unverified",
+    "errorSample": "org.hibernate.InstantiationException: No default constructor for entity 'task.Payment'\n    at app//org.hibernate.metamodel.internal.EntityInstantiatorPojoStandard.instantiate(EntityInstantiatorPojoStandard.java:94)\n    at app//org.hibernate.persister.entity.AbstractEntityPersister.instantiate(AbstractEntityPersister.java:4300)\n    at app//org.hibernate.internal.SessionImpl.instantiate(SessionImpl.java:1599)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.instantiateEntity(EntityInitializerImpl.java:1430)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveEntityInstance(EntityInitializerImpl.java:1422)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveEntityInstance2(EntityInitializerImpl.java:1381)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveEntityInstance1(EntityInitializerImpl.java:1274)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveInstance(EntityInitializerImpl.java:1173)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveKey(EntityInitializerImpl.java:617)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "hibernate-orm",
+        "versions": ">=7.0 <7.3"
+      },
+      {
+        "component": "kotlin",
+        "versions": "2.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://kotlinlang.org/docs/no-arg-plugin.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "Saving an entity works, but loading it back fails with JpaSystemException caused by org.hibernate.InstantiationException: \"No default constructor for entity\". Startup may also log a warning that the class has no no-argument constructor.",
+    "cause": "Hibernate instantiates entities through a no-argument constructor and then populates the fields. A Kotlin entity whose primary constructor has required parameters has no such constructor unless the kotlin-jpa (no-arg) compiler plugin generates one.",
+    "fixSummary": "Add the kotlin(\"plugin.jpa\") Gradle plugin at the same version as the Kotlin plugin; it synthesizes a no-arg constructor for classes annotated with @Entity, @Embeddable and @MappedSuperclass and the properties can stay val. Alternatively give every constructor parameter a default value or add a protected secondary no-arg constructor."
+  }
+]

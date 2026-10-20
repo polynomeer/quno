@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a07",
+    "title": "Spring Boot: spring.mongodb.password containing a space reaches the driver as '+' and authentication fails",
+    "verification": "unverified",
+    "errorSample": "org.opentest4j.AssertionFailedError: \nexpected: \"my secret\"\n but was: \"my+secret\"",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.0.9 (observed on 4.0.8); fixed in 4.0.9"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/pull/52121",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-10-09",
+    "symptom": "A MongoDB account whose password contains a space (for example 'my secret') cannot authenticate when configured through spring.mongodb.username and spring.mongodb.password, although the same account works in mongosh. The credentials handed to the driver contain 'my+secret'.",
+    "cause": "PropertiesMongoConnectionDetails builds a connection string and encodes username and password with URLEncoder.encode, which turns a space into '+'. The MongoDB driver's ConnectionString treats '+' as a literal plus sign, not a space, so the password changes.",
+    "fixSummary": "Provide the credentials in spring.mongodb.uri with the space percent-encoded as %20, for example mongodb://audit-writer:my%20secret@mongo.internal.example:27017/audit?authSource=admin (keep host, database and authSource unchanged). Defining your own MongoConnectionDetails bean that encodes with %20 works too. Fixed in Boot 4.0.9."
+  }
+]

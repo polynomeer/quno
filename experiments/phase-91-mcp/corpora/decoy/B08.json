@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-b08",
+    "title": "bootBuildImage 'Invalid buildpack reference' on Apple Silicon with Docker Desktop",
+    "verification": "unverified",
+    "errorSample": "Execution failed for task ':bootBuildImage'.\n> Invalid buildpack reference '<buildpack>'\nCaused by: org.springframework.boot.buildpack.platform.docker.transport.DockerEngineException: Docker API call to 'docker://localhost/images/docker.io/paketobuildpacks/opentelemetry:2/get' failed with status code 404 \"Not Found\" and message \"unable to create manifests file: NotFound: content digest sha256:c7ee7bde14d2...: not found\"",
+    "appliesTo": [
+      {
+        "component": "spring-boot-gradle-plugin",
+        "versions": "3.5.4 (macOS arm64, Docker Desktop 4.42.1)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40993",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-04-09",
+    "symptom": "bootBuildImage fails with \"Invalid buildpack reference\" and a DockerEngineException with status 404 Not Found when an external buildpack such as paketobuildpacks/opentelemetry:2 is configured.",
+    "cause": "The plugin talks to the default Docker socket location, but Docker Desktop on macOS keeps its socket under the user's home directory, so some requests reach a stale daemon context. In addition the anonymous registry pull of the buildpack image is refused or throttled and the daemon's 'not found' answer is surfaced as an invalid reference.",
+    "fixSummary": "Point the plugin at the Desktop socket with docker { host = \"unix:///Users/<name>/.docker/run/docker.sock\" } (or DOCKER_HOST), enable the default Docker socket option in Docker Desktop settings, run docker login for the registry, and set docker.builderRegistry credentials in the plugin configuration."
+  }
+]

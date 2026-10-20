@@ -75,3 +75,20 @@ test('같은 예외 클래스에 메시지가 일부만 겹치면 similar-messag
   assert.equal(matches[0].matchType, 'similar-message');
   assert.ok(matches[0].score < 0.85 && matches[0].score >= 0.3);
 });
+
+test('stripLabels: 검증 라벨·확인일·출처를 응답에서 뺀다 (A3b 조건)', () => {
+  const r = searchKnownIssues(records, { errorText: fx('trace-a.txt'), stripLabels: true });
+  const card = r.results[0];
+  assert.equal(card.verification, undefined);
+  assert.equal(card.lastConfirmed, undefined);
+  assert.equal(card.sources, undefined);
+  assert.ok(card.untrustedText.symptom);
+  const withLabels = searchKnownIssues(records, { errorText: fx('trace-a.txt') }).results[0];
+  assert.equal(withLabels.verification, 'unverified');
+});
+
+test('무관한 경고 트레이스가 앞에 있어도 뒤의 실제 실패로 기록을 찾는다', () => {
+  const noisy = "WARN native lib\njava.lang.UnsatisfiedLinkError: no thing\n\tat x.Y.z(Y.java:1)\n" + fx('trace-b.txt');
+  const { matches } = search(records, noisy);
+  assert.equal(matches[0].record.id, 'fixture-conn-refused');
+});

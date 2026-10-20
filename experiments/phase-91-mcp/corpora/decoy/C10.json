@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c10",
+    "title": "UninitializedPropertyAccessException on a lateinit field of a service: component scan does not see the collaborator",
+    "verification": "unverified",
+    "errorSample": "kotlin.UninitializedPropertyAccessException: lateinit property discountPolicy has not been initialized\n    at task.PriceQuoteService.getDiscountPolicy(Application.kt:26)\n    at task.PriceQuoteService.quote(Application.kt:29)\n    at task.PriceQuoteServiceTests.일반 회원은 할인이 없다(PriceQuoteServiceTests.kt:21)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "kotlin",
+        "versions": "2.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/51456",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-05",
+    "symptom": "A service that declares a lateinit var collaborator throws kotlin.UninitializedPropertyAccessException on first use, although the context starts without errors.",
+    "cause": "The collaborator class is not picked up by component scanning, so there is no bean to assign to the property and it remains uninitialized.",
+    "fixSummary": "Add @ComponentScan(basePackages = [\"task\"]) next to @SpringBootApplication on the application class so that the collaborator package is scanned and the bean is registered and assigned to the field."
+  }
+]

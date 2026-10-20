@@ -1,0 +1,32 @@
+[
+  {
+    "id": "oracle-c02",
+    "title": "BeanDefinitionParsingException: @Configuration class may not be final (Kotlin)",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.parsing.BeanDefinitionParsingException: Configuration problem: @Configuration class 'PaymentConfig' may not be final. Remove the final modifier to continue.\nOffending resource: class path resource [task/PaymentConfig.class]\n\tat org.springframework.beans.factory.parsing.FailFastProblemReporter.error(FailFastProblemReporter.java:71) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClass.validate(ConfigurationClass.java:251) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClassParser.validate(ConfigurationClassParser.java:230) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:453) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:316) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118) ~[spring-context-7.0.9.jar:7.0.9]\n\tat org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:795) ~[spring-context-7.0.9.jar:7.0.9]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      },
+      {
+        "component": "kotlin",
+        "versions": "2.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://kotlinlang.org/docs/all-open-plugin.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "Context startup fails with BeanDefinitionParsingException: \"@Configuration class 'PaymentConfig' may not be final. Remove the final modifier to continue.\" The class is written in Kotlin and declared without the open modifier.",
+    "cause": "Kotlin classes are final by default. A @Configuration class with the default proxyBeanMethods=true must be subclassed by CGLIB, which is impossible for a final class. The kotlin-spring (all-open) compiler plugin is not applied, so nothing opens the class.",
+    "fixSummary": "Apply the kotlin(\"plugin.spring\") Gradle plugin at the same version as the Kotlin plugin; it opens classes annotated with @Component and its meta-annotations such as @Configuration. Alternatives: declare the configuration class open, or use @Configuration(proxyBeanMethods = false) if the bean methods do not call each other."
+  }
+]

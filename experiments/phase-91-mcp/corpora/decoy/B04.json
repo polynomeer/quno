@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-b04",
+    "title": "RANDOM_PORT tests fail with 'Port 18081 is already in use' when the management port is fixed",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.boot.web.server.PortInUseException: Port 18081 is already in use\n\tat org.springframework.boot.web.server.PortInUseException.lambda$throwIfPortBindingException$0(PortInUseException.java:73) ~[spring-boot-web-server-4.0.1.jar:4.0.1]\nCaused by: java.lang.IllegalArgumentException: standardService.connector.startFailed\n\tat org.apache.catalina.core.StandardService.addConnector(StandardService.java:220) ~[tomcat-embed-core-11.0.15.jar:11.0.15]\nCaused by: org.apache.catalina.LifecycleException: Protocol handler start failed\n\tat org.apache.catalina.connector.Connector.startInternal(Connector.java:1119) ~[tomcat-embed-core-11.0.15.jar:11.0.15]\nCaused by: java.net.BindException: Address already in use\n\tat java.base/sun.nio.ch.Net.bind0(Native Method) ~[na:na]\n\tat java.base/sun.nio.ch.Net.bind(Net.java:577) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(ServerSocketChannelImpl.java:344) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:301) ~[na:na]\n\tat org.apache.tomcat.util.net.NioEndpoint.initServerSocket(NioEndpoint.java:265) ~[tomcat-embed-core-11.0.15.jar:11.0.15]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40502",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-11",
+    "symptom": "A @SpringBootTest with webEnvironment RANDOM_PORT fails to start with PortInUseException: Port 18081 is already in use, where 18081 is the configured management.server.port.",
+    "cause": "Spring's test context cache keeps the management web server of an earlier test class bound to the port while the next class builds a new context in the same Gradle test JVM, so the second bind fails. The collision only shows up when contexts are rebuilt in one JVM.",
+    "fixSummary": "Run each test class in its own JVM so cached contexts and their bound ports are released: add tasks.withType<Test> { forkEvery = 1; maxParallelForks = 1 } to build.gradle.kts."
+  }
+]

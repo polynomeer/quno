@@ -1,0 +1,29 @@
+[
+  {
+    "id": "oracle-b07",
+    "title": "Testcontainers 'Could not find a valid Docker environment' after upgrading to Docker Engine 29",
+    "verification": "unverified",
+    "errorSample": "java.lang.RuntimeException: Could not start local database\n\tat base.database.LocalDatabaseExtension.beforeAll(LocalDatabaseExtension.java:78)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\nCaused by: java.lang.IllegalStateException: Could not find a valid Docker environment. Please see logs and check configuration\n\tat org.testcontainers.dockerclient.DockerClientProviderStrategy.lambda$getFirstValidStrategy$7(DockerClientProviderStrategy.java:274)\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:403)\n\tat org.testcontainers.dockerclient.DockerClientProviderStrategy.getFirstValidStrategy(DockerClientProviderStrategy.java:265)\n\tat org.testcontainers.DockerClientFactory.getOrInitializeStrategy(DockerClientFactory.java:154)\n\tat org.testcontainers.DockerClientFactory.client(DockerClientFactory.java:196)\n\tat org.testcontainers.DockerClientFactory$1.getDockerClient(DockerClientFactory.java:108)\n\tat com.github.dockerjava.api.DockerClientDelegate.authConfig(DockerClientDelegate.java:109)\n\tat org.testcontainers.containers.GenericContainer.start(GenericContainer.java:316)",
+    "appliesTo": [
+      {
+        "component": "testcontainers-java",
+        "versions": "2.0.1 (fixed in 2.0.2)"
+      },
+      {
+        "component": "docker-engine",
+        "versions": "29.0.0 (minimum API version 1.44); worked on 28.5.2"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/testcontainers/testcontainers-java/issues/11212",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2025-11-11",
+    "symptom": "After upgrading Docker Engine to 29.0.0 every Testcontainers-based test fails with IllegalStateException \"Could not find a valid Docker environment. Please see logs and check configuration\". The same setup works on Docker Engine 28.5.2.",
+    "cause": "Docker Engine 29 raised the minimum client API version it accepts to 1.44. Testcontainers 2.0.1 (docker-java) uses an older fixed API version when none is configured, so the daemon rejects the requests of every client provider strategy and Testcontainers reports that no valid environment was found.",
+    "fixSummary": "Upgrade Testcontainers to 2.0.2 or newer, which raises the default API version to 1.44. If that is not possible, set the docker-java api.version to 1.44 or higher via ~/.docker-java.properties, a docker-java.properties on the classpath, or a system property/environment variable. Rolling Docker Engine back to 28.x is a temporary workaround.",
+    "notes": "The daemon rejection reason is not printed in the Testcontainers log; the API-version mismatch is inferred from the engine raising its minimum API version in 29.0.0."
+  }
+]

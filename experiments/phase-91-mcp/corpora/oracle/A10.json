@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a10",
+    "title": "Spring Boot 4.0: OAuth2ClientProperties bean is missing when the application defines its own ClientRegistrationRepository",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientProperties' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.raiseNoMatchingBeanFound(DefaultListableBeanFactory.java:2304) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1732) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1658) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-7.0.9.jar:7.0.9]\n\t... 122 common frames omitted",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.0.9 (observed on 4.0.8); fixed in 4.0.9"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/51447",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-08-25",
+    "symptom": "Startup fails with NoSuchBeanDefinitionException: No qualifying bean of type OAuth2ClientProperties when a user-defined ClientRegistrationRepository bean takes OAuth2ClientProperties as a parameter, even though spring.security.oauth2.client.registration.* is configured.",
+    "cause": "OAuth2ClientConfigurations.ClientRegistrationRepositoryConfiguration carries a class-level @ConditionalOnMissingBean(ClientRegistrationRepository). When the application defines its own repository the whole class is skipped, including its @EnableConfigurationProperties(OAuth2ClientProperties.class), so the properties bean is never registered.",
+    "fixSummary": "Register the properties yourself: add @EnableConfigurationProperties(OAuth2ClientProperties::class) to your own configuration class (@ConfigurationPropertiesScan or binding the spring.security.oauth2.client prefix with Binder also works), and keep reading the values from the configuration. Fixed in Boot 4.0.9."
+  }
+]

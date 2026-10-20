@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-b03",
+    "title": "@Transactional silently ignored with spring-boot-starter-kafka on Spring Boot 4.0: 'No transaction is in process'",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalStateException: No transaction is in process; possible solutions: run the template operation within the scope of a template.executeInTransaction() operation, start a transaction with @Transactional before invoking the template method, run in a transaction started by a listener container when consuming a record\n\tat org.springframework.util.Assert.state(Assert.java:80)\n\tat org.springframework.kafka.core.KafkaTemplate.getTheProducer(KafkaTemplate.java:975)\n\tat org.springframework.kafka.core.KafkaTemplate.doSend(KafkaTemplate.java:849)\n\tat org.springframework.kafka.core.KafkaTemplate.observeSend(KafkaTemplate.java:826)\n\tat org.springframework.kafka.core.KafkaTemplate.send(KafkaTemplate.java:607)\n\tat task.OrderEventPublisher.publishAll(Application.kt:22)\n\tat task.OrderEventPublisherTests.발행한 이벤트는 커밋되어 모두 전송된다(OrderEventPublisherTests.kt:64)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.1 (spring-boot-starter-kafka; fixed in 4.0.2)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/48880",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-01-19",
+    "symptom": "With spring.kafka.producer.transaction-id-prefix set, calling KafkaTemplate.send from a @Transactional method throws IllegalStateException \"No transaction is in process; possible solutions: ...\". The @Transactional annotation is ignored without any error or warning.",
+    "cause": "Boot 4 moved TransactionAutoConfiguration (which enables transaction management and the @Transactional proxies) into the spring-boot-transaction module, and spring-boot-starter-kafka does not pull that module in. KafkaTransactionManager is still auto-configured, but nothing creates the transactional proxies, so the method runs without a transaction.",
+    "fixSummary": "Add the dependency org.springframework.boot:spring-boot-transaction (version managed by the Boot BOM). Equivalent alternatives: declare @EnableTransactionManagement on the application class, or add a starter that already includes the module such as spring-boot-starter-jdbc or spring-boot-starter-data-jpa. Fixed upstream in 4.0.2."
+  }
+]

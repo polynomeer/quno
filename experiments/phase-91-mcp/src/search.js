@@ -1,4 +1,4 @@
-import { computeSignature } from './signature.js';
+import { computeSignatures } from './signature.js';
 
 const tokens = (s) => new Set(s.split(/[^a-z0-9<>]+/).filter((t) => t.length > 2 && !/^<.*>$/.test(t)));
 
@@ -16,28 +16,30 @@ function jaccard(a, b) {
  * - similar-message: 같은 예외 클래스이고 메시지 토큰이 겹친다 (0.3~0.7)
  * 점수가 minScore 미만이면 결과에서 제외한다 — 억지로 채우지 않는 것이 적중률 측정의 정직성이다.
  */
-export function search(records, query, { limit = 3, minScore = 0.3 } = {}) {
-  const q = computeSignature(query);
-  if (!q) return { query: null, matches: [] };
-  const qTokens = tokens(q.normalizedMessage);
+export function search(records, query, { limit = 3, minScore = 0.35 } = {}) {
+  const qs = computeSignatures(query);
+  if (qs.length === 0) return { query: null, queries: [], matches: [] };
   const matches = [];
   for (const r of records) {
-    let score = 0;
-    let matchType = null;
-    if (q.signature && r.sig.signature === q.signature) {
-      score = 1;
-      matchType = 'exact-signature';
-    } else if (r.sig.messageKey === q.messageKey) {
-      score = 0.85;
-      matchType = 'same-message';
-    } else if (r.sig.exceptionClass === q.exceptionClass) {
-      const sim = jaccard(qTokens, tokens(r.sig.normalizedMessage));
-      score = 0.3 + 0.4 * sim;
-      matchType = 'similar-message';
-      if (sim === 0) score = 0;
+    let best = null;
+    for (const q of qs) {
+      const cand = scoreOne(r, q);
+      if (cand && (!best || cand.score > best.score)) best = cand;
     }
-    if (score >= minScore) matches.push({ record: r, score: Number(score.toFixed(2)), matchType });
+    if (best && best.score >= minScore) matches.push({ record: r, score: Number(best.score.toFixed(2)), matchType: best.matchType });
   }
   matches.sort((a, b) => b.score - a.score || a.record.id.localeCompare(b.record.id));
-  return { query: q, matches: matches.slice(0, limit) };
+  return { query: qs[0], queries: qs, matches: matches.slice(0, limit) };
+}
+
+function scoreOne(r, q) {
+  const qTokens = tokens(q.normalizedMessage);
+  if (q.signature && r.sig.signature === q.signature) return { score: 1, matchType: 'exact-signature' };
+  if (r.sig.messageKey === q.messageKey) return { score: 0.85, matchType: 'same-message' };
+  if (r.sig.exceptionClass === q.exceptionClass) {
+    const sim = jaccard(qTokens, tokens(r.sig.normalizedMessage));
+    if (sim === 0) return null;
+    return { score: 0.3 + 0.4 * sim, matchType: 'similar-message' };
+  }
+  return null;
 }

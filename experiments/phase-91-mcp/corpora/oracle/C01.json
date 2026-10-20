@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c01",
+    "title": "BeanCurrentlyInCreationException: circular constructor injection between two services",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'inventoryService': Requested bean is currently in creation: Is there an unresolvable circular reference or an asynchronous initialization dependency?\n\tat org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.beforeSingletonCreation(DefaultSingletonBeanRegistry.java:541) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:310) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveBean(DefaultListableBeanFactory.java:1232) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1711) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1658) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-7.0.9.jar:7.0.9]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-2.6-Release-Notes",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "The application context fails to start with an UnsatisfiedDependencyException whose root cause is BeanCurrentlyInCreationException (\"Requested bean is currently in creation: Is there an unresolvable circular reference\"). Two singleton beans each take the other as a constructor parameter.",
+    "cause": "Since Spring Boot 2.6 circular references between beans are prohibited by default. A cycle made of constructor parameters can never be resolved by the container anyway, because neither bean can be instantiated before the other.",
+    "fixSummary": "Break the cycle instead of relaxing the check: move the state both services need into a third bean and let both depend on it, or mark one constructor parameter with @Lazy so a lazy-resolution proxy is injected. Setting spring.main.allow-circular-references=true does not resolve constructor cycles and is discouraged."
+  }
+]

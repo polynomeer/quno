@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-a02",
+    "title": "JWT resource server rejects valid tokens with 'The iss claim is not valid': issuer-uri must match the token's iss including the trailing slash",
+    "verification": "unverified",
+    "errorSample": "java.lang.AssertionError: Status expected:<200> but was:<401>\n    at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)\n    at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:129)\n    at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$0(StatusResultMatchers.java:600)\n    at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:212)\n    at org.springframework.test.web.servlet.result.StatusResultMatchersDsl.isOk(StatusResultMatchersDsl.kt:131)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3102",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-02",
+    "symptom": "Tokens with a correct signature get HTTP 401 and a WWW-Authenticate header saying 'The iss claim is not valid' when the resource server uses jwk-set-uri together with an issuer-uri property.",
+    "cause": "JwtIssuerValidator compares the iss claim to issuer-uri as an exact string. Identity providers differ on whether the issuer URL ends with a slash, and the configured value does not match the token's iss claim, so every token is treated as having a foreign issuer.",
+    "fixSummary": "Give the issuer-uri property a concrete default instead of an empty one: the issuer string that your identity provider puts in its tokens, with a trailing slash appended, for example spring.security.oauth2.resourceserver.jwt.issuer-uri=${ISSUER_URI:<issuer string>/}. The exact string comparison then succeeds and valid tokens are accepted."
+  }
+]

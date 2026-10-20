@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-c06",
+    "title": "Boot reports \"Failed to determine a suitable driver class\" with only the PostgreSQL driver on the classpath",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.boot.jdbc.autoconfigure.DataSourceProperties$DataSourceBeanCreationException: Failed to determine a suitable driver class\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceProperties.determineDriverClassName(DataSourceProperties.java:179) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.jdbc.autoconfigure.PropertiesJdbcConnectionDetails.getDriverClassName(PropertiesJdbcConnectionDetails.java:51) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration.createDataSource(DataSourceConfiguration.java:63) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration$Hikari.dataSource(DataSourceConfiguration.java:128) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/46032",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-03-30",
+    "symptom": "Startup fails with \"Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured\" and reason \"Failed to determine a suitable driver class\".",
+    "cause": "Boot cannot infer which JDBC driver to use for the DataSource because driver detection depends on a connection URL, and with several candidate drivers or class loaders the lookup returns nothing.",
+    "fixSummary": "Name the driver explicitly in application.properties with spring.datasource.driver-class-name=org.postgresql.Driver so DataSourceProperties no longer has to detect it, then restart."
+  }
+]

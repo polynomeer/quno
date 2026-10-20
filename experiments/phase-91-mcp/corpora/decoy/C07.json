@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c07",
+    "title": "NoUniqueBeanDefinitionException for an interface with two implementations: annotate the interface with @Primary",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'task.PaymentGateway' available: expected single matching bean but found 2: bankTransferGateway,cardPaymentGateway\n\tat org.springframework.beans.factory.config.DependencyDescriptor.resolveNotUnique(DependencyDescriptor.java:192) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1746) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1658) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-7.0.9.jar:7.0.9]\n\t... 122 common frames omitted",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/50388",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-01-18",
+    "symptom": "Startup fails with NoUniqueBeanDefinitionException: expected single matching bean but found 2, for a constructor parameter typed with an interface that has two component implementations.",
+    "cause": "Both implementations register as candidates for the interface type and nothing marks one of them as the default choice.",
+    "fixSummary": "Mark the shared interface with @Primary. Because both implementations are assignable to it, Spring treats the interface-level marker as the default selection and injects the candidate it describes without touching the implementations or the injection point."
+  }
+]

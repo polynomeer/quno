@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c06",
+    "title": "Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.boot.jdbc.autoconfigure.DataSourceProperties$DataSourceBeanCreationException: Failed to determine a suitable driver class\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceProperties.determineDriverClassName(DataSourceProperties.java:179) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.jdbc.autoconfigure.PropertiesJdbcConnectionDetails.getDriverClassName(PropertiesJdbcConnectionDetails.java:51) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration.createDataSource(DataSourceConfiguration.java:63) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration$Hikari.dataSource(DataSourceConfiguration.java:128) ~[spring-boot-jdbc-4.0.8.jar:4.0.8]\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-boot-jdbc",
+        "versions": "4.0.8"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-boot/how-to/data-access.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "The context fails with \"APPLICATION FAILED TO START\": \"Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured\", with reason \"Failed to determine a suitable driver class\". Only the PostgreSQL driver is on the classpath and no spring.datasource.url is set.",
+    "cause": "Spring Boot only auto-configures a DataSource without a URL when an embedded database (H2, HSQL or Derby) is on the classpath. A server database driver alone gives Boot nothing to connect to, so DataSourceProperties cannot determine a driver class or URL.",
+    "fixSummary": "Provide a connection or an embedded database for the environment. For tests that must run without an external database, add an embedded database to the test classpath, for example testRuntimeOnly(\"com.h2database:h2\"), so Boot creates an in-memory DataSource. Otherwise set spring.datasource.url, username and password for a reachable database."
+  }
+]

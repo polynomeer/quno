@@ -12,6 +12,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const seedDir = resolve(process.env.QUNO_SEED_DIR ?? join(root, 'seeds'));
 const logPath = process.env.QUNO_CALL_LOG ?? join(root, 'logs', 'calls.jsonl');
 
+const stripLabels = process.env.QUNO_STRIP_LABELS === '1';
 const { records, errors } = loadRecords(seedDir);
 for (const e of errors) console.error(`[quno] 기록 거부: ${e.file} ${e.id ?? ''} — ${e.message}`);
 console.error(`[quno] 기록 ${records.length}건 로드 (${seedDir})`);
@@ -20,6 +21,7 @@ const log = createCallLog(logPath, {
   condition: process.env.QUNO_CONDITION ?? null,
   runId: process.env.QUNO_RUN_ID ?? null,
   corpusSize: records.length,
+  stripLabels,
 });
 
 const asResult = (payload) => ({
@@ -44,7 +46,7 @@ server.registerTool(
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   async ({ errorText, limit }) => {
-    const payload = searchKnownIssues(records, { errorText, limit });
+    const payload = searchKnownIssues(records, { errorText, limit, stripLabels });
     log({ tool: 'search_known_issues', query: errorText.slice(0, 2000), parsed: payload.parsed, resultIds: payload.results.map((r) => r.id) });
     return asResult(payload);
   },
@@ -59,7 +61,7 @@ server.registerTool(
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   async ({ id }) => {
-    const payload = getResolution(records, { id });
+    const payload = getResolution(records, { id, stripLabels });
     log({ tool: 'get_resolution', id, found: payload.found });
     return asResult(payload);
   },

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-b04",
+    "title": "RANDOM_PORT test still binds the management server to its fixed port: 'Port 18081 is already in use'",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.boot.web.server.PortInUseException: Port 18081 is already in use\n\tat org.springframework.boot.web.server.PortInUseException.lambda$throwIfPortBindingException$0(PortInUseException.java:73) ~[spring-boot-web-server-4.0.1.jar:4.0.1]\nCaused by: java.lang.IllegalArgumentException: standardService.connector.startFailed\n\tat org.apache.catalina.core.StandardService.addConnector(StandardService.java:220) ~[tomcat-embed-core-11.0.15.jar:11.0.15]\nCaused by: org.apache.catalina.LifecycleException: Protocol handler start failed\n\tat org.apache.catalina.connector.Connector.startInternal(Connector.java:1119) ~[tomcat-embed-core-11.0.15.jar:11.0.15]\nCaused by: java.net.BindException: Address already in use\n\tat java.base/sun.nio.ch.Net.bind0(Native Method) ~[na:na]\n\tat java.base/sun.nio.ch.Net.bind(Net.java:577) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(ServerSocketChannelImpl.java:344) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:301) ~[na:na]\n\tat org.apache.tomcat.util.net.NioEndpoint.initServerSocket(NioEndpoint.java:265) ~[tomcat-embed-core-11.0.15.jar:11.0.15]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.1 (regression vs 3.x, fixed in 4.0.2)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/48653",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2025-12-31",
+    "symptom": "@SpringBootTest(webEnvironment = RANDOM_PORT) fails with PortInUseException / \"Web server failed to start. Port 18081 was already in use\" when management.server.port is a fixed port and that port is occupied, for example by a locally running instance of the app.",
+    "cause": "In Boot 4 the random-port handling moved from SpringBootTestRandomPortEnvironmentPostProcessor to a listener, but the event is published before the context customizer registers that listener. RANDOM_PORT is therefore applied to server.port only and the management server keeps its configured fixed port.",
+    "fixSummary": "In the test environment set management.server.port=0, for example in src/test/resources/config/application.properties (overrides the main config without touching test code) or via @SpringBootTest(properties = ...). Do not set it to -1: that disables the management server and local.management.port is no longer available. Fixed upstream in 4.0.2."
+  }
+]

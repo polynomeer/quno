@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a04",
+    "title": "WebFlux multipart: @RequestPart FilePart is null when an empty file part is followed by another part",
+    "verification": "unverified",
+    "errorSample": "java.lang.AssertionError: Response body expected:<received: test.txt> but was:<no file received>\n    at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)\n    at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:129)\n    at org.springframework.test.web.reactive.server.DefaultWebTestClient$DefaultBodySpec.lambda$isEqualTo$0(DefaultWebTestClient.java:585)\n    at org.springframework.test.web.reactive.server.ExchangeResult.assertWithDiagnostics(ExchangeResult.java:231)\n    at org.springframework.test.web.reactive.server.DefaultWebTestClient$DefaultBodySpec.isEqualTo(DefaultWebTestClient.java:584)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.9 (Spring Boot 4.0.8; also reported with Boot 4.1.1); fixed in 7.0.10"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/37264",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-09-10",
+    "symptom": "In a WebFlux controller, an empty (0-byte) file part that is followed by further parts in the multipart body arrives as null in @RequestPart FilePart (the app reports 'no file received'). The same empty file as the last part, or a file with content, is received correctly. It is deterministic and independent of how the body is chunked.",
+    "cause": "MultipartParser's body state does not emit an empty last BodyToken when a part has no content (the boundary follows the headers immediately). DefaultPartHttpMessageReader splits parts into windows on Token::isLast, so the window of the empty file part never closes and merges with the next part's tokens, and the file part disappears. The empty last part case is handled separately.",
+    "fixSummary": "Receive the request as @RequestBody Flux<PartEvent> instead of @RequestPart. PartEventHttpMessageReader windows on HeadersToken and handles empty bodies. Collect the events, read FilePartEvent and FormPartEvent by name, and release each event's content buffer. A custom HttpMessageReader or preprocessing the body are other workarounds. Fixed in Framework 7.0.10."
+  }
+]

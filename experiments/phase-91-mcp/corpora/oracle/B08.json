@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-b08",
+    "title": "bootBuildImage on Apple Silicon with imagePlatform linux/amd64 fails with 'Invalid buildpack reference' (404 on images/.../get)",
+    "verification": "unverified",
+    "errorSample": "Execution failed for task ':bootBuildImage'.\n> Invalid buildpack reference '<buildpack>'\nCaused by: org.springframework.boot.buildpack.platform.docker.transport.DockerEngineException: Docker API call to 'docker://localhost/images/docker.io/paketobuildpacks/opentelemetry:2/get' failed with status code 404 \"Not Found\" and message \"unable to create manifests file: NotFound: content digest sha256:c7ee7bde14d2...: not found\"",
+    "appliesTo": [
+      {
+        "component": "spring-boot-gradle-plugin",
+        "versions": "3.5.4 on macOS arm64 with Docker Desktop 4.42.1; issue milestoned for the 3.4.12 fix release"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/46665",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2025-08-04",
+    "symptom": "bootBuildImage with imagePlatform = \"linux/amd64\" on an arm64 host and an external buildpack (for example paketobuildpacks/opentelemetry:2) fails with \"Invalid buildpack reference\"; the stack trace shows a DockerEngineException, status 404, on the images/.../get call (\"content digest ... not found\"). Without imagePlatform the build works.",
+    "cause": "The requested platform (amd64) differs from the host (arm64). The external buildpack image is pulled for the requested platform, but the plugin then reads it back through the image export call (images/{name}/get, the equivalent of docker save) without passing a platform. The daemon tries to export the host-platform variant, which was never pulled, and answers 404; the plugin reports this misleadingly as an invalid buildpack reference.",
+    "fixSummary": "Upgrade to a Spring Boot release that contains the fix (the issue is milestoned for 3.4.12). Workarounds: avoid external buildpacks (use a builder that already bundles them), or do not set imagePlatform so it matches the host. Removing images of the other architecture with docker rmi and restarting the Gradle daemon helped one user, but maintainers saw failures persist after a full prune when imagePlatform is set."
+  }
+]

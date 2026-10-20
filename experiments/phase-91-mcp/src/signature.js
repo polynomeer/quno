@@ -40,42 +40,37 @@ export function normalizeFrame(method) {
     .replace(/\$\d+/g, '$$n');
 }
 
-function parseBlocks(text) {
-  // "Caused by:" 로 나뉜 블록들. 마지막 블록이 근본 원인이다.
-  const lines = text.split(/\r?\n/);
-  const blocks = [];
+/**
+ * 텍스트의 모든 예외 체인을 읽는다. "Caused by:" 는 앞 체인을 잇고, 그 외에 예외 이름이 나오는
+ * 비-프레임 줄은 새 체인을 시작한다. 각 체인의 마지막 블록이 근본 원인이다.
+ */
+function parseChains(text) {
+  const chains = [];
   let current = null;
-  for (const line of lines) {
+  for (const line of text.split(/\r?\n/)) {
     const jvm = line.match(JVM_FRAME_RE);
     const node = jvm ? null : line.match(NODE_FRAME_RE);
     if (jvm || node) {
-      current?.frames.push(normalizeFrame(jvm ? jvm[1] : node[1]));
+      current?.[current.length - 1].frames.push(normalizeFrame(jvm ? jvm[1] : node[1]));
       continue;
     }
     const causedBy = line.match(/^\s*Caused by:\s*(.*)$/);
-    if (causedBy || current === null) {
-      const m = (causedBy ? causedBy[1] : line).match(EXCEPTION_RE);
-      if (m) {
-        current = { exceptionClass: m[1], message: m[2] ?? '', frames: [] };
-        blocks.push(current);
-      }
+    const m = (causedBy ? causedBy[1] : line).match(EXCEPTION_RE);
+    if (!m) continue;
+    const block = { exceptionClass: m[1], message: m[2] ?? '', frames: [] };
+    if (causedBy && current) {
+      current.push(block);
+    } else {
+      current = [block];
+      chains.push(current);
     }
   }
-  return blocks;
+  return chains;
 }
 
 const sha = (s) => createHash('sha256').update(s).digest('hex').slice(0, 16);
 
-/**
- * 스택트레이스(또는 에러 한 줄)를 시그니처로 정규화한다.
- * - signature: 근본 원인의 예외 클래스 + 정규화한 상위 N개 프레임
- * - messageKey: 근본 원인의 예외 클래스 + 정규화한 메시지
- * 예외를 찾지 못하면 null.
- */
-export function computeSignature(text) {
-  if (!text || typeof text !== 'string') return null;
-  const blocks = parseBlocks(text);
-  if (blocks.length === 0) return null;
+function toSignature(blocks) {
   const root = blocks[blocks.length - 1];
   const message = normalizeMessage(root.message);
   const frames = root.frames.slice(0, TOP_FRAMES);
@@ -87,4 +82,31 @@ export function computeSignature(text) {
     signature: frames.length ? sha(`${root.exceptionClass}|${frames.join('|')}`) : null,
     chain: blocks.map((b) => b.exceptionClass),
   };
+}
+
+/**
+ * 텍스트에 들어 있는 모든 예외 체인의 시그니처(근본 원인 기준). 같은 체인은 한 번만 낸다.
+ * 사용자가 빌드·실행 로그를 통째로 붙이면 무관한 경고 트레이스가 섞이므로 검색은 모두 시도한다.
+ */
+export function computeSignatures(text) {
+  if (!text || typeof text !== 'string') return [];
+  const seen = new Set();
+  const out = [];
+  for (const blocks of parseChains(text)) {
+    const sig = toSignature(blocks);
+    const key = sig.messageKey + '|' + (sig.signature ?? '');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(sig);
+  }
+  return out;
+}
+
+/**
+ * 첫 번째 체인의 시그니처. 예외를 찾지 못하면 null.
+ * - signature: 근본 원인의 예외 클래스 + 정규화한 상위 N개 프레임
+ * - messageKey: 근본 원인의 예외 클래스 + 정규화한 메시지
+ */
+export function computeSignature(text) {
+  return computeSignatures(text)[0] ?? null;
 }

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c04",
+    "title": "JaCoCo \"Unsupported class file major version 65\": exclude JDK internal classes from instrumentation",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65\n\tat org.jacoco.agent.rt.internal_3570298.asm.ClassReader.<init>(ClassReader.java:196)\n\tat org.jacoco.agent.rt.internal_3570298.asm.ClassReader.<init>(ClassReader.java:177)\n\tat org.jacoco.agent.rt.internal_3570298.asm.ClassReader.<init>(ClassReader.java:163)\n\tat org.jacoco.agent.rt.internal_3570298.core.internal.instr.InstrSupport.classReaderFor(InstrSupport.java:280)\n\tat org.jacoco.agent.rt.internal_3570298.core.instr.Instrumenter.instrument(Instrumenter.java:76)\n\tat org.jacoco.agent.rt.internal_3570298.core.instr.Instrumenter.instrument(Instrumenter.java:108)\n\t... 36 more",
+    "appliesTo": [
+      {
+        "component": "jacoco",
+        "versions": "0.8.x"
+      },
+      {
+        "component": "java",
+        "versions": "21"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/44871",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-06-09",
+    "symptom": "jacocoTestReport fails with \"Error while creating report\" and the test JVM prints IllegalClassFormatException / \"Unsupported class file major version 65\" for classes such as sun.util and jdk.internal ones.",
+    "cause": "The JaCoCo agent tries to instrument classes from the JDK itself that were not loaded from a normal class directory, and the JDK 21 internals have a newer class file version than the pinned JaCoCo ASM can read.",
+    "fixSummary": "Keep the pinned JaCoCo version and tell the agent to leave JDK classes alone: in tasks.test configure the JaCoCo extension with isIncludeNoLocationClasses = true and excludes = listOf(\"jdk.internal.*\"). The agent no longer touches the JDK classes and the report is generated."
+  }
+]

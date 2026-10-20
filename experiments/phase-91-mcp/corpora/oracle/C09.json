@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c09",
+    "title": "@Transactional has no effect when the annotated method is called from another method of the same class",
+    "verification": "unverified",
+    "errorSample": "org.opentest4j.AssertionFailedError: 실패한 묶음은 롤백되어야 한다 ==> expected: <0> but was: <2>\n    at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)\n    at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)\n    at app//org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)\n    at app//org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:152)\n    at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:590)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-framework/reference/core/aop/proxying.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "An exception is thrown part way through a batch, but rows written before it stay in the database (for example an assertion that expected 0 rows finds 2). There is no error about transactions; the rollback simply never happens.",
+    "cause": "Spring applies @Transactional through a proxy around the bean. A public method that calls a @Transactional method on this bypasses the proxy, so no transaction is started and each JDBC statement autocommits.",
+    "fixSummary": "Put @Transactional on the method that outside callers invoke (the entry point), or move the transactional method into a separate bean and call it through the injected reference, or wrap the work in a TransactionTemplate. Keep the exception behavior unchanged."
+  }
+]
