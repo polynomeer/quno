@@ -116,3 +116,4 @@ C층 예비: Mockito `UnnecessaryStubbingException`, `HttpMessageNotReadableExce
 | 날짜 | 변경 | 이유 |
 |---|---|---|
 | 2026-10-19 | 최초 작성 (A 10 + 예비 7, B 10 + 예비 5, C 10) | PLAN.md 91.2 |
+| 2026-10-20 | 재현 프로젝트 26개(A10, B6, C10) 완성·순차 검증. A05·A06 재현 조건 정정, B03·B05·B06 구현 편차 기록 | 재현 단계 |
