@@ -1,6 +1,6 @@
 # Phase 91 과제 프로젝트
 
-[과제 후보 목록](../../docs/product/phase-91-task-candidates.md)의 과제를 실제로 재현 가능한 최소 프로젝트로 만든 것이다. 실험 설계는 [phase-91-validation-experiment.md](../../docs/product/phase-91-validation-experiment.md).
+[과제 후보 목록](../../docs/product/phase-91-task-candidates.md)의 과제(전체 목록은 [MANIFEST.md](MANIFEST.md))를 실제로 재현 가능한 최소 프로젝트로 만든 것이다. 실험 설계는 [phase-91-validation-experiment.md](../../docs/product/phase-91-validation-experiment.md).
 
 ## 구조
 
