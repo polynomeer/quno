@@ -78,20 +78,20 @@ Spring Boot 4.0.8(이 저장소의 버전) 주변에서 최근 3개월에 보고
 
 ## 5. C층 — 통제군 (흔한 에러), 10개
 
-에이전트가 혼자 풀 것으로 **예상되는** 문제다. 여기서 Quno가 이득을 못 내야 "수요는 최신·롱테일에 남는다"는 주장이 선다. 모두 이 스택의 대표적이고 문서화된 에러이며, 최근 이슈를 쓰지 않고 합성 재현 프로젝트로 만든다. 링크는 확인한 것만 적었고, 나머지는 확정 시 공식 문서 링크를 붙인다.
+에이전트가 혼자 풀 것으로 **예상되는** 문제다. 여기서 Quno가 이득을 못 내야 "수요는 최신·롱테일에 남는다"는 주장이 선다. 모두 이 스택의 대표적이고 문서화된 에러이며, 최근 이슈를 쓰지 않고 합성 재현 프로젝트로 만든다. 링크는 모두 200 응답을 확인했다(C08 제외). 재현 프로젝트는 [experiments/phase-91-tasks](../../experiments/phase-91-tasks/README.md)에 있고 C01~C10 모두 재현·정답 검증을 통과했다.
 
 | ID | 에러 | 원인·해결 | 근거 문서 |
 |---|---|---|---|
 | C01 | `BeanCurrentlyInCreationException` (순환 참조) | Boot 2.6부터 순환 참조 금지. 설계 변경 또는 `@Lazy` | [Boot 2.6 릴리스 노트](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-2.6-Release-Notes) |
 | C02 | `@Configuration` 클래스가 final이라 프록시 불가 | Kotlin 클래스는 기본 final. `kotlin-spring`(all-open) 플러그인 | [Kotlin all-open](https://kotlinlang.org/docs/all-open-plugin.html) |
 | C03 | JPA 엔티티 "No default constructor" | Kotlin 데이터 클래스. `kotlin-jpa`(no-arg) 플러그인 | [Kotlin no-arg](https://kotlinlang.org/docs/no-arg-plugin.html) |
-| C04 | Gradle `Unsupported class file major version` | JDK와 Gradle/Kotlin 버전 불일치 | [Gradle 호환성 표](https://docs.gradle.org/current/userguide/compatibility.html) |
-| C05 | `PortInUseException`: 포트 8080 사용 중 | 포트 충돌. 포트 변경 또는 프로세스 종료 | 링크 확정 시 추가 |
-| C06 | `Failed to configure a DataSource: 'url' attribute is not specified` | 데이터소스 설정 누락 | 링크 확정 시 추가 |
-| C07 | `NoUniqueBeanDefinitionException` | 같은 타입 빈 둘. `@Primary`/`@Qualifier` | 링크 확정 시 추가 |
-| C08 | `LazyInitializationException: could not initialize proxy - no Session` | 트랜잭션 밖 지연 로딩 | 링크 확정 시 추가 |
-| C09 | `@Transactional`이 적용되지 않음(자기 호출) | 프록시 기반 AOP의 한계 | 링크 확정 시 추가 |
-| C10 | `UninitializedPropertyAccessException: lateinit property ... has not been initialized` | Kotlin `lateinit` 초기화 전 접근 | 링크 확정 시 추가 |
+| C04 | Gradle `Unsupported class file major version` | JDK와 도구 버전 불일치. 구현은 JDK 21 + 구버전 JaCoCo(0.8.7)로 `jacocoTestReport`가 실패하는 형태(Gradle 래퍼를 과제별로 낮출 수 없어 변형) | [Gradle 호환성 표](https://docs.gradle.org/current/userguide/compatibility.html) |
+| C05 | `PortInUseException`: 포트 8080 사용 중 | 포트 충돌. 포트 변경 또는 프로세스 종료 | [Boot how-to: 웹 서버](https://docs.spring.io/spring-boot/how-to/webserver.html) |
+| C06 | `Failed to configure a DataSource: 'url' attribute is not specified` | 데이터소스 설정 누락 | [Boot how-to: 데이터 접근](https://docs.spring.io/spring-boot/how-to/data-access.html) |
+| C07 | `NoUniqueBeanDefinitionException` | 같은 타입 빈 둘. `@Primary`/`@Qualifier` | [Spring: @Primary](https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/autowired-primary.html) |
+| C08 | `LazyInitializationException` (Hibernate 7 문구: `Cannot lazily initialize collection of role ...`) | 트랜잭션 밖 지연 로딩 | 링크 미확인 |
+| C09 | `@Transactional`이 적용되지 않음(자기 호출) | 프록시 기반 AOP의 한계 | [Spring: 프록시 메커니즘](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html) |
+| C10 | `UninitializedPropertyAccessException: lateinit property ... has not been initialized` | Kotlin `lateinit` 초기화 전 접근 | [Kotlin: 프로퍼티](https://kotlinlang.org/docs/properties.html) |
 
 C층 예비: Mockito `UnnecessaryStubbingException`, `HttpMessageNotReadableException`(JSON 필드 불일치).
 

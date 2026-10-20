@@ -1,0 +1,19 @@
+diff -ruN a/src/main/kotlin/task/Application.kt b/src/main/kotlin/task/Application.kt
+--- a/src/main/kotlin/task/Application.kt
++++ b/src/main/kotlin/task/Application.kt
+@@ -2,6 +2,7 @@
+ 
+ import org.springframework.boot.autoconfigure.SpringBootApplication
+ import org.springframework.boot.runApplication
++import org.springframework.context.annotation.Primary
+ import org.springframework.stereotype.Component
+ import org.springframework.stereotype.Service
+ import java.math.BigDecimal
+@@ -16,6 +17,7 @@
+ }
+ 
+ /** 카드 결제 대행사 연동. */
++@Primary
+ @Component
+ class CardPaymentGateway : PaymentGateway {
+ 	override fun pay(orderNo: String, amount: BigDecimal) = PaymentResult(true, "CARD")

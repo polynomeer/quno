@@ -1,0 +1,17 @@
+diff -ruN a/src/main/kotlin/task/Application.kt b/src/main/kotlin/task/Application.kt
+--- a/src/main/kotlin/task/Application.kt
++++ b/src/main/kotlin/task/Application.kt
+@@ -16,12 +16,12 @@
+ class OrderImportService(
+ 	private val jdbcTemplate: JdbcTemplate,
+ ) {
++	@Transactional
+ 	fun importBatch(lines: List<OrderLine>): Int {
+ 		saveAll(lines)
+ 		return lines.size
+ 	}
+ 
+-	@Transactional
+ 	fun saveAll(lines: List<OrderLine>) {
+ 		lines.forEach { line ->
+ 			jdbcTemplate.update(

@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS refunds (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    payment_no VARCHAR(40) NOT NULL,
+    amount DECIMAL(12, 2) NOT NULL,
+    reason VARCHAR(200)
+);
