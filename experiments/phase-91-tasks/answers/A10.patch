@@ -1,0 +1,18 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 12:02:43
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 12:02:43
+@@ -1,6 +1,7 @@
+ package task
+ 
+ import org.springframework.boot.autoconfigure.SpringBootApplication
++import org.springframework.boot.context.properties.EnableConfigurationProperties
+ import org.springframework.boot.runApplication
+ import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientProperties
+ import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientPropertiesMapper
+@@ -28,6 +29,7 @@
+ }
+ 
+ @Configuration
++@EnableConfigurationProperties(OAuth2ClientProperties::class)
+ class OAuth2Config {
+ 	@Bean
+ 	fun clientRegistrationRepository(properties: OAuth2ClientProperties): ClientRegistrationRepository =

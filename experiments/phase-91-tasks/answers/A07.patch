@@ -1,0 +1,10 @@
+--- a/src/main/resources/application.properties	2026-10-20 11:55:48
++++ b/src/main/resources/application.properties	2026-10-20 11:55:48
+@@ -1,6 +1 @@
+-spring.mongodb.host=mongo.internal.example
+-spring.mongodb.port=27017
+-spring.mongodb.database=audit
+-spring.mongodb.authentication-database=admin
+-spring.mongodb.username=audit-writer
+-spring.mongodb.password=my secret
++spring.mongodb.uri=mongodb://audit-writer:my%20secret@mongo.internal.example:27017/audit?authSource=admin

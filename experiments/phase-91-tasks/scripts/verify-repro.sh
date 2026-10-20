@@ -5,7 +5,9 @@ set -uo pipefail
 here="$(cd "$(dirname "$0")/.." && pwd)"
 id="${1:?usage: verify-repro.sh <TASK_ID>}"
 dir="$("$here/scripts/prepare.sh" "$id")"
-sig="$(cat "$here/answers/$id.signature")"
+sig_file="$here/answers/$id.signature"
+[ -s "$sig_file" ] || { echo "FAIL[$id]: answers/$id.signature 가 없거나 비어 있음 — 빈 문자열은 모든 로그에 일치한다" >&2; exit 2; }
+sig="$(head -n1 "$sig_file")"
 log="$dir/verify.log"
 ( cd "$dir" && bash ./CHECK ) >"$log" 2>&1
 code=$?
