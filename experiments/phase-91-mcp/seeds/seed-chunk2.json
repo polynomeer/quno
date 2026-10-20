@@ -1,0 +1,645 @@
+[
+  {
+    "id": "spring-data-jpa-4228",
+    "title": "AOT processing fails with MappingException for java.sql.Clob entity field (InaccessibleObjectException on java.io.Reader)",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.data.mapping.MappingException: Cannot create PersistentEntity for 'java.sql.Clob'\n\tat org.springframework.data.mapping.context.AbstractMappingContext.addPersistentEntity(AbstractMappingContext.java:430)\n\tat org.springframework.data.mapping.context.AbstractMappingContext$PersistentPropertyCreator.lambda$createAndRegisterProperty$0(AbstractMappingContext.java:674)\nCaused by: org.springframework.data.mapping.MappingException: Cannot create PersistentEntity for 'java.io.Reader'\nCaused by: java.lang.reflect.InaccessibleObjectException: Unable to make protected java.io.Reader() accessible: module java.base does not \"opens java.io\" to unnamed module @25b485ba\n\tat java.base/java.lang.reflect.AccessibleObject.throwInaccessibleObjectException(AccessibleObject.java:353)\n\tat java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:329)",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": "reported with Spring Boot 4.0.5 (Hibernate 7.2.7, JDK 25); fixed in 4.0.5 (2025.1.5)"
+      },
+      {
+        "component": "spring-data-commons",
+        "versions": "AotMappingContext type guard; fixed with the 2025.1.5 release train"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-jpa/issues/4228",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-04-10",
+    "symptom": "Native image build / AOT processing of a Spring Data JPA application fails with AotProcessingException when an entity has a @Lob java.sql.Clob field. The same code worked with Spring Boot 3.5.x.",
+    "cause": "AotMappingContext lacked a guard for java.sql types (it already had one for javax), so AOT type collection tried to create a persistent entity for Clob, then for java.io.Reader, and reflected into java.base, which does not open java.io.",
+    "fixSummary": "Fixed in the next Spring Data release (milestone 4.0.5 / 2025.1.5) by adding the missing java.sql guard. Interim workarounds from the thread: pass --add-opens java.base/java.io=ALL-UNNAMED as a JVM argument of the process-aot goal, or register a TypeCollector.TypeCollectorFilters implementation via aot.factories (as JpaTypeFilters does).",
+    "notes": "Exact release in which the fix shipped is taken from the issue milestone."
+  },
+  {
+    "id": "spring-kafka-4088",
+    "title": "Kafka listener container sends offsets to a non-existent transaction when an early RecordInterceptor filters a record",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalStateException: Cannot send offsets if a transaction is not in progress (currentState= READY)\n\tat org.apache.kafka.clients.producer.internals.TransactionManager.sendOffsetsToTransaction(TransactionManager.java:367)\n\tat org.apache.kafka.clients.producer.KafkaProducer.sendOffsetsToTransaction(KafkaProducer.java:785)",
+    "appliesTo": [
+      {
+        "component": "spring-kafka",
+        "versions": "3.3.7 (reported); fixed in 4.0.0-RC1; 3.3.x backport planned"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-kafka/issues/4088",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-10-14",
+    "symptom": "With a transactional @KafkaListener and a filtering RecordInterceptor that runs before the transaction (interceptBeforeTx=true), the container logs 'Consumer exception' with IllegalStateException: Cannot send offsets if a transaction is not in progress, after a record has been filtered out.",
+    "cause": "When the interceptor filters a record, the container still tries to send offsets to the transaction, but the interceptor runs before the transaction starts, so none is in progress. It happens after an earlier non-filtered record has set the listener consumer's producer field.",
+    "fixSummary": "Fixed in Spring for Apache Kafka 4.0.0-RC1 via a community pull request; the maintainers planned a 3.3.x release containing the fix.",
+    "notes": "Reproduction steps from the issue: transactional listener, early filtering RecordInterceptor, send one record that passes then one that is filtered."
+  },
+  {
+    "id": "spring-batch-5377",
+    "title": "Spring Batch skip policy fails with UnexpectedRollbackException when using JpaItemWriter",
+    "verification": "unverified",
+    "errorSample": "org.springframework.transaction.UnexpectedRollbackException: Transaction silently rolled back because it has been marked as rollback-only\n\tat org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:803)\n\tat org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:757)",
+    "appliesTo": [
+      {
+        "component": "spring-batch",
+        "versions": "6.0.3 (reported); fixed in 6.0.4"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-batch/issues/5377",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-05",
+    "symptom": "A chunk-oriented step with a JpaItemWriter and a skip policy fails with UnexpectedRollbackException ('Transaction silently rolled back because it has been marked as rollback-only') when an item violates a database constraint, instead of skipping only the invalid item. The same job works with a JDBC writer.",
+    "cause": "In scan mode (after a failed chunk) all items were re-processed in a single transaction. With JPA, the first failed flush marks the whole transaction rollback-only, so the next item written in that transaction fails and the skip policy does not cover it. A failed JDBC statement does not poison the transaction this way.",
+    "fixSummary": "Fixed in Spring Batch 6.0.4: scan mode now processes each item in its own transaction and explicitly sets the local transaction rollback-only when an item is skipped (commit message: 'Process each item in its own transaction in scan mode')."
+  },
+  {
+    "id": "gradle-36652",
+    "title": "Gradle 9.4 test task fails with 'Selected test name cannot be null or empty' after java-gradle-plugin gradleApi change",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.gradle.api.InvalidUserDataException: Selected test name cannot be null or empty.\n\tat org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter.validateName(DefaultTestFilter.java:38)\n\tat org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter.includeTestsMatching(DefaultTestFilter.java:44)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "9.4.0-rc-1 (worked in 9.3.1)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/36652",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-02-19",
+    "symptom": "After updating to Gradle 9.4.0-rc-1, the test task fails with 'Selected test name cannot be null or empty', a JUnit Jupiter initializationError / DiscoveryIssueException and 'Failed to close some test reporters'.",
+    "cause": "The java-gradle-plugin now adds gradleApi() to compileOnlyApi instead of compileOnly, so it is not on the test runtime classpath for test source sets that are not registered as test source sets of the plugin. In the reported build, a testSourceSets(...) call replaced the default 'test' suite in that list, so the 'test' source set lost the special treatment and test loading failed. The confusing error message itself comes from the test-retry plugin hiding the real loading error.",
+    "fixSummary": "Either add testRuntimeOnly(gradleApi()), or pass all source sets that should be treated as plugin test source sets in one testSourceSets(...) call, including sourceSets[\"test\"]. Gradle documented the compileOnlyApi change in the 9.x upgrade guide; the poor error message was filed against the test-retry plugin."
+  },
+  {
+    "id": "gradle-36751",
+    "title": "Gradle 9.3 flaky 'Output range end 0 specified without any output range starts' when running Kotlin/Wasm tests",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalStateException: Output range end 0 specified without any output range starts\n\tat org.gradle.api.internal.tasks.testing.results.serializable.OutputRanges.of(OutputRanges.java:100)\n\tat org.gradle.api.internal.tasks.testing.results.serializable.TestOutputWriter.finishOutput(TestOutputWriter.java:85)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "9.3.x (reported on 9.3.1; worked in 9.2.1); fixed in 9.4.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/36751",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-02-19",
+    "symptom": "A Kotlin/Wasm test task (wasmWasiTest) intermittently fails with IllegalStateException from OutputRanges ('Output range end 0 specified without any output range starts' or 'Range end ... is before stderr start ...') and 'Could not write test report', even though the tests pass; re-running succeeds.",
+    "cause": "Test output events from the Kotlin TeamCity service message adapter were handled concurrently inside AbstractTestTask internals without sufficient synchronization, producing out-of-order output ranges in the new binary test result store introduced in 9.3.0.",
+    "fixSummary": "Fixed in Gradle 9.4.0 by synchronizing those AbstractTestTask internals (PR 'Synchronize some internals of AbstractTestTask'). The reporter's workaround was downgrading to Gradle 9.2.x.",
+    "notes": "The exact race is described only in the fixing PR title/description; the reporter observed no flakes on 9.4.0-rc-1."
+  },
+  {
+    "id": "jackson-databind-5335",
+    "title": "Jackson 3.0.0 record with Optional constructor parameter fails with NullPointerException when property is missing or null",
+    "verification": "unverified",
+    "errorSample": "Exception in thread \"main\" tools.jackson.databind.exc.ValueInstantiationException: Cannot construct instance of `io.airlift.json.TestOptional$Person`, problem: nickname is null\n at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); byte offset: #UNKNOWN]\nCaused by: java.lang.NullPointerException: nickname is null\n\tat java.base/java.util.Objects.requireNonNull(Objects.java:246)\n\tat io.airlift.json.TestOptional$Person.<init>(TestOptional.java:31)",
+    "appliesTo": [
+      {
+        "component": "jackson-databind",
+        "versions": "3.0.0; fixed in 3.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/FasterXML/jackson-databind/issues/5335",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-10-16",
+    "symptom": "Deserializing JSON that omits an Optional property (or has null) into a record whose canonical constructor calls requireNonNull on the Optional fails in Jackson 3.0.0 with ValueInstantiationException wrapping a NullPointerException; the same code works in Jackson 2.x with Jdk8Module.",
+    "cause": "Jackson 3.0.0 passes null for a missing/null Optional creator property instead of Optional.empty() (a behavior change related to the integration of the Jdk8 module into core, tracked as issue 3601 by the maintainers), so the record's null check fails.",
+    "fixSummary": "Fixed in Jackson 3.0.1, which restores the Jackson 2.x behavior (Optional.empty() for missing or null creator properties). The reporter confirmed it with the 3.0.1 release."
+  },
+  {
+    "id": "jackson-databind-6227",
+    "title": "Jackson BeanDescription.findProperties() throws ConcurrentModificationException when one instance is used by several threads",
+    "verification": "unverified",
+    "errorSample": "java.util.ConcurrentModificationException\n\tat java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1095)\n\tat java.base/java.util.ArrayList$Itr.next(ArrayList.java:1049)",
+    "appliesTo": [
+      {
+        "component": "jackson-databind",
+        "versions": "2.21 and 3.1.x (reported on 3.1.5); fixed in 2.21.8 and merged up"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/FasterXML/jackson-databind/issues/6227",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-09-25",
+    "symptom": "Calling findProperties() concurrently on the same BeanDescription instance randomly fails with ConcurrentModificationException or IllegalArgumentException 'Conflicting property-based creators'.",
+    "cause": "findProperties() lazily runs POJOPropertiesCollector.collectAll(), which mutates collector instance state without synchronization, so two threads that both see the properties as not yet collected corrupt each other's work. Jackson itself does not share BeanDescription instances across threads; it only occurs when calling code obtains one and uses it from several threads (the reporter hit it via a JSON schema generator library).",
+    "fixSummary": "Fixed by making the collection thread-safe (volatile flag, synchronized collectAll with double-checked access), shipped in 2.21.8 and carried to 3.x. Until then, avoid sharing a BeanDescription or ClassIntrospector across threads or add external locking.",
+    "notes": "Maintainers noted BeanDescription was never designed to be thread-safe; the fix was accepted as a pragmatic improvement."
+  },
+  {
+    "id": "spring-boot-47433",
+    "title": "Spring Boot 4 native image built with GraalVM older than 25 fails with AotInitializerNotFoundException",
+    "verification": "unverified",
+    "errorSample": "org.springframework.boot.AotInitializerNotFoundException: Startup with AOT mode enabled failed: AOT initializer org.springframework.cloud.task.timestamp.TaskApplication__ApplicationContextInitializer could not be found\n        at org.springframework.boot.SpringApplication.addAotGeneratedInitializerIfNecessary(SpringApplication.java:428)\n        at org.springframework.boot.SpringApplication.prepareContext(SpringApplication.java:384)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.0-M3 (reported); explicit failure added in 4.0.0-RC1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/47433",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-10-15",
+    "symptom": "A native image built with GraalVM 21 fails on startup with 'Startup with AOT mode enabled failed: AOT initializer ... could not be found', while the same application starts with GraalVM 24 (earlier build).",
+    "cause": "Spring Framework 7 writes reflection hints in a format that native-image versions older than GraalVM 25 do not understand, so the generated AOT initializer class is not reachable at runtime.",
+    "fixSummary": "Use GraalVM 25 or newer for Spring Boot 4 native images. From 4.0.0-RC1 Spring Boot checks at startup whether it runs in a native image that does not support Java 25 and fails with an explicit exception instead of this confusing error.",
+    "notes": "The issue title is 'Raise GraalVM baseline to 25'; a failure analyzer was deliberately not added because failure analyzers cannot work on native images older than 25."
+  },
+  {
+    "id": "spring-batch-5330",
+    "title": "Spring Batch 6 JsonLineMapper throws NoClassDefFoundError for tools.jackson.databind.json.JsonMapper when only Jackson 2 is present",
+    "verification": "unverified",
+    "errorSample": "Exception in thread \"main\" java.lang.NoClassDefFoundError: tools/jackson/databind/json/JsonMapper\n\tat org.springframework.batch.infrastructure.item.file.mapping.JsonLineMapper.<init>(JsonLineMapper.java:51)\n\tat LineMapperUser.main(LineMapperUser.java:5)\nCaused by: java.lang.ClassNotFoundException: tools.jackson.databind.json.JsonMapper\n\tat java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:580)",
+    "appliesTo": [
+      {
+        "component": "spring-batch",
+        "versions": "6.0.x (documentation corrected for 6.0.4)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-batch/issues/5330",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-28",
+    "symptom": "Using JsonLineMapper in a Spring Batch 6 application that only has Jackson 2 (com.fasterxml.jackson) on the classpath fails with NoClassDefFoundError for tools.jackson.databind.json.JsonMapper.",
+    "cause": "Spring Batch 6 upgraded these APIs to use Jackson 3 (tools.jackson) directly; it deliberately does not duplicate them or support both Jackson versions at once, so Jackson 2 alone is not enough.",
+    "fixSummary": "Add Jackson 3 (tools.jackson.core:jackson-databind) to the classpath, or write a custom LineMapper that uses a Jackson 2 ObjectMapper (workaround given in the issue). The maintainer updated the 6.0 migration guide, which had wrongly implied Jackson 3 was optional."
+  },
+  {
+    "id": "gradle-35263",
+    "title": "Gradle 9.2 build fails with 'Comparison method violates its general contract!' in execution plan sorting",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalArgumentException: Comparison method violates its general contract!\n\tat java.base/java.util.TimSort.mergeHi(TimSort.java:903)\n\tat java.base/java.util.TimSort.mergeAt(TimSort.java:520)\n\tat java.base/java.util.TimSort.mergeForceCollapse(TimSort.java:461)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "9.2.0-rc-1 (worked in 9.1); fixed in 9.2.0 RC2"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/35263",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-10-14",
+    "symptom": "Builds on Gradle 9.2 intermittently fail with java.lang.IllegalArgumentException: Comparison method violates its general contract! thrown from TimSort, with or without the configuration cache.",
+    "cause": "A change in the execution plan (PR 34754) sorts nodes with Arrays.sort using NodeComparator, which does not define a total order for all node types, violating the Comparator contract (acceptable for a TreeSet but not for TimSort).",
+    "fixSummary": "Fixed in Gradle 9.2.0 RC2 by making NodeComparator implement the Comparator contract fully (PR 35285)."
+  },
+  {
+    "id": "spring-framework-36499",
+    "title": "MySQL/Galera error 149 during COMMIT surfaces as JpaSystemException instead of a ConcurrencyFailureException",
+    "verification": "unverified",
+    "errorSample": "org.springframework.orm.jpa.JpaSystemException: could not execute statement [Got error 149 - 'Lock deadlock; Retry transaction' during COMMIT]\nCaused by: java.sql.SQLException: Got error 149 - 'Lock deadlock; Retry transaction' during COMMIT\n    at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.2 (reported); error code 149 added to MySQL defaults in 7.0.7 (backported)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/36499",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-03-21",
+    "symptom": "On a Galera/Percona XtraDB cluster, a certification conflict at COMMIT yields a JpaSystemException ('Got error 149 - Lock deadlock; Retry transaction' during COMMIT) rather than a deadlock/concurrency-failure exception, so retry logic keyed on those types does not trigger.",
+    "cause": "The driver throws a plain SQLException with vendor code 149 and an empty SQLState. The default translator (SQLExceptionSubclassTranslator since Spring 6.0) only reacts to JDBC 4 exception subclasses and the SQLState fallback finds nothing, while code 149 was missing from the MySQL entry of sql-error-codes.xml.",
+    "fixSummary": "Spring added 149 to its default MySQL error codes (7.0.7). Meanwhile, put a sql-error-codes.xml in the classpath root (empty, or redefining the MySQL bean with 149 in deadlockLoserCodes) to activate SQLErrorCodeSQLExceptionTranslator, and retry on PessimisticLockingFailureException or ConcurrencyFailureException rather than the deprecated DeadlockLoserDataAccessException."
+  },
+  {
+    "id": "spring-security-18307",
+    "title": "spring-security-config 7.0.0 method security fails with NoClassDefFoundError for spring-security-web ThrowableAnalyzer",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.NoClassDefFoundError: org/springframework/security/web/util/ThrowableAnalyzer\n\tat org.springframework.security.config.annotation.method.configuration.AuthorizationProxyWebConfiguration$AccessDeniedExceptionResolver.<init>(AuthorizationProxyWebConfiguration.java:96)\n\tat org.springframework.security.config.annotation.method.configuration.AuthorizationProxyWebConfiguration.extendHandlerExceptionResolvers(AuthorizationProxyWebConfiguration.java:59)\n\tat org.springframework.web.servlet.config.annotation.WebMvcConfigurerComposite.extendHandlerExceptionResolvers(WebMvcConfigurerComposite.java:179)",
+    "appliesTo": [
+      {
+        "component": "spring-security",
+        "versions": "7.0.0; fixed in 7.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-security/issues/18307",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-12-15",
+    "symptom": "After moving to Spring Security 7.0.0, an application that depends only on spring-security-config (no spring-security-web) fails at startup creating the HandlerExceptionResolver bean with NoClassDefFoundError: org/springframework/security/web/util/ThrowableAnalyzer.",
+    "cause": "AuthorizationProxyWebConfiguration (method security support for returning authorized objects from controllers) was registered even when spring-security-web is absent, but its AccessDeniedExceptionResolver needs ThrowableAnalyzer from spring-security-web.",
+    "fixSummary": "Fixed in 7.0.1: MethodSecuritySelector now checks that spring-security-web is on the classpath before adding that configuration. Adding the spring-security-web dependency also avoids the error on 7.0.0.",
+    "notes": "Adding spring-security-web as a workaround is an inference from the cause; the thread only states the 7.0.1 fix."
+  },
+  {
+    "id": "spring-framework-36634",
+    "title": "ServerSentEvent builder id()/event() throws NullPointerException on null in Spring Framework 6.2.17",
+    "verification": "unverified",
+    "errorSample": "java.lang.NullPointerException: Cannot invoke \"String.indexOf(int)\" because \"content\" is null\n\tat org.springframework.http.codec.ServerSentEvent$BuilderImpl.checkEvent(ServerSentEvent.java:270)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "6.2.17 (worked in 6.2.10); fixed in 6.2.18; null stays rejected in 7.0.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/36634",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-04-10",
+    "symptom": "After upgrading spring-web to 6.2.17, ServerSentEvent.builder().id(null) or .event(null) throws NullPointerException from BuilderImpl.checkEvent, whereas 6.2.10 accepted it (seen with an MCP streamable HTTP server).",
+    "cause": "A commit added a guard against invalid characters in SSE fields that dereferences the argument without a null check. Maintainers state the builder methods are not meant to accept null; the properties are @Nullable only because calling the builder method is optional.",
+    "fixSummary": "6.2.18 restores the previous tolerance of null. In 7.0.x the stricter behavior is kept on purpose, so avoid passing null (do not call id()/event() when there is no value)."
+  },
+  {
+    "id": "spring-data-mongodb-5159",
+    "title": "Spring Data MongoDB keyset scrolling throws UnsupportedOperationException from EmptyDocument.put",
+    "verification": "unverified",
+    "errorSample": "java.lang.UnsupportedOperationException\n        at org.springframework.data.mongodb.util.EmptyDocument.put(EmptyDocument.java:41) ~[spring-data-mongodb-5.0.2.jar:5.0.2]\n        at org.springframework.data.mongodb.core.ScrollUtils$KeysetScrollDirector.createQuery(ScrollUtils.java:193) ~[spring-data-mongodb-5.0.2.jar:5.0.2]",
+    "appliesTo": [
+      {
+        "component": "spring-data-mongodb",
+        "versions": "5.0.2 (reported); fixed in the following service releases (milestone 4.5.9 / 2025.0.9)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-mongodb/issues/5159",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-02-11",
+    "symptom": "Calling a repository method returning Window<T> with a ScrollPosition cursor on an unfiltered query fails with UnsupportedOperationException from EmptyDocument.put in ScrollUtils$KeysetScrollDirector.createQuery.",
+    "cause": "For an empty query Query.getQueryObject() returns the shared immutable EmptyDocument, and the keyset scroll utility then modifies that document in place to add its sort constraint.",
+    "fixSummary": "Fixed by the Spring Data MongoDB team and shipped with the next service releases; no user-side change was needed."
+  },
+  {
+    "id": "spring-boot-50292",
+    "title": "Spring Boot executable jar fails with 'JCE cannot authenticate the provider BC' for Bouncy Castle 1.84",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.SecurityException: JCE cannot authenticate the provider BC\n        at java.base/javax.crypto.Cipher.getInstance(Cipher.java:756)\n        at java.base/javax.crypto.Cipher.getInstance(Cipher.java:667)\nCaused by: java.util.jar.JarException: bcprov-jdk18on-1.84.jar! has unsigned entries - META-INF/services/java.security.Provider\n        at java.base/javax.crypto.JarVerifier.verifySingleJar(JarVerifier.java:446)\n        at java.base/javax.crypto.JarVerifier.verifyJars(JarVerifier.java:308)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "3.5.x (reported with Bouncy Castle 1.84); fixed in 3.5.15"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/50292",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-05",
+    "symptom": "A Spring Boot application run via java -jar fails with SecurityException: JCE cannot authenticate the provider BC, caused by JarException: bcprov-jdk18on-1.84.jar has unsigned entries. It works with Bouncy Castle 1.83 and when not packaged as an executable jar.",
+    "cause": "The Spring Boot loader's ZipContent only treats a jar as signed if it has a DSA signature block; Bouncy Castle 1.84 signs with RSA (EC signatures are likewise unsupported), so JCE provider verification of the nested jar fails.",
+    "fixSummary": "The loader was fixed to recognize RSA and EC signed jars (milestone 3.5.15). Workaround from the report: list bcprov-jdk18on under requiresUnpack in the spring-boot-maven-plugin configuration so it is unpacked at startup."
+  },
+  {
+    "id": "spring-data-jpa-4130",
+    "title": "processAot fails with 'The application must supply JDBC connections' when hibernate.hbm2ddl.auto=update is set",
+    "verification": "unverified",
+    "errorSample": "Caused by: jakarta.persistence.PersistenceException: Unable to build Hibernate SessionFactory  [persistence unit: AotMetamodel]\n    at org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl.build(EntityManagerFactoryBuilderImpl.java:1461)\nCaused by: java.lang.UnsupportedOperationException: The application must supply JDBC connections\n    at org.hibernate.engine.jdbc.connections.internal.UserSuppliedConnectionProviderImpl.getConnection(UserSuppliedConnectionProviderImpl.java:39)",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": "4.0.1 (reported with Spring Boot 4.0.1, Hibernate 7.2.0); fixed in 4.0.2 (2025.1.2)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-jpa/issues/4130",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-01-15",
+    "symptom": "The processAot task fails with AotProcessingException: Unable to build Hibernate SessionFactory [persistence unit: AotMetamodel], caused by UnsupportedOperationException: The application must supply JDBC connections, when spring.jpa.properties.hibernate.hbm2ddl.auto=update is configured.",
+    "cause": "Spring Data's AOT processing started to honor JPA configuration properties and built a Hibernate SessionFactory for the metamodel; with schema update enabled Hibernate then needs a JDBC connection, which does not exist at build time. Maintainers called it a regression of that AOT change.",
+    "fixSummary": "Fixed in Spring Data JPA 4.0.2 (2025.1.2). Workaround from the report: set the system property spring.jpa.properties.jakarta.persistence.schema-generation.database.action=none on the ProcessAot task(s) in Gradle."
+  },
+  {
+    "id": "spring-batch-5281",
+    "title": "JsonItemReader close() throws NullPointerException when open() failed (Jackson/Gson JSON object readers)",
+    "verification": "unverified",
+    "errorSample": "org.springframework.batch.infrastructure.item.ItemStreamException: Error while closing item reader\nCaused by: java.lang.NullPointerException: Cannot invoke \"java.io.InputStream.close()\" because \"this.inputStream\" is null\n    at org.springframework.batch.infrastructure.item.json.JacksonJsonObjectReader.close(JacksonJsonObjectReader.java:112)\n    at org.springframework.batch.infrastructure.item.json.JsonItemReader.doClose(JsonItemReader.java:125)",
+    "appliesTo": [
+      {
+        "component": "spring-batch",
+        "versions": "6.0.2 (reported); fixed in 6.0.4, backport planned for 5.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-batch/issues/5281",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-29",
+    "symptom": "If JsonItemReader.open() fails because Resource.getInputStream() throws, a later close() raises ItemStreamException 'Error while closing item reader' caused by NullPointerException on this.inputStream, hiding the original failure.",
+    "cause": "JacksonJsonObjectReader.close() and GsonJsonObjectReader.close() call inputStream.close() without a null check, and the stream is never assigned if opening it failed (isReadable() does not guarantee the read succeeds).",
+    "fixSummary": "Fixed in Spring Batch 6.0.4 by making close() null-safe in both readers."
+  },
+  {
+    "id": "reactor-netty-4210",
+    "title": "Reactor Netty SniProvider throws bare NullPointerException when setSniAsyncMappings completes with null",
+    "verification": "unverified",
+    "errorSample": "java.lang.NullPointerException: Cannot invoke \"reactor.netty.tcp.SslProvider.getSslContext()\" because \"sslProvider\" is null\n    at reactor.netty.tcp.SniProvider$SniHandler.onLookupComplete(SniProvider.java:131)\n    at io.netty.handler.ssl.AbstractSniHandler.onLookupComplete(AbstractSniHandler.java:191)",
+    "appliesTo": [
+      {
+        "component": "reactor-netty",
+        "versions": "1.2.17 (reported); fixed in 1.2.18"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/reactor/reactor-netty/issues/4210",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-29",
+    "symptom": "A TLS client sending SNI triggers NullPointerException in SniProvider$SniHandler.onLookupComplete when the AsyncMapping given to setSniAsyncMappings succeeds with a null SslProvider, with no hostname in the message.",
+    "cause": "onLookupComplete checks future.isSuccess() but not that future.getNow() is non-null; a null mapping result is invalid usage, but it was neither documented nor reported with a helpful message.",
+    "fixSummary": "The mapping must complete with a non-null SslProvider. In reactor-netty 1.2.18 a null result now fails with a descriptive exception that includes the hostname.",
+    "notes": "The report came from a downstream Spring Boot issue where the null could also be avoided on the Boot side; the reactor-netty change makes the failure diagnosable."
+  },
+  {
+    "id": "spring-boot-48493",
+    "title": "Spring Boot 4 Spring Session Redis auto-configuration fails in a WAR deployment: ServerProperties class not found",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.IllegalArgumentException: Could not find class [org.springframework.boot.web.server.autoconfigure.ServerProperties]\n\tat org.springframework.util.ClassUtils.resolveClassName(ClassUtils.java:353) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.core.annotation.TypeMappedAnnotation.adapt(TypeMappedAnnotation.java:451) ~[spring-core-7.0.1.jar:7.0.1]\nCaused by: java.lang.ClassNotFoundException: org.springframework.boot.web.server.autoconfigure.ServerProperties\n\tat org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1225) ~[catalina.jar:11.0.15]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.0 (reported, WAR on external Tomcat); fixed in 4.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/48493",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-12-11",
+    "symptom": "Deploying a Spring Boot 4 WAR with Spring Session Data Redis to an external Tomcat fails with 'Failed to generate bean name for imported class SessionDataRedisAutoConfiguration', caused by ClassNotFoundException for org.springframework.boot.web.server.autoconfigure.ServerProperties.",
+    "cause": "The session auto-configurations referenced the web server module's ServerProperties class, which is not on the class path of an external servlet container deployment.",
+    "fixSummary": "Fixed in Spring Boot 4.0.1 by decoupling the Session auto-configuration from ServerProperties. The reporter's interim workaround was to exclude SessionAutoConfiguration and SessionDataRedisAutoConfiguration and define the SessionRepositoryCustomizer bean manually."
+  },
+  {
+    "id": "spring-kafka-4194",
+    "title": "Spring for Apache Kafka docs: group.share.delivery.attempt.limit is rejected by the Admin API as an unknown group config",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.util.concurrent.ExecutionException: org.apache.kafka.common.errors.InvalidConfigurationException: Unknown group config name: group.share.delivery.attempt.limit\n\tat java.base/java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:396) ~[na:na]\n\tat java.base/java.util.concurrent.CompletableFuture.get(CompletableFuture.java:2073) ~[na:na]\n\tat org.apache.kafka.common.internals.KafkaFutureImpl.get(KafkaFutureImpl.java:155) ~[kafka-clients-4.1.1.jar:na]",
+    "appliesTo": [
+      {
+        "component": "spring-kafka",
+        "versions": "4.0.0 (share consumer documentation); docs corrected in 4.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-kafka/issues/4194",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-12-03",
+    "symptom": "Following the Share Consumer documentation and altering group config group.share.delivery.attempt.limit with Admin.incrementalAlterConfigs fails with InvalidConfigurationException: Unknown group config name.",
+    "cause": "The documentation described a group-level config that does not exist. The delivery count limit for share groups is a broker-level setting and cannot be overridden per consumer group.",
+    "fixSummary": "The docs were corrected in Spring Kafka 4.0.1: the Admin API example was removed and the text now refers to the broker-level group.share.delivery.count.limit setting.",
+    "notes": "The commit message names the broker setting share.group.delivery.count.limit while the edited doc text reads group.share.delivery.count.limit; check the Kafka broker documentation for the exact property name."
+  },
+  {
+    "id": "micrometer-7272",
+    "title": "Gradle 9.4 'projects' task fails with 'Incorrect lifecycle state for definition root project' when build.gradle defines a method",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.IllegalStateException: Incorrect lifecycle state for definition 'root project 'micrometer''. Expected it to have the context and build model attached already, got none. Check that the feature's apply action registers the build model for this definition.\n        at org.gradle.plugin.software.internal.ProjectFeatureSupportInternal.lambda$getContext$0(ProjectFeatureSupportInternal.java:154)\n        at org.gradle.plugin.software.internal.ProjectFeatureSupportInternal.getContext(ProjectFeatureSupportInternal.java:153)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "9.4.0 (regression from earlier 9.x)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/micrometer-metrics/micrometer/issues/7272",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-03-11",
+    "symptom": "After upgrading to Gradle 9.4, running the projects task fails with IllegalStateException: Incorrect lifecycle state for definition 'root project ...'. Expected it to have the context and build model attached already, got none.",
+    "cause": "A Groovy build script that declares a method (even an empty one, such as private static void helper()) at the top level triggers the failure in Gradle 9.4; the project filed it as a Gradle bug.",
+    "fixSummary": "Micrometer worked around it by replacing the top-level method with a closure stored in ext (ext.assertDependencyVersionPrefix = { ... }), which Groovy build scripts can still call.",
+    "notes": "The underlying Gradle fix version is not stated in this thread; only the build-script workaround is confirmed. The issue is tracked against milestone 1.17.0-RC1; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "jackson-databind-5811",
+    "title": "Jackson 3 NullPointerException 'matcher is null' with a custom deserializer wrapping the default BeanDeserializer",
+    "verification": "unverified",
+    "errorSample": "  java.lang.NullPointerException: Cannot invoke \"tools.jackson.core.sym.PropertyNameMatcher.matchName(String)\" because \"matcher\" is null\n  \tat tools.jackson.core.base.ParserMinimalBase.currentNameMatch(ParserMinimalBase.java:498)\n  \tat tools.jackson.databind.deser.bean.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:648)",
+    "appliesTo": [
+      {
+        "component": "jackson-databind",
+        "versions": "3.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/FasterXML/jackson-databind/issues/5811",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-03-19",
+    "symptom": "A BeanDeserializerModifier wraps the default bean deserializer in a custom StdDeserializer; deserializing fails with NullPointerException (PropertyNameMatcher 'matcher' is null) in ParserMinimalBase.currentNameMatch / BeanDeserializer.deserializeFromObject. The same code worked in Jackson 2.x.",
+    "cause": "The wrapper delegates resolve() but not createContextual(), so the wrapped bean deserializer is never contextualized and its property-name matcher is not initialized. A maintainer noted this delegation was already expected in 2.x and only worked by luck.",
+    "fixSummary": "Delegate createContextual() as well, or extend DelegatingDeserializer instead of StdDeserializer. The reporter confirmed that DelegatingDeserializer works.",
+    "notes": "Usage error rather than a Jackson bug; no Jackson fix was made."
+  },
+  {
+    "id": "springdoc-openapi-3095",
+    "title": "springdoc-openapi 3.0.0-M1 with Spring Boot 4.0.0-M3 fails with NoClassDefFoundError for Jackson2HalModule",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.NoClassDefFoundError: org/springframework/hateoas/mediatype/hal/Jackson2HalModule\n\tat org.springdoc.core.configuration.SpringDocHateoasConfiguration.hateoasHalProvider(SpringDocHateoasConfiguration.java:78)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)",
+    "appliesTo": [
+      {
+        "component": "springdoc-openapi",
+        "versions": "3.0.0-M1 with Spring Boot 4.0.0-M3; support for Boot 4.0.0-RC1 and Jackson 3 added afterwards"
+      },
+      {
+        "component": "spring-hateoas",
+        "versions": "Jackson2HalModule replaced by HalJacksonModule in the Jackson 3 line"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/springdoc/springdoc-openapi/issues/3095",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-10-31",
+    "symptom": "Starting an app with springdoc-openapi 3.0.0-M1 and its HATEOAS support on Spring Boot 4.0.0-M3 fails creating hateoasHalProvider with NoClassDefFoundError: org/springframework/hateoas/mediatype/hal/Jackson2HalModule.",
+    "cause": "Spring Boot 4 moved to Jackson 3 and Spring HATEOAS no longer ships the Jackson 2 HAL module that this early springdoc milestone referenced.",
+    "fixSummary": "springdoc-openapi completed its migration to Jackson 3 and added support for Spring Boot 4.0.0-RC1 and later; use a springdoc 3.x release matching your Spring Boot 4 version. Some Jackson 2 usage remains through swagger-core until it migrates.",
+    "notes": "A related Kotlin-module startup failure from the linked issue was reportedly avoided with springdoc.enable-kotlin: false; that is a user comment, not a maintainer statement."
+  },
+  {
+    "id": "testcontainers-java-10372",
+    "title": "Testcontainers Cassandra: second node fails with 'Bootstrapping to existing token 0 is not allowed'",
+    "verification": "unverified",
+    "errorSample": "ERROR [main] 2025-06-24 07:59:37,931 CassandraDaemon.java:911 - Fatal configuration error\norg.apache.cassandra.exceptions.ConfigurationException: Bootstrapping to existing token 0 is not allowed (decommission/removenode the old node first).\n\tat org.apache.cassandra.dht.BootStrapper.getSpecifiedTokens(BootStrapper.java:200)\n\tat org.apache.cassandra.dht.BootStrapper.getBootstrapTokens(BootStrapper.java:168)",
+    "appliesTo": [
+      {
+        "component": "testcontainers-java",
+        "versions": "1.20.2, Cassandra module, image cassandra:4.0.8"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/testcontainers/testcontainers-java/issues/10372",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-07-22",
+    "symptom": "Starting two CassandraContainer instances to form a cluster, the second container dies with a ConfigurationException: Bootstrapping to existing token 0 is not allowed. Starting the same image manually with plain docker works.",
+    "cause": "The second node attempts to bootstrap with token 0 which the first node already owns. The maintainer's working setup overrides the JVM_OPTS environment variable of the Testcontainers Cassandra container with an empty value.",
+    "fixSummary": "Put both containers on a shared Network, give the first a network alias used as CASSANDRA_SEEDS, set the same CASSANDRA_CLUSTER_NAME, and set withEnv(\"JVM_OPTS\", \"\") on both; make the second wait for a 'Startup complete' log line. The reporter confirmed clearing JVM_OPTS was the key.",
+    "notes": "Inference: the thread does not say what the default JVM_OPTS contains; it likely pins the initial token for single-node use, which would explain both nodes choosing token 0."
+  },
+  {
+    "id": "spring-data-jpa-4135",
+    "title": "Spring Data JPA 4.0 interface projection with same leaf property names fails with AliasCollisionException",
+    "verification": "unverified",
+    "errorSample": "org.springframework.data.jpa.repository.query.BadJpqlGrammarException:\norg.hibernate.query.sqm.AliasCollisionException: Duplicate alias 'id' at position 1 in 'select' clause;\nBad JPQL grammar [SELECT o.id id, c.id id, p.id id, s.id id, c.name name, p.name name\nFROM Order o LEFT JOIN o.customer c LEFT JOIN o.product p LEFT JOIN o.shipment s WHERE o.id = :id]",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": "4.0.x with Hibernate 7 (reported with Spring Boot 4.0.0); fixed in 4.0.2 (2025.1.2)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-jpa/issues/4135",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-01-06",
+    "symptom": "A derived query returning an interface projection that flattens several associations (getCustomerId(), getProductId(), getCustomerName(), ...) fails with BadJpqlGrammarException caused by Hibernate's AliasCollisionException: Duplicate alias 'id' in the select clause. It worked on Spring Boot 3.x.",
+    "cause": "Spring Data JPA generated select aliases from only the last segment of each property path (id, name), so several joins produced duplicate aliases; Hibernate 7 rejects duplicate aliases.",
+    "fixSummary": "Fixed in Spring Data JPA 4.0.2 (2025.1.2) by a merged maintainer fix.",
+    "notes": "Cause and expected aliases are from the reporter's analysis; the maintainer confirmed the fix was merged without detailing it."
+  },
+  {
+    "id": "lettuce-3317",
+    "title": "Lettuce 6.7.0 throws NoClassDefFoundError for io.micrometer InternalLoggerFactory without Micrometer",
+    "verification": "unverified",
+    "errorSample": "java.lang.NoClassDefFoundError: io/micrometer/common/util/internal/logging/InternalLoggerFactory\n\tat io.lettuce.core.resource.Transports$NativeTransports.<clinit>(Transports.java:64)\n\tat io.lettuce.core.resource.Transports.datagramChannelClass(Transports.java:52)",
+    "appliesTo": [
+      {
+        "component": "lettuce",
+        "versions": "6.7.0; fixed in 6.7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/redis/lettuce/issues/3317",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-06-04",
+    "symptom": "Creating a RedisClusterClient with Lettuce 6.7.0 fails in Transports$NativeTransports.<clinit> with NoClassDefFoundError: io/micrometer/common/util/internal/logging/InternalLoggerFactory, although Micrometer is meant to be optional.",
+    "cause": "A mistake in 6.7.0 made the native transport code path reference a Micrometer class unconditionally.",
+    "fixSummary": "Upgrade to Lettuce 6.7.1, released the next day. Interim workaround: add micrometer-core to the dependencies."
+  },
+  {
+    "id": "spring-data-jpa-4308",
+    "title": "Native query with scalar String return type throws IncorrectResultSizeDataAccessException after Spring Boot 4.1 upgrade",
+    "verification": "unverified",
+    "errorSample": "IncorrectResultSizeDataAccessException",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": "with Spring Boot 4.1.0 / Hibernate 7.2 (worked on Spring Boot 4.0.1)"
+      },
+      {
+        "component": "hibernate-orm",
+        "versions": "behavior changed between 5.6, 6.0 and 7.2"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-jpa/issues/4308",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-08-06",
+    "symptom": "A repository method with a native @Query returning String starts throwing IncorrectResultSizeDataAccessException when several rows match; the same queries worked on Spring Boot 4.0.1.",
+    "cause": "Spring Data expects a single-valued return type to get at most one result and documents that more results trigger IncorrectResultSizeDataAccessException. Older Hibernate versions treated multiple rows with identical values as a unique result; newer Hibernate (HHH-20006) only accepts a single result.",
+    "fixSummary": "No Spring change: the behavior matches the documented contract. Make the query return at most one row (for example with a limit or DISTINCT) or declare a List/collection return type.",
+    "notes": "The limit/DISTINCT/List suggestions are inferred from the documented contract; the thread only confirms the cause and that no fix is planned. The error excerpt in the issue is just the exception class name."
+  },
+  {
+    "id": "lettuce-3323",
+    "title": "Lettuce/Spring Data Redis set() of a large value fails with EncoderException: OutOfMemoryError: Direct buffer memory",
+    "verification": "unverified",
+    "errorSample": "org.springframework.data.redis.RedisSystemException: Redis exception; nested exception is io.lettuce.core.RedisException: io.netty.handler.codec.EncoderException: java.lang.OutOfMemoryError: Direct buffer memory",
+    "appliesTo": [
+      {
+        "component": "lettuce",
+        "versions": "unspecified (reported with spring-data-redis 2.3.x)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/redis/lettuce/issues/3323",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-06-13",
+    "symptom": "Writing a very large cached value with RedisTemplate (setEx) fails with RedisSystemException wrapping io.netty.handler.codec.EncoderException: java.lang.OutOfMemoryError: Direct buffer memory.",
+    "cause": "Lettuce encodes commands into Netty direct (off-heap) buffers by default; a large payload exceeds the available direct memory. The maintainer sees no driver defect or leak: it is application or environment sizing.",
+    "fixSummary": "Increase the memory available to the process (including the direct memory limit), reduce the payload size, or configure Lettuce to use heap buffers instead of direct memory.",
+    "notes": "No driver-side fix; the heap-buffer option is referenced by the maintainer via another Lettuce issue."
+  }
+]

@@ -47,3 +47,31 @@ test('Node 스타일 에러도 파싱', () => {
   assert.equal(s.exceptionClass, 'TypeError');
   assert.deepEqual(s.frames, ['foo', 'bar']);
 });
+
+test('helpful NPE 메시지는 따옴표 안의 코드 이름을 보존해 서로 구분된다', () => {
+  const a = computeSignature('java.lang.NullPointerException: Cannot invoke "java.util.List.size()" because "items" is null');
+  const b = computeSignature('java.lang.NullPointerException: Cannot invoke "String.length()" because "name" is null');
+  assert.notEqual(a.messageKey, b.messageKey);
+});
+
+test('NoClassDefFoundError의 클래스 이름은 경로로 지워지지 않는다', () => {
+  const a = computeSignature('java.lang.NoClassDefFoundError: org/springframework/boot/jdbc/autoconfigure/DataSourceProperties');
+  const b = computeSignature('java.lang.NoClassDefFoundError: org/springframework/util/StringUtils');
+  assert.notEqual(a.messageKey, b.messageKey);
+  assert.match(a.normalizedMessage, /datasourceproperties/);
+});
+
+test('파일 경로는 계속 정규화된다', () => {
+  assert.equal(normalizeMessage('cannot read /home/alice/app/config.yml'), 'cannot read <path>');
+});
+
+test('Gradle 로그의 태스크 이름(소문자 시작)을 예외로 착각하지 않는다', () => {
+  const log = "> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :test FAILED\nJwtAuthTests > x() FAILED\n    java.lang.AssertionError: Status expected:<200> but was:<401>\n        at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)";
+  const s = computeSignature(log);
+  assert.equal(s.exceptionClass, 'java.lang.AssertionError');
+});
+
+test('중첩 클래스·단순 이름도 파싱', () => {
+  assert.equal(computeSignature('org.x.Outer$Inner$BoomException: bad').exceptionClass, 'org.x.Outer$Inner$BoomException');
+  assert.equal(computeSignature('TypeError: x is not a function').exceptionClass, 'TypeError');
+});

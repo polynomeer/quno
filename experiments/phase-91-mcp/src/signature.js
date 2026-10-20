@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 
 const TOP_FRAMES = 5;
+const HELPFUL_NPE_RE = /^\s*Cannot (?:invoke|read|load|store|assign|throw|enter|exit)\b/;
 
-const EXCEPTION_RE = /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*(?:Exception|Error|Throwable))(?::\s*(.*))?/;
+// 클래스 이름은 대문자로 시작해야 한다(Gradle 태스크 이름 checkKotlin...Error 같은 소문자 시작 토큰을 배제).
+const EXCEPTION_RE = /(?<![\w$.])((?:[a-z_][\w$]*\.)*[A-Z][\w$]*(?:Exception|Error|Throwable))(?::\s*(.*))?/;
 const JVM_FRAME_RE = /^\s*at\s+([\w$.<>]+)\(([^)]*)\)/;
 const NODE_FRAME_RE = /^\s*at\s+(?:async\s+)?([^\s(]+)\s+\(.*\)\s*$/;
 
@@ -10,12 +12,17 @@ const NODE_FRAME_RE = /^\s*at\s+(?:async\s+)?([^\s(]+)\s+\(.*\)\s*$/;
  * 메시지의 가변 부분(경로·주소·식별자·숫자·따옴표 문자열)을 지워 같은 에러가 같은 문자열이 되게 한다.
  */
 export function normalizeMessage(message) {
-  return (message ?? '')
+  const text = message ?? '';
+  // JDK의 "helpful NPE" 메시지는 따옴표 안이 코드 이름(메서드·필드)이라 안정적이고 식별력이 있다 — 지우지 않는다.
+  const keepQuoted = HELPFUL_NPE_RE.test(text);
+  let out = text
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, '<uuid>')
     .replace(/\b0x[0-9a-f]+\b/gi, '<hex>')
     .replace(/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b/g, '<ip>')
-    .replace(/(?:[A-Za-z]:)?(?:[\\/][\w.@~+-]+){2,}/g, '<path>')
-    .replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '<str>')
+    // 파일 경로만. "org/springframework/..." 같은 JVM 내부 클래스 이름은 앞이 단어 문자라 걸리지 않는다.
+    .replace(/(?<![\w.$])(?:[A-Za-z]:)?(?:[\\/][\w.@~+-]+){2,}/g, '<path>');
+  if (!keepQuoted) out = out.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '<str>');
+  return out
     .replace(/\b\d+(?:\.\d+)*\b/g, '<n>')
     .replace(/\s+/g, ' ')
     .trim()
