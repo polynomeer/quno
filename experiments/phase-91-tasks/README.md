@@ -35,6 +35,10 @@ scripts/verify-solution.sh A01  # 정답 패치를 적용하면 CHECK가 통과�
 - `CHECK`는 앱/테스트의 종료 코드만 믿지 않는다 — 과제마다 실제로 성공한 것이 맞는지 출력·결과로 판정한다.
 - 첫 실행은 의존성을 내려받느라 느리다. 네트워크가 필요하다.
 
+## 실험 실행
+
+에이전트 실행 하네스: `scripts/run-one.py`(한 번), `scripts/run-matrix.py`(전체·재개 가능), `scripts/aggregate.py`(집계), `scripts/judge-sheet.py`(조건을 가린 적중 판정 시트). 절차와 사전 조건은 [실행 가이드](../../docs/product/phase-91-run-guide.md). 인증 실패 같은 무효 실행은 `runs/_invalid/`로 분리된다.
+
 ## 실행 요건
 
 - JDK 21, 네트워크(Maven Central), `bash`.
