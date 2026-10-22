@@ -45,7 +45,7 @@ export function SearchBox() {
         </svg>
         <Input
           aria-label="Search"
-          className="h-11 bg-canvas pl-10"
+          className="h-11 rounded-full bg-canvas pl-10"
           type="search"
           placeholder="Search questions, tags, errors..."
           value={query}
@@ -58,7 +58,7 @@ export function SearchBox() {
         />
       </form>
       {showDropdown && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+        <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
           {tags.length > 0 && (
             <div className="border-b border-border p-2">
               <p className="px-1 pb-1 text-xs font-medium text-text-secondary">Tags</p>
