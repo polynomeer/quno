@@ -26,7 +26,7 @@ export default function ModerationPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">Moderation Queue</h1>
+      <h1 className="text-[32px] leading-10 font-bold tracking-tight">Moderation Queue</h1>
       {reports && reports.length === 0 ? (
         <p className="text-sm text-text-secondary">대기 중인 신고가 없습니다.</p>
       ) : (

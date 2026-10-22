@@ -15,7 +15,7 @@ export default function SavedPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">Saved</h1>
+      <h1 className="text-[32px] leading-10 font-bold tracking-tight">Saved</h1>
       <SavedQuestionList questions={saves ?? []} emptyMessage="아직 저장한 질문이 없습니다." />
     </div>
   );

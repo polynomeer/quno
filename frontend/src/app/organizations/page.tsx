@@ -19,7 +19,7 @@ export default function OrganizationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
+        <h1 className="text-[32px] leading-10 font-bold tracking-tight">Organizations</h1>
         <CreateOrganizationForm />
       </div>
 

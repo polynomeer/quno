@@ -15,7 +15,7 @@ export default function WatchingPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">Watching</h1>
+      <h1 className="text-[32px] leading-10 font-bold tracking-tight">Watching</h1>
       <WatchedQuestionList questions={watches ?? []} emptyMessage="아직 Watch 중인 질문이 없습니다." />
     </div>
   );

@@ -14,7 +14,7 @@ export default function TagDirectoryPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Tags</h1>
+      <h1 className="text-[32px] leading-10 font-bold tracking-tight">Tags</h1>
       <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search tags..." />
 
       {isLoading && <Skeleton className="h-40 w-full" />}

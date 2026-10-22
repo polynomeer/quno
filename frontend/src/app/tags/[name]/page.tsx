@@ -45,7 +45,7 @@ function TagDetailContent({ tagName }: { tagName: string }) {
       <div className="space-y-6">
         <header className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">#{tag.name}</h1>
+            <h1 className="text-[32px] leading-10 font-bold tracking-tight">#{tag.name}</h1>
             <FollowTagButton tagId={tag.id} />
           </div>
           <TagDetailsEditor tag={tag} />
