@@ -36,7 +36,9 @@ describe("NotificationItem", () => {
   it("links to the question when there's no answer", () => {
     render(
       <ul>
-        <NotificationItem notification={notification({ questionId: 10, answerId: null })} />
+        <NotificationItem
+          notification={notification({ questionId: 10, answerId: null })}
+        />
       </ul>,
     );
     expect(screen.getByRole("link")).toHaveAttribute("href", "/questions/10");
@@ -45,10 +47,15 @@ describe("NotificationItem", () => {
   it("links to the answer anchor within the question when there is one", () => {
     render(
       <ul>
-        <NotificationItem notification={notification({ questionId: 10, answerId: 5 })} />
+        <NotificationItem
+          notification={notification({ questionId: 10, answerId: 5 })}
+        />
       </ul>,
     );
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/questions/10#answer-5");
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "/questions/10#answer-5",
+    );
   });
 
   it.each([
@@ -56,31 +63,54 @@ describe("NotificationItem", () => {
     ["ANSWER_ACCEPTED", "{}", "답변이 채택되었습니다"],
     ["NEW_COMMENT", "{}", "새 댓글이 달렸습니다"],
     ["CONTENT_HIDDEN", "{}", "모더레이터에 의해 콘텐츠가 숨겨졌습니다"],
-    ["QUESTION_REVISION", '{"versionNumber":3}', "질문이 수정되었습니다 (버전 3)"],
-    ["QUESTION_OUTDATED", '{"reason":"더 이상 재현되지 않음"}', "질문이 Outdated로 표시되었습니다 — 더 이상 재현되지 않음"],
+    [
+      "QUESTION_REVISION",
+      '{"versionNumber":3}',
+      "질문이 수정되었습니다 (버전 3)",
+    ],
+    [
+      "QUESTION_OUTDATED",
+      '{"reason":"더 이상 재현되지 않음"}',
+      "질문이 Outdated로 표시되었습니다 — 더 이상 재현되지 않음",
+    ],
     ["QUESTION_OUTDATED", "{}", "질문이 Outdated로 표시되었습니다"],
-  ] as [NotificationType, string, string][])("renders the %s message correctly", (type, payload, expected) => {
-    render(
-      <ul>
-        <NotificationItem notification={notification({ type, payload })} />
-      </ul>,
-    );
-    expect(screen.getByText(expected)).toBeInTheDocument();
-  });
+  ] as [NotificationType, string, string][])(
+    "renders the %s message correctly",
+    (type, payload, expected) => {
+      render(
+        <ul>
+          <NotificationItem notification={notification({ type, payload })} />
+        </ul>,
+      );
+      expect(screen.getByText(expected)).toBeInTheDocument();
+    },
+  );
 
   it("routes Direct Ask notifications to the direct-asks list instead of the question", () => {
     render(
       <ul>
-        <NotificationItem notification={notification({ type: "DIRECT_ASK_REQUESTED", questionId: null })} />
+        <NotificationItem
+          notification={notification({
+            type: "DIRECT_ASK_REQUESTED",
+            questionId: null,
+          })}
+        />
       </ul>,
     );
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/direct-asks?role=received");
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "/direct-asks?role=received",
+    );
   });
 
   it("falls back to the raw type string for an unmapped type", () => {
     render(
       <ul>
-        <NotificationItem notification={notification({ type: "UNKNOWN_FUTURE_TYPE" as NotificationType })} />
+        <NotificationItem
+          notification={notification({
+            type: "UNKNOWN_FUTURE_TYPE" as NotificationType,
+          })}
+        />
       </ul>,
     );
     expect(screen.getByText("UNKNOWN_FUTURE_TYPE")).toBeInTheDocument();
@@ -89,9 +119,16 @@ describe("NotificationItem", () => {
   it("does not throw on malformed JSON payload", () => {
     render(
       <ul>
-        <NotificationItem notification={notification({ type: "QUESTION_REVISION", payload: "not json" })} />
+        <NotificationItem
+          notification={notification({
+            type: "QUESTION_REVISION",
+            payload: "not json",
+          })}
+        />
       </ul>,
     );
-    expect(screen.getByText("질문이 수정되었습니다 (버전 ?)")).toBeInTheDocument();
+    expect(
+      screen.getByText("질문이 수정되었습니다 (버전 ?)"),
+    ).toBeInTheDocument();
   });
 });
