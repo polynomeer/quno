@@ -40,6 +40,7 @@
 - 새 쓰기 경로가 없어 답변 관련 기존 불변식(버전, 알림, 평판, 채택)을 그대로 재사용한다.
 - 초안을 저장하지 않으므로 편집 중 이탈하면 다시 만들어야 한다. 사용성 문제가 보이면 클라이언트 임시 저장을 검토한다.
 - 참여자 판정에 `existsByRoomIdAndSenderId` 조회가 하나 늘어난다(MongoDB, `roomId` 인덱스 범위).
+- 메시지를 고르는 화면에서 누가 한 말인지 보여야 하므로, 과거 메시지 조회(`GET /live-chat/{roomId}/messages`)에도 [ADR-0064](0064-list-responses-resolve-nicknames-in-one-batch.md)와 같은 일괄 닉네임 조회를 붙였다. 실시간 STOMP 메시지는 여전히 `senderId`만 보낸다.
 
 ## 관련 문서
 

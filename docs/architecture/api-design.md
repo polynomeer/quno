@@ -385,7 +385,14 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 
 - `POST /questions/{id}/live-chat`(201): find-or-create — 이미 방이 있으면 그 방을 그대로 반환한다. 새로 만들어졌을 때만 `LIVE_CHAT_STARTED` outbox 이벤트(Ward 구독자 + 질문 작성자)가 발행된다.
 - `GET /questions/{id}/live-chat`: 방 조회. 없으면 404.
-- `GET /live-chat/{roomId}/messages?limit=`(기본 50): 가장 최근 메시지를 오래된 순으로 반환 — WebSocket 구독이 시작되기 전, 화면에 스크롤백을 채우는 용도.
+- `GET /live-chat/{roomId}/messages?limit=`(기본 50): 가장 최근 메시지를 오래된 순으로 반환 — WebSocket 구독이 시작되기 전, 화면에 스크롤백을 채우는 용도. Phase 71부터 응답에 `senderNickname`이 들어간다(ADR-0064와 같은 일괄 조회). STOMP로 오는 실시간 메시지에는 여전히 `senderId`만 있다.
+- `POST /live-chat/{roomId}/answer-draft`(body: `{"messageIds": [...]}`, Phase 71, [ADR-0072](decisions/0072-live-chat-to-answer-draft.md)): 고른 메시지(1~50개)를 시간순으로, 발신자 닉네임과 함께 인용한 마크다운 답변 초안을 돌려준다(`roomId`, `questionId`, `body`, `messageCount`). 아무것도 저장하지 않는다.
+  - 방 참여자(방을 연 사람 또는 메시지를 보낸 사람)만 쓸 수 있다(아니면 403).
+  - 다른 방의 메시지나 없는 id가 섞이면 400이다.
+- 초안을 게시할 때는 기존 `POST /questions/{id}/answers`에 선택 필드 `liveChatRoomId`를 더한다.
+  - 일반 답변과 같은 경로라 버전·`NEW_ANSWER` 알림·채택이 그대로 적용된다.
+  - 서버는 방 참여자인지(403), 그 질문의 방인지(400)를 확인하고 `answers.source_live_chat_room_id`에 출처를 남긴다.
+  - 답변 응답의 `sourceLiveChatRoomId`가 있으면 화면에 "질문방 대화에서 정리됨"을 표시한다.
 
 ### WebSocket (STOMP, endpoint `/ws`)
 
