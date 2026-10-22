@@ -27,6 +27,7 @@
 - [13. 테스트가 잡아낸 unhandled promise rejection](#13-테스트가-잡아낸-unhandled-promise-rejection)
 - [14. 캐시 히트에서만 깨지는 대시보드 — 타입 정보 없는 Redis 직렬화](#14-캐시-히트에서만-깨지는-대시보드--타입-정보-없는-redis-직렬화)
 - [15. 로컬에서만 첫 실행이 깨지는 e2e — 병렬 워커와 Fast Refresh](#15-로컬에서만-첫-실행이-깨지는-e2e--병렬-워커와-fast-refresh)
+- [16. `useSyncExternalStore`로도 막히지 않은 하이드레이션 불일치 — Suspense와 공유 쿼리 캐시](#16-usesyncexternalstore로도-막히지-않은-하이드레이션-불일치--suspense와-공유-쿼리-캐시)
 
 ---
 
@@ -355,6 +356,37 @@ async function handleFork() {
 **교훈.** "재실행하면 통과한다"는 원인이 아니라 증상이다. 같은 실패를 세 번 넘긴 뒤에야 재현 조건(콜드 캐시 + 병렬 워커)을 만들어 보고 원인에 닿았다. 설정 주석이 말하는 동작과 실제 옵션의 의미가 다를 수 있다는 점도 함께 확인해야 한다.
 
 > 관련: ADR-0066
+
+---
+
+## 16. `useSyncExternalStore`로도 막히지 않은 하이드레이션 불일치 — Suspense와 공유 쿼리 캐시
+
+**증상.** 로그인한 상태로 dev 서버에서 `/questions`를 열면 콘솔에 "Hydration failed because the server rendered HTML didn't match the client"가 났다. 서버 HTML에는 검색 폼(`<div className="space-y-6"><form ...>`)이 있는데, 클라이언트의 첫 렌더는 `<Skeleton className="h-40 w-full" />`였다. 로그아웃 상태에서는 나지 않았다.
+
+**왜 바로 안 보였는가.**
+- `useSession`은 11절에서 이미 `useSyncExternalStore`로 하이드레이션 안전하게 만들어 둔 훅이다. 서버 스냅샷이 `false`라 하이드레이션 렌더에서는 `enabled: false`이고, TanStack Query v5의 `isLoading`은 `isPending && isFetching`이라 disabled 쿼리에서는 `false`여야 한다. 코드만 읽으면 서버와 클라이언트가 같은 값을 볼 수밖에 없어 보였다.
+- 같은 `if (authLoading) return <Skeleton/>` 패턴을 쓰는 다른 페이지(홈, 질문 상세 등)는 멀쩡했다. 패턴 자체가 문제라면 전부 깨져야 했다.
+
+**실제 원인.**
+- 차이는 `<Suspense>`였다. `/questions`는 `useSearchParams` 때문에 `QuestionsSearchContent`를 `<Suspense>`로 감싸는데, React는 Suspense 경계 안쪽을 바깥쪽보다 **나중의 별도 패스**에서 하이드레이션한다.
+- 그 사이 바깥의 `AppHeader`는 하이드레이션을 끝내고, `useSyncExternalStore`가 실제 값(`hasToken = true`)으로 다시 렌더하면서 `/me` 요청을 시작한다.
+- `useSyncExternalStore`가 보장하는 것은 `hasToken` 값뿐이다. 늦게 하이드레이션되는 경계 안의 `useSession`도 서버 스냅샷 덕분에 `enabled: false`이긴 하지만, 쿼리 상태는 **공유 캐시**에서 온다. 이미 `AppHeader`가 시작한 요청 때문에 `fetchStatus`가 `fetching`이라 `isLoading`이 `true`가 됐고, 스켈레톤을 그렸다.
+- 즉 "서버 스냅샷을 쓴다"는 보장이 훅 반환값 전체로 이어지지 않는다. 같은 이유로 `/me`가 경계 하이드레이션 전에 끝나면 `data`도 서버(비로그인)와 다르게 보인다.
+- 이 페이지의 게이트는 원래 필요 없었다. Phase 29에서 검색을 비로그인 공개로 바꾸며 `useRequireAuth`를 `useSession`으로 교체했는데, 화면이 세션을 전혀 쓰지 않는데도 로딩 게이트만 남아 있었다.
+
+**해결.** `/questions`에서 쓰이지 않던 `useSession` 호출과 스켈레톤 게이트를 제거했다. `useSession` 주석에 "Suspense 안쪽 콘텐츠의 첫 렌더를 이 훅의 결과로 분기하지 말 것"을 남겼다.
+
+**같은 패턴을 쓰는 다른 페이지 점검.**
+- `useSession` 게이트를 쓰는 홈·질문 상세는 Suspense 밖이라 `AppHeader`와 같은 패스에서 하이드레이션된다. 그 시점에는 `/me` 요청이 시작되기 전이라 서버와 같다.
+- `useRequireAuth`를 쓰는 페이지(`/saved`, `/watching`, `/notifications`, `/direct-asks` 등)는 `isLoading || !me`를 돌려준다. 서버와 첫 클라이언트 렌더 모두 `me`가 없어 둘 다 스켈레톤이다. `/direct-asks`, `/answers/:id/versions`처럼 Suspense 안에 있어도, 경계가 하이드레이션되는 시점에는 `/me`가 아직 끝나지 않아(요청이 막 시작됨) 둘 다 스켈레톤으로 일치한다. 다만 이론상 `/me`가 경계 하이드레이션보다 먼저 끝나면 불일치가 날 수 있는 경합은 남아 있다 — 아래 e2e에서는 재현되지 않았다.
+
+**검증.**
+- 로그인 상태로 14개 페이지를 열어 콘솔의 hydration 오류를 수집하는 e2e(`hydration-authenticated.spec.ts`)를 먼저 추가했다. 수정 전에는 `/questions`, `/questions?q=...` 두 개만 실패하고 나머지 12개는 통과해, 위 원인 분석(Suspense 안쪽 + 세션 게이트)과 정확히 맞았다.
+- 수정 후 14개 모두 통과했고, 전체 e2e 33개, vitest 351개, `tsc`, `eslint`도 통과했다.
+
+**교훈.** `useSyncExternalStore`는 그 훅이 읽는 값 하나만 하이드레이션 안전하게 만든다. 그 값을 입력으로 쓰는 공유 캐시(react-query 등)는 컴포넌트마다 하이드레이션 시점이 다르면 다른 상태를 보여줄 수 있다. 그리고 단위 테스트는 SSR HTML과 비교하지 않으니, 하이드레이션 불일치는 실제 dev 서버를 상대로 한 e2e로만 잡힌다.
+
+> 관련: 11절, PLAN.md Phase 29
 
 ---
 
