@@ -46,7 +46,7 @@ export function ReviewRequestPanel({
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+    <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
       <h2 className="text-sm font-semibold text-text-primary">정보 요청 (QPR)</h2>
 
       {requests && requests.length > 0 && (

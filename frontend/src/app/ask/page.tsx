@@ -147,7 +147,7 @@ export default function AskPage() {
         </div>
 
         {/* Similar questions sit right under the title — search first, ask second (design.md #2). */}
-        <section aria-label={t.ask.similarQuestions} className="overflow-hidden rounded-xl border border-border bg-surface">
+        <section aria-label={t.ask.similarQuestions} className="overflow-hidden rounded-[20px] border border-border bg-surface">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-canvas px-4 py-3">
             <h2 className="text-sm font-semibold">{t.ask.similarHeading}</h2>
             {similarQuery && similarQuestions && (
@@ -218,7 +218,7 @@ export default function AskPage() {
       </form>
 
       <aside>
-        <section className="rounded-xl border border-border bg-surface p-5 lg:sticky lg:top-24">
+        <section className="rounded-[20px] border border-border bg-surface p-5 lg:sticky lg:top-24">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="text-[15px] font-semibold">{t.ask.checklistHeading}</h2>
             <span className="font-mono text-xs text-success">

@@ -35,7 +35,7 @@ export default function OrganizationsPage() {
       )}
 
       {!isLoading && organizations && organizations.length > 0 && (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface">
           {organizations.map((organization) => (
             <OrganizationCard key={organization.id} organization={organization} />
           ))}

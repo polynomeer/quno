@@ -35,7 +35,7 @@ export default function NotificationsPage() {
       {sorted.length === 0 ? (
         <p className="text-sm text-text-secondary">알림이 없습니다.</p>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface">
           {sorted.map((notification) => (
             <NotificationItem key={notification.id} notification={notification} />
           ))}

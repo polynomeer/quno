@@ -26,7 +26,12 @@ export function QuestionCard({ question, compact = false }: { question: Question
   const movedRecently = isWithin(question.updatedAt, DAY_MS);
 
   return (
-    <li className={cn("flex gap-4 transition-colors hover:bg-canvas/60", compact ? "p-4" : "px-4 py-4 sm:gap-5 sm:px-5")}>
+    <li
+      className={cn(
+        "flex gap-4 rounded-[20px] border border-border bg-surface transition-colors hover:border-border-strong",
+        compact ? "p-4" : "px-4 py-4 sm:gap-5 sm:px-[22px] sm:py-[18px]",
+      )}
+    >
       {!compact && (
         <div className="flex w-16 shrink-0 flex-col items-end gap-1.5 pt-0.5 text-right text-xs text-text-secondary">
           <span>
@@ -34,7 +39,7 @@ export function QuestionCard({ question, compact = false }: { question: Question
           </span>
           <span
             className={cn(
-              "rounded px-1.5",
+              "rounded-full px-1.5",
               question.hasAcceptedAnswer
                 ? "bg-success-strong text-surface"
                 : question.answerCount > 0
@@ -59,7 +64,7 @@ export function QuestionCard({ question, compact = false }: { question: Question
           ) : (
             <>
               {question.versionNumber > 1 && (
-                <span className="inline-flex h-[22px] items-center rounded border border-border-strong px-2 font-mono text-[11px] text-text-body">
+                <span className="inline-flex h-[22px] items-center rounded-full bg-surface-subtle px-2.5 font-mono text-[11px] text-text-body">
                   rev {question.versionNumber}
                 </span>
               )}

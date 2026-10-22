@@ -30,7 +30,7 @@ export default function ModerationPage() {
       {reports && reports.length === 0 ? (
         <p className="text-sm text-text-secondary">대기 중인 신고가 없습니다.</p>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">{reports?.map((report) => <ReportQueueItem key={report.id} report={report} />)}</ul>
+        <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface">{reports?.map((report) => <ReportQueueItem key={report.id} report={report} />)}</ul>
       )}
     </div>
   );

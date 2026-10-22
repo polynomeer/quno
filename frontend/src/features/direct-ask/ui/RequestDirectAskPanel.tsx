@@ -89,7 +89,7 @@ export function RequestDirectAskPanel({ targetUserId }: { targetUserId: number }
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+    <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
       <h2 className="text-sm font-semibold text-text-primary">이 사용자에게 Direct Ask 요청</h2>
       {myQuestions.length === 0 ? (
         <p className="text-sm text-text-secondary">먼저 질문을 작성해야 Direct Ask를 요청할 수 있습니다.</p>

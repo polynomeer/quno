@@ -28,7 +28,7 @@ export function ForkPanel({ questionId }: { questionId: number }) {
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+    <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">Fork</h2>
         <Button

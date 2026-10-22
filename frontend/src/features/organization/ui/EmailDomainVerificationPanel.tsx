@@ -47,7 +47,7 @@ export function EmailDomainVerificationPanel({ viewerId }: { viewerId: number | 
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+    <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
       <h2 className="text-sm font-semibold text-text-primary">업무/학교 이메일로 Verified 조직 가입</h2>
       <p className="text-[13px] text-text-secondary">gmail.com 같은 공개 웹메일 도메인은 인증할 수 없습니다.</p>
 

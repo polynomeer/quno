@@ -40,7 +40,7 @@ export default function OrganizationDetailPage({ params }: PageProps<"/organizat
       </header>
 
       {organization.description && (
-        <section className="rounded-xl border border-border bg-surface p-5">
+        <section className="rounded-[20px] border border-border bg-surface p-5">
           <p className="text-text-body">{organization.description}</p>
         </section>
       )}

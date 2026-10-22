@@ -12,7 +12,7 @@ export function EmptyState({ message, inline = false, className }: { message: st
     <p
       className={cn(
         "text-sm text-text-secondary",
-        !inline && "rounded-xl border border-dashed border-border-strong px-4 py-6 text-center",
+        !inline && "rounded-[20px] border border-dashed border-border-strong px-4 py-6 text-center",
         className,
       )}
     >

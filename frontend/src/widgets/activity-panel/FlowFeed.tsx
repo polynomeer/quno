@@ -16,18 +16,18 @@ export function FlowFeed({ cards }: { cards: FlowCard[] }) {
   }
 
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+    <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface">
       {cards.map((card, index) => {
         const content = (
           <>
-            <span className="mr-2 inline-flex h-[22px] items-center rounded border border-border-strong px-2 font-mono text-[11px] text-text-body">
+            <span className="mr-2 inline-flex h-6 items-center rounded-full bg-surface-subtle px-2.5 text-xs font-semibold text-text-body">
               {typeLabels[card.type]}
             </span>
             {card.headline}
           </>
         );
         return (
-          <li key={index} className="px-4 py-3 text-sm text-text-primary">
+          <li key={index} className="px-5 py-3.5 text-sm text-text-primary">
             {card.questionId ? (
               <Link href={`/questions/${card.questionId}`} className="hover:text-brand">
                 {content}

@@ -121,7 +121,7 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
       )}
 
       {profile.followedTags.length > 0 && (
-        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <h2 className="text-sm font-semibold text-text-primary">팔로우 태그</h2>
           <div className="flex flex-wrap gap-1.5">
             {profile.followedTags.map((tag) => (
@@ -132,7 +132,7 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
       )}
 
       {profile.organizations.length > 0 && (
-        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <h2 className="text-sm font-semibold text-text-primary">소속 조직</h2>
           <div className="flex flex-wrap gap-2">
             {profile.organizations.map((organization) => (
