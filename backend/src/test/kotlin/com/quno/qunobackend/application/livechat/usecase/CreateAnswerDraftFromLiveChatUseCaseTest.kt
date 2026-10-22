@@ -45,7 +45,7 @@ class CreateAnswerDraftFromLiveChatUseCaseTest {
         assertEquals(10L, draft.questionId)
         assertEquals(2, draft.messageCount)
         assertTrue(draft.body.indexOf("**minji**\n> 풀이 고갈돼요.") < draft.body.indexOf("**devpark**"))
-        assertTrue(draft.body.contains("> auditScope로 분리하세요.\n> 코드는 아래와 같아요."))
+        assertTrue(draft.body.contains("> auditScope로 분리하세요.  \n> 코드는 아래와 같아요."))
     }
 
     @Test

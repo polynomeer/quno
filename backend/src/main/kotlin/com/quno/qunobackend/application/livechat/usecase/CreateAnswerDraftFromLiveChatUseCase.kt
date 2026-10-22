@@ -33,7 +33,9 @@ class CreateAnswerDraftFromLiveChatUseCase(
         val nicknames = nicknameResolver.nicknamesOf(messages.map { it.senderId })
         val quoted = messages.joinToString("\n\n") { message ->
             val name = nicknames[message.senderId] ?: "사용자 #${message.senderId}"
-            val lines = message.body.lines().joinToString("\n") { "> $it" }
+            // Two trailing spaces force a markdown line break, so a multi-line chat message keeps
+            // its lines inside the quote instead of collapsing into one paragraph.
+            val lines = message.body.lines().joinToString("  \n") { "> $it" }
             "**$name**\n$lines"
         }
         val body = "$HEADER\n\n$quoted\n\n## 정리\n\n"
