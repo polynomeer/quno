@@ -95,3 +95,4 @@
 | [0068](0068-living-engine-runner-and-ai-first-responder.md) | 살아있는 엔진: 원본 불변·제안만, 격리 러너로 재현 증명(외부 CI → 호스티드 샌드박스 → 자체 순), AI는 라벨 붙은 비-Answer 1차 응답자로 참여, 비공개 질문을 IDE 연동의 선행 조건으로, IntelliJ 먼저 | 승인됨 |
 | [0069](0069-agent-era-positioning-verified-fix-memory.md) | AI 에이전트 시대의 포지셔닝 전환(가설, Phase 91 실험으로 재검토): Q&A 사이트 → 증거가 붙은 해결 기록소 + AI→사람 에스컬레이션 통로, 주 소비자는 에이전트, 주 콘텐츠는 해결 기록, 사람 대상 UX(74~77, 87)는 보류, 기여 데이터 외부 라이선스 안 함 | 조건부 승인 |
 | [0070](0070-question-as-evidence-environment-snapshot-and-verification-tiers.md) | 질문은 증거 자료다: 환경 스냅샷을 이벤트 기반으로 로컬 정제 후 3계층·증상별 프로파일·기준선 델타로 자동 수집, 검증된 질문 L0~L4 등급과 Evidence Card | 승인됨 |
+| [0071](0071-web-design-v2-liquid-glass-chrome.md) | 웹 디자인 시안 v2 적용: 실제 데이터가 있는 기존 화면만 리뉴얼, 추가 기획 화면은 해당 Phase에서 시안 기준으로(목 데이터 화면 금지), 유리 효과는 헤더·탭·투표 레일 같은 크롬에만(본문 카드는 불투명), 캡슐 버튼·20~24px 카드·떨어진 카드 목록 | 승인됨 |
