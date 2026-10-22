@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { useLiveChatRoom } from "../hooks/useLiveChatRoom";
 import { useOpenLiveChatRoom } from "../hooks/useOpenLiveChatRoom";
@@ -56,6 +57,17 @@ export function LiveChatPanel({ questionId }: { questionId: number }) {
       )}
 
       {joined && room && <LiveChatSession roomId={room.id} questionId={questionId} myUserId={me?.id} />}
+
+      {room && (
+        // Phase 71 (ADR-0072): the server decides who may summarise (room participants); anyone
+        // else just gets a clear 403 message on that page.
+        <Link
+          href={`/questions/${questionId}/live-chat/answer`}
+          className="flex h-11 items-center justify-center rounded-full bg-text-primary px-5 text-sm font-bold text-surface hover:opacity-90"
+        >
+          대화를 답변으로 정리
+        </Link>
+      )}
     </section>
   );
 }

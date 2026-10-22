@@ -9,8 +9,12 @@ export interface AcceptAnswerResult {
 
 export const answerApi = {
   list: (questionId: number) => httpClient.get<Answer[]>(`/api/v1/questions/${questionId}/answers`),
-  create: (questionId: number, body: string) =>
-    httpClient.post<Answer>(`/api/v1/questions/${questionId}/answers`, { body }),
+  /** [liveChatRoomId] cites the live chat the answer was summarised from (ADR-0072). */
+  create: (questionId: number, body: string, liveChatRoomId?: number) =>
+    httpClient.post<Answer>(
+      `/api/v1/questions/${questionId}/answers`,
+      liveChatRoomId === undefined ? { body } : { body, liveChatRoomId },
+    ),
   accept: (answerId: number) => httpClient.post<AcceptAnswerResult>(`/api/v1/answers/${answerId}/accept`),
   revise: (answerId: number, body: string) =>
     httpClient.post<AnswerMutationResult>(`/api/v1/answers/${answerId}/versions`, { body }),

@@ -11,6 +11,16 @@ export interface LiveChatMessage {
   id: string;
   roomId: number;
   senderId: number;
+  /** Filled by the history endpoint only; live STOMP frames carry just senderId. */
+  senderNickname?: string | null;
   body: string;
   createdAt: string;
+}
+
+/** Unsaved draft built from selected messages — mirrors LiveChatAnswerDraftResponse (ADR-0072). */
+export interface LiveChatAnswerDraft {
+  roomId: number;
+  questionId: number;
+  body: string;
+  messageCount: number;
 }

@@ -88,6 +88,15 @@ export function AnswerCard({
             ✓ Accepted
           </span>
         )}
+        {answer.sourceLiveChatRoomId != null && (
+          // Provenance from Phase 71 (ADR-0072): the room never closes, so the link stays valid.
+          <Link
+            href={`/questions/${answer.questionId}#live-chat`}
+            className="inline-flex h-[22px] items-center rounded-full bg-live-ring px-2.5 font-semibold text-success hover:underline"
+          >
+            질문방 대화에서 정리됨
+          </Link>
+        )}
         {answer.isStale && (
           <Link
             href={`/questions/${answer.questionId}/versions`}
