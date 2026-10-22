@@ -1,0 +1,549 @@
+[
+  {
+    "id": "spring-amqp-3246",
+    "title": "NPE in SimpleAmqpHeaderMapper.toHeaders when AMQP message priority is null",
+    "verification": "unverified",
+    "errorSample": "java.lang.NullPointerException: Cannot invoke \"java.lang.Integer.intValue()\" because \"priority\" is null\n\tat org.springframework.amqp.support.SimpleAmqpHeaderMapper.toHeaders(SimpleAmqpHeaderMapper.java:155) ~[spring-amqp-4.0.0.jar:4.0.0]\n\tat org.springframework.amqp.support.SimpleAmqpHeaderMapper.toHeaders(SimpleAmqpHeaderMapper.java:57) ~[spring-amqp-4.0.0.jar:4.0.0]",
+    "appliesTo": [
+      {
+        "component": "spring-amqp",
+        "versions": "4.0.0; fix targeted for 4.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-amqp/issues/3246",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-11-26",
+    "symptom": "Consuming a RabbitMQ message that has no priority property (for example one published from the management UI) fails in the listener container with a NullPointerException in SimpleAmqpHeaderMapper.toHeaders.",
+    "cause": "In 4.0.0 the header mapper compares the nullable Integer priority with 0 (priority > 0) without a null check, so unboxing a null priority throws. Messages built via RabbitTemplate usually carry priority 0, which hides the problem.",
+    "fixSummary": "Maintainers confirmed the regression and scheduled the fix for the 4.0.1 release. Until then, make sure published messages carry an explicit priority.",
+    "notes": "The interim advice to set an explicit priority is an inference from the cause, not stated in the thread."
+  },
+  {
+    "id": "jackson-databind-5884",
+    "title": "ArrayIndexOutOfBoundsException in BeanPropertyMap.initMatcher with @JsonUnwrapped plus @JsonAlias",
+    "verification": "unverified",
+    "errorSample": "java.lang.ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1\n\tat tools.jackson.databind.deser.bean.BeanPropertyMap.initMatcher(BeanPropertyMap.java:292)\n\tat tools.jackson.databind.deser.bean.BeanDeserializer.initNameMatcher(BeanDeserializer.java:172)\n\tat tools.jackson.databind.deser.bean.BeanDeserializerBase.createContextual(BeanDeserializerBase.java:876)\n\tat tools.jackson.databind.DeserializationContext.handleSecondaryContextualization(DeserializationContext.java:1044)\n\tat tools.jackson.databind.DeserializationContext.findRootValueDeserializer(DeserializationContext.java:743)\n\tat tools.jackson.databind.ObjectMapper._findRootDeserializer(ObjectMapper.java:2824)\n\tat tools.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2611)\n\tat tools.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:978)",
+    "appliesTo": [
+      {
+        "component": "jackson-databind",
+        "versions": "3.1.1, fixed in 3.1.2"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/FasterXML/jackson-databind/issues/5884",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-04-06",
+    "symptom": "After upgrading to Jackson 3.1.1, deserializing a bean that has a property with @JsonAlias and another property annotated @JsonUnwrapped fails with ArrayIndexOutOfBoundsException (Index 1 out of bounds for length 1) in BeanPropertyMap.initMatcher.",
+    "cause": "The reporter traced it to unwrapped properties being removed from the internal property array while a loop in BeanPropertyMap still indexes into it, producing an index mismatch. A maintainer confirmed it as a bug.",
+    "fixSummary": "Fixed by the maintainer and shipped in the 3.1.2 patch release; upgrade jackson-databind to 3.1.2 or later."
+  },
+  {
+    "id": "spring-framework-36118",
+    "title": "JmsClient.sendAndReceive with headers fails with No defaultDestination configured",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalStateException: No 'defaultDestination' configured\n\tat org.springframework.util.Assert.state(Assert.java:80)\n\tat org.springframework.messaging.core.AbstractMessageSendingTemplate.getRequiredDefaultDestination(AbstractMessageSendingTemplate.java:102)\n\tat org.springframework.messaging.core.AbstractMessagingTemplate.convertSendAndReceive(AbstractMessagingTemplate.java:93)\n\tat org.springframework.jms.core.DefaultJmsClient$DefaultOperationSpec.sendAndReceive(DefaultJmsClient.java:206)\n    ...",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.x before 7.0.3, fixed in 7.0.3"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/36118",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-01-09",
+    "symptom": "JmsClient.destination(\"queue\").sendAndReceive(payload, headers, ResponseType.class) throws IllegalStateException \"No 'defaultDestination' configured\" even though a destination was set; the overload without headers works.",
+    "cause": "JmsMessagingTemplate overrides the convertSendAndReceive variant without headers to fall back to the default destination name, but not the variant that takes a headers map, so the inherited AbstractMessagingTemplate version only checks defaultDestination.",
+    "fixSummary": "Fixed in Spring Framework 7.0.3 by overriding the missing method. Before upgrading, calling the overload without a headers map avoids the failure.",
+    "notes": "The workaround of omitting headers comes from the report showing the headerless call works."
+  },
+  {
+    "id": "spring-framework-35528",
+    "title": "AbstractTestNGSpringContextTests wrong exception message when TestNG runs methods in parallel",
+    "verification": "unverified",
+    "errorSample": "org.testng.TestException: The exception was thrown with the wrong message: expected \"Message2\" but got \"Message10\"",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "<=6.2.11, fixed in 6.2.12 and main"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/35528",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-09-25",
+    "symptom": "With TestNG parallel=methods, tests extending AbstractTestNGSpringContextTests fail randomly with \"The exception was thrown with the wrong message\", and a failure shows the stack trace of a different test method.",
+    "cause": "AbstractTestNGSpringContextTests keeps the tracked test exception in a field of the shared test instance. TestNG runs several methods concurrently on the same instance, so one thread overwrites the exception recorded by another.",
+    "fixSummary": "Fixed in Spring Framework 6.2.12 and main; upgrade spring-test.",
+    "notes": "The affected-version lower bound was not stated; 6.2.12 snapshots were suggested for verification."
+  },
+  {
+    "id": "spring-batch-5475",
+    "title": "TracingAwareMeterObservationHandler registered alone throws Context does not have an entry for TracingContext",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalArgumentException: Context does not have an entry for key\n  [class io.micrometer.tracing.handler.TracingObservationHandler$TracingContext]\n\tat io.micrometer.tracing.handler.TracingAwareMeterObservationHandler.onStop(TracingAwareMeterObservationHandler.java:78)\n\tat org.springframework.batch.core.job.AbstractJob.stopObservation(AbstractJob.java:370)",
+    "appliesTo": [
+      {
+        "component": "spring-batch",
+        "versions": "6.0.4 (documentation example introduced in 6.0)"
+      },
+      {
+        "component": "micrometer-tracing",
+        "versions": "1.6.6"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-batch/issues/5475",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-08-26",
+    "symptom": "Following the reference-documentation tracing example and registering only a TracingAwareMeterObservationHandler creates no spans and makes JobLauncher.run() throw IllegalArgumentException when the job observation stops.",
+    "cause": "TracingAwareMeterObservationHandler is a decorator whose onStop requires a TracingContext that only a span-producing TracingObservationHandler puts into the observation context. Registered by itself it never gets one.",
+    "fixSummary": "Also register a span-producing handler such as DefaultTracingObservationHandler(tracer) on the ObservationRegistry; a pull request updated the documentation example to register both handlers.",
+    "notes": "The issue is tracked against milestone 6.1.0-M2; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "jackson-module-kotlin-1065",
+    "title": "ClassCastException serializing Kotlin value class with Include.NON_EMPTY on Jackson 3",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.ClassCastException: class com.example.demo.VehicleId cannot be cast to class java.lang.String (com.example.demo.VehicleId is in unnamed module of loader 'app'; java.lang.String is in module java.base of loader 'bootstrap')\n\tat tools.jackson.databind.ser.jdk.StringSerializer.isEmpty(StringSerializer.java:27) ~[jackson-databind-3.0.2.jar:3.0.2]\n\tat tools.jackson.databind.ser.std.StdDelegatingSerializer.isEmpty(StdDelegatingSerializer.java:211) ~[jackson-databind-3.0.2.jar:3.0.2]\n\tat tools.jackson.databind.ser.BeanPropertyWriter.serializeAsProperty(BeanPropertyWriter.java:592) ~[jackson-databind-3.0.2.jar:3.0.2]\n\tat tools.jackson.databind.ser.UnrolledBeanSerializer.serializeNonFiltered(UnrolledBeanSerializer.java:203) ~[jackson-databind-3.0.2.jar:3.0.2]",
+    "appliesTo": [
+      {
+        "component": "jackson-databind",
+        "versions": "3.0.2, fixed in 3.1.0"
+      },
+      {
+        "component": "jackson-module-kotlin",
+        "versions": "3.0.2"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/FasterXML/jackson-module-kotlin/issues/1065",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-02-15",
+    "symptom": "After moving to Spring Boot 4 / Jackson 3, serializing a Kotlin object that has a non-null @JvmInline value class property backed by String throws ClassCastException in StringSerializer.isEmpty when the mapper uses JsonInclude.Include.NON_EMPTY as the default value inclusion.",
+    "cause": "With NON_EMPTY the serializer calls isEmpty on the property, and the delegating String serializer is handed the value-class instance instead of the underlying String. A maintainer identified this as a jackson-databind bug rather than a Kotlin-module bug.",
+    "fixSummary": "Fixed in jackson-databind and reported working with Jackson 3.1.0; a commenter notes Spring Boot 4.0.4 already uses Jackson 3.1.0. Using Include.NON_NULL as the default value inclusion also avoids the call.",
+    "notes": "The fix version 3.1.0 and the Boot 4.0.4 remark come from user comments; the maintainer only said it is fixed in the next release."
+  },
+  {
+    "id": "spring-boot-49274",
+    "title": "HTTP Service Interface client in GraalVM native image fails with URI with undefined scheme",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalArgumentException: URI with undefined scheme\n\tat java.net.http@25/jdk.internal.net.http.common.Utils.newIAE(Utils.java:394)\n\tat java.net.http@25/jdk.internal.net.http.HttpRequestBuilderImpl.checkURI(HttpRequestBuilderImpl.java:81)\n\tat java.net.http@25/jdk.internal.net.http.HttpRequestBuilderImpl.uri(HttpRequestBuilderImpl.java:73)\n\tat java.net.http@25/jdk.internal.net.http.HttpRequestBuilderImpl.uri(HttpRequestBuilderImpl.java:45)\n\tat org.springframework.http.client.JdkClientHttpRequest.buildRequest(JdkClientHttpRequest.java:167)\n\tat org.springframework.http.client.JdkClientHttpRequest.executeInternal(JdkClientHttpRequest.java:117)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.3 (native image only)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/49274",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-02-25",
+    "symptom": "In a native image built with Boot 4.0.3, an @ImportHttpServices client ignores spring.http.serviceclient.<group>.base-url and fails on the first call with IllegalArgumentException \"URI with undefined scheme\"; the JVM run works.",
+    "cause": "Runtime reflection hints for binding the HTTP client properties (HttpClientProperties) were missing in the native image, so the configuration was not bound.",
+    "fixSummary": "Maintainers confirmed missing hints and gave a workaround: add @ImportRuntimeHints with a RuntimeHintsRegistrar that calls BindableRuntimeHintsRegistrar.forTypes(HttpClientProperties.class).registerHints(...). A proper fix was left to a later release.",
+    "notes": "The release containing the fix was not named in the thread. The issue is tracked against milestone 4.0.4; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "liquibase-7843",
+    "title": "ChangeLogParseException Failed to read schema document when liquibase.org XSD returns 403 to Java user-agents",
+    "verification": "unverified",
+    "errorSample": "liquibase.exception.ChangeLogParseException: Error parsing line 3 column 150 of changelog.xml:\nschema_reference.4: Failed to read schema document\n'https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd', because\n1) could not find the document; 2) the document could not be read;\n3) the root element of the document is not <xsd:schema>.",
+    "appliesTo": [
+      {
+        "component": "liquibase",
+        "versions": "any version that fetches XSDs over the network (4.9.0 reported); server-side issue from about 2026-07-18"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/liquibase/liquibase/issues/7843",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-07-23",
+    "symptom": "Changelog parsing fails with ChangeLogParseException \"Failed to read schema document ... root element of the document is not xsd:schema\" because the XSD request gets an HTTP 403 page instead of the schema.",
+    "cause": "After the liquibase.org site moved behind a new CDN/security provider, its default bot protection blocked requests whose User-Agent starts with Java/, so JVM clients that download the XSD over the network received an error page.",
+    "fixSummary": "Liquibase maintainers allowed Java user agents again on the site, so no client change is needed. Newer Liquibase releases resolve schemas from the distribution locally, which avoids the network dependency; a commenter suggested serving XSDs from a caching proxy.",
+    "notes": "Site-side incident, mostly relevant to old Liquibase versions or liquibase.secureParsing=false."
+  },
+  {
+    "id": "spring-framework-36844",
+    "title": "BeanCurrentlyInCreationException with global lazy init and @Bean(bootstrap = BACKGROUND)",
+    "verification": "unverified",
+    "errorSample": "org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'beanExampleApplication.ExampleConfig': Bean marked for mainline initialization but requested in background thread - enforce early instantiation in mainline thread through depends-on 'beanExampleApplication.ExampleConfig' declaration for dependent background beans\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.checkMergedBeanDefinition(DefaultListableBeanFactory.java:1051) ~[spring-beans-7.0.7.jar:7.0.7]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:297) ~[spring-beans-7.0.7.jar:7.0.7]",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.7"
+      },
+      {
+        "component": "spring-boot",
+        "versions": "4.0.6 (spring.main.lazy-initialization=true)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/36844",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-27",
+    "symptom": "With spring.main.lazy-initialization=true, a @Bean(bootstrap = Bean.Bootstrap.BACKGROUND) method inside a @Configuration class logs BeanCurrentlyInCreationException: bean marked for mainline initialization but requested in background thread.",
+    "cause": "Global lazy initialization makes the @Configuration class lazy, while the @Bean method is scheduled on a background thread; the background thread then needs the configuration class as factory bean, which trips the mainline/background initialization check. A maintainer reproduced it with Spring Framework alone using @Lazy on the configuration class.",
+    "fixSummary": "Maintainers listed ways to avoid it: add @DependsOn for the configuration class, declare the background @Bean method static, or remove @Lazy from the configuration class. A change to Boot's lazy-initialization post-processor was only discussed.",
+    "notes": "The issue is tracked against milestone 7.0.8; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "spring-kafka-4190",
+    "title": "ConfigException DefaultJwtValidator not found creating Kafka AdminClient in GraalVM native image",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.apache.kafka.common.config.ConfigException: Invalid value org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator for configuration sasl.oauthbearer.jwt.validator.class: Class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator could not be found.\n\tat org.apache.kafka.common.config.ConfigDef.parseType(ConfigDef.java:778)\n\tat org.apache.kafka.common.config.ConfigDef$ConfigKey.<init>(ConfigDef.java:1271)\n\tat org.apache.kafka.common.config.ConfigDef.define(ConfigDef.java:155)\n    ...\n\tat org.apache.kafka.clients.admin.AdminClientConfig.<clinit>(AdminClientConfig.java:270)\n\t... 15 more",
+    "appliesTo": [
+      {
+        "component": "spring-kafka",
+        "versions": "with kafka-clients 4.1.1 and Spring Boot 4.0.0"
+      },
+      {
+        "component": "kafka-clients",
+        "versions": "4.1.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-kafka/issues/4190",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-12-10",
+    "symptom": "A native image with a NewTopic bean fails at startup with ExceptionInInitializerError caused by ConfigException: class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator could not be found, while the JVM run works.",
+    "cause": "AdminClientConfig validates the default value of sasl.oauthbearer.jwt.validator.class by loading DefaultJwtValidator by name; KafkaRuntimeHints did not register that class for reflection, so the lookup fails in native mode. A commenter saw the same error on a plain JVM when running from a Spring Boot fat jar because of mixed class loaders.",
+    "fixSummary": "Workaround: register the class with a RuntimeHintsRegistrar (invoke declared constructors and methods). A pull request adds the hint to KafkaRuntimeHints. For the non-native fat-jar case, a commenter fixed it by running a thin jar with extracted layers so only the application class loader is used.",
+    "notes": "Fat-jar remark comes from a user comment, not a maintainer. Fix release of the spring-kafka PR was not stated. The issue is tracked against milestone 4.0.1; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "spring-batch-5455",
+    "title": "ClassNotFoundException: long reading job parameters from BATCH_JOB_EXECUTION_PARAMS",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.RuntimeException: java.lang.ClassNotFoundException: long\n    at org.springframework.batch.core.repository.dao.jdbc.JdbcJobExecutionDao.getJobParameters(...)",
+    "appliesTo": [
+      {
+        "component": "spring-batch",
+        "versions": "6.0.4, fixed in 6.0.6"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-batch/issues/5455",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-08-26",
+    "symptom": "Reading the last job execution fails with RuntimeException caused by ClassNotFoundException: long in JdbcJobExecutionDao.getJobParameters when a parameter was added with a primitive type such as Long::class.java.",
+    "cause": "The type is stored with Class.getName(), which yields \"long\" for a primitive class, but it is read back with Class.forName, which cannot resolve primitive type names.",
+    "fixSummary": "A maintainer confirmed the bug and said the fix (resolve with ClassUtils.forName) ships in 6.0.6.",
+    "notes": "The issue is tracked against milestone 6.1.0-M2; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "spring-framework-37221",
+    "title": "Stored procedure OUT parameter not available outside a transaction",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalArgumentException: OUT/INOUT parameter not available: outParam\n\tat org.springframework.orm.jpa.SharedEntityManagerCreator$DeferredQueryInvocationHandler.invoke(SharedEntityManagerCreator.java:553)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": "7.0.9 (spring-orm); 7.0.8 works, fixed in 7.0.10"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-framework/issues/37221",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-08-31",
+    "symptom": "Calling a stored procedure through a shared EntityManager without an active transaction (for example Spring Data JPA @Procedure with outputParameterName on @Async or @Scheduled threads) throws IllegalArgumentException \"OUT/INOUT parameter not available\" after the procedure has already run.",
+    "cause": "In SharedEntityManagerCreator.DeferredQueryInvocationHandler a 7.0.9 rework moved the recording of registered OUT/INOUT parameters into an else-if chain; Hibernate's registerStoredProcedureParameter returns this, so the first branch always matches and the recording branch is never reached.",
+    "fixSummary": "Fixed in 7.0.10 by making the recording an independent if block. Staying on 7.0.8 avoids the regression."
+  },
+  {
+    "id": "gradle-38075",
+    "title": "Gradle 8.x fails with UncheckedIOException on truncated or missing workspace metadata.bin",
+    "verification": "unverified",
+    "errorSample": "  Caused by: java.io.EOFException\n      at org.gradle.internal.serialize.kryo.KryoBackedDecoder.maybeEndOfStream(KryoBackedDecoder.java:80)\n      at org.gradle.internal.serialize.kryo.KryoBackedDecoder.readNullableString(KryoBackedDecoder.java:185)\n      at org.gradle.internal.serialize.kryo.KryoBackedDecoder.readString(KryoBackedDecoder.java:177)\n      at org.gradle.internal.execution.history.impl.OriginMetadataSerializer.read(OriginMetadataSerializer.java:35)\n      at org.gradle.internal.execution.history.impl.DefaultImmutableWorkspaceMetadataStore.loadWorkspaceMetadata(DefaultImmutableWorkspaceMetadataStore.java:46)\n      ...\n  Caused by: com.esotericsoftware.kryo.KryoException: Buffer underflow.\n      at com.esotericsoftware.kryo.io.Input.require(Input.java:181)\n      at com.esotericsoftware.kryo.io.Input.readString(Input.java:452)\n      at org.gradle.internal.serialize.kryo.KryoBackedDecoder.readNullableString(KryoBackedDecoder.java:183)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "8.x (8.14.5 reported) and earlier than 9.4.0; fixed in 9.4.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/38075",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-06-08",
+    "symptom": "After restoring a corrupted or truncated Gradle user-home cache (for example from CI cache), the build fails early with UncheckedIOException \"Could not read workspace metadata\" caused by EOFException/KryoException or FileNotFoundException for a metadata.bin file.",
+    "cause": "DefaultImmutableWorkspaceMetadataStore.loadWorkspaceMetadata forwarded read failures instead of treating a missing or broken workspace as absent.",
+    "fixSummary": "Gradle 9.4.0 treats such a workspace as missing and re-executes the work. The change was judged too invasive to backport to 8.14.x, so upgrade to 9.4.0 or newer.",
+    "notes": "Clearing the affected cache directory on 8.x is a likely workaround but was not stated in the thread."
+  },
+  {
+    "id": "springdoc-openapi-3328",
+    "title": "/v3/api-docs returns 500 with spring-data-rest: NPE in SpringDocDataRestUtils.updateResponseSchemaEmbedded",
+    "verification": "unverified",
+    "errorSample": "java.lang.NullPointerException: Cannot invoke \"java.util.Map.get(Object)\" because the return value of \"io.swagger.v3.oas.models.media.Schema.getProperties()\" is null\n\tat org.springdoc.core.utils.SpringDocDataRestUtils.updateResponseSchemaEmbedded(SpringDocDataRestUtils.java:297)\n\tat org.springdoc.core.utils.SpringDocDataRestUtils.updateResponseSchema(SpringDocDataRestUtils.java:278)\n\tat org.springdoc.core.utils.SpringDocDataRestUtils.lambda$updateApiResponse$3(SpringDocDataRestUtils.java:173)\n\tat java.base/java.util.HashMap$KeySet.forEach(HashMap.java:1017)",
+    "appliesTo": [
+      {
+        "component": "springdoc-openapi",
+        "versions": "3.0.3 and 3.1.0 affected; 3.0.2 works"
+      },
+      {
+        "component": "spring-boot",
+        "versions": "4.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/springdoc/springdoc-openapi/issues/3328",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-09-06",
+    "symptom": "With spring-boot-starter-data-rest on the classpath, every request to /v3/api-docs returns HTTP 500 with a NullPointerException because Schema.getProperties() is null for the _embedded schema.",
+    "cause": "A contributor traced it to a change in 3.0.3 that alters when the SpringDocHateoasConfiguration bean is created; the _embedded handling expects preprocessing from that configuration, which is no longer in the context with only these dependencies.",
+    "fixSummary": "Use springdoc-openapi 3.0.2 (confirmed working by the reporter) or set springdoc.enable-data-rest=false, which restores /v3/api-docs but drops the Spring Data REST resources from the docs.",
+    "notes": "Cause is a contributor analysis; the thread does not name a release with a permanent fix."
+  },
+  {
+    "id": "jackson-databind-5898",
+    "title": "DoubleDeserializer rejects +INF and +Infinity strings",
+    "verification": "unverified",
+    "errorSample": "Caused by: com.fasterxml.jackson.databind.exc.InvalidFormatException: Cannot deserialize value of type `java.lang.Double` from String \"+INF\": not a valid `Double` value\n at [...omitted...])\n\tat com.fasterxml.jackson.databind.exc.InvalidFormatException.from(InvalidFormatException.java:67)\n\tat com.fasterxml.jackson.databind.DeserializationContext.weirdStringException(DeserializationContext.java:2014)\n\tat com.fasterxml.jackson.databind.DeserializationContext.handleWeirdStringValue(DeserializationContext.java:1300)\n\tat com.fasterxml.jackson.databind.deser.std.NumberDeserializers$DoubleDeserializer._parseDouble(NumberDeserializers.java:785)\n\tat com.fasterxml.jackson.databind.deser.std.NumberDeserializers$DoubleDeserializer.deserialize(NumberDeserializers.java:704)\n\tat com.fasterxml.jackson.databind.deser.std.NumberDeserializers$DoubleDeserializer.deserialize(NumberDeserializers.java:683)",
+    "appliesTo": [
+      {
+        "component": "jackson-databind",
+        "versions": "2.20.1 reported; fixed by 2.21.3 per thread"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/FasterXML/jackson-databind/issues/5898",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-04-11",
+    "symptom": "Deserializing a double from the string \"+INF\" or \"+Infinity\" (as produced by XML schema serializers) throws InvalidFormatException, although INF, Infinity, -INF and -Infinity are accepted.",
+    "cause": "StdDeserializer._checkDoubleSpecialValue recognized the unsigned and negative special values but not the explicitly signed positive ones. A maintainer ruled that String tokens for special doubles are in scope for databind for all formats.",
+    "fixSummary": "A maintainer accepted the request and the reporter was pointed to the 2.21.3 patch release, published shortly after.",
+    "notes": "The fix being in 2.21.3 is inferred from the release remarks in the thread; 3.1.3 was announced as following."
+  },
+  {
+    "id": "spring-data-commons-3389",
+    "title": "MappingInstantiationException for Kotlin class with private constructor and value class parameter",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.IllegalArgumentException: object is not an instance of declaring class\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.checkReceiver(DirectMethodHandleAccessor.java:197) ~[na:na]\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:99) ~[na:na]\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]\n\tat kotlin.reflect.jvm.internal.calls.ValueClassAwareCaller.call(ValueClassAwareCaller.kt:200) ~[kotlin-reflect-2.2.20.jar:2.2.20-release-333]\n\tat kotlin.reflect.jvm.internal.KCallableImpl.callDefaultMethod$kotlin_reflection(KCallableImpl.kt:250) ~[kotlin-reflect-2.2.20.jar:2.2.20-release-333]\n\tat kotlin.reflect.jvm.internal.KCallableImpl.callBy(KCallableImpl.kt:155) ~[kotlin-reflect-2.2.20.jar:2.2.20-release-333]\n\tat org.springframework.beans.BeanUtils$KotlinDelegate.instantiateClass(BeanUtils.java:943) ~[spring-beans-6.2.11.jar:6.2.11]",
+    "appliesTo": [
+      {
+        "component": "spring-data-commons",
+        "versions": "3.5.4 reported (Kotlin 2.2.20); fix release not stated"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-commons/issues/3389",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-10-27",
+    "symptom": "Loading a Kotlin class whose private primary constructor takes value-class parameters (no default values) fails with MappingInstantiationException caused by IllegalArgumentException: object is not an instance of declaring class.",
+    "cause": "KotlinInstantiationDelegate assumes the synthetic default-argument constructor always has both an int mask and a DefaultConstructorMarker parameter; for a private constructor without defaults the compiler emits only the marker variant, so the wrong constructor is resolved.",
+    "fixSummary": "A maintainer agreed with the analysis and fixed it by also considering the original constructor as resolution target when no defaulting is involved. Giving a constructor parameter a default value avoids the failing path.",
+    "notes": "The default-value workaround is inferred from the reporter's observation that a variant with a default parameter works. The release containing the fix was not stated. The issue is tracked against milestone 3.5.6 (2025.0.6); whether and where a backport landed is not established here."
+  },
+  {
+    "id": "spring-data-commons-3485",
+    "title": "InaccessibleObjectException for @Transient SecureRandom field in Spring Data mapping",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.reflect.InaccessibleObjectException: Unable to make field private java.security.Provider java.security.SecureRandom.provider accessible: module java.base does not \"opens java.security\" to unnamed module @32502377\n\tat java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:354) ~[na:na]\n\tat java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:297) ~[na:na]\n\tat java.base/java.lang.reflect.Field.checkCanSetAccessible(Field.java:178) ~[na:na]\n\tat java.base/java.lang.reflect.Field.setAccessible(Field.java:172) ~[na:na]\n\tat org.springframework.util.ReflectionUtils.makeAccessible(ReflectionUtils.java:803) ~[spring-core-7.0.6.jar:7.0.6]\n\tat org.springframework.data.mapping.context.AbstractMappingContext$PersistentPropertyCreator.doWith(AbstractMappingContext.java:619) ~[spring-data-commons-4.1.0-M2.jar:4.1.0-M2]",
+    "appliesTo": [
+      {
+        "component": "spring-data-commons",
+        "versions": "4.1.0-M3 and 4.1.0-M4 affected; 4.1.0-M2 works"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-commons/issues/3485",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-05-27",
+    "symptom": "An entity with a @Transient java.security.SecureRandom field fails to map on 4.1.0-M3/M4 with InaccessibleObjectException because java.base does not open java.security to the unnamed module.",
+    "cause": "In the affected milestones the persistent-property creation in AbstractMappingContext calls setAccessible on fields of the transient property's type, which is not allowed for JDK-internal classes.",
+    "fixSummary": "A maintainer said the issue is fixed in spring-data-commons (the report was first filed against Spring Data MongoDB); upgrade past 4.1.0-M4.",
+    "notes": "The exact fixing release was not stated; the description of the mechanism is inferred from the stack trace. The issue is tracked against milestone 3.5.12 (2025.0.12); whether and where a backport landed is not established here."
+  },
+  {
+    "id": "lettuce-3862",
+    "title": "NoClassDefFoundError jdk/net/ExtendedSocketOptions on startup in jlink runtime without jdk.net module",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.NoClassDefFoundError: jdk/net/ExtendedSocketOptions\n\tat io.lettuce.core.resource.ExtendedKeepAliveSupport$ExtendedNioSocketOptions.<clinit>(ExtendedKeepAliveSupport.java:110)\n\tat io.lettuce.core.resource.ExtendedKeepAliveSupport.<clinit>(ExtendedKeepAliveSupport.java:45)\n\tat io.lettuce.core.SocketOptions$Builder.<init>(SocketOptions.java:118)\n\tat io.lettuce.core.SocketOptions$Builder.<init>(SocketOptions.java:107)\n\tat io.lettuce.core.SocketOptions.builder(SocketOptions.java:92)\n\tat io.lettuce.core.SocketOptions.create(SocketOptions.java:101)",
+    "appliesTo": [
+      {
+        "component": "lettuce-core",
+        "versions": "7.5.0 and later (7.5.2 reported); 6.8.2 works"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/redis/lettuce/issues/3862",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-08-05",
+    "symptom": "A Spring Boot 4.1.0 app running on a custom jlink runtime image fails at startup creating the LettuceConnectionFactory with NoClassDefFoundError: jdk/net/ExtendedSocketOptions.",
+    "cause": "Since 7.5.0 extended TCP keepalive is enabled by default and ExtendedKeepAliveSupport loads jdk.net.ExtendedSocketOptions in a static initializer. The jlink image did not include the jdk.net module.",
+    "fixSummary": "A maintainer said the fix is to check that jdk.net.ExtendedSocketOptions is available and fall back to plain SO_KEEPALIVE; a contributor took the pull request. Alternatively include the jdk.net module in the jlink runtime image.",
+    "notes": "Adding jdk.net to the jlink modules was named by the reporter as the easy path but not confirmed by maintainers; the fix release was not stated."
+  },
+  {
+    "id": "gradle-34015",
+    "title": "Gradle 9 fails on include(\"a:b\") when parent project directory does not exist",
+    "verification": "unverified",
+    "errorSample": "org.gradle.api.GradleException: Configuring project ':ConfigurationStudio' without an existing directory is not allowed. The configured projectDirectory '<project-root>\\ConfigurationStudio' does not exist, can't be written to or is not a directory.\n        at org.gradle.initialization.DefaultSettingsLoader.failOnMissingProjectDirectory(DefaultSettingsLoader.java:191)\n        at org.gradle.initialization.DefaultSettingsLoader.lambda$validate$0(DefaultSettingsLoader.java:183)\n        at org.gradle.initialization.DefaultSettingsLoader.validate(DefaultSettingsLoader.java:176)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "9.0.0-rc-1 and later; deprecation warning since 8.14"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/34015",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-06-27",
+    "symptom": "Build fails with GradleException \"Configuring project ':ConfigurationStudio' without an existing directory is not allowed\" when settings include a nested path and only the child projectDir was customized.",
+    "cause": "include(\"A:B\") implicitly creates project A as well, and Gradle 9 requires every configured project directory to exist; the default directory of A did not.",
+    "fixSummary": "This is expected behavior documented in the Gradle 9.0 upgrade guide. Set the parent project's projectDir too, for example project(\":ConfigurationStudio\").projectDir = file(\"db-export/ConfigurationStudio\"), or create the directory.",
+    "notes": "The thread was reclassified by maintainers as a documentation issue about the 9.0 upgrade guide."
+  },
+  {
+    "id": "gradle-34585",
+    "title": "AtomicMoveNotSupportedException Invalid cross-device link moving Gradle transforms workspace in Docker",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.nio.file.AtomicMoveNotSupportedException: /app/.gradle/caches/8.14/transforms/3b2d455af66406b61ef3b1a0ba7fde4e -> /app/.gradle/caches/8.14/transforms/3b2d455af66406b61ef3b1a0ba7fde4e-e9295ee8-c0d8-42ee-bb4a-cb05bb560ad4: Invalid cross-device link\n        at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.moveInconsistentImmutableWorkspaceToTemporaryLocation(AssignImmutableWorkspaceStep.java:191)",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "8.14 reported; fix attributed to a change shipped in 9.4.0 (see notes)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/34585",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-01-21",
+    "symptom": "Inside a Docker container using a cache from an earlier image layer, the build fails with \"Could not move inconsistent immutable workspace\" caused by AtomicMoveNotSupportedException: Invalid cross-device link.",
+    "cause": "Gradle moves an inconsistent immutable workspace in the caches/transforms directory with an atomic move; the layered Docker file system does not support atomic moves across image layers even though they are the same physical device.",
+    "fixSummary": "The issue was closed by Gradle change 36227. A maintainer also mentioned a lock-based approach (as used on Windows) as a possible alternative to atomic moves in the 9.x line.",
+    "notes": "Another Gradle issue states change 36227 is included in 9.4.0, so 9.4.0 is the inferred fixed version. The thread offers no user-side workaround."
+  },
+  {
+    "id": "gradle-36797",
+    "title": "ModuleVersionNotFoundException for gradle-<version>-src.zip with local or offline distributionUrl in IDE sync",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.gradle.internal.resolve.ModuleVersionNotFoundException: Could not find gradle:gradle:9.4.0-rc-1.\nSearched in the following locations:\n  - file:/home/user/Code/temp/sync-fail/gradle-9.4.0-rc-1-src.zip",
+    "appliesTo": [
+      {
+        "component": "gradle",
+        "versions": "9.4.0-rc-1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/gradle/gradle/issues/36797",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-02-24",
+    "symptom": "IDE sync logs ModuleVersionNotFoundException \"Could not find gradle:gradle:9.4.0-rc-1\" looking for gradle-9.4.0-rc-1-src.zip next to a file-based distribution URL while resolving Gradle sources.",
+    "cause": "Starting with 9.4.0-RC1 the Gradle sources distribution URL is derived from the distributionUrl setting instead of always using the public services host, so a locally served -bin.zip needs a matching -src.zip beside it.",
+    "fixSummary": "Place the matching -src.zip next to the binary distribution (or download it there). Maintainers noted that sync itself still succeeds with a logged warning, and considered falling back to the previous behavior for non-http distribution URLs.",
+    "notes": "Whether the fallback was implemented was not confirmed in the thread. A related local-build case needs GRADLE_VERSION_OVERRIDE set."
+  },
+  {
+    "id": "spring-cloud-gateway-4001",
+    "title": "NoClassDefFoundError JsonProcessingException in Spring Cloud Gateway Server MVC with Spring Boot 4",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.NoClassDefFoundError: com/fasterxml/jackson/core/JsonProcessingException\n\tat org.springframework.cloud.gateway.server.mvc.filter.FilterFunctions.removeResponseHeader(FilterFunctions.java:137) ~[spring-cloud-gateway-server-webmvc-5.0.0.jar:5.0.0]\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]",
+    "appliesTo": [
+      {
+        "component": "spring-cloud-gateway",
+        "versions": "5.0.0 (release train 2025.1.0) with Spring Boot 4"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-cloud/spring-cloud-gateway/issues/4001",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2025-12-01",
+    "symptom": "Gateway Server MVC 5.0.0 on Spring Boot 4 fails at startup with NoClassDefFoundError: com/fasterxml/jackson/core/JsonProcessingException from FilterFunctions.removeResponseHeader.",
+    "cause": "The gateway filter functions still reference Jackson 2 classes (com.fasterxml.jackson), while Spring Boot 4 ships Jackson 3 by default.",
+    "fixSummary": "Workaround from the reporter: add the spring-boot-jackson2 dependency so Jackson 2 classes are on the classpath. The thread does not state a release that removes the Jackson 2 usage.",
+    "notes": "No maintainer comment in the thread; workaround is user-reported and fixed version unknown. The issue is tracked against milestone 5.0.1; whether and where a backport landed is not established here."
+  },
+  {
+    "id": "spring-batch-5149",
+    "title": "FlatFileItemReader builder fails with A name is required when saveState is true",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.springframework.batch.infrastructure.item.file.FlatFileItemReader]: Factory method 'reader' threw exception with message: A name is required when saveState is set to true.",
+    "appliesTo": [
+      {
+        "component": "spring-batch",
+        "versions": "6.0.x; fix release not stated"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-batch/issues/5149",
+        "license": "Facts summarized from a public GitHub issue; only a short error excerpt is quoted. Original text © its authors."
+      }
+    ],
+    "lastConfirmed": "2026-09-16",
+    "symptom": "Building a FlatFileItemReader via its builder without calling name() fails with BeanInstantiationException: \"A name is required when saveState is set to true\".",
+    "cause": "A maintainer found that ItemStreamSupport already defaults the name to the bean name, but several builders add their own redundant Assert.hasText on a local name field that is null unless name(...) is called, so they fail before the component is created.",
+    "fixSummary": "The agreed fix is to remove the redundant assertion from the affected builders. Until then, call .name(\"...\") on the builder.",
+    "notes": "The interim advice to call name() is an inference from the error message. The issue is tracked against milestone 6.1.0-M2; whether and where a backport landed is not established here."
+  }
+]

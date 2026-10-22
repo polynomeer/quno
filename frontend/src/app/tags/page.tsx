@@ -14,7 +14,7 @@ export default function TagDirectoryPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Tags</h1>
+      <h1 className="text-[32px] leading-10 font-bold tracking-tight">Tags</h1>
       <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search tags..." />
 
       {isLoading && <Skeleton className="h-40 w-full" />}
@@ -29,7 +29,7 @@ export default function TagDirectoryPage() {
             <li key={tag.id}>
               <Link
                 href={`/tags/${encodeURIComponent(tag.name)}`}
-                className="block rounded-xl border border-border bg-surface p-4 text-sm transition-colors hover:border-border-strong"
+                className="block rounded-[20px] border border-border bg-surface p-4 text-sm transition-colors hover:border-border-strong"
               >
                 <span className="font-mono font-medium text-text-primary">{tag.name}</span>
                 {tag.description && <p className="mt-1.5 truncate text-[13px] text-text-secondary">{tag.description}</p>}

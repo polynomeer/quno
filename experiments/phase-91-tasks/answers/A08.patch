@@ -1,0 +1,19 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 11:57:42
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 11:57:42
+@@ -2,10 +2,12 @@
+ 
+ import org.springframework.boot.autoconfigure.SpringBootApplication
+ import org.springframework.boot.runApplication
++import org.springframework.context.annotation.PropertySource
+ import org.springframework.core.env.Environment
+ import org.springframework.stereotype.Component
+ 
+ @SpringBootApplication
++@PropertySource("classpath:routes.properties")
+ class Application
+ 
+ /** 채널 이름(예: `#general`)으로 알림 웹훅 주소를 찾는다. 매핑은 routes.properties 에 둔다. */
+--- a/src/main/resources/application.properties	2026-10-20 11:57:42
++++ b/src/main/resources/application.properties	2026-10-20 11:57:42
+@@ -1 +0,0 @@
+-spring.config.import=classpath:routes.properties

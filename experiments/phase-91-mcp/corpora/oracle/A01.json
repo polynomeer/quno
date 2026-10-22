@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-a01",
+    "title": "Spring Boot 4.0 bootRun fails with NoClassDefFoundError for DataSourceProperties when DevTools is present and the app defines its own DataSource bean",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.lang.NoClassDefFoundError: org/springframework/boot/jdbc/autoconfigure/DataSourceProperties\n\tat org.springframework.boot.devtools.autoconfigure.DevToolsDataSourceAutoConfiguration$DevToolsDataSourceCondition.getMatchOutcome(DevToolsDataSourceAutoConfiguration.java:202) ~[spring-boot-devtools-4.0.8.jar:4.0.8]\n\tat org.springframework.boot.autoconfigure.condition.SpringBootCondition.matches(SpringBootCondition.java:47) ~[spring-boot-autoconfigure-4.0.8.jar:4.0.8]\n\t... 20 common frames omitted\nCaused by: java.lang.ClassNotFoundException: org.springframework.boot.jdbc.autoconfigure.DataSourceProperties\n\tat java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641) ~[na:na]\n\tat java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188) ~[na:na]\n\tat java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[na:na]\n\t... 22 common frames omitted",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.0.9 (observed on 4.0.8); fixed in 4.0.9 and 4.1.2"
+      },
+      {
+        "component": "spring-boot-devtools",
+        "versions": ">=4.0.0 <4.0.9"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/pull/51872",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-09-28",
+    "symptom": "Running the application with bootRun aborts during context refresh with IllegalStateException 'Could not evaluate condition on DevToolsDataSourceAutoConfiguration', caused by NoClassDefFoundError for org.springframework.boot.jdbc.autoconfigure.DataSourceProperties. The same context starts fine in tests, where DevTools is not loaded.",
+    "cause": "In Boot 4.0 DataSourceProperties moved into the spring-boot-jdbc module. DevToolsDataSourceCondition references it when exactly one user-defined DataSource bean exists, but spring-boot-jdbc is only an optional dependency of spring-boot-devtools, so the class is missing from a project that does not otherwise depend on JDBC auto-configuration.",
+    "fixSummary": "Add the missing module to the project dependencies, for example implementation(\"org.springframework.boot:spring-boot-jdbc\") (spring-boot-starter-jdbc also works); removing devtools avoids the condition as well. Fixed upstream in Boot 4.0.9 and 4.1.2."
+  }
+]

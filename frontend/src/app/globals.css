@@ -34,6 +34,13 @@
   --code-fg: #e6e8ee;
   --live: #1e8a55;
   --live-ring: #ddf1e5;
+  /* Floating chrome only — header, segmented controls, vote rail (ADR-0071). Content cards stay
+     on the opaque --surface so body text contrast never depends on what scrolls behind it. */
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-border: rgb(255 255 255 / 0.95);
+  --glass-shadow: 0 8px 28px rgb(21 23 28 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.9);
+  --glass-fallback: rgb(255 255 255 / 0.96);
+  --segment-selected-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
 
   --font-sans: var(--font-plex-kr);
   --font-mono: var(--font-jetbrains-mono);
@@ -65,6 +72,11 @@
     --code-fg: #e6e8ee;
     --live: #3fc07f;
     --live-ring: #143826;
+    --glass-bg: rgb(30 34 42 / 0.66);
+    --glass-border: rgb(255 255 255 / 0.1);
+    --glass-shadow: 0 8px 28px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --glass-fallback: rgb(30 34 42 / 0.97);
+    --segment-selected-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
   }
 }
 
@@ -95,6 +107,19 @@
   --color-live-ring: var(--live-ring);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+}
+
+/* Translucent, blurred surface for floating chrome (ADR-0071). Without backdrop-filter the
+   translucency would only make text harder to read, so fall back to a near-opaque fill. */
+@utility glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background: var(--glass-fallback);
+  }
 }
 
 body {

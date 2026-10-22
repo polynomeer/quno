@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-b06",
+    "title": "WAR on external Tomcat: context.xml Parameter values not resolved, 'Could not resolve placeholder'",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.util.PlaceholderResolutionException: Could not resolve placeholder 'storage.root' in value \"${storage.root}\"\n\tat org.springframework.util.PlaceholderResolutionException.withValue(PlaceholderResolutionException.java:81) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.util.PlaceholderParser$ParsedValue.resolve(PlaceholderParser.java:296) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.util.PlaceholderParser.replacePlaceholders(PlaceholderParser.java:129) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.util.PropertyPlaceholderHelper.replacePlaceholders(PropertyPlaceholderHelper.java:96) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.core.env.AbstractPropertyResolver.doResolvePlaceholders(AbstractPropertyResolver.java:286) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.core.env.AbstractPropertyResolver.resolveRequiredPlaceholders(AbstractPropertyResolver.java:257) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.context.support.PropertySourcesPlaceholderConfigurer.lambda$processProperties$0(PropertySourcesPlaceholderConfigurer.java:184) ~[spring-context-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.resolveEmbeddedValue(AbstractBeanFactory.java:959) ~[spring-beans-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1672) ~[spring-beans-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1651) ~[spring-beans-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.1.jar:7.0.1]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.0 (WAR deployment, embedded Tomcat starter excluded)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40744",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-06-17",
+    "symptom": "Properties passed as servlet context init parameters via Tomcat's context.xml are not visible to the application; startup fails with PlaceholderResolutionException: Could not resolve placeholder for the property.",
+    "cause": "With the embedded servlet container excluded, Boot 4 deduces the web application type as NONE during WAR startup, so the servlet-specific property sources, including the servlet context init parameters, are never registered.",
+    "fixSummary": "Force the web application type to servlet by adding spring.main.web-application-type=servlet to application.properties; the init parameters are then registered and the placeholders resolve."
+  }
+]

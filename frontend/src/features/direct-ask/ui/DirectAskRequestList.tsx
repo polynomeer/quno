@@ -84,7 +84,7 @@ export function DirectAskRequestList({
   }
 
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+    <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface">
       {items.map((item) => (
         <DirectAskRequestRow key={item.id} item={item} role={role} />
       ))}

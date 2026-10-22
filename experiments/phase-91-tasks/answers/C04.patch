@@ -1,0 +1,12 @@
+diff -ruN a/build.gradle.kts b/build.gradle.kts
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -43,7 +43,7 @@
+ 
+ jacoco {
+ 	// 커버리지 리포트 도구 버전. 사내 빌드 표준에 맞춰 고정해 둔 값
+-	toolVersion = "0.8.7"
++	toolVersion = "0.8.13"
+ }
+ 
+ tasks.test {

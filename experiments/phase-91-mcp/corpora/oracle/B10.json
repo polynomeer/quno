@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-b10",
+    "title": "bootBuildImage push on Windows fails to run 'docker-credential-gcloud' (CreateProcess error=2)",
+    "verification": "unverified",
+    "errorSample": "java.io.IOException: Cannot run program \"docker-credential-gcloud\": CreateProcess error=2, The system cannot find the file specified\n\tat java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1112)\n\tat java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1046)\n\tat org.gradle.internal.classpath.Instrumented.start(Instrumented.java:315)\n\tat org.springframework.boot.buildpack.platform.docker.configuration.CredentialHelper.start(CredentialHelper.java:88)\n\tat org.springframework.boot.buildpack.platform.docker.configuration.CredentialHelper.get(CredentialHelper.java:54)\n\tat org.springframework.boot.buildpack.platform.docker.configuration.DockerRegistryConfigAuthentication.computeCredentialsFromHelper(DockerRegistryConfigAuthentication.java:129)",
+    "appliesTo": [
+      {
+        "component": "spring-boot-gradle-plugin",
+        "versions": "4.0.1 on Windows 11 with Google Cloud SDK credential helper provided as a .cmd file; fix PR milestoned 3.5.11"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/48961",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      },
+      {
+        "url": "https://github.com/spring-projects/spring-boot/pull/48965",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-01-24",
+    "symptom": "The image builds, but pushing to Google Artifact Registry with bootBuildImage fails to authenticate: looking up the credential helper throws IOException \"Cannot run program \"docker-credential-gcloud\": CreateProcess error=2, The system cannot find the file specified\", and the push is then attempted without credentials. The helper is configured in credHelpers of the Docker config.json.",
+    "cause": "On Windows the Google Cloud SDK ships the helper as docker-credential-gcloud.cmd. A batch file cannot be started by its bare name through Java ProcessBuilder; it must be run through cmd /c. The plugin has code to prepend cmd /c on Windows, but it calls command(...) twice so the second call overwrites the first and the prefix is lost.",
+    "fixSummary": "Upgrade to a Spring Boot release that contains the fix (PR milestoned 3.5.11). Workarounds: pass the registry credentials directly in the plugin configuration (docker.publishRegistry with username/password or token), make the helper available as an executable (.exe) on PATH, or push with docker push instead of bootBuildImage."
+  }
+]

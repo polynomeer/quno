@@ -19,7 +19,8 @@ export function QuestionList({
     return <EmptyState message={emptyMessage} inline={compact || emptyInline} />;
   }
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+    // Separate cards rather than a divided table — web design v2 (ADR-0071).
+    <ul className="space-y-3">
       {questions.map((question) => (
         <QuestionCard key={question.id} question={question} compact={compact} />
       ))}

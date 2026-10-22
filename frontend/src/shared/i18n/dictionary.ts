@@ -11,6 +11,11 @@ export const ko = {
     reopenedKnowledge: "재활성화된 지식",
     flow: "Quno Flow",
     noQuestionsYet: "아직 질문이 없습니다.",
+    title: "홈",
+    feedFilter: "피드 섹션",
+    spikeLabel: "QunoBot · 태그 급상승",
+    spikeHeadline: "{tag} 질문이 평소의 {ratio}배로 늘었어요",
+    spikeLink: "{tag} 질문 보기",
   },
   sideNav: {
     label: "주 메뉴",
@@ -24,6 +29,8 @@ export const ko = {
     changes: "변화",
     saved: "저장됨",
     directAsks: "Direct Ask",
+    notifications: "알림",
+    profile: "프로필",
   },
   login: {
     title: "로그인",
@@ -88,6 +95,11 @@ export const en: Dictionary = {
     reopenedKnowledge: "Reactivated Knowledge",
     flow: "Quno Flow",
     noQuestionsYet: "No questions yet.",
+    title: "Home",
+    feedFilter: "Feed sections",
+    spikeLabel: "QunoBot · Tag spike",
+    spikeHeadline: "{tag} questions are up {ratio}x on usual",
+    spikeLink: "See {tag} questions",
   },
   sideNav: {
     label: "Main menu",
@@ -101,6 +113,8 @@ export const en: Dictionary = {
     changes: "new",
     saved: "Saved",
     directAsks: "Direct Ask",
+    notifications: "Notifications",
+    profile: "Profile",
   },
   login: {
     title: "Log in",

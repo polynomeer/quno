@@ -22,7 +22,11 @@ import type { Dictionary } from "@/shared/i18n/dictionary";
 
 function buildAskSchema(t: Dictionary) {
   return z.object({
-    title: z.string().trim().min(1, t.ask.titleRequired).max(300, t.ask.titleTooLong),
+    title: z
+      .string()
+      .trim()
+      .min(1, t.ask.titleRequired)
+      .max(300, t.ask.titleTooLong),
     body: z.string().trim().min(1, t.ask.bodyRequired),
     environment: z.string().optional(),
     logs: z.string().optional(),
@@ -64,7 +68,12 @@ export default function AskPage() {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const draft = JSON.parse(raw) as AskDraft;
-        reset({ title: draft.title, body: draft.body, environment: draft.environment, logs: draft.logs });
+        reset({
+          title: draft.title,
+          body: draft.body,
+          environment: draft.environment,
+          logs: draft.logs,
+        });
         setTags(draft.tags ?? []);
       }
     } catch {
@@ -85,7 +94,8 @@ export default function AskPage() {
   }, [watched, tags]);
 
   const debouncedTitle = useDebouncedValue(watched.title, 400);
-  const similarQuery = debouncedTitle.trim().length >= 3 ? debouncedTitle.trim() : "";
+  const similarQuery =
+    debouncedTitle.trim().length >= 3 ? debouncedTitle.trim() : "";
   const { data: similarQuestions } = useSearch(similarQuery);
 
   async function onSubmit(values: AskFormValues) {
@@ -115,7 +125,10 @@ export default function AskPage() {
   // Suggestions, not blocking errors (design.md #11 Quality Check) — derived from what's typed.
   const checklist = [
     { label: t.ask.checklistTitle, done: watched.title.trim().length >= 15 },
-    { label: t.ask.checklistEnvironment, done: Boolean(watched.environment?.trim()) },
+    {
+      label: t.ask.checklistEnvironment,
+      done: Boolean(watched.environment?.trim()),
+    },
     { label: t.ask.checklistCode, done: watched.body.includes("```") },
     { label: t.ask.checklistLogs, done: Boolean(watched.logs?.trim()) },
     { label: t.ask.checklistTags, done: tags.length > 0 },
@@ -126,101 +139,136 @@ export default function AskPage() {
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
       <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-7">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight">{t.ask.heading}</h1>
+          <h1 className="text-[32px] leading-10 font-bold tracking-tight">
+            {t.ask.heading}
+          </h1>
           <p className="mt-1.5 text-text-body">{t.ask.subtitle}</p>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-baseline justify-between">
-            <label htmlFor="ask-title" className="font-semibold">
-              {t.ask.titleLabel}
+        {/* Web design v2 (ADR-0071): the fields sit in one card on the canvas. */}
+        <div className="space-y-7 rounded-3xl border border-border bg-surface px-5 py-6 sm:px-8 sm:py-7">
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <label htmlFor="ask-title" className="font-semibold">
+                {t.ask.titleLabel}
+              </label>
+              <span className="font-mono text-xs text-text-secondary">
+                {watched.title.length} / 300
+              </span>
+            </div>
+            <Input
+              id="ask-title"
+              placeholder={t.ask.titlePlaceholder}
+              className="h-12 text-base"
+              {...register("title")}
+            />
+            {errors.title && (
+              <p className="mt-1 text-sm text-danger">{errors.title.message}</p>
+            )}
+          </div>
+
+          {/* Similar questions sit right under the title — search first, ask second (design.md #2). */}
+          <section
+            aria-label={t.ask.similarQuestions}
+            className="rounded-[20px] bg-brand-subtle p-4"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-3">
+              <h2 className="text-sm font-bold text-brand-on-subtle">
+                {t.ask.similarHeading}
+              </h2>
+              {similarQuery && similarQuestions && (
+                <span className="font-mono text-xs font-semibold text-brand-on-subtle">
+                  {similarQuestions.length}
+                </span>
+              )}
+            </div>
+            <div>
+              {similarQuery ? (
+                <QuestionList
+                  questions={similarQuestions ?? []}
+                  emptyMessage={t.ask.noSimilarQuestions}
+                  emptyInline
+                />
+              ) : (
+                <p className="px-1 text-sm text-text-body">
+                  {t.ask.similarQuestionsHint}
+                </p>
+              )}
+            </div>
+          </section>
+
+          <div className="space-y-2">
+            <label htmlFor="ask-body" className="block font-semibold">
+              {t.ask.bodyLabel}
             </label>
-            <span className="font-mono text-xs text-text-secondary">{watched.title.length} / 300</span>
-          </div>
-          <Input
-            id="ask-title"
-            placeholder={t.ask.titlePlaceholder}
-            className="h-12 text-base"
-            {...register("title")}
-          />
-          {errors.title && <p className="mt-1 text-sm text-danger">{errors.title.message}</p>}
-        </div>
-
-        {/* Similar questions sit right under the title — search first, ask second (design.md #2). */}
-        <section aria-label={t.ask.similarQuestions} className="overflow-hidden rounded-xl border border-border bg-surface">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-canvas px-4 py-3">
-            <h2 className="text-sm font-semibold">{t.ask.similarHeading}</h2>
-            {similarQuery && similarQuestions && (
-              <span className="font-mono text-xs text-text-secondary">{similarQuestions.length}</span>
+            <Controller
+              control={control}
+              name="body"
+              render={({ field }) => (
+                <MarkdownEditor
+                  id="ask-body"
+                  value={field.value}
+                  onChange={field.onChange}
+                  rows={12}
+                  placeholder={t.ask.bodyPlaceholder}
+                />
+              )}
+            />
+            {errors.body && (
+              <p className="mt-1 text-sm text-danger">{errors.body.message}</p>
             )}
           </div>
-          <div className="p-3">
-            {similarQuery ? (
-              <QuestionList questions={similarQuestions ?? []} emptyMessage={t.ask.noSimilarQuestions} emptyInline />
-            ) : (
-              <p className="px-1 text-sm text-text-secondary">{t.ask.similarQuestionsHint}</p>
-            )}
+
+          <div className="space-y-2">
+            <label htmlFor="ask-environment" className="block font-semibold">
+              {t.ask.environmentLabel}
+            </label>
+            <Textarea
+              id="ask-environment"
+              rows={2}
+              placeholder={t.ask.environmentPlaceholder}
+              {...register("environment")}
+            />
           </div>
-        </section>
 
-        <div className="space-y-2">
-          <label htmlFor="ask-body" className="block font-semibold">
-            {t.ask.bodyLabel}
-          </label>
-          <Controller
-            control={control}
-            name="body"
-            render={({ field }) => (
-              <MarkdownEditor
-                id="ask-body"
-                value={field.value}
-                onChange={field.onChange}
-                rows={12}
-                placeholder={t.ask.bodyPlaceholder}
-              />
-            )}
-          />
-          {errors.body && <p className="mt-1 text-sm text-danger">{errors.body.message}</p>}
-        </div>
+          <div className="space-y-2">
+            <label htmlFor="ask-logs" className="block font-semibold">
+              {t.ask.logsLabel}
+            </label>
+            <Textarea
+              id="ask-logs"
+              rows={4}
+              placeholder={t.ask.logsPlaceholder}
+              className="font-mono text-[13px]"
+              {...register("logs")}
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label htmlFor="ask-environment" className="block font-semibold">
-            {t.ask.environmentLabel}
-          </label>
-          <Textarea id="ask-environment" rows={2} placeholder={t.ask.environmentPlaceholder} {...register("environment")} />
-        </div>
+          <div className="space-y-2">
+            <span className="block font-semibold">{t.ask.tagsLabel}</span>
+            <TagInput value={tags} onChange={setTags} />
+          </div>
 
-        <div className="space-y-2">
-          <label htmlFor="ask-logs" className="block font-semibold">
-            {t.ask.logsLabel}
-          </label>
-          <Textarea
-            id="ask-logs"
-            rows={4}
-            placeholder={t.ask.logsPlaceholder}
-            className="font-mono text-[13px]"
-            {...register("logs")}
-          />
-        </div>
+          <FormError error={createQuestion.error} fallback={t.ask.failed} />
 
-        <div className="space-y-2">
-          <span className="block font-semibold">{t.ask.tagsLabel}</span>
-          <TagInput value={tags} onChange={setTags} />
-        </div>
-
-        <FormError error={createQuestion.error} fallback={t.ask.failed} />
-
-        <div className="flex justify-end border-t border-border pt-4">
-          <Button type="submit" className="h-11 px-6" disabled={createQuestion.isPending}>
-            {createQuestion.isPending ? t.ask.submitting : t.ask.submit}
-          </Button>
+          <div className="flex justify-end border-t border-border pt-4">
+            <Button
+              type="submit"
+              className="h-12 px-7 text-[15px] font-bold"
+              disabled={createQuestion.isPending}
+            >
+              {createQuestion.isPending ? t.ask.submitting : t.ask.submit}
+            </Button>
+          </div>
         </div>
       </form>
 
       <aside>
-        <section className="rounded-xl border border-border bg-surface p-5 lg:sticky lg:top-24">
+        <section className="rounded-3xl border border-border bg-surface p-5 lg:sticky lg:top-28">
           <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-[15px] font-semibold">{t.ask.checklistHeading}</h2>
+            <h2 className="text-[15px] font-semibold">
+              {t.ask.checklistHeading}
+            </h2>
             <span className="font-mono text-xs text-success">
               {doneCount} / {checklist.length}
             </span>
@@ -238,13 +286,21 @@ export default function AskPage() {
                 >
                   {item.done ? "✓" : null}
                 </span>
-                <span className={item.done ? "text-text-secondary line-through" : "font-medium text-text-primary"}>
+                <span
+                  className={
+                    item.done
+                      ? "text-text-secondary line-through"
+                      : "font-medium text-text-primary"
+                  }
+                >
                   {item.label}
                 </span>
               </li>
             ))}
           </ul>
-          <p className="mt-4 border-t border-border pt-4 text-xs text-text-secondary">{t.ask.checklistNote}</p>
+          <p className="mt-4 border-t border-border pt-4 text-xs text-text-secondary">
+            {t.ask.checklistNote}
+          </p>
         </section>
       </aside>
     </div>

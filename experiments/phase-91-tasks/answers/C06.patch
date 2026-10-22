@@ -1,0 +1,11 @@
+diff -ruN a/build.gradle.kts b/build.gradle.kts
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -23,6 +23,7 @@
+ 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+ 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+ 	runtimeOnly("org.postgresql:postgresql")
++	testRuntimeOnly("com.h2database:h2")
+ 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+ 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+ }

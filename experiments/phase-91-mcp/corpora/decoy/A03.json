@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-a03",
+    "title": "Spring Framework 7.0 @CacheEvict on Flux-returning method completes after the first element: make the Flux replayable with cache()",
+    "verification": "unverified",
+    "errorSample": "java.lang.AssertionError: expectation \"expectNext(two)\" failed (expected: onNext(two); actual: onComplete())\n    at reactor.test.MessageFormatter.assertionError(MessageFormatter.java:115)\n    at reactor.test.MessageFormatter.failPrefix(MessageFormatter.java:104)\n    at reactor.test.MessageFormatter.fail(MessageFormatter.java:73)\n    at reactor.test.MessageFormatter.failOptional(MessageFormatter.java:88)\n    at reactor.test.DefaultStepVerifierBuilder.lambda$addExpectedValue$0(DefaultStepVerifierBuilder.java:516)\n    at reactor.test.DefaultStepVerifierBuilder$SignalEvent.test(DefaultStepVerifierBuilder.java:2339)\n    at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onSignal(DefaultStepVerifierBuilder.java:1554)\n    at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onExpectation(DefaultStepVerifierBuilder.java:1501)\n    at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onComplete(DefaultStepVerifierBuilder.java:1138)\n    at reactor.core.publisher.MonoPeekTerminal$MonoTerminalPeekSubscriber.onComplete(MonoPeekTerminal.java:303)",
+    "appliesTo": [
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0.0 <7.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3103",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-12",
+    "symptom": "A reactive service method annotated with @CacheEvict(allEntries = true) that returns a Flux delivers only its first element to the subscriber and then completes, so StepVerifier expectations for the remaining elements fail.",
+    "cause": "The cache interceptor subscribes to the returned cold Flux in order to attach the eviction and cancels that first subscription after one element. The caller's own subscription then races with the already cancelled source and only sees the first signal.",
+    "fixSummary": "Make the returned publisher replayable by ending the pipeline with .cache(), for example Flux.fromIterable(names).doOnNext { ... }.cache(), and keep @CacheEvict(allEntries = true) on the method. The interceptor's subscription and the caller's subscription then both receive the full sequence."
+  }
+]

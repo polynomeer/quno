@@ -91,3 +91,8 @@
 | [0064](0064-list-responses-resolve-nicknames-in-one-batch.md) | "사용자 #id" 대신 닉네임 표시: 목록 컨트롤러가 `NicknameResolver`로 응답당 1회 일괄 조회(유스케이스·결과 DTO는 그대로), 생성/수정 응답과 실시간 질문방은 범위 밖 | 승인됨 |
 | [0065](0065-typed-redis-cache-serializers.md) | 대시보드 500 수정: `@Cacheable` 캐시가 타입 정보 없이 저장돼 캐시 히트에서 `LinkedHashMap`/`Integer`로 복원되던 문제를 캐시별 타입 지정 직렬화기로 해결(전역 default typing은 기각), Redis 왕복 통합 테스트 추가 | 승인됨 |
 | [0066](0066-playwright-single-worker.md) | 로컬 e2e 첫 실행 flaky 해결: `fullyParallel: false`가 파일 간 병렬을 막지 않아 콜드 dev 서버의 Fast Refresh가 다른 탭 폼을 비우던 문제를 `workers: 1`로 해결(프로덕션 빌드 기반 실행은 보류) | 승인됨 |
+| [0067](0067-differentiation-roadmap-priorities-and-boundaries.md) | 차별화 로드맵(Phase 63~70) 우선순위와 경계: Stack Fingerprint를 키스톤으로 먼저, AI는 구조화 보조만(답변 생성 안 함), MCP로 AI 에이전트를 유통 채널로, 자체 코드 실행 샌드박스 기각, 콜드 스타트는 한국어 백엔드 개발자로 좁게 | 일부 대체됨(ADR-0068) |
+| [0068](0068-living-engine-runner-and-ai-first-responder.md) | 살아있는 엔진: 원본 불변·제안만, 격리 러너로 재현 증명(외부 CI → 호스티드 샌드박스 → 자체 순), AI는 라벨 붙은 비-Answer 1차 응답자로 참여, 비공개 질문을 IDE 연동의 선행 조건으로, IntelliJ 먼저 | 승인됨 |
+| [0069](0069-agent-era-positioning-verified-fix-memory.md) | AI 에이전트 시대의 포지셔닝 전환(가설, Phase 91 실험으로 재검토): Q&A 사이트 → 증거가 붙은 해결 기록소 + AI→사람 에스컬레이션 통로, 주 소비자는 에이전트, 주 콘텐츠는 해결 기록, 사람 대상 UX(74~77, 87)는 보류, 기여 데이터 외부 라이선스 안 함 | 조건부 승인 |
+| [0070](0070-question-as-evidence-environment-snapshot-and-verification-tiers.md) | 질문은 증거 자료다: 환경 스냅샷을 이벤트 기반으로 로컬 정제 후 3계층·증상별 프로파일·기준선 델타로 자동 수집, 검증된 질문 L0~L4 등급과 Evidence Card | 승인됨 |
+| [0071](0071-web-design-v2-liquid-glass-chrome.md) | 웹 디자인 시안 v2 적용: 실제 데이터가 있는 기존 화면만 리뉴얼, 추가 기획 화면은 해당 Phase에서 시안 기준으로(목 데이터 화면 금지), 유리 효과는 헤더·탭·투표 레일 같은 크롬에만(본문 카드는 불투명), 캡슐 버튼·20~24px 카드·떨어진 카드 목록 | 승인됨 |

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c10",
+    "title": "kotlin.UninitializedPropertyAccessException: lateinit property has not been initialized (Spring bean)",
+    "verification": "unverified",
+    "errorSample": "kotlin.UninitializedPropertyAccessException: lateinit property discountPolicy has not been initialized\n    at task.PriceQuoteService.getDiscountPolicy(Application.kt:26)\n    at task.PriceQuoteService.quote(Application.kt:29)\n    at task.PriceQuoteServiceTests.일반 회원은 할인이 없다(PriceQuoteServiceTests.kt:21)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "kotlin",
+        "versions": "2.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://kotlinlang.org/docs/properties.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "The application context starts normally, but the first call that uses a collaborator throws kotlin.UninitializedPropertyAccessException: \"lateinit property discountPolicy has not been initialized\".",
+    "cause": "The collaborator is declared as a lateinit var in a Spring bean but nothing asks Spring to inject it. Without @Autowired (or a constructor parameter) Spring never assigns the field, so it stays uninitialized.",
+    "fixSummary": "Prefer constructor injection: declare the collaborator as a private val in the primary constructor and remove the lateinit var. Alternatively keep the field and annotate it with @Autowired."
+  }
+]

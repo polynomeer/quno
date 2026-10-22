@@ -24,18 +24,19 @@ export function MarkdownEditor({
   const [tab, setTab] = useState<Tab>("write");
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border-strong bg-surface">
-      <div className="flex border-b border-border bg-canvas px-2 text-sm">
+    <div className="overflow-hidden rounded-2xl border border-border-strong bg-surface">
+      <div className="flex gap-1 border-b border-border bg-canvas p-1.5 text-sm">
         {(["write", "preview"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
+            aria-pressed={tab === t}
             className={cn(
-              "-mb-px border-b-2 px-3 py-2.5 capitalize",
+              "h-8 rounded-full px-3.5 capitalize transition-colors",
               tab === t
-                ? "border-text-primary font-semibold text-text-primary"
-                : "border-transparent text-text-secondary hover:text-text-primary",
+                ? "bg-surface font-semibold text-text-primary shadow-[var(--segment-selected-shadow)]"
+                : "text-text-secondary hover:text-text-primary",
             )}
           >
             {t}
@@ -56,7 +57,9 @@ export function MarkdownEditor({
           {value.trim() ? (
             <MarkdownContent>{value}</MarkdownContent>
           ) : (
-            <p className="text-sm text-text-secondary">미리볼 내용이 없습니다.</p>
+            <p className="text-sm text-text-secondary">
+              미리볼 내용이 없습니다.
+            </p>
           )}
         </div>
       )}

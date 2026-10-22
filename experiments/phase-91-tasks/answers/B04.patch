@@ -1,0 +1,4 @@
+--- a/src/test/resources/config/application.properties
++++ b/src/test/resources/config/application.properties
+@@ -0,0 +1 @@
++management.server.port=0

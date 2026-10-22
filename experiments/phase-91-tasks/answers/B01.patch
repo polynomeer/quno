@@ -1,0 +1,10 @@
+--- a/build.gradle.kts	2026-10-20 12:08:17
++++ b/build.gradle.kts	2026-10-20 12:08:17
+@@ -21,6 +21,7 @@
+ dependencies {
+ 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+ 	implementation("org.springframework.boot:spring-boot-starter-flyway")
++	implementation("org.flywaydb:flyway-database-postgresql")
+ 	runtimeOnly("org.postgresql:postgresql")
+ 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+ 	testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -48,7 +48,7 @@ export function QuestionTimeline({ questionId }: { questionId: number }) {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-5">
+    <section className="rounded-[20px] border border-border bg-surface p-5">
       <h2 className="mb-4 text-sm font-semibold text-text-primary">질문의 생애</h2>
       <ol>
         {events.map((event, index) => {

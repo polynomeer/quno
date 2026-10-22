@@ -1,0 +1,10 @@
+--- a/build.gradle.kts	2026-10-20 11:48:20
++++ b/build.gradle.kts	2026-10-20 11:48:20
+@@ -21,6 +21,7 @@
+ dependencies {
+ 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+ 	implementation("org.jetbrains.kotlin:kotlin-reflect")
++	implementation("org.springframework.boot:spring-boot-jdbc")
+ 	developmentOnly("org.springframework.boot:spring-boot-devtools")
+ }
+ 

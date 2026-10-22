@@ -1,0 +1,16 @@
+diff -ruN a/src/main/kotlin/task/Application.kt b/src/main/kotlin/task/Application.kt
+--- a/src/main/kotlin/task/Application.kt
++++ b/src/main/kotlin/task/Application.kt
+@@ -22,9 +22,9 @@
+ 
+ /** 주문 금액에 회원 등급 할인을 적용한 견적을 낸다. */
+ @Service
+-class PriceQuoteService {
+-	lateinit var discountPolicy: DiscountPolicy
+-
++class PriceQuoteService(
++	private val discountPolicy: DiscountPolicy,
++) {
+ 	fun quote(grade: String, amount: BigDecimal): BigDecimal {
+ 		val discount = amount * discountPolicy.rateFor(grade)
+ 		return (amount - discount).setScale(0, RoundingMode.HALF_UP)

@@ -47,7 +47,7 @@ export function CreateOrganizationForm() {
   }
 
   return (
-    <div className="w-full space-y-3 rounded-xl border border-border bg-surface p-5">
+    <div className="w-full space-y-3 rounded-[20px] border border-border bg-surface p-5">
       <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="조직 이름" maxLength={100} />
       <Textarea
         value={description}

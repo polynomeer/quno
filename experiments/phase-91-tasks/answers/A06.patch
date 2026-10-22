@@ -1,0 +1,10 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 12:05:23
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 12:05:23
+@@ -34,6 +34,7 @@
+ 	@Query(
+ 		"select distinct new task.DisplayName(coalesce(nickname, name)) " +
+ 			"from Member where active = true",
++		countQuery = "select count(distinct coalesce(nickname, name)) from Member where active = true",
+ 	)
+ 	fun findDisplayNames(pageable: Pageable): Page<DisplayName>
+ }

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c03",
+    "title": "Hibernate \"No default constructor for entity\" with Kotlin: open the entity classes with all-open",
+    "verification": "unverified",
+    "errorSample": "org.hibernate.InstantiationException: No default constructor for entity 'task.Payment'\n    at app//org.hibernate.metamodel.internal.EntityInstantiatorPojoStandard.instantiate(EntityInstantiatorPojoStandard.java:94)\n    at app//org.hibernate.persister.entity.AbstractEntityPersister.instantiate(AbstractEntityPersister.java:4300)\n    at app//org.hibernate.internal.SessionImpl.instantiate(SessionImpl.java:1599)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.instantiateEntity(EntityInitializerImpl.java:1430)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveEntityInstance(EntityInitializerImpl.java:1422)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveEntityInstance2(EntityInitializerImpl.java:1381)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveEntityInstance1(EntityInitializerImpl.java:1274)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveInstance(EntityInitializerImpl.java:1173)\n    at app//org.hibernate.sql.results.graph.entity.internal.EntityInitializerImpl.resolveKey(EntityInitializerImpl.java:617)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "kotlin",
+        "versions": "2.2.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/39650",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-04-03",
+    "symptom": "Loading a Kotlin entity fails with JpaSystemException / InstantiationException \"No default constructor for entity\". Saving works.",
+    "cause": "Kotlin classes are final, and Hibernate needs entity classes to be non-final so it can create the subclasses it uses to instantiate and populate entities.",
+    "fixSummary": "Apply the kotlin(\"plugin.allopen\") plugin with the same version as the Kotlin plugin and register the persistence annotations: allOpen { annotation(\"jakarta.persistence.Entity\"); annotation(\"jakarta.persistence.Embeddable\"); annotation(\"jakarta.persistence.MappedSuperclass\") }. The entity classes become open and Hibernate can instantiate them."
+  }
+]

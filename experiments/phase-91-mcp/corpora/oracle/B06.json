@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-b06",
+    "title": "Servlet context init parameters (Tomcat context.xml Parameter) not visible in Environment for a WAR on Spring Boot 4.0.0: 'Could not resolve placeholder'",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.util.PlaceholderResolutionException: Could not resolve placeholder 'storage.root' in value \"${storage.root}\"\n\tat org.springframework.util.PlaceholderResolutionException.withValue(PlaceholderResolutionException.java:81) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.util.PlaceholderParser$ParsedValue.resolve(PlaceholderParser.java:296) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.util.PlaceholderParser.replacePlaceholders(PlaceholderParser.java:129) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.util.PropertyPlaceholderHelper.replacePlaceholders(PropertyPlaceholderHelper.java:96) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.core.env.AbstractPropertyResolver.doResolvePlaceholders(AbstractPropertyResolver.java:286) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.core.env.AbstractPropertyResolver.resolveRequiredPlaceholders(AbstractPropertyResolver.java:257) ~[spring-core-7.0.1.jar:7.0.1]\n\tat org.springframework.context.support.PropertySourcesPlaceholderConfigurer.lambda$processProperties$0(PropertySourcesPlaceholderConfigurer.java:184) ~[spring-context-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.resolveEmbeddedValue(AbstractBeanFactory.java:959) ~[spring-beans-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1672) ~[spring-beans-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1651) ~[spring-beans-7.0.1.jar:7.0.1]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.1.jar:7.0.1]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.0 (WAR on external Tomcat with embedded Tomcat starter excluded/provided; fixed in 4.0.1)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/48254",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2025-11-23",
+    "symptom": "A SpringBootServletInitializer-based WAR on an external Tomcat no longer sees properties supplied as servlet context init parameters (context.xml <Parameter>); bean creation fails with PlaceholderResolutionException: Could not resolve placeholder 'storage.root'. spring.datasource.* values supplied that way are ignored too.",
+    "cause": "WarDeploymentApplicationContextFactory does not implement getEnvironmentType() in 4.0.0, so SpringApplication falls back to the default servlet factory from the spring-boot-web-server module. With the embedded Tomcat starter excluded or provided that module is not on the classpath, the environment is converted to a plain non-servlet ApplicationEnvironment, and the servletContextInitParams property source stays an unpopulated stub.",
+    "fixSummary": "In ServletInitializer.configure, set the environment explicitly: builder.sources(Application::class.java).environment(StandardServletEnvironment()) (org.springframework.web.context.support.StandardServletEnvironment). Putting spring-boot-web-server on the classpath also works but adds the module to the WAR. Fixed upstream in 4.0.1."
+  }
+]

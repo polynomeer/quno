@@ -44,7 +44,7 @@ export default function QuestionVersionHistoryPage({ params }: PageProps<"/quest
         <h1 className="mt-2 text-2xl font-bold tracking-tight">Revision History</h1>
       </div>
 
-      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+      <ul className="divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface">
         {(versions ?? [])
           .slice()
           .sort((a, b) => b.versionNumber - a.versionNumber)
@@ -61,7 +61,7 @@ export default function QuestionVersionHistoryPage({ params }: PageProps<"/quest
       {versions && versions.length < 2 ? (
         <p className="text-sm text-text-secondary">비교할 이전 리비전이 없습니다.</p>
       ) : (
-        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-text-primary">
             <label className="flex items-center gap-2">
               From

@@ -1,0 +1,11 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 12:01:15
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 12:01:15
+@@ -24,7 +24,7 @@
+ 
+ interface CallRepository : JpaRepository<Call, Long> {
+ 	/** 통화 시간이 짝수 초인 기록. */
+-	@Query("select c from Call c where c.duration % 2 = 0 order by c.id")
++	@Query("select c from Call c where mod(c.duration, 2) = 0 order by c.id")
+ 	fun findEvenDurations(): List<Call>
+ }
+ 

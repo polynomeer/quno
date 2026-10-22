@@ -1,0 +1,19 @@
+--- a/src/main/kotlin/task/Application.kt
++++ b/src/main/kotlin/task/Application.kt
+@@ -6,6 +6,7 @@
+ import org.springframework.boot.runApplication
+ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
+ import org.springframework.stereotype.Component
++import org.springframework.web.context.support.StandardServletEnvironment
+ 
+ @SpringBootApplication
+ class Application
+@@ -19,7 +20,7 @@
+ 
+ /** WAR로 배포할 때 외부 Tomcat이 호출하는 진입점. */
+ open class ServletInitializer : SpringBootServletInitializer() {
+-	override fun configure(builder: SpringApplicationBuilder): SpringApplicationBuilder = builder.sources(Application::class.java)
++	override fun configure(builder: SpringApplicationBuilder): SpringApplicationBuilder = builder.sources(Application::class.java).environment(StandardServletEnvironment())
+ }
+ 
+ fun main(args: Array<String>) {

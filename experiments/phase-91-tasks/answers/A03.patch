@@ -1,0 +1,31 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 11:51:56
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 11:51:56
+@@ -2,7 +2,7 @@
+ 
+ import org.springframework.boot.autoconfigure.SpringBootApplication
+ import org.springframework.boot.runApplication
+-import org.springframework.cache.annotation.CacheEvict
++import org.springframework.cache.CacheManager
+ import org.springframework.cache.annotation.EnableCaching
+ import org.springframework.stereotype.Service
+ import reactor.core.publisher.Flux
+@@ -14,12 +14,16 @@
+ 
+ /** 항목을 일괄 저장하고, 저장하면 목록 캐시를 비운다. */
+ @Service
+-class ItemService {
++class ItemService(
++	private val cacheManager: CacheManager,
++) {
+ 	val savedCount = AtomicInteger()
+ 
+-	@CacheEvict(cacheNames = ["items"], allEntries = true)
+ 	fun saveAll(names: List<String>): Flux<String> =
+-		Flux.fromIterable(names).doOnNext { savedCount.incrementAndGet() }
++		Flux
++			.fromIterable(names)
++			.doOnNext { savedCount.incrementAndGet() }
++			.doOnComplete { cacheManager.getCache("items")?.clear() }
+ }
+ 
+ fun main(args: Array<String>) {

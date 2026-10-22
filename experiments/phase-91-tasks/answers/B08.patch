@@ -1,0 +1,16 @@
+--- a/DIAGNOSIS.md	1970-01-01 09:00:00
++++ b/DIAGNOSIS.md	2026-10-20 12:31:14
+@@ -0,0 +1,13 @@
++## 원인
++
++`imagePlatform = "linux/amd64"`로 amd64 빌드를 요청했지만 호스트는 arm64다. 플러그인은 빌더에 없는 외부 빌드팩(`paketobuildpacks/opentelemetry:2`)을 `docker pull --platform linux/amd64`에 해당하는 호출로 받은 뒤, 내용을 읽으려고 `docker save`에 해당하는 `/images/{name}/get`을 **플랫폼 지정 없이** 호출한다. 이때 데몬은 호스트 플랫폼(arm64) 변형을 내보내려다 "content digest ... not found"(404)로 실패하고, 플러그인은 이를 `Invalid buildpack reference`로 보고한다. `imagePlatform`이 없으면 호스트 플랫폼과 일치해 문제가 없다.
++
++## 해결
++
++1. 이 문제가 수정된 Spring Boot 버전으로 올린다(이슈는 3.4.12 마일스톤에서 해결).
++2. 임시로(스레드의 한 사용자가 효과를 본 방법): 다른 아키텍처로 받아 둔 빌더·빌드팩·실행 이미지를 `docker rmi`로 지우고 Gradle 데몬을 재시작해 깨끗한 상태에서 한 아키텍처로만 빌드한다. 단 메인테이너가 `docker system prune --all` 후에도 `imagePlatform` 지정 시 실패함을 확인했으므로 근본 해결은 아니다.
++3. 외부 빌드팩을 쓰지 않거나, 빌드팩이 이미 들어 있는 빌더를 쓰면 `/images/.../get` 호출 경로를 피한다.
++
++## 근거
++
++확신: 로그의 404가 `images/.../get` 호출에서 나고, `imagePlatform` 유무에 따라 결과가 갈린다는 점. 추정: 해당 호출에 플랫폼이 전달되지 않아 데몬이 호스트 아키텍처 변형을 찾는다는 세부 동작(보고자의 분석이며 로그에 직접 나오지 않음).

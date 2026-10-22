@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-b01",
+    "title": "Flyway fails on startup with 'Unsupported Database: PostgreSQL 18.1' on Spring Boot 4.0",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.flywaydb.core.api.FlywayException: Unsupported Database: PostgreSQL 18.1\n\tat org.flywaydb.core.internal.database.DatabaseTypeRegister.lambda$getDatabaseTypeForConnection$7(DatabaseTypeRegister.java:142) ~[flyway-core-11.14.1.jar:na]\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:403) ~[na:na]\n\tat org.flywaydb.core.internal.database.DatabaseTypeRegister.getDatabaseTypeForConnection(DatabaseTypeRegister.java:142) ~[flyway-core-11.14.1.jar:na]\n\tat org.flywaydb.core.internal.jdbc.JdbcConnectionFactory.<init>(JdbcConnectionFactory.java:77) ~[flyway-core-11.14.1.jar:na]\n\tat org.flywaydb.core.FlywayExecutor.execute(FlywayExecutor.java:142) ~[flyway-core-11.14.1.jar:na]\n\tat org.flywaydb.core.Flyway.migrate(Flyway.java:186) ~[flyway-core-11.14.1.jar:na]\n\tat org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer.afterPropertiesSet(FlywayMigrationInitializer.java:67) ~[spring-boot-flyway-4.0.2.jar:4.0.2]\n\tat org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1864) ~[spring-beans-7.0.3.jar:7.0.3]\n\tat org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1813) ~[spring-beans-7.0.3.jar:7.0.3]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.2 (spring-boot-starter-flyway; not a Boot defect, applies to 4.0.x)"
+      },
+      {
+        "component": "flyway",
+        "versions": "11.14.1 (flyway-core only); PostgreSQL server 18.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/49012",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-01-28",
+    "symptom": "The application context fails to start with a BeanCreationException for 'flywayInitializer', caused by FlywayException 'Unsupported Database: PostgreSQL 18.1', even though the JDBC connection to PostgreSQL succeeds.",
+    "cause": "Since Flyway 10 the per-database support lives in separate modules instead of flyway-core. spring-boot-starter-flyway only brings in flyway-core, so Flyway has no PostgreSQL database type to match the connection against.",
+    "fixSummary": "Add the dependency org.flywaydb:flyway-database-postgresql (version managed by the Spring Boot BOM; implementation or runtimeOnly both work). No configuration change, PostgreSQL downgrade or Flyway version change is needed."
+  }
+]

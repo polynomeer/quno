@@ -1,0 +1,19 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 12:01:19
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 12:01:19
+@@ -21,13 +21,15 @@
+ 	val readTimeout: Duration,
+ )
+ 
++private val MAX_CONNECT_TIMEOUT: Duration = Duration.ofMillis(Int.MAX_VALUE.toLong())
++
+ @Configuration
+ @EnableConfigurationProperties(PartnerApiProperties::class)
+ class PartnerApiConfig {
+ 	@Bean
+ 	fun partnerRestClient(properties: PartnerApiProperties): RestClient {
+ 		val requestFactory = ReactorClientHttpRequestFactory()
+-		requestFactory.setConnectTimeout(properties.connectTimeout)
++		requestFactory.setConnectTimeout(minOf(properties.connectTimeout, MAX_CONNECT_TIMEOUT))
+ 		requestFactory.setReadTimeout(properties.readTimeout)
+ 		return RestClient
+ 			.builder()

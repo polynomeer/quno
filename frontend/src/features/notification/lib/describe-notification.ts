@@ -19,14 +19,23 @@ function safeParsePayload(payload: string): Record<string, unknown> {
  * WriteAnswerUseCase, AcceptAnswerUseCase, CreateReviewRequestUseCase, ReRequestReviewUseCase,
  * MarkQuestionOutdatedUseCase). This is where that gets translated into something readable.
  */
-export function describeNotification(notification: Notification): DescribedNotification {
+export function describeNotification(
+  notification: Notification,
+): DescribedNotification {
   const payload = safeParsePayload(notification.payload);
-  const questionHref = notification.questionId ? `/questions/${notification.questionId}` : "/";
-  const href = notification.answerId ? `${questionHref}#answer-${notification.answerId}` : questionHref;
+  const questionHref = notification.questionId
+    ? `/questions/${notification.questionId}`
+    : "/";
+  const href = notification.answerId
+    ? `${questionHref}#answer-${notification.answerId}`
+    : questionHref;
 
   switch (notification.type) {
     case "QUESTION_REVISION":
-      return { message: `질문이 수정되었습니다 (버전 ${String(payload.versionNumber ?? "?")})`, href };
+      return {
+        message: `질문이 수정되었습니다 (버전 ${String(payload.versionNumber ?? "?")})`,
+        href,
+      };
     case "NEW_ANSWER":
       return { message: "새 답변이 달렸습니다", href };
     case "ANSWER_ACCEPTED":
@@ -37,7 +46,10 @@ export function describeNotification(notification: Notification): DescribedNotif
       return { message: "재요청이 처리되었습니다", href };
     case "QUESTION_OUTDATED": {
       const reason = typeof payload.reason === "string" ? payload.reason : null;
-      return { message: `질문이 Outdated로 표시되었습니다${reason ? ` — ${reason}` : ""}`, href };
+      return {
+        message: `질문이 Outdated로 표시되었습니다${reason ? ` — ${reason}` : ""}`,
+        href,
+      };
     }
     case "NEW_COMMENT":
       return { message: "새 댓글이 달렸습니다", href };
@@ -48,16 +60,32 @@ export function describeNotification(notification: Notification): DescribedNotif
     case "MENTIONED_IN_COMMENT":
       return { message: "댓글에서 언급되었습니다", href };
     case "DIRECT_ASK_REQUESTED":
-      return { message: "Direct Ask 요청이 도착했습니다", href: "/direct-asks?role=received" };
+      return {
+        message: "Direct Ask 요청이 도착했습니다",
+        href: "/direct-asks?role=received",
+      };
     case "DIRECT_ASK_ACCEPTED":
-      return { message: "Direct Ask 요청이 수락되었습니다", href: "/direct-asks?role=sent" };
+      return {
+        message: "Direct Ask 요청이 수락되었습니다",
+        href: "/direct-asks?role=sent",
+      };
     case "DIRECT_ASK_DECLINED":
-      return { message: "Direct Ask 요청이 거절되었습니다 (환불 처리됨)", href: "/direct-asks?role=sent" };
+      return {
+        message: "Direct Ask 요청이 거절되었습니다 (환불 처리됨)",
+        href: "/direct-asks?role=sent",
+      };
     case "LIVE_CHAT_STARTED":
-      return { message: "실시간 질문방이 열렸습니다", href: `${href}#live-chat` };
+      return {
+        message: "실시간 질문방이 열렸습니다",
+        href: `${href}#live-chat`,
+      };
     case "TECH_VERSION_IMPACT_DETECTED": {
-      const tagSlug = typeof payload.tagSlug === "string" ? payload.tagSlug : null;
-      const latestVersion = typeof payload.latestVersion === "string" ? payload.latestVersion : null;
+      const tagSlug =
+        typeof payload.tagSlug === "string" ? payload.tagSlug : null;
+      const latestVersion =
+        typeof payload.latestVersion === "string"
+          ? payload.latestVersion
+          : null;
       return {
         message: `${tagSlug ?? "관련 기술"}${latestVersion ? ` ${latestVersion}` : ""} 릴리스로 이 질문이 오래되었을 수 있습니다`,
         href,

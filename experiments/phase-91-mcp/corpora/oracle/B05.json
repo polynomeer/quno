@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-b05",
+    "title": "processAot fails with 'Failed to determine a suitable driver class' creating the jdbcDialect bean (Spring Data JDBC + AOT)",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.boot.jdbc.autoconfigure.DataSourceProperties$DataSourceBeanCreationException: Failed to determine a suitable driver class\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceProperties.determineDriverClassName(DataSourceProperties.java:179)\n\tat org.springframework.boot.jdbc.autoconfigure.PropertiesJdbcConnectionDetails.getDriverClassName(PropertiesJdbcConnectionDetails.java:51)\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration.createDataSource(DataSourceConfiguration.java:63)\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration$Hikari.dataSource(DataSourceConfiguration.java:128)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)\n\t... 79 more",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.0 as reported; still reproduces on 4.0.8"
+      },
+      {
+        "component": "spring-data-jdbc",
+        "versions": "version managed by Boot 4.0.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/48240",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2025-11-22",
+    "symptom": "The Gradle processAot task fails with AotProcessingException in BeanRegistrationsAotProcessor: Error creating bean with name 'jdbcDialect' ... DataSourceBeanCreationException: Failed to determine a suitable driver class. Tests and bootRun with datasource settings from environment variables work fine.",
+    "cause": "During AOT processing Spring Data JDBC creates the JdbcDialect bean by initializing the DataSource and NamedParameterJdbcTemplate and detecting the dialect from a live database connection. At build time there are no spring.datasource.* settings and no database, so the datasource cannot be created. This is by design; the Boot issue was closed as a documentation item.",
+    "fixSummary": "Define the dialect yourself so no database access is needed during AOT processing, e.g. a @Bean returning JdbcPostgresDialect.INSTANCE typed as JdbcDialect (use the matching dialect for other databases). Setting the spring.data.jdbc.dialect property does not avoid the failure. Supplying a live database at build time also works but is usually undesirable."
+  }
+]

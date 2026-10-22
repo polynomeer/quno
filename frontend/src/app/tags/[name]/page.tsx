@@ -43,9 +43,9 @@ function TagDetailContent({ tagName }: { tagName: string }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
       <div className="space-y-6">
-        <header className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <header className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">#{tag.name}</h1>
+            <h1 className="text-[32px] leading-10 font-bold tracking-tight">#{tag.name}</h1>
             <FollowTagButton tagId={tag.id} />
           </div>
           <TagDetailsEditor tag={tag} />
@@ -75,11 +75,11 @@ function TagDetailContent({ tagName }: { tagName: string }) {
       </div>
 
       <aside className="space-y-4">
-        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <h2 className="text-sm font-semibold text-text-primary">상위 기여자</h2>
           <TagContributorList contributors={contributors ?? []} />
         </section>
-        <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <section className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
           <h2 className="text-sm font-semibold text-text-primary">관련 태그</h2>
           <RelatedTagList tags={relatedTags ?? []} />
         </section>

@@ -9,10 +9,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => pathname(),
 }));
 
-function renderNav(wardChangeCount = 0) {
+function renderNav(wardChangeCount = 0, extra: { userId?: number; unreadNotificationCount?: number } = {}) {
   return render(
     <LocaleProvider>
-      <SideNav wardChangeCount={wardChangeCount} />
+      <SideNav wardChangeCount={wardChangeCount} {...extra} />
     </LocaleProvider>,
   );
 }
@@ -50,5 +50,15 @@ describe("SideNav", () => {
 
     renderNav(0);
     expect(screen.getByRole("link", { name: "Watching" })).toBeInTheDocument();
+  });
+
+  it("links notifications with the unread count, and the profile only when a user id is given", () => {
+    const { unmount } = renderNav(0, { unreadNotificationCount: 2 });
+    expect(screen.getByRole("link", { name: "알림 2" })).toHaveAttribute("href", "/notifications");
+    expect(screen.queryByRole("link", { name: "프로필" })).not.toBeInTheDocument();
+    unmount();
+
+    renderNav(0, { userId: 7 });
+    expect(screen.getByRole("link", { name: "프로필" })).toHaveAttribute("href", "/users/7");
   });
 });

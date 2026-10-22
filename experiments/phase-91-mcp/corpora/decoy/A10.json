@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-a10",
+    "title": "Custom ClientRegistrationRepository conflicts with OAuth2 client auto-configuration, OAuth2ClientProperties not available: exclude the auto-configuration",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientProperties' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.raiseNoMatchingBeanFound(DefaultListableBeanFactory.java:2304) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1732) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1658) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-7.0.9.jar:7.0.9]\n\t... 122 common frames omitted",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3110",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-08",
+    "symptom": "Context startup fails with NoSuchBeanDefinitionException for OAuth2ClientProperties in a configuration that defines its own ClientRegistrationRepository bean and has spring.security.oauth2.client.registration.* set.",
+    "cause": "Two competing definitions of the client registration infrastructure are active at once: the auto-configured one and the user-defined repository. The auto-configuration's partial registration leaves the properties bean in a half-initialized state that cannot be injected.",
+    "fixSummary": "Exclude the OAuth2 client auto-configuration so the user-defined repository is the only definition: spring.autoconfigure.exclude=org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration in application.properties. The conflict disappears and the custom repository bean receives its dependencies."
+  }
+]

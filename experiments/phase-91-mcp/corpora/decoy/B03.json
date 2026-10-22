@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-b03",
+    "title": "KafkaTemplate.send in a @Transactional method fails with 'No transaction is in process' on Boot 4",
+    "verification": "unverified",
+    "errorSample": "java.lang.IllegalStateException: No transaction is in process; possible solutions: run the template operation within the scope of a template.executeInTransaction() operation, start a transaction with @Transactional before invoking the template method, run in a transaction started by a listener container when consuming a record\n\tat org.springframework.util.Assert.state(Assert.java:80)\n\tat org.springframework.kafka.core.KafkaTemplate.getTheProducer(KafkaTemplate.java:975)\n\tat org.springframework.kafka.core.KafkaTemplate.doSend(KafkaTemplate.java:849)\n\tat org.springframework.kafka.core.KafkaTemplate.observeSend(KafkaTemplate.java:826)\n\tat org.springframework.kafka.core.KafkaTemplate.send(KafkaTemplate.java:607)\n\tat task.OrderEventPublisher.publishAll(Application.kt:22)\n\tat task.OrderEventPublisherTests.발행한 이벤트는 커밋되어 모두 전송된다(OrderEventPublisherTests.kt:64)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40391",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-07-30",
+    "symptom": "Sending from a method annotated with @Transactional throws IllegalStateException \"No transaction is in process; possible solutions: run the template operation within the scope of a template.executeInTransaction() operation, start a transaction with @Transactional ...\", although spring.kafka.producer.transaction-id-prefix is set.",
+    "cause": "The transactional producer factory is only wired into the template when the Kafka listener infrastructure is enabled and the producer is configured for exactly-once semantics. Without @EnableKafka and with default producer settings, the template falls back to a non-transactional producer and rejects the send.",
+    "fixSummary": "Annotate the application class with @EnableKafka and configure the producer for exactly-once: spring.kafka.producer.acks=all, spring.kafka.producer.properties.enable.idempotence=true and spring.kafka.producer.properties.max.in.flight.requests.per.connection=1."
+  }
+]

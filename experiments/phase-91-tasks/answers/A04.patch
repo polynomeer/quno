@@ -1,0 +1,49 @@
+--- a/src/main/kotlin/task/Application.kt	2026-10-20 11:58:33
++++ b/src/main/kotlin/task/Application.kt	2026-10-20 11:58:33
+@@ -3,12 +3,16 @@
+ import org.slf4j.LoggerFactory
+ import org.springframework.boot.autoconfigure.SpringBootApplication
+ import org.springframework.boot.runApplication
++import org.springframework.core.io.buffer.DataBufferUtils
+ import org.springframework.http.MediaType
+ import org.springframework.http.ResponseEntity
+-import org.springframework.http.codec.multipart.FilePart
++import org.springframework.http.codec.multipart.FilePartEvent
++import org.springframework.http.codec.multipart.FormPartEvent
++import org.springframework.http.codec.multipart.PartEvent
+ import org.springframework.web.bind.annotation.PostMapping
+-import org.springframework.web.bind.annotation.RequestPart
++import org.springframework.web.bind.annotation.RequestBody
+ import org.springframework.web.bind.annotation.RestController
++import reactor.core.publisher.Flux
+ import reactor.core.publisher.Mono
+ 
+ @SpringBootApplication
+@@ -21,14 +25,19 @@
+ 
+ 	@PostMapping("/uploads", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+ 	fun upload(
+-		@RequestPart("file", required = false) file: FilePart?,
+-		@RequestPart("action", required = false) action: String?,
+-		@RequestPart("reason", required = false) reason: String?,
+-	): Mono<ResponseEntity<String>> {
+-		logger.info("action={}, reason={}, filename={}", action, reason, file?.filename())
+-		val body = file?.let { "received: ${it.filename()}" } ?: "no file received"
+-		return Mono.just(ResponseEntity.ok(body))
+-	}
++		@RequestBody events: Flux<PartEvent>,
++	): Mono<ResponseEntity<String>> =
++		events
++			.doOnNext { DataBufferUtils.release(it.content()) }
++			.collectList()
++			.map { list ->
++				val filename = list.filterIsInstance<FilePartEvent>().firstOrNull { it.name() == "file" }?.filename()
++				val action = list.filterIsInstance<FormPartEvent>().firstOrNull { it.name() == "action" }?.value()
++				val reason = list.filterIsInstance<FormPartEvent>().firstOrNull { it.name() == "reason" }?.value()
++				logger.info("action={}, reason={}, filename={}", action, reason, filename)
++				val body = filename?.let { "received: $it" } ?: "no file received"
++				ResponseEntity.ok(body)
++			}
+ }
+ 
+ fun main(args: Array<String>) {

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a06",
+    "title": "Spring Data JPA: derived count query for 'select distinct new Dto(coalesce(...))' is malformed ('coalescenickname') and the repository fails to start",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.data.repository.query.QueryCreationException: Cannot create query for method [MemberRepository.findDisplayNames(org.springframework.data.domain.Pageable)]; Count query validation failed for 'select count(distinct coalescenickname, name) from Member where active = true'\n\tat org.springframework.data.repository.query.QueryCreationException.create(QueryCreationException.java:139) ~[spring-data-commons-4.0.7.jar:4.0.7]\nCaused by: org.hibernate.query.SemanticException: Could not interpret path expression 'coalescenickname'\n\tat org.hibernate.query.hql.internal.BasicDotIdentifierConsumer$BaseLocalSequencePart.resolveTerminal(BasicDotIdentifierConsumer.java:180) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.hibernate.query.hql.internal.BasicDotIdentifierConsumer$BaseLocalSequencePart.resolvePathPart(BasicDotIdentifierConsumer.java:153) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.hibernate.query.hql.internal.BasicDotIdentifierConsumer.consumeIdentifier(BasicDotIdentifierConsumer.java:90) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.hibernate.query.hql.internal.SemanticQueryBuilder.visitSimplePath(SemanticQueryBuilder.java:5786) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.hibernate.query.hql.internal.SemanticQueryBuilder.visitGeneralPathFragment(SemanticQueryBuilder.java:5651) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.hibernate.query.hql.internal.SemanticQueryBuilder.visitGeneralPathExpression(SemanticQueryBuilder.java:1821) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.hibernate.grammars.hql.HqlParser$GeneralPathExpressionContext.accept(HqlParser.java:7847) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]\n\tat org.antlr.v4.runtime.tree.AbstractParseTreeVisitor.visitChildren(AbstractParseTreeVisitor.java:46) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.hibernate.grammars.hql.HqlParserBaseVisitor.visitBarePrimaryExpression(HqlParserBaseVisitor.java:761) ~[hibernate-core-7.2.24.Final.jar:7.2.24.Final]",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": "4.0.x (4.0.7 in Spring Boot 4.0.8, Hibernate 7.2.x); fixed in 4.0.8 (2025.1.8)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-jpa/issues/4341",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-09-03",
+    "symptom": "Repository creation fails with QueryCreationException: Count query validation failed for 'select count(distinct coalescenickname, name) from Member where active = true', caused by a Hibernate SemanticException 'Could not interpret path expression coalescenickname'. It affects a Page-returning @Query written as 'select distinct new Dto(coalesce(nickname, name)) from Member where ...' with no alias on the entity.",
+    "cause": "When deriving the count query, QueryTransformers.CountSelectionTokenStream.withoutConstructorExpression() removes every parenthesis instead of only the constructor wrapper and joins the remaining tokens without whitespace, so coalesce(nickname, name) turns into 'coalescenickname, name'.",
+    "fixSummary": "Give the @Query an explicit count query: countQuery = \"select count(distinct coalesce(nickname, name)) from Member where active = true\", which counts distinct display values as the page total should. Adding an alias to the entity (from Member m where m.active = true) also avoids the broken derivation. Fixed in Spring Data JPA 4.0.8 (2025.1.8)."
+  }
+]

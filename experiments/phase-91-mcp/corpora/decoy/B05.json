@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-b05",
+    "title": "processAot fails with 'Failed to determine a suitable driver class' for the jdbcDialect bean",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.boot.jdbc.autoconfigure.DataSourceProperties$DataSourceBeanCreationException: Failed to determine a suitable driver class\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceProperties.determineDriverClassName(DataSourceProperties.java:179)\n\tat org.springframework.boot.jdbc.autoconfigure.PropertiesJdbcConnectionDetails.getDriverClassName(PropertiesJdbcConnectionDetails.java:51)\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration.createDataSource(DataSourceConfiguration.java:63)\n\tat org.springframework.boot.jdbc.autoconfigure.DataSourceConfiguration$Hikari.dataSource(DataSourceConfiguration.java:128)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:155)\n\t... 79 more",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-data-jdbc",
+        "versions": "managed by Boot 4.0.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40618",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-10-03",
+    "symptom": "The processAot task fails with AotProcessingException: Error creating bean with name 'jdbcDialect' ... Failed to determine a suitable driver class. Tests and bootRun are fine.",
+    "cause": "Spring Data JDBC detects the SQL dialect from the datasource at AOT time. The dialect auto-detection path is used whenever no dialect is configured explicitly, and it needs a resolvable driver class.",
+    "fixSummary": "Configure the dialect explicitly so auto-detection is skipped: set spring.data.jdbc.dialect=postgresql in application.properties. After this the AOT phase no longer needs to inspect the database."
+  }
+]

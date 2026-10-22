@@ -1,0 +1,10 @@
+(보고자·메인테이너가 붙인 로그 발췌)
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':bootBuildImage'.
+> Invalid buildpack reference '<buildpack>'
+
+--- --stacktrace (일부) ---
+Caused by: org.springframework.boot.buildpack.platform.docker.transport.DockerEngineException: Docker API call to 'docker://localhost/images/docker.io/paketobuildpacks/opentelemetry:2/get' failed with status code 404 "Not Found" and message "unable to create manifests file: NotFound: content digest sha256:c7ee7bde14d2...: not found"

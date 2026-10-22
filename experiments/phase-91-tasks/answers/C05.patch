@@ -1,0 +1,7 @@
+diff -ruN a/src/main/resources/application.properties b/src/main/resources/application.properties
+--- a/src/main/resources/application.properties
++++ b/src/main/resources/application.properties
+@@ -1,2 +1,2 @@
+ spring.application.name=shipping-service
+-server.port=8080
++server.port=18080

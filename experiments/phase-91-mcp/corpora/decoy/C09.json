@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c09",
+    "title": "@Transactional batch import does not roll back: unchecked vs checked exceptions",
+    "verification": "unverified",
+    "errorSample": "org.opentest4j.AssertionFailedError: 실패한 묶음은 롤백되어야 한다 ==> expected: <0> but was: <2>\n    at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)\n    at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)\n    at app//org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)\n    at app//org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:152)\n    at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:590)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/45290",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-04-22",
+    "symptom": "A batch insert method annotated with @Transactional throws an exception halfway, but the rows inserted before it are still in the table.",
+    "cause": "By default Spring rolls back only for RuntimeException and Error. If the failure is not treated as a rollback-triggering exception, the transaction commits whatever was written before it.",
+    "fixSummary": "Declare the rollback rule explicitly on the annotation: @Transactional(rollbackFor = [Exception::class]). With every exception type triggering rollback, rows written before the failure are discarded."
+  }
+]

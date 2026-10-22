@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c07",
+    "title": "NoUniqueBeanDefinitionException: expected single matching bean but found 2",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'task.PaymentGateway' available: expected single matching bean but found 2: bankTransferGateway,cardPaymentGateway\n\tat org.springframework.beans.factory.config.DependencyDescriptor.resolveNotUnique(DependencyDescriptor.java:192) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1746) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1658) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-7.0.9.jar:7.0.9]\n\t... 122 common frames omitted",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/autowired-primary.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "The context fails with UnsatisfiedDependencyException caused by NoUniqueBeanDefinitionException: \"No qualifying bean of type 'PaymentGateway' available: expected single matching bean but found 2\". A service takes the shared interface as a constructor parameter and two components implement it.",
+    "cause": "Autowiring by type finds two candidates. The fallback match by parameter name does not apply because the parameter name differs from both bean names, so Spring cannot choose.",
+    "fixSummary": "Tell Spring which candidate wins: put @Primary on the preferred implementation (the default one), or add @Qualifier(\"beanName\") at the injection point, or name the injection point after the bean. Keep both implementations as beans."
+  }
+]

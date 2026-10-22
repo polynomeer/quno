@@ -1,0 +1,6 @@
+--- a/src/main/resources/application.properties	2026-10-20 11:50:46
++++ b/src/main/resources/application.properties	2026-10-20 11:50:46
+@@ -1,2 +1 @@
+-# 리소스 서버: JWKS로 서명을 검증한다. 환경에 따라 issuer를 ISSUER_URI로 줄 수 있다(없으면 비워 둔다).
+-spring.security.oauth2.resourceserver.jwt.issuer-uri=${ISSUER_URI:}
++# 리소스 서버: JWKS로 서명을 검증한다. issuer 검증이 필요한 환경은 SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI 환경변수로 켠다.

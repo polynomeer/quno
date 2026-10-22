@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-c05",
+    "title": "PortInUseException in the second test class: cached Spring contexts keep the port bound",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.net.BindException: Address already in use\n\tat java.base/sun.nio.ch.Net.bind0(Native Method) ~[na:na]\n\tat java.base/sun.nio.ch.Net.bind(Net.java:577) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(ServerSocketChannelImpl.java:344) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:301) ~[na:na]\n\tat org.apache.tomcat.util.net.NioEndpoint.initServerSocket(NioEndpoint.java:339) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.tomcat.util.net.NioEndpoint.bind(NioEndpoint.java:289) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.tomcat.util.net.AbstractEndpoint.bindWithCleanup(AbstractEndpoint.java:2188) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.tomcat.util.net.AbstractEndpoint.start(AbstractEndpoint.java:2281) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.coyote.AbstractProtocol.start(AbstractProtocol.java:974) ~[tomcat-embed-core-11.0.24.jar:11.0.24]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/52114",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-07-21",
+    "symptom": "A web test with a fixed port fails with \"Port 8080 was already in use\" (BindException: Address already in use), typically once more than one test class is run.",
+    "cause": "Spring caches application contexts between test classes. A context started by an earlier test class keeps its embedded server and its port bound, so the next context that wants the same fixed port cannot bind it.",
+    "fixSummary": "Annotate the web test class with @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS) so the context and its server are closed after the class and the port is released before the next context starts."
+  }
+]

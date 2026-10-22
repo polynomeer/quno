@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-b10",
+    "title": "bootBuildImage push to Google Artifact Registry fails with 'docker-credential-gcloud' error on Windows",
+    "verification": "unverified",
+    "errorSample": "java.io.IOException: Cannot run program \"docker-credential-gcloud\": CreateProcess error=2, The system cannot find the file specified\n\tat java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1112)\n\tat java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1046)\n\tat org.gradle.internal.classpath.Instrumented.start(Instrumented.java:315)\n\tat org.springframework.boot.buildpack.platform.docker.configuration.CredentialHelper.start(CredentialHelper.java:88)\n\tat org.springframework.boot.buildpack.platform.docker.configuration.CredentialHelper.get(CredentialHelper.java:54)\n\tat org.springframework.boot.buildpack.platform.docker.configuration.DockerRegistryConfigAuthentication.computeCredentialsFromHelper(DockerRegistryConfigAuthentication.java:129)",
+    "appliesTo": [
+      {
+        "component": "spring-boot-gradle-plugin",
+        "versions": "4.0.1 (Windows 11, Google Cloud SDK)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/41107",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-03-25",
+    "symptom": "Pushing with bootBuildImage fails when the plugin tries to read credentials through docker-credential-gcloud: IOException Cannot run program \"docker-credential-gcloud\", CreateProcess error=2.",
+    "cause": "The gcloud credential helper is invoked successfully but the stored access token has expired or the account lacks the Artifact Registry writer role, so the helper exits with a failure that the plugin reports as a missing program. The registry then rejects the unauthenticated push.",
+    "fixSummary": "Refresh the login with gcloud auth login, re-run gcloud auth configure-docker for the registry host, and grant the pushing account the Artifact Registry Writer role in the project. Retry the push after the token has been renewed."
+  }
+]

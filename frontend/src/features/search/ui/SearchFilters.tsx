@@ -19,7 +19,7 @@ export function SearchFilters({
   onToggleStatus: (status: QuestionStatus) => void;
 }) {
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-surface p-5">
+    <div className="space-y-3 rounded-[20px] border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="w-12 text-xs font-semibold text-text-primary">Status</span>
         {ALL_STATUSES.map((status) => (

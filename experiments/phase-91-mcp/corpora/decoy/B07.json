@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-b07",
+    "title": "Testcontainers 'Could not find a valid Docker environment' after upgrading Docker Engine to 29",
+    "verification": "unverified",
+    "errorSample": "java.lang.RuntimeException: Could not start local database\n\tat base.database.LocalDatabaseExtension.beforeAll(LocalDatabaseExtension.java:78)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\nCaused by: java.lang.IllegalStateException: Could not find a valid Docker environment. Please see logs and check configuration\n\tat org.testcontainers.dockerclient.DockerClientProviderStrategy.lambda$getFirstValidStrategy$7(DockerClientProviderStrategy.java:274)\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:403)\n\tat org.testcontainers.dockerclient.DockerClientProviderStrategy.getFirstValidStrategy(DockerClientProviderStrategy.java:265)\n\tat org.testcontainers.DockerClientFactory.getOrInitializeStrategy(DockerClientFactory.java:154)\n\tat org.testcontainers.DockerClientFactory.client(DockerClientFactory.java:196)\n\tat org.testcontainers.DockerClientFactory$1.getDockerClient(DockerClientFactory.java:108)\n\tat com.github.dockerjava.api.DockerClientDelegate.authConfig(DockerClientDelegate.java:109)\n\tat org.testcontainers.containers.GenericContainer.start(GenericContainer.java:316)",
+    "appliesTo": [
+      {
+        "component": "testcontainers-java",
+        "versions": "2.0.1"
+      },
+      {
+        "component": "docker-engine",
+        "versions": "29.0.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40871",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-05-12",
+    "symptom": "Right after updating Docker Engine to 29.0.0, all Testcontainers tests fail with IllegalStateException \"Could not find a valid Docker environment\". Docker commands work in a shell, and the previous Docker version worked.",
+    "cause": "The engine update recreated the daemon socket with restrictive ownership and the default context no longer advertises the unix socket path to non-root clients, so none of the Testcontainers discovery strategies (environment variable, unix socket, context) can open a connection.",
+    "fixSummary": "Export DOCKER_HOST pointing at the unix socket of the daemon (or set docker.host in the Testcontainers properties file in the home directory), make sure the build user belongs to the docker group and log in again, then restart the Docker daemon so the socket is recreated with the correct permissions."
+  }
+]

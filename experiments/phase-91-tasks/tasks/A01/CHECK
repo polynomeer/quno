@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# 성공이면 종료 코드 0. bootRun은 앱이 실패해도 0으로 끝날 수 있어서 출력의 STARTUP_OK로 판정한다.
+set -uo pipefail
+out="$(./gradlew bootRun --no-daemon --console=plain --args='--server.port=0' 2>&1)"
+echo "$out"
+echo "$out" | grep -q '^STARTUP_OK'

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-b02",
+    "title": "Multipart form with more than 10 parts rejected with HTTP 413 (MaxUploadSizeExceededException) on Spring Boot 4.0.x",
+    "verification": "unverified",
+    "errorSample": "Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.3 (embedded Tomcat; regression vs 3.5.x, fixed in 4.0.4)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/issues/49311",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-02-24",
+    "symptom": "A multipart/form-data request with 11 or more parts is rejected before it reaches the controller: the client gets 413 and the server logs MaxUploadSizeExceededException: Maximum upload size exceeded. The same form worked on Spring Boot 3.5.",
+    "cause": "In Spring Boot 4.0.x the default of server.tomcat.max-part-count is 10 (an old Tomcat default), while Tomcat itself and Boot 3.5.x use 50. Requests with more parts than the limit are refused regardless of their size.",
+    "fixSummary": "Set server.tomcat.max-part-count to at least the number of parts a request can contain (for example 50) in application.properties. Upgrading to Spring Boot 4.0.4, which realigns the default, also fixes it."
+  }
+]

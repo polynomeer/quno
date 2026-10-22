@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a05",
+    "title": "Spring Data JPA: @Query with the % (modulo) operator fails at startup with 'mismatched input '%''",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.data.jpa.repository.query.BadJpqlGrammarException: At 1:38 and token '%', mismatched input '%', expecting one of the following tokens: <EOF>, ',', '[', '/', '||', '.', '*', AND, BY, DAY, EPOCH, EXCEPT, FETCH, GROUP, HAVING, HOUR, INTERSECT, LIMIT, MINUTE, MONTH, NANOSECOND, OFFSET, OR, ORDER, QUARTER, SECOND, UNION, WEEK, YEAR, '+', '-'; Bad HQL grammar [select c from Call c where c.duration % 2 = 0 order by c.id]\n\tat org.springframework.data.jpa.repository.query.BadJpqlGrammarErrorListener.syntaxError(BadJpqlGrammarErrorListener.java:53) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.antlr.v4.runtime.ProxyErrorListener.syntaxError(ProxyErrorListener.java:41) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.antlr.v4.runtime.Parser.notifyErrorListeners(Parser.java:544) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.antlr.v4.runtime.DefaultErrorStrategy.reportInputMismatch(DefaultErrorStrategy.java:327) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.antlr.v4.runtime.DefaultErrorStrategy.reportError(DefaultErrorStrategy.java:139) ~[antlr4-runtime-4.13.2.jar:4.13.2]\n\tat org.springframework.data.jpa.repository.query.HqlParser.start(HqlParser.java:394) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer.parse(JpaQueryEnhancer.java:102) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser.<init>(JpaQueryEnhancer.java:286) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser.parseQuery(JpaQueryEnhancer.java:298) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.JpaQueryEnhancer.forHql(JpaQueryEnhancer.java:159) ~[spring-data-jpa-4.0.7.jar:4.0.7]\n\tat org.springframework.data.jpa.repository.query.QueryEnhancerFactories$BuiltinQueryEnhancerFactories$3.create(QueryEnhancerFactories.java:91) ~[spring-data-jpa-4.0.7.jar:4.0.7]",
+    "appliesTo": [
+      {
+        "component": "spring-data-jpa",
+        "versions": "4.0.x (4.0.7 in Spring Boot 4.0.8, Hibernate 7.2.x); also reported with Hibernate 7.4; fixed in 4.1.2 (2026.0.2)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-data-jpa/issues/4359",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-09-19",
+    "symptom": "Creating a repository bean fails with QueryCreationException caused by BadJpqlGrammarException: mismatched input '%' for an @Query such as 'select c from Call c where c.duration % 2 = 0 order by c.id'. The failure happens at startup, before the query is ever run, and Hibernate itself accepts the same HQL.",
+    "cause": "Spring Data JPA validates @Query strings with its own ANTLR HQL grammar before Hibernate sees them. That grammar allows only * and / as multiplicative operators and has no rule for the % remainder operator, so the query is rejected.",
+    "fixSummary": "Replace the operator with the standard function: where mod(c.duration, 2) = 0. Moving the query to a native query (nativeQuery = true) or to a Specification/Criteria query also works if the result stays the same. Fixed in Spring Data JPA 4.1.2 (2026.0.2)."
+  }
+]

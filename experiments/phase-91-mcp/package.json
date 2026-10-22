@@ -1,0 +1,19 @@
+{
+  "name": "quno-phase-91-mcp",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Phase 91 가설 검증용 읽기 전용 MCP 프로토타입. 실험이 끝나면 버릴 수 있는 코드다.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js",
+    "validate-seeds": "node src/validate-seeds.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.7"
+  }
+}

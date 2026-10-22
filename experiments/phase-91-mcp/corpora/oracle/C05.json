@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c05",
+    "title": "PortInUseException: Port 8080 is already in use when starting the embedded web server",
+    "verification": "unverified",
+    "errorSample": "Caused by: java.net.BindException: Address already in use\n\tat java.base/sun.nio.ch.Net.bind0(Native Method) ~[na:na]\n\tat java.base/sun.nio.ch.Net.bind(Net.java:577) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(ServerSocketChannelImpl.java:344) ~[na:na]\n\tat java.base/sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:301) ~[na:na]\n\tat org.apache.tomcat.util.net.NioEndpoint.initServerSocket(NioEndpoint.java:339) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.tomcat.util.net.NioEndpoint.bind(NioEndpoint.java:289) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.tomcat.util.net.AbstractEndpoint.bindWithCleanup(AbstractEndpoint.java:2188) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.tomcat.util.net.AbstractEndpoint.start(AbstractEndpoint.java:2281) ~[tomcat-embed-core-11.0.24.jar:11.0.24]\n\tat org.apache.coyote.AbstractProtocol.start(AbstractProtocol.java:974) ~[tomcat-embed-core-11.0.24.jar:11.0.24]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "tomcat-embed-core",
+        "versions": "11.0.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-boot/how-to/webserver.html",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "The web application or a @SpringBootTest with a fixed port fails to start: \"Web server failed to start. Port 8080 was already in use.\" The root cause is java.net.BindException: Address already in use.",
+    "cause": "server.port is fixed to 8080 in application.properties and another process on the machine is already listening on that port, so Tomcat cannot bind its connector.",
+    "fixSummary": "Pick a different free port, for example server.port=18080 in application.properties, or server.port=0 to let the OS assign one. The port can also be overridden with the SERVER_PORT environment variable or the --server.port argument. Do not try to free port 8080 by stopping the other service."
+  }
+]

@@ -135,10 +135,22 @@ LayeringArchitectureTest > layers only depend in the documented direction() FAIL
 로컬 Redis/Postgres를 실제로 띄운 채 라이브로 확인했다(단위 테스트로는 "캐시가 실제로 붙었는지"를 확인하기 어려워 의도적으로 실제 서버+`redis-cli`로 검증):
 
 1. **캐시 생성 확인.** `GET /api/v1/dashboard` 첫 호출 후 `redis-cli KEYS "dashboard*"` → `dashboard-popular-questions::5`, `dashboard-trending-tags::10` 등 생성 확인. `TTL` 조회 결과 45(60에서 시작해 감소 중).
-2. **캐시 히트 확인.** 두 번째 호출 후 `TTL`이 35로 계속 줄어들고 있어(리셋되지 않음) 두 번째 호출이 재계산·재저장 없이 캐시를 그대로 읽었음을 확인. 응답 시간도 0.557s → 0.131s로 감소.
-3. **직렬화 형태 확인.** `redis-cli GET "dashboard-trending-tags::10"`으로 저장된 값을 직접 확인 — 타입 메타데이터(`@class`) 없이 깨끗한 JSON 배열이었다.
+2. **캐시 히트 확인.** 두 번째 호출 후 `TTL`이 35로 계속 줄어들고 있어(리셋되지 않음) 두 번째 호출이 재계산·재저장 없이 캐시를 그대로 읽었음을 확인. 응답 시간도 0.557s → 0.131s로 감소. **(정정: 이 검증은 불충분했다. 아래 "사후 정정" 참고)**
+3. **직렬화 형태 확인.** `redis-cli GET "dashboard-trending-tags::10"`으로 저장된 값을 직접 확인 — 타입 메타데이터(`@class`) 없이 깨끗한 JSON 배열이었다. **(정정: "깨끗하다"는 장점이 아니라 버그의 원인이었다.)**
 4. **Redis 장애 시 폴백 확인(ADR-0056이 보장하던 것).** `docker compose stop redis` 후 같은 엔드포인트를 다시 호출 — `HTTP:200`, 62ms, 데이터 정상(인기 질문 5건·트렌딩 태그 7건 그대로). 백엔드 로그에 `LoggingCacheErrorHandler`가 캐시별로 `Redis unavailable, skipping cache read for cache=... key=...` 경고를 남긴 것도 확인해, 실제로 이 에러 핸들러 경로를 탔음을(우연히 다른 이유로 통과한 게 아님을) 검증했다.
 5. **회귀 없음 확인.** `docker compose start redis`로 복구한 뒤 대시보드·조직 검색(수정 안 한 경로) 둘 다 정상. `./gradlew build`(테스트 351개 + ktlint) `BUILD SUCCESSFUL`. 이 과정에서 새로 쓴 `DashboardRepositoryAdapter.kt`가 ktlint의 `function-signature` 규칙에 걸려(1절 검증 때 고쳤던 것과 같은 종류) `ktlintFormat`으로 그 자리에서 정리했다.
+
+### 사후 정정 (2026-10-13 발견, ADR-0065)
+
+이 전환은 **캐시 히트에서 `GET /dashboard`와 `GET /flow`를 500으로 만드는 버그를 넣었고**, 로그인 상태 화면용 axe e2e를 추가하던 다른 작업에서 발견·수정됐다([ADR-0065](../architecture/decisions/0065-typed-redis-cache-serializers.md), 진단은 [technical-deep-dives.md 14절](technical-deep-dives.md#14-캐시-히트에서만-깨지는-대시보드--타입-정보-없는-redis-직렬화)). 원인은 `GenericJacksonJsonRedisSerializer`에 default typing이 없는 `ObjectMapper`를 넘겨 저장 JSON에 클래스 정보가 남지 않았고, 히트 시 `List<TagTrend>`가 `List<LinkedHashMap>`으로, `List<Long>`의 작은 값이 `Integer`로 복원된 것이다.
+
+위 검증이 이를 놓친 이유는 구체적이다.
+
+- **캐시 히트 검증이 상태 코드와 본문을 보지 않았다.** 두 번째 호출의 응답을 파일로 저장만 하고 열어보지 않았고, `TTL` 감소와 응답 시간만으로 "히트"라고 판단했다. 시간이 빨랐던 것도 500이 빨리 났기 때문일 수 있었다.
+- **Redis 장애 시나리오는 캐시 미스 경로만 탔다.** 폴백 검증은 `redis-cli`로 키를 읽거나 역직렬화하지 않으므로 직렬화 왕복을 검증하지 못했다.
+- **저장 형태를 확인하고도 의미를 잘못 해석했다.** "타입 메타데이터 없이 깨끗한 JSON"을 장점으로 기록했지만, 그것이 곧 역직렬화 때 타입을 복원할 단서가 없다는 뜻이었다.
+
+교훈은 캐시를 도입할 때 **히트 경로의 본문과 타입까지** 확인해야 한다는 것이다(상태 코드만이 아니라 첫 응답과 히트 응답이 같은지). 새 `@Cacheable`은 `CacheConfig.typedCaches()`에 값 타입을 등록하는 것을 규칙으로 한다(ADR-0065).
 
 ### 결과
 

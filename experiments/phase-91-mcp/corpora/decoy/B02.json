@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-b02",
+    "title": "HTTP 413 MaxUploadSizeExceededException on form submits after moving to Spring Boot 4",
+    "verification": "unverified",
+    "errorSample": "Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.3 (embedded Tomcat)"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40233",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-02",
+    "symptom": "Submitting a multipart/form-data form with many fields gets HTTP 413 from the embedded server and the log shows MaxUploadSizeExceededException: Maximum upload size exceeded. The same form worked on Boot 3.5.",
+    "cause": "Boot 4 applies the multipart size limits to the aggregate size of the whole request instead of per file, and Tomcat additionally limits how much of a rejected body it will swallow. A form with many parts adds up to more than the default 1MB request limit, so the request is cut off with 413.",
+    "fixSummary": "Raise the limits: spring.servlet.multipart.max-request-size=100MB and spring.servlet.multipart.max-file-size=100MB, plus server.tomcat.max-swallow-size=-1 and server.tomcat.max-http-form-post-size=100MB. Restart and resubmit."
+  }
+]

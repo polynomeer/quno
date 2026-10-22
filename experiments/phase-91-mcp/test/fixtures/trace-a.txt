@@ -1,0 +1,9 @@
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'orderService' defined in file [/Users/alice/work/app/build/classes/kotlin/main/com/acme/OrderService.class]: Unsatisfied dependency expressed through constructor parameter 0
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:795)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:237)
+	at com.acme.Config$$SpringCGLIB$$0.foo(<generated>)
+Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'com.acme.PaymentClient' available: expected at least 1 bean which qualifies as autowire candidate
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.raiseNoMatchingBeanFound(DefaultListableBeanFactory.java:2234)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1630)
+	at com.acme.Boot.lambda$run$0(Boot.kt:41)
+	at com.acme.Boot$$FastClassBySpringCGLIB$$9fa31c2e.invoke(<generated>)

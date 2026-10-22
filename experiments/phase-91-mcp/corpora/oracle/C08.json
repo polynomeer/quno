@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oracle-c08",
+    "title": "LazyInitializationException: Cannot lazily initialize collection (no session)",
+    "verification": "unverified",
+    "errorSample": "org.hibernate.LazyInitializationException: Cannot lazily initialize collection of role 'task.Order.items' with key '1' (no session)\n    at app//org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:647)\n    at app//org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:232)\n    at app//org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:159)\n    at app//org.hibernate.collection.spi.PersistentBag.size(PersistentBag.java:403)\n    at app//task.OrderServiceTests.주문 상세는 주문 품목을 함께 돌려준다(OrderServiceTests.kt:20)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "hibernate-orm",
+        "versions": ">=7.0 <7.3"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-boot/",
+        "license": "Facts summarized from public documentation."
+      }
+    ],
+    "lastConfirmed": "2026-10-01",
+    "symptom": "Touching a lazy collection on an entity returned from a service method throws org.hibernate.LazyInitializationException: \"Cannot lazily initialize collection of role '...items' ... (no session)\". spring.jpa.open-in-view is false.",
+    "cause": "The service method has no transaction of its own, so the Hibernate session closes when the repository call returns. The lazy collection is first accessed by the caller after the persistence context is gone and cannot be loaded.",
+    "fixSummary": "Load the association while the session is open: query with a fetch join or an @EntityGraph(attributePaths = ...) on the repository method, or make the service method @Transactional(readOnly = true) and initialize the collection inside it (Hibernate.initialize or by touching it) before returning. Marking the mapping EAGER, enabling open-in-view or enabling lazy loading without a transaction only hide the problem."
+  }
+]

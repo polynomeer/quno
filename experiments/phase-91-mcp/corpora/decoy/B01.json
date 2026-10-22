@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-b01",
+    "title": "Flyway 'Unsupported Database: PostgreSQL 18.1' when the server major version is newer than Flyway's tested range",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.flywaydb.core.api.FlywayException: Unsupported Database: PostgreSQL 18.1\n\tat org.flywaydb.core.internal.database.DatabaseTypeRegister.lambda$getDatabaseTypeForConnection$7(DatabaseTypeRegister.java:142) ~[flyway-core-11.14.1.jar:na]\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:403) ~[na:na]\n\tat org.flywaydb.core.internal.database.DatabaseTypeRegister.getDatabaseTypeForConnection(DatabaseTypeRegister.java:142) ~[flyway-core-11.14.1.jar:na]\n\tat org.flywaydb.core.internal.jdbc.JdbcConnectionFactory.<init>(JdbcConnectionFactory.java:77) ~[flyway-core-11.14.1.jar:na]\n\tat org.flywaydb.core.FlywayExecutor.execute(FlywayExecutor.java:142) ~[flyway-core-11.14.1.jar:na]\n\tat org.flywaydb.core.Flyway.migrate(Flyway.java:186) ~[flyway-core-11.14.1.jar:na]\n\tat org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer.afterPropertiesSet(FlywayMigrationInitializer.java:67) ~[spring-boot-flyway-4.0.2.jar:4.0.2]\n\tat org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1864) ~[spring-beans-7.0.3.jar:7.0.3]\n\tat org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1813) ~[spring-beans-7.0.3.jar:7.0.3]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.2"
+      },
+      {
+        "component": "flyway",
+        "versions": "11.14.x; PostgreSQL server 18.x"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/40117",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-08-21",
+    "symptom": "Application startup fails with a BeanCreationException for 'flywayInitializer', caused by FlywayException 'Unsupported Database: PostgreSQL 18.1', although the datasource connects and plain JDBC queries work.",
+    "cause": "Flyway 11.14 only knows PostgreSQL majors up to 17. When Flyway reuses the Spring datasource it reads the server version from the connection metadata, cannot map 18.x to a known database type and aborts during the version check performed before migration validation.",
+    "fixSummary": "Let Flyway skip the strict version-dependent checks and open its own driver-level connection: set spring.flyway.driver-class-name=org.postgresql.Driver, spring.flyway.baseline-on-migrate=true and spring.flyway.validate-on-migrate=false in application.properties. Several users reported the context starting normally after this change."
+  }
+]

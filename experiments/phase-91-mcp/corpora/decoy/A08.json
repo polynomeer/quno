@@ -1,0 +1,24 @@
+[
+  {
+    "id": "decoy-a08",
+    "title": "Properties keys starting with # or ! disappear from the Environment: write the first character as a unicode escape",
+    "verification": "unverified",
+    "errorSample": "org.opentest4j.AssertionFailedError: \nexpected: \"https://hooks.example.com/T000/general\"\n but was: null",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.1.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3108",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-29",
+    "symptom": "Entries such as '\\#general=...' and '\\!oncall=...' in a .properties file imported through spring.config.import are missing from the Environment, so lookups return null, while keys like 'dm' load fine.",
+    "cause": "Boot's properties reader decodes a backslash escape before it decides whether the line is a comment, so a line starting with an escaped # or ! is turned into a comment and skipped.",
+    "fixSummary": "Avoid a literal backslash escape for the first character of such keys and write it as a unicode escape instead, for example \\u0023general=... and \\u0021oncall=... in the file. The reader then sees an ordinary key character and keeps the entry, and the Environment returns the value under the original name."
+  }
+]

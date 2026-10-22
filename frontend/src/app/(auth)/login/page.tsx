@@ -31,9 +31,9 @@ function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto my-12 w-full max-w-sm space-y-4 rounded-xl border border-border bg-surface p-6 sm:p-8"
+      className="mx-auto my-12 w-full max-w-sm space-y-4 rounded-[20px] border border-border bg-surface p-6 sm:p-8"
     >
-      <h1 className="text-2xl font-bold tracking-tight">{t.login.title}</h1>
+      <h1 className="text-[32px] leading-10 font-bold tracking-tight">{t.login.title}</h1>
       <Input
         type="email"
         placeholder="Email"

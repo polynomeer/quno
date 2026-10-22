@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-c01",
+    "title": "BeanCurrentlyInCreationException after upgrading: circular references are disabled by default",
+    "verification": "unverified",
+    "errorSample": "Caused by: org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'inventoryService': Requested bean is currently in creation: Is there an unresolvable circular reference or an asynchronous initialization dependency?\n\tat org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.beforeSingletonCreation(DefaultSingletonBeanRegistry.java:541) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:310) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:201) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveBean(DefaultListableBeanFactory.java:1232) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1711) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1658) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:912) ~[spring-beans-7.0.9.jar:7.0.9]\n\tat org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-7.0.9.jar:7.0.9]",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": "4.0.8"
+      },
+      {
+        "component": "spring-framework",
+        "versions": ">=7.0 <7.1"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/48213",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-05-14",
+    "symptom": "After moving to a newer Spring Boot version the application stops starting with UnsatisfiedDependencyException caused by BeanCurrentlyInCreationException (\"Requested bean is currently in creation\"), although the same code started fine on older releases.",
+    "cause": "Spring Boot 2.6 changed the default of circular reference handling: the container no longer resolves cycles between singleton beans through early references unless it is told to.",
+    "fixSummary": "Restore the previous behavior by adding spring.main.allow-circular-references=true to application.properties. The container then exposes early singleton references and both services are created normally; no code change is needed."
+  }
+]

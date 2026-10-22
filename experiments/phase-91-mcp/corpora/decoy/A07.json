@@ -1,0 +1,28 @@
+[
+  {
+    "id": "decoy-a07",
+    "title": "MongoDB password with a space fails authentication: percent-encode the password in spring.mongodb.password",
+    "verification": "unverified",
+    "errorSample": "org.opentest4j.AssertionFailedError: \nexpected: \"my secret\"\n but was: \"my+secret\"",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.1.0"
+      },
+      {
+        "component": "mongodb-driver",
+        "versions": ">=5.0 <6.0"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://example.invalid/threads/3107",
+        "license": "decoy"
+      }
+    ],
+    "lastConfirmed": "2026-09-25",
+    "symptom": "Authentication against MongoDB fails for an account whose password contains a space, and the value the driver receives differs from the configured password ('my+secret' instead of 'my secret').",
+    "cause": "The MongoDB driver builds its credentials from a connection string, in which reserved and special characters must be percent-encoded, and it does not decode the password again when it comes from separate properties, so a raw space is mangled.",
+    "fixSummary": "Percent-encode the password yourself in the properties file: spring.mongodb.password=my%20secret. The driver then receives an unambiguous connection string and reads the space correctly; keep username, host, database and authentication-database as they are."
+  }
+]

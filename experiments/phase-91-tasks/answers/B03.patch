@@ -1,0 +1,10 @@
+--- a/build.gradle.kts	2026-10-20 11:59:11
++++ b/build.gradle.kts	2026-10-20 11:59:11
+@@ -20,6 +20,7 @@
+ 
+ dependencies {
+ 	implementation("org.springframework.boot:spring-boot-starter-kafka")
++	implementation("org.springframework.boot:spring-boot-transaction")
+ 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+ 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+ 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

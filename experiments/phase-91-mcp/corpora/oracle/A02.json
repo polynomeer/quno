@@ -1,0 +1,24 @@
+[
+  {
+    "id": "oracle-a02",
+    "title": "JWT resource server returns 401 'The iss claim is not valid' for valid tokens when issuer-uri resolves to an empty string",
+    "verification": "unverified",
+    "errorSample": "java.lang.AssertionError: Status expected:<200> but was:<401>\n    at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)\n    at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:129)\n    at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$0(StatusResultMatchers.java:600)\n    at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:212)\n    at org.springframework.test.web.servlet.result.StatusResultMatchersDsl.isOk(StatusResultMatchersDsl.kt:131)",
+    "appliesTo": [
+      {
+        "component": "spring-boot",
+        "versions": ">=4.0.0 <4.0.9 (observed on 4.0.8); fixed in 4.0.9"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/spring-projects/spring-boot/pull/52249",
+        "license": "Facts summarized from a public GitHub issue/PR; short error excerpt quoted."
+      }
+    ],
+    "lastConfirmed": "2026-10-15",
+    "symptom": "Tokens with a valid signature are rejected with HTTP 401 and a WWW-Authenticate header containing 'An error occurred while attempting to decode the Jwt: The iss claim is not valid'. It occurs with spring.security.oauth2.resourceserver.jwt.jwk-set-uri when issuer-uri is set from a placeholder that defaults to empty, such as ${ISSUER_URI:}, and no issuer is configured for that environment.",
+    "cause": "For a jwk-set-uri based decoder, the auto-configuration adds a JwtIssuerValidator whenever issuer-uri is not null. An empty string is not null, so the validator only accepts tokens whose iss claim is exactly the empty string.",
+    "fixSummary": "Do not set the issuer-uri property when there is no issuer: remove the line with the empty default, or set the property only in the profile or through the environment variable of deployments that have an issuer, so validation stays active when an issuer is configured. Alternatively define the JwtDecoder bean yourself and add the issuer validator only if the configured value is not blank. Fixed upstream in Boot 4.0.9."
+  }
+]

@@ -6,7 +6,7 @@ export function TrendingTagsPanel({ tags, spikes }: { tags: TagTrend[]; spikes: 
     return null;
   }
   return (
-    <div className="space-y-5 rounded-xl border border-border bg-surface p-5">
+    <div className="space-y-5 rounded-[20px] border border-border bg-surface px-5 py-[18px]">
       {tags.length > 0 && (
         <div>
           <h2 className="mb-3 text-sm font-semibold text-text-primary">Trending Tags</h2>
@@ -27,7 +27,9 @@ export function TrendingTagsPanel({ tags, spikes }: { tags: TagTrend[]; spikes: 
             {spikes.map((spike) => (
               <li key={spike.id} className="flex items-center justify-between text-sm">
                 <TagChip name={spike.name} />
-                <span className="font-mono text-xs text-warning">{spike.spikeRatio.toFixed(1)}x 급증</span>
+                <span className="inline-flex h-[22px] items-center rounded-full bg-warning-subtle px-2 font-mono text-xs font-semibold text-warning">
+                  {spike.spikeRatio.toFixed(1)}x 급증
+                </span>
               </li>
             ))}
           </ul>
