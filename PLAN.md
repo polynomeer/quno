@@ -1105,8 +1105,8 @@ IDE 연동(88)의 선행 조건이다. 지금 질문에는 공개 범위 개념�
 
 결정은 [ADR-0071](docs/architecture/decisions/0071-web-design-v2-liquid-glass-chrome.md)이 정한다. Claude Design 캔버스 "Quno 웹 디자인 시안 v2" 중 **실제 데이터가 있는 기존 화면**에 새 시각 체계를 입힌다. 추가 기획 화면은 아래 대응표의 Phase에서 시안을 기준으로 만든다(목 데이터 껍데기 화면은 만들지 않는다).
 
-- [ ] 100.1 계획·ADR — 이 Phase, ADR-0071
-- [ ] 100.2 공용 프리미티브 — 유리 토큰(`--glass-*`)과 `glass` 유틸리티, 캡슐 Button·TagChip·StatusBadge, 둥근 Input, `SegmentedControl` 신설
+- [x] 100.1 계획·ADR — 이 Phase, ADR-0071
+- [x] 100.2 공용 프리미티브 — 유리 토큰(`--glass-*`)과 `glass` 유틸리티, 캡슐 Button·TagChip·StatusBadge, 둥근 Input, `SegmentedControl` 신설
 - [ ] 100.3 공용 헤더 — 떠 있는 유리 캡슐 헤더, 아이콘 알림 버튼(읽지 않은 수), "질문하기" brand 캡슐, 아바타, 모바일 메뉴 유지
 - [ ] 100.4 좌측 내비게이션 — 아이콘·둥근 항목·옅은 패널, 알림·프로필 항목 추가, 홈·알림 화면에 배치
 - [ ] 100.5 홈 — 페이지 제목, 대시보드 섹션을 탭으로 전환(인기/팔로우 태그/오늘 해결/재활성화), 떨어진 질문 카드, QunoBot 급상승 카드, 둥근 사이드 패널

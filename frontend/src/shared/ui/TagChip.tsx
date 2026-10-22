@@ -6,7 +6,7 @@ export function TagChip({ name, className }: { name: string; className?: string 
     <Link
       href={`/tags/${name}`}
       className={cn(
-        "inline-flex h-6 items-center rounded bg-surface-subtle px-2 font-mono text-xs text-text-body hover:text-brand",
+        "inline-flex h-[26px] items-center rounded-full bg-surface-subtle px-2.5 font-mono text-xs text-text-body hover:text-brand",
         className,
       )}
     >

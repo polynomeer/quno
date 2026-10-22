@@ -30,7 +30,7 @@ export function StatusBadge({ status, className }: { status: QuestionStatus; cla
   return (
     <span
       className={cn(
-        "inline-flex h-[22px] shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold",
+        "inline-flex h-[22px] shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold",
         toneClasses[status],
         className,
       )}
