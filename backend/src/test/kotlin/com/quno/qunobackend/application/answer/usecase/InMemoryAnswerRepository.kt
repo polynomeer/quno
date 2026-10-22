@@ -20,6 +20,7 @@ class InMemoryAnswerRepository : AnswerRepository {
                 deletedAt = answer.deletedAt,
                 createdAt = answer.createdAt,
                 updatedAt = answer.updatedAt,
+                sourceLiveChatRoomId = answer.sourceLiveChatRoomId,
             )
         } else {
             answer

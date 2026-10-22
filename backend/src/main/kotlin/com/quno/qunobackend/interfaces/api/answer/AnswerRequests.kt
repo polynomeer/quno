@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank
 data class WriteAnswerRequest(
     @field:NotBlank
     val body: String,
+    /** Cite the live chat this answer was summarised from (Phase 71, ADR-0072). */
+    val liveChatRoomId: Long? = null,
 )
 
 /** Revising an answer only ever touches its body — there's no title/environment/logs to carry. */

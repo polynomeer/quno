@@ -19,26 +19,34 @@ class Answer private constructor(
     val deletedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** The live chat room this answer was summarised from (Phase 71, ADR-0072), or null. */
+    val sourceLiveChatRoomId: Long? = null,
 ) {
     fun accept(): Answer {
         check(deletedAt == null) { "cannot accept a deleted answer" }
-        return Answer(id, questionId, authorId, bodyMarkdown, true, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now())
+        return Answer(id, questionId, authorId, bodyMarkdown, true, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now(), sourceLiveChatRoomId)
     }
 
-    fun unaccept(): Answer = Answer(id, questionId, authorId, bodyMarkdown, false, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now())
+    fun unaccept(): Answer = Answer(id, questionId, authorId, bodyMarkdown, false, targetVersionNumber, latestVersionId, deletedAt, createdAt, Instant.now(), sourceLiveChatRoomId)
 
     /** Used by moderation Hide (Phase 16, ADR-0028). Idempotent. */
     fun softDelete(): Answer {
         if (deletedAt != null) return this
-        return Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, latestVersionId, Instant.now(), createdAt, Instant.now())
+        return Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, latestVersionId, Instant.now(), createdAt, Instant.now(), sourceLiveChatRoomId)
     }
 
     /** Used right after inserting the first AnswerVersion: wires the pointer and refreshes the body cache. */
-    fun withLatestVersion(versionId: Long, bodyMarkdown: String = this.bodyMarkdown): Answer = Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, versionId, deletedAt, createdAt, Instant.now())
+    fun withLatestVersion(versionId: Long, bodyMarkdown: String = this.bodyMarkdown): Answer = Answer(id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, versionId, deletedAt, createdAt, Instant.now(), sourceLiveChatRoomId)
 
     companion object {
         /** [targetVersionNumber] is the question's latest version number at write time (see PLAN.md 5.1). */
-        fun write(questionId: Long, authorId: Long, bodyMarkdown: String, targetVersionNumber: Int): Answer {
+        fun write(
+            questionId: Long,
+            authorId: Long,
+            bodyMarkdown: String,
+            targetVersionNumber: Int,
+            sourceLiveChatRoomId: Long? = null,
+        ): Answer {
             require(bodyMarkdown.isNotBlank()) { "bodyMarkdown must not be blank" }
             require(targetVersionNumber >= 1) { "targetVersionNumber must be >= 1" }
             val now = Instant.now()
@@ -53,6 +61,7 @@ class Answer private constructor(
                 deletedAt = null,
                 createdAt = now,
                 updatedAt = now,
+                sourceLiveChatRoomId = sourceLiveChatRoomId,
             )
         }
 
@@ -67,8 +76,9 @@ class Answer private constructor(
             deletedAt: Instant?,
             createdAt: Instant,
             updatedAt: Instant,
+            sourceLiveChatRoomId: Long? = null,
         ): Answer = Answer(
-            id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, latestVersionId, deletedAt, createdAt, updatedAt,
+            id, questionId, authorId, bodyMarkdown, isAccepted, targetVersionNumber, latestVersionId, deletedAt, createdAt, updatedAt, sourceLiveChatRoomId,
         )
     }
 }

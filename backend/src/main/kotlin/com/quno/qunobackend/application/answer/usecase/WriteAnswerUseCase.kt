@@ -39,6 +39,7 @@ class WriteAnswerUseCase(
                 authorId = command.authorId,
                 bodyMarkdown = command.body,
                 targetVersionNumber = targetVersionNumber,
+                sourceLiveChatRoomId = command.sourceLiveChatRoomId,
             ),
         )
         val answerId = requireNotNull(answer.id)

@@ -16,6 +16,8 @@ data class AnswerResult(
     val score: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** The live chat room this answer was summarised from (ADR-0072), or null. */
+    val sourceLiveChatRoomId: Long? = null,
 )
 
 data class AcceptAnswerResult(
