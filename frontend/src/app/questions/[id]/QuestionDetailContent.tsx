@@ -29,8 +29,19 @@ import { TagChip } from "@/shared/ui/TagChip";
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { FormError } from "@/shared/ui/FormError";
+import {
+  SegmentedControl,
+  type SegmentOption,
+} from "@/shared/ui/SegmentedControl";
 
 type AnswerSort = "best" | "newest" | "oldest" | "score";
+
+const SORT_OPTIONS: SegmentOption<AnswerSort>[] = [
+  { value: "best", label: "Best" },
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "score", label: "Score" },
+];
 
 /** All the interactivity for Question Detail — split out of `page.tsx` so that file can stay a
  * Server Component and export `generateMetadata` (Phase 31, ADR-0043). Nothing about the
@@ -64,9 +75,11 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
   }
 
   const sortedAnswers = [...(answers ?? [])].sort((a, b) => {
-    if (sort === "best" && a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
+    if (sort === "best" && a.isAccepted !== b.isAccepted)
+      return a.isAccepted ? -1 : 1;
     if (sort === "score" && a.score !== b.score) return b.score - a.score;
-    const byTime = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    const byTime =
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     return sort === "newest" ? -byTime : byTime;
   });
 
@@ -74,46 +87,52 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
   const acceptedAnswerId = answers?.find((a) => a.isAccepted)?.id ?? null;
 
   return (
-    <div className="space-y-7">
-      {/* Header per the design canvas (ADR-0061): state first, then the H1, then meta + tags. */}
-      <header className="space-y-3 border-b border-border pb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={question.status} />
-        </div>
-        <h1 className="max-w-[900px] text-[26px] leading-snug font-bold tracking-tight sm:text-3xl">
-          {question.title}
-        </h1>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <QuestionMeta
-              questionId={question.id}
-              createdAt={question.createdAt}
-              updatedAt={question.updatedAt}
-              versionNumber={question.versionNumber}
-              viewCount={question.viewCount}
-            />
-            {me && me.id !== question.authorId && <ReportButton targetType="QUESTION" targetId={question.id} />}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {question.tags.map((tag) => (
-              <TagChip key={tag} name={tag} />
-            ))}
-          </div>
-        </div>
-        {me && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <WatchButton questionId={question.id} />
-              <SaveButton questionId={question.id} />
+    // Web design v2 (ADR-0071): the question is one card — state, title, meta and the body with
+    // its glass vote rail — and the living-card panels move into the side column.
+    <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0 space-y-6">
+        <article className="space-y-5 rounded-3xl border border-border bg-surface px-5 py-6 sm:px-8 sm:py-7">
+          <header className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={question.status} />
             </div>
-            <OutdatedAction questionId={question.id} status={question.status} />
-          </div>
-        )}
-      </header>
+            <h1 className="max-w-[900px] text-[26px] leading-snug font-bold tracking-tight sm:text-[28px]">
+              {question.title}
+            </h1>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <QuestionMeta
+                  questionId={question.id}
+                  createdAt={question.createdAt}
+                  updatedAt={question.updatedAt}
+                  versionNumber={question.versionNumber}
+                  viewCount={question.viewCount}
+                />
+                {me && me.id !== question.authorId && (
+                  <ReportButton targetType="QUESTION" targetId={question.id} />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {question.tags.map((tag) => (
+                  <TagChip key={tag} name={tag} />
+                ))}
+              </div>
+            </div>
+            {me && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <WatchButton questionId={question.id} />
+                  <SaveButton questionId={question.id} />
+                </div>
+                <OutdatedAction
+                  questionId={question.id}
+                  status={question.status}
+                />
+              </div>
+            )}
+          </header>
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 space-y-10">
-          <article className="flex gap-4 sm:gap-5">
+          <div className="flex gap-4 sm:gap-6">
             <div className="shrink-0">
               <VoteControl
                 targetType="QUESTION"
@@ -127,20 +146,26 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
               <MarkdownContent>{question.body}</MarkdownContent>
 
               {(question.environment || question.logs) && (
-                <details className="rounded-lg border border-border bg-surface p-3 text-sm">
-                  <summary className="cursor-pointer font-medium text-text-body">환경 / 로그</summary>
+                <details className="rounded-2xl border border-border p-4 text-sm">
+                  <summary className="cursor-pointer font-semibold text-text-primary">
+                    환경 / 로그
+                  </summary>
                   {question.environment && (
-                    <div className="mt-2">
-                      <p className="text-xs font-medium text-text-secondary">Environment</p>
-                      <pre className="mt-1 overflow-x-auto rounded-md bg-code-bg p-3 font-mono text-xs text-code-fg">
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-text-secondary">
+                        Environment
+                      </p>
+                      <pre className="mt-1 overflow-x-auto rounded-xl bg-code-bg p-3 font-mono text-xs text-code-fg">
                         {question.environment}
                       </pre>
                     </div>
                   )}
                   {question.logs && (
-                    <div className="mt-2">
-                      <p className="text-xs font-medium text-text-secondary">Logs</p>
-                      <pre className="mt-1 overflow-x-auto rounded-md bg-code-bg p-3 font-mono text-xs text-code-fg">
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-text-secondary">
+                        Logs
+                      </p>
+                      <pre className="mt-1 overflow-x-auto rounded-xl bg-code-bg p-3 font-mono text-xs text-code-fg">
                         {question.logs}
                       </pre>
                     </div>
@@ -150,88 +175,98 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
 
               <CommentSection targetType="QUESTION" targetId={question.id} />
             </div>
-          </article>
-
-          {me && (
-            <ReviewRequestPanel
-              questionId={question.id}
-              questionAuthorId={question.authorId}
-              questionVersionNumber={question.versionNumber}
-              currentUserId={me.id}
-            />
-          )}
-
-          <section className="space-y-4">
-            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
-              <h2 className="text-xl font-bold">{sortedAnswers.length} Answers</h2>
-              {sortedAnswers.length > 1 && (
-                <label className="flex items-center gap-1 text-sm text-text-secondary">
-                  sort:
-                  <select
-                    className="h-9 rounded-lg border border-border-strong bg-surface px-2 text-text-primary"
-                    value={sort}
-                    onChange={(event) => setSort(event.target.value as AnswerSort)}
-                  >
-                    <option value="best">Best</option>
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="score">Score</option>
-                  </select>
-                </label>
-              )}
-            </div>
-
-            <FormError error={acceptAnswer.error} fallback="답변을 채택하지 못했습니다." />
-
-            {sortedAnswers.length === 0 ? (
-              <p className="text-sm text-text-secondary">아직 답변이 없습니다.</p>
-            ) : (
-              <ul className="space-y-4">
-                {sortedAnswers.map((answer) => (
-                  <AnswerCard
-                    key={answer.id}
-                    answer={answer}
-                    canAccept={canAccept}
-                    isAccepting={acceptAnswer.isPending && acceptAnswer.variables === answer.id}
-                    onAccept={() => acceptAnswer.mutate(answer.id)}
-                    showEngagement
-                  />
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {me ? (
-            <AnswerComposer questionId={questionId} />
-          ) : (
-            <p className="text-sm text-text-secondary">
-              <Link
-                href={`/login?redirectTo=/questions/${questionId}`}
-                className="text-brand underline hover:no-underline"
-              >
-                로그인
-              </Link>
-              하고 답변을 작성하세요.
-            </p>
-          )}
-
-          {me && (
-            <>
-              <ClusterPanel questionId={question.id} acceptedAnswerId={acceptedAnswerId} />
-              <ForkPanel questionId={question.id} />
-              <LiveChatPanel questionId={question.id} />
-            </>
-          )}
-        </div>
-
-        <aside className="space-y-6">
-          <QuestionTimeline questionId={question.id} />
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-text-primary">Related Questions</h2>
-            <QuestionList questions={related ?? []} emptyMessage="관련 질문이 없습니다." compact />
           </div>
-        </aside>
+        </article>
+
+        {me && (
+          <ReviewRequestPanel
+            questionId={question.id}
+            questionAuthorId={question.authorId}
+            questionVersionNumber={question.versionNumber}
+            currentUserId={me.id}
+          />
+        )}
+
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <h2 className="text-xl font-bold">
+              {sortedAnswers.length} Answers
+            </h2>
+            {sortedAnswers.length > 1 && (
+              <SegmentedControl
+                options={SORT_OPTIONS}
+                value={sort}
+                onChange={setSort}
+                label="답변 정렬"
+                size="sm"
+              />
+            )}
+          </div>
+
+          <FormError
+            error={acceptAnswer.error}
+            fallback="답변을 채택하지 못했습니다."
+          />
+
+          {sortedAnswers.length === 0 ? (
+            <p className="text-sm text-text-secondary">아직 답변이 없습니다.</p>
+          ) : (
+            <ul className="space-y-4">
+              {sortedAnswers.map((answer) => (
+                <AnswerCard
+                  key={answer.id}
+                  answer={answer}
+                  canAccept={canAccept}
+                  isAccepting={
+                    acceptAnswer.isPending &&
+                    acceptAnswer.variables === answer.id
+                  }
+                  onAccept={() => acceptAnswer.mutate(answer.id)}
+                  showEngagement
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {me ? (
+          <AnswerComposer questionId={questionId} />
+        ) : (
+          <p className="text-sm text-text-secondary">
+            <Link
+              href={`/login?redirectTo=/questions/${questionId}`}
+              className="text-brand underline hover:no-underline"
+            >
+              로그인
+            </Link>
+            하고 답변을 작성하세요.
+          </p>
+        )}
       </div>
+
+      <aside className="min-w-0 space-y-4">
+        {me && <LiveChatPanel questionId={question.id} />}
+        <QuestionTimeline questionId={question.id} />
+        {me && (
+          <>
+            <ClusterPanel
+              questionId={question.id}
+              acceptedAnswerId={acceptedAnswerId}
+            />
+            <ForkPanel questionId={question.id} />
+          </>
+        )}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-text-primary">
+            Related Questions
+          </h2>
+          <QuestionList
+            questions={related ?? []}
+            emptyMessage="관련 질문이 없습니다."
+            compact
+          />
+        </section>
+      </aside>
     </div>
   );
 }

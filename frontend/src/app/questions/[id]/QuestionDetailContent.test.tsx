@@ -232,21 +232,21 @@ describe("QuestionDetailContent", () => {
     } as unknown as ReturnType<typeof useAnswers>);
 
     render(<QuestionDetailContent questionId={10} />);
-    await userEvent.selectOptions(screen.getByRole("combobox"), "score");
+    await userEvent.click(screen.getByRole("button", { name: "Score" }));
 
     const items = screen.getAllByTestId(/^answer-/);
     expect(items[0]).toHaveTextContent("높은 점수");
     expect(items[1]).toHaveTextContent("낮은 점수");
   });
 
-  it("hides the sort dropdown when there's 0 or 1 answer", () => {
+  it("hides the sort switch when there's 0 or 1 answer", () => {
     vi.mocked(useSession).mockReturnValue({ data: undefined, isLoading: false } as ReturnType<typeof useSession>);
     vi.mocked(useQuestion).mockReturnValue({ data: QUESTION, isLoading: false, isError: false } as unknown as ReturnType<typeof useQuestion>);
     vi.mocked(useAnswers).mockReturnValue({ data: [answer()] } as unknown as ReturnType<typeof useAnswers>);
 
     render(<QuestionDetailContent questionId={10} />);
 
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "답변 정렬" })).not.toBeInTheDocument();
     expect(screen.getByText("1 Answers")).toBeInTheDocument();
   });
 

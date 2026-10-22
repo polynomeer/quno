@@ -77,7 +77,7 @@ describe("VoteControl", () => {
     renderWithClient(<VoteControl targetType="QUESTION" targetId={10} questionId={10} score={6} authorId={99} />);
 
     const upvote = await screen.findByRole("button", { name: "Upvote" });
-    await waitFor(() => expect(upvote).toHaveClass("text-brand"));
+    await waitFor(() => expect(upvote).toHaveClass("bg-brand"));
 
     await userEvent.click(upvote);
 

@@ -37,13 +37,19 @@ export function AnswerCard({
   showEngagement?: boolean;
 }) {
   const { data: me } = useSession();
-  const { data: versions } = useAnswerVersions(answer.id, Boolean(showEngagement));
+  const { data: versions } = useAnswerVersions(
+    answer.id,
+    Boolean(showEngagement),
+  );
   const reviseAnswer = useReviseAnswer(answer.id, answer.questionId);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(answer.body);
 
   const isAuthor = Boolean(showEngagement && me && me.id === answer.authorId);
-  const latestVersionNumber = versions && versions.length > 0 ? Math.max(...versions.map((v) => v.versionNumber)) : null;
+  const latestVersionNumber =
+    versions && versions.length > 0
+      ? Math.max(...versions.map((v) => v.versionNumber))
+      : null;
   const isEdited = latestVersionNumber !== null && latestVersionNumber > 1;
 
   async function handleSave() {
@@ -60,32 +66,40 @@ export function AnswerCard({
     <li
       id={`answer-${answer.id}`}
       className={cn(
-        "scroll-mt-20 rounded-xl border p-4 sm:p-5",
+        "scroll-mt-28 rounded-3xl border p-5 sm:px-7 sm:py-6",
         // Accepted gets a light success edge, never a fill that drowns out the other answers
         // (design.md #13.1, design canvas ADR-0061).
-        answer.isAccepted ? "border-success-border bg-success-subtle/25" : "border-border bg-surface",
+        answer.isAccepted
+          ? "border-[1.5px] border-success-border bg-surface"
+          : "border-border bg-surface",
       )}
     >
       {questionHref && (
-        <Link href={questionHref} className="mb-2 block text-xs text-text-secondary hover:underline">
+        <Link
+          href={questionHref}
+          className="mb-2 block text-xs text-text-secondary hover:underline"
+        >
           질문 보기 →
         </Link>
       )}
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
         {answer.isAccepted && (
-          <span className="inline-flex h-[22px] items-center rounded bg-success-subtle px-2 font-semibold text-success">
+          <span className="inline-flex h-[22px] items-center rounded-full bg-success-subtle px-2.5 font-semibold text-success">
             ✓ Accepted
           </span>
         )}
         {answer.isStale && (
           <Link
             href={`/questions/${answer.questionId}/versions`}
-            className="inline-flex h-[22px] items-center rounded bg-warning-subtle px-2 font-semibold text-warning hover:underline"
+            className="inline-flex h-[22px] items-center rounded-full bg-warning-subtle px-2.5 font-semibold text-warning hover:underline"
           >
             질문이 이후 수정됨 (v{answer.targetVersionNumber} 기준 답변)
           </Link>
         )}
-        <Link href={`/users/${answer.authorId}`} className="font-medium text-text-primary hover:text-brand">
+        <Link
+          href={`/users/${answer.authorId}`}
+          className="font-medium text-text-primary hover:text-brand"
+        >
           {userLabel(answer.authorId, answer.authorNickname)}
         </Link>
         <span>· {relativeTime(answer.createdAt)}</span>
@@ -98,13 +112,27 @@ export function AnswerCard({
           </Link>
         )}
         {isAuthor && !isEditing && (
-          <button type="button" onClick={() => { setDraft(answer.body); setIsEditing(true); }} className="hover:text-text-primary">
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(answer.body);
+              setIsEditing(true);
+            }}
+            className="hover:text-text-primary"
+          >
             Edit
           </button>
         )}
-        {showEngagement && !isAuthor && <ReportButton targetType="ANSWER" targetId={answer.id} />}
+        {showEngagement && !isAuthor && (
+          <ReportButton targetType="ANSWER" targetId={answer.id} />
+        )}
         {canAccept && !answer.isAccepted && (
-          <Button variant="secondary" className="ml-auto px-2 py-1 text-xs" onClick={onAccept} disabled={isAccepting}>
+          <Button
+            variant="secondary"
+            className="ml-auto px-2 py-1 text-xs"
+            onClick={onAccept}
+            disabled={isAccepting}
+          >
             {isAccepting ? "채택 중..." : "Accept"}
           </Button>
         )}
@@ -119,18 +147,31 @@ export function AnswerCard({
             authorId={answer.authorId}
           />
         ) : (
-          <span className="w-11 shrink-0 text-center font-mono text-lg font-semibold text-text-primary">{answer.score}</span>
+          <span className="w-11 shrink-0 text-center font-mono text-lg font-semibold text-text-primary">
+            {answer.score}
+          </span>
         )}
         <div className="min-w-0 flex-1">
           {isEditing ? (
             <div className="space-y-2">
               <MarkdownEditor value={draft} onChange={setDraft} rows={6} />
-              <FormError error={reviseAnswer.error} fallback="수정하지 못했습니다." />
+              <FormError
+                error={reviseAnswer.error}
+                fallback="수정하지 못했습니다."
+              />
               <div className="flex gap-2">
-                <Button className="px-2 py-1 text-xs" onClick={handleSave} disabled={reviseAnswer.isPending || !draft.trim()}>
+                <Button
+                  className="px-2 py-1 text-xs"
+                  onClick={handleSave}
+                  disabled={reviseAnswer.isPending || !draft.trim()}
+                >
                   {reviseAnswer.isPending ? "저장 중..." : "Save"}
                 </Button>
-                <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => setIsEditing(false)}>
+                <Button
+                  variant="ghost"
+                  className="px-2 py-1 text-xs"
+                  onClick={() => setIsEditing(false)}
+                >
                   Cancel
                 </Button>
               </div>
@@ -138,7 +179,9 @@ export function AnswerCard({
           ) : (
             <MarkdownContent>{answer.body}</MarkdownContent>
           )}
-          {showEngagement && <CommentSection targetType="ANSWER" targetId={answer.id} />}
+          {showEngagement && (
+            <CommentSection targetType="ANSWER" targetId={answer.id} />
+          )}
         </div>
       </div>
     </li>
