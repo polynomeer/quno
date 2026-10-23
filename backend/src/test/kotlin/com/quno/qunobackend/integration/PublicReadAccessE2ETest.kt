@@ -69,6 +69,7 @@ class PublicReadAccessE2ETest {
             jdbcTemplate.update("DELETE FROM questions WHERE id = ?", id)
         }
         tagId?.let { id -> jdbcTemplate.update("DELETE FROM tags WHERE id = ?", id) }
+        userIds.forEach { id -> jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", id) }
         userIds.forEach { id -> jdbcTemplate.update("DELETE FROM users WHERE id = ?", id) }
     }
 
