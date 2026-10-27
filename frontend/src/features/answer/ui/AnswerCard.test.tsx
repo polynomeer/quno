@@ -60,6 +60,17 @@ describe("AnswerCard", () => {
     expect(screen.getByText("original body")).toBeInTheDocument();
   });
 
+  it("marks an answer summarised from the live chat, and only that kind", () => {
+    const { rerender } = renderWithClient(<AnswerCard answer={{ ...ANSWER, sourceLiveChatRoomId: 5 }} />);
+    expect(screen.getByRole("link", { name: "질문방 대화에서 정리됨" })).toHaveAttribute(
+      "href",
+      `/questions/${ANSWER.questionId}#live-chat`,
+    );
+
+    rerender(<AnswerCard answer={ANSWER} />);
+    expect(screen.queryByText("질문방 대화에서 정리됨")).not.toBeInTheDocument();
+  });
+
   it("links the author by nickname, falling back to the user id when there is none", () => {
     const { rerender } = renderWithClient(<AnswerCard answer={{ ...ANSWER, authorNickname: "devGuru" }} />);
     expect(screen.getByRole("link", { name: "devGuru" })).toHaveAttribute("href", `/users/${ME.id}`);

@@ -97,3 +97,4 @@
 | [0070](0070-question-as-evidence-environment-snapshot-and-verification-tiers.md) | 질문은 증거 자료다: 환경 스냅샷을 이벤트 기반으로 로컬 정제 후 3계층·증상별 프로파일·기준선 델타로 자동 수집, 검증된 질문 L0~L4 등급과 Evidence Card | 승인됨 |
 | [0071](0071-web-design-v2-liquid-glass-chrome.md) | 웹 디자인 시안 v2 적용: 실제 데이터가 있는 기존 화면만 리뉴얼, 추가 기획 화면은 해당 Phase에서 시안 기준으로(목 데이터 화면 금지), 유리 효과는 헤더·탭·투표 레일 같은 크롬에만(본문 카드는 불투명), 캡슐 버튼·20~24px 카드·떨어진 카드 목록 | 승인됨 |
 | [0072](0072-disable-outbox-dispatch-scheduler-in-tests.md) | 통합 테스트 정리의 `notifications_user_id_fkey` flaky 해결: 2초 주기 `OutboxDispatchScheduler`를 프로퍼티로 끌 수 있게 하고 Gradle 테스트에서 끔(테스트는 `DispatchOutboxEventsUseCase`를 직접 호출), `user_id` 기준 정리만으로는 미커밋 INSERT 창이 안 닫힘 | 승인됨 |
+| [0073](0073-live-chat-to-answer-draft.md) | 실시간 질문방 → 답변: 서버는 고른 메시지로 마크다운 초안만 만들고(저장 안 함) 게시는 기존 답변 쓰기에 `liveChatRoomId`를 더해 재사용, 출처는 `answers.source_live_chat_room_id`, 권한은 방 참여자(연 사람 또는 메시지 보낸 사람), 공동 저자 표기·종료 시점 제안은 보류 | 승인됨 |

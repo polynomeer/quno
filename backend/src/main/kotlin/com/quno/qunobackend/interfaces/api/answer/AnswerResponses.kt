@@ -19,6 +19,8 @@ data class AnswerResponse(
     val score: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** Shown as "질문방 대화에서 정리됨" (ADR-0073); null for ordinary answers. */
+    val sourceLiveChatRoomId: Long?,
 )
 
 fun AnswerResult.toResponse(authorNickname: String? = null) = AnswerResponse(
@@ -33,6 +35,7 @@ fun AnswerResult.toResponse(authorNickname: String? = null) = AnswerResponse(
     score = score,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    sourceLiveChatRoomId = sourceLiveChatRoomId,
 )
 
 data class AcceptAnswerResponse(

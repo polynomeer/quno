@@ -23,6 +23,7 @@ class AnswerRepositoryAdapter(
             deletedAt = answer.deletedAt,
             createdAt = answer.createdAt,
             updatedAt = answer.updatedAt,
+            sourceLiveChatRoomId = answer.sourceLiveChatRoomId,
         )
         return jpaRepository.save(entity).toDomain()
     }
@@ -51,5 +52,6 @@ class AnswerRepositoryAdapter(
         deletedAt = deletedAt,
         createdAt = createdAt,
         updatedAt = updatedAt,
+        sourceLiveChatRoomId = sourceLiveChatRoomId,
     )
 }

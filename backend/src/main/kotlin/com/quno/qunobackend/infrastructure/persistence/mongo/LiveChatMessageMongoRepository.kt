@@ -5,4 +5,8 @@ import org.springframework.data.mongodb.repository.MongoRepository
 
 interface LiveChatMessageMongoRepository : MongoRepository<LiveChatMessageDocument, String> {
     fun findByRoomIdOrderByCreatedAtDesc(roomId: Long, pageable: Pageable): List<LiveChatMessageDocument>
+
+    fun findByRoomIdAndIdIn(roomId: Long, ids: Collection<String>): List<LiveChatMessageDocument>
+
+    fun existsByRoomIdAndSenderId(roomId: Long, senderId: Long): Boolean
 }

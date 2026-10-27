@@ -24,4 +24,8 @@ class InMemoryLiveChatMessageRepository : LiveChatMessageRepository {
     }
 
     override fun findRecentByRoomId(roomId: Long, limit: Int): List<LiveChatMessage> = messages.filter { it.roomId == roomId }.takeLast(limit)
+
+    override fun findByRoomIdAndIds(roomId: Long, ids: Collection<String>): List<LiveChatMessage> = messages.filter { it.roomId == roomId && it.id in ids }
+
+    override fun existsByRoomIdAndSenderId(roomId: Long, senderId: Long): Boolean = messages.any { it.roomId == roomId && it.senderId == senderId }
 }
