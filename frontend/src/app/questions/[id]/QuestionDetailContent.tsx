@@ -29,6 +29,7 @@ import { TagChip } from "@/shared/ui/TagChip";
 import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { FormError } from "@/shared/ui/FormError";
+import { DependencyChips } from "@/features/stack/ui/DependencyChips";
 import {
   SegmentedControl,
   type SegmentOption,
@@ -118,6 +119,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
                 ))}
               </div>
             </div>
+            <DependencyChips dependencies={question.dependencies ?? []} />
             {me && (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
 import com.quno.qunobackend.domain.question.QuestionViewCountRepository
+import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import com.quno.qunobackend.domain.vote.VoteRepository
 import com.quno.qunobackend.domain.vote.VoteTargetType
@@ -17,6 +18,8 @@ class GetQuestionUseCase(
     private val questionTagRepository: QuestionTagRepository,
     private val voteRepository: VoteRepository,
     private val questionViewCountRepository: QuestionViewCountRepository,
+    /** Null only in unit tests that don't care about the stack fingerprint; Spring always injects it. */
+    private val questionDependencyRepository: QuestionDependencyRepository? = null,
 ) {
     fun execute(questionId: Long): QuestionSummaryResult {
         val question = questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
@@ -40,6 +43,7 @@ class GetQuestionUseCase(
             viewCount = questionViewCountRepository.countByQuestionId(questionId),
             createdAt = question.createdAt,
             updatedAt = question.updatedAt,
+            dependencies = questionDependencyRepository?.findByQuestionId(questionId).orEmpty(),
         )
     }
 }

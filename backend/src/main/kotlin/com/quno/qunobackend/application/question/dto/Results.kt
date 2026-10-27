@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.question.dto
 
 import com.quno.qunobackend.domain.question.DiffLine
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.stack.StackDependency
 import java.time.Instant
 
 /** Shared shape for both "create" and "revise", since both just wire a question to a new version. */
@@ -26,6 +27,8 @@ data class QuestionSummaryResult(
     val viewCount: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** The latest version's stack fingerprint (ADR-0076). */
+    val dependencies: List<StackDependency> = emptyList(),
 )
 
 data class QuestionVersionResult(

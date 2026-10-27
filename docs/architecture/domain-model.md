@@ -129,7 +129,7 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 | users | id, email, nickname, is_active, role, accepts_direct_ask | 비활성화 + 필요 시 익명화 (물리 삭제 지양). `role`(USER\|MODERATOR)은 Phase 16에서 추가 — 부여/회수 API 없이 DB에서 직접 변경([ADR-0028](decisions/0028-moderation-mvp-report-dismiss-hide-only.md)). `accepts_direct_ask`는 Phase 22에서 추가 — role과 달리 `PUT /me/direct-ask-settings`로 self-service 변경 가능([ADR-0034](decisions/0034-organization-virtual-only-direct-ask-no-payment.md)) |
 | questions | id, author_id, title(cache), status, latest_version_id, accepted_answer_id, cluster_id, origin_question_id, deleted_at | soft delete, 핵심 FK 유지. `origin_question_id`는 Phase 18에서 추가된 Fork 계보 포인터([ADR-0030](decisions/0030-cluster-merge-question-fork-graph-data-only.md)) |
 | question_versions | id, question_id, version_number, title, body_markdown, environment, logs, created_by | append-only, 보존 우선(soft delete는 예외적) |
-| answers | id, question_id, author_id, body_markdown(최신 버전 캐시), is_accepted, target_version_number, latest_version_id, deleted_at | soft delete. `latest_version_id`는 Phase 17에서 추가([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
+| answers | id, question_id, author_id, body_markdown(최신 버전 캐시), is_accepted, target_version_number, latest_version_id, source_live_chat_room_id, deleted_at | soft delete. `latest_version_id`는 Phase 17에서 추가([ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)). `source_live_chat_room_id`(nullable)는 질문방 대화에서 정리한 답변의 출처(Phase 71, [ADR-0073](decisions/0073-live-chat-to-answer-draft.md)) |
 | answer_versions | id, answer_id, version_number, body_markdown, created_by | append-only, 보존 우선(soft delete는 예외적) — question_versions와 동일한 패턴(Phase 17, [ADR-0029](decisions/0029-answer-revision-mirrors-question-version-no-locking.md)) |
 | tags | name, slug, description, docs_url, deleted_at | soft delete + active partial unique index. `description`/`docs_url`(Phase 28, [ADR-0040](decisions/0040-tag-detail-wiki-editable-and-real-stats.md))은 위키 스타일 — 소유권 검사 없이 아무 로그인 사용자나 편집 가능 |
 | question_tags | question_id, tag_id | 관계 데이터, hard delete 허용 |
@@ -151,12 +151,15 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 | direct_ask_payments | id, direct_ask_request_id, order_id(unique), amount, status, toss_payment_key, created_at, confirmed_at, cancelled_at | append형, hard delete 불필요(상태만 전이). 결제하지 않고 방치된 AWAITING_PAYMENT 요청을 정리하는 배치는 없음 — 알려진 단순화(Phase 25, [ADR-0037](decisions/0037-paid-direct-ask-toss-payments-test-mode.md)) |
 | email_domain_verifications | id, user_id, email, domain, code, status, created_at, expires_at, verified_at | append형, hard delete 불필요. 만료 정리 배치 없음 — 조회 시점에 `expires_at`을 비교해 계산(Phase 23, [ADR-0035](decisions/0035-verified-organization-email-domain-mailpit.md)) |
 | live_chat_rooms | id, question_id(unique), created_by, created_at | hard delete 불필요(close/archive 없음 — 논의 이력이 질문과 함께 영구 보존됨). 메시지 자체는 여기 없다 — MongoDB `live_chat_messages`에 있음(Phase 24, [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)) |
+| question_error_signatures | id, question_id, version_number, exception_class, signature_hash, message_key, created_at | 질문 최신 판본의 로그·본문에서 다시 계산할 수 있는 파생 색인. 작성·수정·Fork 때 통째로 교체하고, 질문을 hard delete하면 `ON DELETE CASCADE`로 함께 지운다(Phase 64, [ADR-0075](decisions/0075-error-signature-normalization-and-matching.md)) |
+| question_dependencies | id, question_id, version_number, ecosystem, name, version, created_at | 작성자가 미리보기에서 고른 Stack Fingerprint 항목. 원본 의존성 파일은 저장하지 않는다. 최신 판본만 두고(수정 시 생략=유지, 빈 목록=삭제) Fork는 복사하며, 질문 hard delete 시 CASCADE(Phase 63, [ADR-0076](decisions/0076-stack-fingerprint-dependency-parsing.md)) |
 
 ### 삭제/FK 운영 원칙
 
 - Question/Answer/User 같은 코어 엔티티에 무분별한 `ON DELETE CASCADE`를 사용하지 않는다 (부모 한 건 삭제 시 대량 연쇄 삭제 위험 방지).
 - 질문/답변은 soft delete를 기본으로 하여 복구·감사·통계·지식 그래프의 과거 관계를 보존한다.
 - `question_tags`, `watches`, `saves`, `user_tag_follows`, `user_follows` 같은 순수 관계 데이터는 hard delete가 자연스럽다.
+- 질문 내용에서 다시 만들 수 있는 파생 색인(`question_error_signatures`, `question_dependencies`)은 예외적으로 질문에 `ON DELETE CASCADE`를 건다. 질문은 평소 soft delete라 실제로 연쇄 삭제가 일어나는 경우는 계정 삭제·테스트 정리뿐이고, 색인만 남는 쪽이 더 해롭다.
 - Notification처럼 대량·약결합 데이터는 FK를 생략하거나 `SET NULL` 정책을 허용한다.
 - 영구 삭제가 필요하면 즉시 cascade하지 않고 retention/배치 purge 정책으로 통제한다.
 

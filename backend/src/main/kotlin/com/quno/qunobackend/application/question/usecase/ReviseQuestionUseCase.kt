@@ -11,6 +11,7 @@ import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersion
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -27,6 +28,7 @@ class ReviseQuestionUseCase(
 
     /** Null only in unit tests that don't care about signatures; Spring always injects it. */
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
+    private val questionDependencyRepository: QuestionDependencyRepository? = null,
 ) {
     @Transactional
     fun execute(command: ReviseQuestionCommand): QuestionMutationResult {
@@ -57,6 +59,9 @@ class ReviseQuestionUseCase(
         )
 
         errorSignatureIndexer?.index(command.questionId, newVersion.versionNumber, command.body, command.logs)
+        command.dependencies?.let {
+            questionDependencyRepository?.replaceForQuestion(command.questionId, newVersion.versionNumber, checkedDependencies(it))
+        }
 
         outboxEventRepository.save(
             OutboxEvent.create(

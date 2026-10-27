@@ -4,6 +4,8 @@ import com.quno.qunobackend.application.cluster.dto.QuestionGraphResult
 import com.quno.qunobackend.application.question.dto.QuestionTimelineEventType
 import com.quno.qunobackend.domain.question.DiffLineType
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.stack.DependencyFileFormat
+import com.quno.qunobackend.domain.stack.Ecosystem
 import com.quno.qunobackend.interfaces.api.search.QuestionSearchResultResponse
 import com.quno.qunobackend.interfaces.api.search.toResponse
 import java.time.Instant
@@ -30,7 +32,13 @@ data class QuestionResponse(
     val viewCount: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** The latest version's stack fingerprint (ADR-0076). */
+    val dependencies: List<DependencyResponse>,
 )
+
+data class DependencyResponse(val ecosystem: Ecosystem, val name: String, val version: String?)
+
+data class ParsedDependencyFileResponse(val format: DependencyFileFormat, val dependencies: List<DependencyResponse>)
 
 data class QuestionVersionResponse(
     val questionId: Long,
