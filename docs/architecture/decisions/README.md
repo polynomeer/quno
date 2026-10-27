@@ -100,3 +100,4 @@
 | [0073](0073-live-chat-to-answer-draft.md) | 실시간 질문방 → 답변: 서버는 고른 메시지로 마크다운 초안만 만들고(저장 안 함) 게시는 기존 답변 쓰기에 `liveChatRoomId`를 더해 재사용, 출처는 `answers.source_live_chat_room_id`, 권한은 방 참여자(연 사람 또는 메시지 보낸 사람), 공동 저자 표기·종료 시점 제안은 보류 | 승인됨 |
 | [0074](0074-defer-kotlin-2-4-until-ktlint-support.md) | Kotlin 2.4 업그레이드 보류: 세 플러그인을 함께 올려도 ktlint(기본 엔진·1.8.0 모두)가 2.4 소스를 해석하지 못해 2.2.21 유지, ktlint 검사는 끄지 않음, Dependabot은 Kotlin 플러그인을 한 그룹으로 묶고 2.4 이상은 무시 | 승인됨 |
 | [0075](0075-error-signature-normalization-and-matching.md) | 에러 시그니처: Phase 91 정규화기를 Kotlin 도메인으로 이식(같은 SHA-256 16자 키), 근본 원인 기준 `signatureHash`(클래스+상위 5프레임)·`messageKey`(클래스+정규화 메시지) 두 키, 라인 번호 제외, 최신 판본만 색인(판본별 누적은 기각), 질문 작성 미리보기·검색·관련 질문에서 공통 사용, 기존 질문은 수정 시 색인 | 승인됨 |
+| [0076](0076-stack-fingerprint-dependency-parsing.md) | Stack Fingerprint: Gradle·Maven·npm 의존성 파일을 서버가 파싱하되 원본은 저장하지 않고(미리보기 API) 작성자가 고른 항목만 질문에 저장, 파서는 도메인 포트·인프라 구현(XML은 XXE 차단), 최신 판본만 저장, 수정 시 생략=유지·빈 목록=삭제, Fork는 상속, 버전 비교는 63.3으로 미룸 | 승인됨 |
