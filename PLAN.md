@@ -765,10 +765,10 @@ Phase 61에 이어 같은 지속 항목을 계속 진행한다. 지금까지 남
 
 개발 흐름(터미널·IDE·코딩 에이전트) 안으로 들어간다. 읽기 전용 MCP는 64 이후, 스택 자동 첨부는 63 이후에 가능하다.
 
-- [ ] 65.1 인증 설계·ADR — 개인 액세스 토큰(PAT) 발급·폐기·스코프(읽기/질문 작성). 현재는 JWT 로그인만 있고 레이트리밋이 IP 기준 인메모리라([production-readiness.md](docs/product/production-readiness.md) B-2) 토큰 단위 한도가 필요하다
+- [x] 65.1 인증 설계·ADR — 개인 액세스 토큰(PAT) 발급·폐기·스코프(읽기/질문 작성). 현재는 JWT 로그인만 있고 레이트리밋이 IP 기준 인메모리라([production-readiness.md](docs/product/production-readiness.md) B-2) 토큰 단위 한도가 필요하다 — `quno_pat_` 토큰(해시만 저장), READ·ASK 스코프 허용 목록, 토큰 관리는 JWT 세션에서만, `/settings/tokens` 화면([ADR-0079](docs/architecture/decisions/0079-personal-access-tokens-and-scopes.md))
 - [ ] 65.2 `quno` CLI — `ask`(파이프로 로그 입력, 스택 지문 자동 첨부), `search`, 에러 시그니처 사전 조회. 구현 언어와 배포 방식은 ADR로 정한다
 - [ ] 65.3 MCP 서버 — 읽기 전용 도구(알려진 이슈 검색, Super Answer 조회, 내 스택 기준 OUTDATED 확인)부터. 질문 초안 작성 같은 쓰기는 사용자 승인을 거친다
-- [ ] 65.4 남용 방지 — 토큰 단위 레이트리밋, 응답 크기 상한
+- [ ] 65.4 남용 방지 — 토큰 단위 레이트리밋, 응답 크기 상한 — **토큰 단위 레이트리밋(분당 120) 완료. 응답 크기 상한은 65.3 MCP 도구 출력에서**
 - [ ] 65.5 검증·문서화 — 실제 코딩 에이전트에서 MCP 연결 시연, 사용 가이드
 
 ## Phase 66 — 재현 가능한 질문 + 검증된 답변
