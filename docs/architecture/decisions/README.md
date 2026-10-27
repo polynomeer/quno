@@ -97,3 +97,4 @@
 | [0070](0070-question-as-evidence-environment-snapshot-and-verification-tiers.md) | 질문은 증거 자료다: 환경 스냅샷을 이벤트 기반으로 로컬 정제 후 3계층·증상별 프로파일·기준선 델타로 자동 수집, 검증된 질문 L0~L4 등급과 Evidence Card | 승인됨 |
 | [0071](0071-web-design-v2-liquid-glass-chrome.md) | 웹 디자인 시안 v2 적용: 실제 데이터가 있는 기존 화면만 리뉴얼, 추가 기획 화면은 해당 Phase에서 시안 기준으로(목 데이터 화면 금지), 유리 효과는 헤더·탭·투표 레일 같은 크롬에만(본문 카드는 불투명), 캡슐 버튼·20~24px 카드·떨어진 카드 목록 | 승인됨 |
 | [0072](0072-disable-outbox-dispatch-scheduler-in-tests.md) | 통합 테스트 정리의 `notifications_user_id_fkey` flaky 해결: 2초 주기 `OutboxDispatchScheduler`를 프로퍼티로 끌 수 있게 하고 Gradle 테스트에서 끔(테스트는 `DispatchOutboxEventsUseCase`를 직접 호출), `user_id` 기준 정리만으로는 미커밋 INSERT 창이 안 닫힘 | 승인됨 |
+| [0075](0075-error-signature-normalization-and-matching.md) | 에러 시그니처: Phase 91 정규화기를 Kotlin 도메인으로 이식(같은 SHA-256 16자 키), 근본 원인 기준 `signatureHash`(클래스+상위 5프레임)·`messageKey`(클래스+정규화 메시지) 두 키, 라인 번호 제외, 최신 판본만 색인(판본별 누적은 기각), 질문 작성 미리보기·검색·관련 질문에서 공통 사용, 기존 질문은 수정 시 색인 | 승인됨 |

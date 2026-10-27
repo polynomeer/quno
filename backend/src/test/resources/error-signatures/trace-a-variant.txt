@@ -1,0 +1,9 @@
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'invoiceService' defined in file [/home/bob/src/app/build/classes/kotlin/main/com/acme/OrderService.class]: Unsatisfied dependency expressed through constructor parameter 0
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:801)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:237)
+	at com.acme.Config$$SpringCGLIB$$0.foo(<generated>)
+Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'com.acme.TaxClient' available: expected at least 1 bean which qualifies as autowire candidate
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.raiseNoMatchingBeanFound(DefaultListableBeanFactory.java:2250)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1644)
+	at com.acme.Boot.lambda$run$3(Boot.kt:57)
+	at com.acme.Boot$$FastClassBySpringCGLIB$$00ab77de.invoke(<generated>)
