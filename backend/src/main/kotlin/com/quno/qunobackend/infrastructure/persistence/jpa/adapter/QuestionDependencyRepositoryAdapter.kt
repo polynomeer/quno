@@ -33,4 +33,9 @@ class QuestionDependencyRepositoryAdapter(
     override fun findByQuestionId(questionId: Long): List<StackDependency> = jpaRepository.findAllByQuestionIdOrderByIdAsc(questionId).map {
         StackDependency(Ecosystem.valueOf(it.ecosystem), it.name, it.version)
     }
+
+    override fun findByQuestionIds(questionIds: Collection<Long>): Map<Long, List<StackDependency>> {
+        if (questionIds.isEmpty()) return emptyMap()
+        return jpaRepository.findAllByQuestionIdInOrderByIdAsc(questionIds).groupBy({ it.questionId }, { StackDependency(Ecosystem.valueOf(it.ecosystem), it.name, it.version) })
+    }
 }
