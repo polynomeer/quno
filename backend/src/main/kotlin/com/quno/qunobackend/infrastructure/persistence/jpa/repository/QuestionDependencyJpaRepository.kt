@@ -12,4 +12,6 @@ interface QuestionDependencyJpaRepository : JpaRepository<QuestionDependencyJpaE
     fun deleteAllByQuestionId(@Param("questionId") questionId: Long)
 
     fun findAllByQuestionIdOrderByIdAsc(questionId: Long): List<QuestionDependencyJpaEntity>
+
+    fun findAllByQuestionIdInOrderByIdAsc(questionIds: Collection<Long>): List<QuestionDependencyJpaEntity>
 }

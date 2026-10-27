@@ -1,3 +1,5 @@
+import type { QuestionStatus } from "@/shared/ui/StatusBadge";
+
 /** Mirrors backend DependencyResponse / ParsedDependencyFileResponse (Phase 63, ADR-0076). */
 export type Ecosystem = "MAVEN" | "GRADLE_PLUGIN" | "NPM";
 
@@ -21,4 +23,14 @@ export interface ApplicabilityRange {
   fromVersion: string | null;
   /** Exclusive upper bound — where compatibility breaks, not the last version tried. */
   untilVersion: string | null;
+}
+
+/** A question worth a Ward because it shares packages with "내 스택" (Phase 63.5, ADR-0078). */
+export interface StackWardSuggestion {
+  questionId: number;
+  title: string;
+  status: QuestionStatus;
+  createdAt: string;
+  /** The question's entries whose package is also in my stack — versions are the question's. */
+  sharedDependencies: StackDependency[];
 }

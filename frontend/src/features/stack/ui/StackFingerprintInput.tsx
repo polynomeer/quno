@@ -17,7 +17,14 @@ const FILE_OPTIONS = ["build.gradle.kts", "build.gradle", "pom.xml", "package.js
  * share (in-house packages) → [onChange] reports only the kept entries (Phase 63, ADR-0076).
  * The pasted text stays in this component; it is never part of the question.
  */
-export function StackFingerprintInput({ onChange }: { onChange: (dependencies: StackDependency[]) => void }) {
+export function StackFingerprintInput({
+  onChange,
+  hint,
+}: {
+  onChange: (dependencies: StackDependency[]) => void;
+  /** Overrides the ask form's wording, e.g. on "내 스택" where nothing goes with a question. */
+  hint?: string;
+}) {
   const { t } = useLocale();
   const [fileName, setFileName] = useState("");
   const [content, setContent] = useState("");
@@ -52,7 +59,7 @@ export function StackFingerprintInput({ onChange }: { onChange: (dependencies: S
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-text-secondary">{t.ask.stackHint}</p>
+      <p className="text-sm text-text-secondary">{hint ?? t.ask.stackHint}</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t.ask.stackFileLabel}

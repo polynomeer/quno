@@ -52,4 +52,6 @@ interface QuestionDependencyRepository {
     fun replaceForQuestion(questionId: Long, versionNumber: Int, dependencies: List<StackDependency>)
 
     fun findByQuestionId(questionId: Long): List<StackDependency>
+
+    fun findByQuestionIds(questionIds: Collection<Long>): Map<Long, List<StackDependency>>
 }
