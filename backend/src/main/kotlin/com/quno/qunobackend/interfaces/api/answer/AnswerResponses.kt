@@ -4,6 +4,8 @@ import com.quno.qunobackend.application.answer.dto.AnswerMutationResult
 import com.quno.qunobackend.application.answer.dto.AnswerResult
 import com.quno.qunobackend.domain.question.DiffLineType
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.stack.ApplicabilityRange
+import com.quno.qunobackend.domain.stack.Ecosystem
 import java.time.Instant
 
 data class AnswerResponse(
@@ -21,7 +23,13 @@ data class AnswerResponse(
     val updatedAt: Instant,
     /** Shown as "질문방 대화에서 정리됨" (ADR-0073); null for ordinary answers. */
     val sourceLiveChatRoomId: Long?,
+    /** Where the answer holds, per package — `[fromVersion, untilVersion)` (ADR-0077). */
+    val applicability: List<ApplicabilityRangeResponse>,
 )
+
+data class ApplicabilityRangeResponse(val ecosystem: Ecosystem, val name: String, val fromVersion: String?, val untilVersion: String?)
+
+fun ApplicabilityRange.toResponse() = ApplicabilityRangeResponse(ecosystem, name, fromVersion, untilVersion)
 
 fun AnswerResult.toResponse(authorNickname: String? = null) = AnswerResponse(
     id = id,
@@ -36,6 +44,7 @@ fun AnswerResult.toResponse(authorNickname: String? = null) = AnswerResponse(
     createdAt = createdAt,
     updatedAt = updatedAt,
     sourceLiveChatRoomId = sourceLiveChatRoomId,
+    applicability = applicability.map { it.toResponse() },
 )
 
 data class AcceptAnswerResponse(

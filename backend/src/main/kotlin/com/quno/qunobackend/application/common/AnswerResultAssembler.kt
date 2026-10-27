@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.answer.dto.AnswerResult
 import com.quno.qunobackend.domain.answer.Answer
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.stack.AnswerApplicabilityRepository
 import com.quno.qunobackend.domain.vote.VoteRepository
 import com.quno.qunobackend.domain.vote.VoteTargetType
 import org.springframework.stereotype.Component
@@ -19,6 +20,7 @@ class AnswerResultAssembler(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
     private val voteRepository: VoteRepository,
+    private val answerApplicabilityRepository: AnswerApplicabilityRepository? = null,
 ) {
     fun toResult(answer: Answer): AnswerResult = toResults(listOf(answer)).single()
 
@@ -33,7 +35,9 @@ class AnswerResultAssembler(
             questionVersionRepository.findById(latestVersionId)?.versionNumber
         }
 
-        val scoresByAnswerId = voteRepository.sumScoresByTargets(VoteTargetType.ANSWER, answers.mapNotNull { it.id })
+        val answerIds = answers.mapNotNull { it.id }
+        val scoresByAnswerId = voteRepository.sumScoresByTargets(VoteTargetType.ANSWER, answerIds)
+        val rangesByAnswerId = answerApplicabilityRepository?.findByAnswerIds(answerIds).orEmpty()
 
         return answers.map { answer ->
             val latestVersionNumber = latestVersionNumberOf(answer.questionId)
@@ -49,6 +53,7 @@ class AnswerResultAssembler(
                 createdAt = answer.createdAt,
                 updatedAt = answer.updatedAt,
                 sourceLiveChatRoomId = answer.sourceLiveChatRoomId,
+                applicability = rangesByAnswerId[answer.id].orEmpty(),
             )
         }
     }
