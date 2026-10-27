@@ -482,6 +482,21 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - **검색:** `GET /search?q=`에 스택트레이스를 붙여 넣으면 같은 에러의 질문이 전문검색 결과보다 앞에 온다.
 - **관련 질문:** `GET /questions/{id}/related`는 같은 에러의 질문을 태그 겹침 결과보다 앞에 둔다.
 
+## Stack Fingerprint (Phase 63, ADR-0076)
+
+질문에 (생태계, 패키지, 버전) 목록을 붙인다. 원본 의존성 파일은 저장하지 않고, 작성자가 미리보기에서 고른 항목만 질문과 함께 저장한다([ADR-0076](decisions/0076-stack-fingerprint-dependency-parsing.md)).
+
+- `POST /stack-fingerprints/parse`(body: `{"fileName"?: "build.gradle.kts", "content": "..."}`, 최대 100,000자, 인증 필요): `{format, dependencies: [{ecosystem, name, version}]}`를 돌려준다. 저장하지 않는다.
+  - `format`: `GRADLE`|`MAVEN`|`NPM`. `fileName`이 없으면 내용으로 판단한다.
+  - `ecosystem`: `MAVEN`(Gradle·Maven 좌표 `group:artifact`)|`GRADLE_PLUGIN`|`NPM`
+  - `version`은 선언된 그대로(`^19.2.0`)이고, BOM이 관리하는 좌표는 `null`이다.
+  - 읽을 수 없는 입력은 오류가 아니라 빈 목록이다. Maven XML은 DTD를 거부한다(XXE 방지).
+- `POST /questions`와 `POST /questions/{id}/versions`가 선택 필드 `dependencies`(위와 같은 항목, 최대 200개)를 받는다.
+  - 수정 요청에서 생략하면 기존 목록을 유지하고, `[]`를 보내면 지운다.
+  - Fork는 원 질문의 목록을 복사한다.
+  - 지원하지 않는 생태계, 빈 이름, 200개 초과는 400이다.
+- `GET /questions/{id}` 응답에 `dependencies`가 들어간다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
