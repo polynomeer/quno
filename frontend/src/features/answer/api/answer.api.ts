@@ -9,7 +9,7 @@ export interface AcceptAnswerResult {
 
 export const answerApi = {
   list: (questionId: number) => httpClient.get<Answer[]>(`/api/v1/questions/${questionId}/answers`),
-  /** [liveChatRoomId] cites the live chat the answer was summarised from (ADR-0072). */
+  /** [liveChatRoomId] cites the live chat the answer was summarised from (ADR-0073). */
   create: (questionId: number, body: string, liveChatRoomId?: number) =>
     httpClient.post<Answer>(
       `/api/v1/questions/${questionId}/answers`,

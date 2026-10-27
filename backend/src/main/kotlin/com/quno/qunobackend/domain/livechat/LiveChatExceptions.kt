@@ -5,7 +5,7 @@ package com.quno.qunobackend.domain.livechat
 class LiveChatRoomNotFoundException(id: Long) : RuntimeException("Live chat room not found: $id")
 
 /** Only the person who opened the room or someone who has posted in it may turn the conversation
- * into an answer (Phase 71, ADR-0072). */
+ * into an answer (Phase 71, ADR-0073). */
 class LiveChatParticipantRequiredException(roomId: Long, userId: Long) :
     RuntimeException("User $userId is not a participant of live chat room $roomId")
 

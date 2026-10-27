@@ -89,7 +89,7 @@ export function AnswerCard({
           </span>
         )}
         {answer.sourceLiveChatRoomId != null && (
-          // Provenance from Phase 71 (ADR-0072): the room never closes, so the link stays valid.
+          // Provenance from Phase 71 (ADR-0073): the room never closes, so the link stays valid.
           <Link
             href={`/questions/${answer.questionId}#live-chat`}
             className="inline-flex h-[22px] items-center rounded-full bg-live-ring px-2.5 font-semibold text-success hover:underline"

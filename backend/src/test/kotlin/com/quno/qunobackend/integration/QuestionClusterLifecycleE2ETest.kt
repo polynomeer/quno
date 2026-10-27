@@ -54,9 +54,8 @@ class QuestionClusterLifecycleE2ETest {
             jdbcTemplate.update("DELETE FROM questions WHERE id = ?", id)
         }
         clusterId?.let { jdbcTemplate.update("DELETE FROM question_clusters WHERE id = ?", it) }
-        // The outbox dispatch scheduler polls independently of this test's transactions, so a
-        // notification for one of these users can still land after the question_id-scoped
-        // deletes above ran. Catch it by user_id right before deleting the users themselves.
+        // Notifications only come from explicit dispatches (the background scheduler is off for
+        // tests), but some are addressed by user rather than question — sweep by user_id too.
         userIds.forEach { id -> jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", id) }
         userIds.forEach { id -> jdbcTemplate.update("DELETE FROM users WHERE id = ?", id) }
     }

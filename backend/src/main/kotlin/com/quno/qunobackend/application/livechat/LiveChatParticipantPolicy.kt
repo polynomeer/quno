@@ -8,7 +8,7 @@ import com.quno.qunobackend.domain.livechat.LiveChatRoomRepository
 import org.springframework.stereotype.Component
 
 /**
- * Who may turn a live chat into an answer (Phase 71, ADR-0072): the person who opened the room,
+ * Who may turn a live chat into an answer (Phase 71, ADR-0073): the person who opened the room,
  * or anyone who has posted in it. Shared by the draft and the publish paths so both enforce the
  * same rule.
  */

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 data class WriteAnswerRequest(
     @field:NotBlank
     val body: String,
-    /** Cite the live chat this answer was summarised from (Phase 71, ADR-0072). */
+    /** Cite the live chat this answer was summarised from (Phase 71, ADR-0073). */
     val liveChatRoomId: Long? = null,
 )
 

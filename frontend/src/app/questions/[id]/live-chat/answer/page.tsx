@@ -17,7 +17,7 @@ import { relativeTime } from "@/shared/lib/relative-time";
 import { cn } from "@/shared/lib/cn";
 
 /**
- * Phase 71 (ADR-0072): pick the messages that solved it, build a draft on the server, edit it,
+ * Phase 71 (ADR-0073): pick the messages that solved it, build a draft on the server, edit it,
  * and publish it as an ordinary answer that cites the room. Layout follows the "질문방 → 답변으로
  * 게시" artboard of web design v2 (ADR-0071).
  */

@@ -46,7 +46,7 @@ class LiveChatController(
     }
 
     /** Unsaved markdown draft from selected messages — published later as a normal answer that
-     * cites the room (Phase 71, ADR-0072). */
+     * cites the room (Phase 71, ADR-0073). */
     @PostMapping("/api/v1/live-chat/{roomId}/answer-draft")
     fun answerDraft(
         @AuthenticationPrincipal userId: Long,

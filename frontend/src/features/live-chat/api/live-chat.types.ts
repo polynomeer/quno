@@ -17,7 +17,7 @@ export interface LiveChatMessage {
   createdAt: string;
 }
 
-/** Unsaved draft built from selected messages — mirrors LiveChatAnswerDraftResponse (ADR-0072). */
+/** Unsaved draft built from selected messages — mirrors LiveChatAnswerDraftResponse (ADR-0073). */
 export interface LiveChatAnswerDraft {
   roomId: number;
   questionId: number;

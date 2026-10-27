@@ -8,7 +8,7 @@ import com.quno.qunobackend.domain.livechat.LiveChatMessageRepository
 import org.springframework.stereotype.Service
 
 /**
- * Builds a markdown answer draft from the messages a participant picked (Phase 71, ADR-0072).
+ * Builds a markdown answer draft from the messages a participant picked (Phase 71, ADR-0073).
  * Nothing is saved — the user edits the draft and publishes it through the normal answer write,
  * citing the room. Messages are ordered by time regardless of selection order, and each keeps its
  * sender's nickname so the conversation's contributors stay visible in the answer body.

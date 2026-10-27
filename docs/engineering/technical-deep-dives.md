@@ -89,7 +89,41 @@ userIds.forEach { id -> jdbcTemplate.update("DELETE FROM users WHERE id = ?", id
 
 **교훈.** 백그라운드 폴러가 있는 시스템에서 테스트 정리 코드를 "이 트랜잭션이 만든 것만 지운다"는 전제로 짜면 안 된다 — 폴러는 트랜잭션 경계를 모른다. 정리는 "이 테스트가 건드린 리소스"가 아니라 "이 테스트가 건드린 리소스 + 그로부터 파생될 수 있는 모든 것"을 스코프로 잡아야 한다.
 
-> 관련: [system-architecture.md — Transactional Outbox](../architecture/system-architecture.md#비동기-이벤트-처리--transactional-outbox), PLAN.md Phase 19.4
+#### 재발 (2026-10-22) — `user_id` 정리로도 창이 닫히지 않았다
+
+**증상.** 같은 테스트가 같은 에러(`DELETE FROM users ... violates foreign key constraint "notifications_user_id_fkey"`)로 다시 실패했다. 실패 지점은 위 해결에서 넣은 `user_id` 정리 **바로 다음 줄**이었다. 단독 실행(`--tests "*QuestionClusterLifecycleE2ETest*"`)은 3/3 통과했다.
+
+**왜 위 해결이 부족했나.** 위 해결은 "알림이 정리 도중에 커밋된다"를 가정했다. 실제로 남은 경우는 "알림 INSERT가 정리 도중에 **아직 커밋되지 않은 채** 진행 중이다"였다.
+
+1. 디스패처 트랜잭션이 outbox 이벤트를 읽고 `notifications`에 INSERT한다. 아직 커밋 전이다.
+2. 테스트가 `DELETE FROM notifications WHERE user_id = ?`를 실행한다. READ COMMITTED라 커밋 안 된 그 row는 보이지 않고, 0건 삭제로 지나간다.
+3. 테스트가 `DELETE FROM users WHERE id = ?`를 실행한다. 1의 INSERT가 FK 검사로 그 사용자 row에 `FOR KEY SHARE` 잠금을 잡고 있어서 여기서 기다린다.
+4. 디스패처가 커밋한다. 잠금이 풀리자마자 3의 DELETE가 FK를 다시 검사하고, 방금 커밋된 알림 때문에 실패한다.
+
+정리 SQL을 어떤 순서로 놓든, 어떤 스코프로 지우든 다른 트랜잭션의 미커밋 INSERT는 보이지 않는다. 두 DELETE를 한 트랜잭션으로 묶어도 같다. 게다가 스프링 테스트 컨텍스트 캐시 때문에 설정이 다른 `@SpringBootTest` 컨텍스트마다 스케줄러가 하나씩 살아 있다. 이 테스트가 만든 이벤트를 다른 테스트 클래스의 컨텍스트가 소비할 수도 있었다.
+
+**실제 원인.** 정리 코드가 아니라 테스트 중에 백그라운드 폴러가 돈다는 것 자체였다. 그리고 그 폴러는 처음부터 필요 없었다. 알림을 검증하는 E2E 테스트(`Comment`/`Question`/`QuestionOutdated`/`QuestionReview`)는 모두 `dispatchOutboxEventsUseCase.execute()`를 직접 호출하고 있었다. 스케줄러는 그 명시적 호출과 같은 이벤트를 두고 경쟁해 중복 알림을 만들 수 있는 잡음일 뿐이었다.
+
+**해결.** 스케줄러를 프로퍼티로 끌 수 있게 하고, Gradle 테스트 태스크에서 끈다([ADR-0072](../architecture/decisions/0072-disable-outbox-dispatch-scheduler-in-tests.md)).
+
+```kotlin
+@Component
+@ConditionalOnProperty(prefix = "quno.outbox.dispatch-scheduler", name = ["enabled"], havingValue = "true", matchIfMissing = true)
+class OutboxDispatchScheduler(
+```
+
+```kotlin
+// build.gradle.kts — tasks.withType<Test>
+systemProperty("quno.outbox.dispatch-scheduler.enabled", "false")
+```
+
+이제 테스트에서 알림이 생기는 경로는 테스트 스레드의 명시적 디스패치 하나뿐이고, 그 호출은 `@AfterEach`보다 먼저 끝난다. `user_id` 정리는 사용자에게 직접 가는 알림을 위해 남겼고, 빠져 있던 `PublicReadAccessE2ETest`에도 넣었다.
+
+**검증.** `./gradlew test --rerun-tasks`를 연속 3회 실행해 모두 통과했다.
+
+**교훈(보강).** "정리 직전에 한 번 더 지운다"는 다른 트랜잭션이 쓰는 데이터에는 해결책이 되지 못한다. 테스트가 결정적이려면 데이터를 쓰는 주체가 전부 테스트 스레드 안에 있어야 한다. 백그라운드 작업은 테스트에서 끄고, 필요하면 명시적으로 한 번 실행한다.
+
+> 관련: [system-architecture.md — Transactional Outbox](../architecture/system-architecture.md#비동기-이벤트-처리--transactional-outbox), PLAN.md Phase 19.4, [ADR-0072](../architecture/decisions/0072-disable-outbox-dispatch-scheduler-in-tests.md)
 
 ### 2. 동시 리비전 생성 — `SELECT ... FOR UPDATE`가 막아야 하는 것
 

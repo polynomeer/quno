@@ -86,6 +86,9 @@ tasks.withType<Test> {
 	// Spring context tests (e.g. QunoBackendApplicationTests) need a real datasource/mongo/redis;
 	// the local profile points at the docker-compose services (see CLAUDE.md).
 	systemProperty("spring.profiles.active", "local")
+	// Integration tests call DispatchOutboxEventsUseCase explicitly; the 2s background poller
+	// would race their @AfterEach cleanup (notifications_user_id_fkey) — see OutboxDispatchScheduler.
+	systemProperty("quno.outbox.dispatch-scheduler.enabled", "false")
 	finalizedBy(tasks.jacocoTestReport)
 }
 

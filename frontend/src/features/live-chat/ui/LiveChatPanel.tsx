@@ -59,7 +59,7 @@ export function LiveChatPanel({ questionId }: { questionId: number }) {
       {joined && room && <LiveChatSession roomId={room.id} questionId={questionId} myUserId={me?.id} />}
 
       {room && (
-        // Phase 71 (ADR-0072): the server decides who may summarise (room participants); anyone
+        // Phase 71 (ADR-0073): the server decides who may summarise (room participants); anyone
         // else just gets a clear 403 message on that page.
         <Link
           href={`/questions/${questionId}/live-chat/answer`}

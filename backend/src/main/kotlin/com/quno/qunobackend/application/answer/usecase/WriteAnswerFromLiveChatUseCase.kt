@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Publishes an answer that cites the live chat it was summarised from (Phase 71, ADR-0072). Only
+ * Publishes an answer that cites the live chat it was summarised from (Phase 71, ADR-0073). Only
  * adds the room checks — the write itself (versions, NEW_ANSWER outbox, acceptance) is the plain
  * [WriteAnswerUseCase], so a chat-sourced answer behaves exactly like any other answer.
  */

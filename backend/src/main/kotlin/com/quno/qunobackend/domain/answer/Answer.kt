@@ -19,7 +19,7 @@ class Answer private constructor(
     val deletedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,
-    /** The live chat room this answer was summarised from (Phase 71, ADR-0072), or null. */
+    /** The live chat room this answer was summarised from (Phase 71, ADR-0073), or null. */
     val sourceLiveChatRoomId: Long? = null,
 ) {
     fun accept(): Answer {

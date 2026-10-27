@@ -4,7 +4,7 @@ data class WriteAnswerCommand(
     val questionId: Long,
     val authorId: Long,
     val body: String,
-    /** Set only by WriteAnswerFromLiveChatUseCase after it has checked the room (ADR-0072). */
+    /** Set only by WriteAnswerFromLiveChatUseCase after it has checked the room (ADR-0073). */
     val sourceLiveChatRoomId: Long? = null,
 )
 
