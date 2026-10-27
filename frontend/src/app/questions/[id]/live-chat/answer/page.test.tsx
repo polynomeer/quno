@@ -58,7 +58,7 @@ describe("LiveChatToAnswerPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "답변으로 게시" }));
 
-    await waitFor(() => expect(answerApi.create).toHaveBeenCalledWith(10, "초안 본문", 5));
+    await waitFor(() => expect(answerApi.create).toHaveBeenCalledWith(10, "초안 본문", { liveChatRoomId: 5 }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/questions/10#answer-77"));
   });
 

@@ -16,6 +16,15 @@ import { useAnswerVersions } from "../hooks/useAnswerVersions";
 import { useReviseAnswer } from "../hooks/useReviseAnswer";
 import { FormError } from "@/shared/ui/FormError";
 import type { Answer } from "../api/answer.types";
+import type { StackDependency } from "@/features/stack/api/stack.types";
+import {
+  type ApplicabilityRow,
+  rowFromRange,
+  rowsToRanges,
+  sameRanges,
+} from "@/features/stack/lib/applicability";
+import { ApplicabilityChips } from "@/features/stack/ui/ApplicabilityChips";
+import { ApplicabilityRangeEditor } from "@/features/stack/ui/ApplicabilityRangeEditor";
 
 export function AnswerCard({
   answer,
@@ -24,6 +33,7 @@ export function AnswerCard({
   isAccepting,
   questionHref,
   showEngagement,
+  questionDependencies,
 }: {
   answer: Answer;
   /** Only the question's author can accept (backend: QuestionAccessDeniedException otherwise). */
@@ -35,6 +45,8 @@ export function AnswerCard({
   /** Vote/Comment/Edit/Report need the card's own question page context — off by default so
    * profile-page answer lists stay read-only. */
   showEngagement?: boolean;
+  /** Offered as applicability rows while editing (ADR-0077). */
+  questionDependencies?: StackDependency[];
 }) {
   const { data: me } = useSession();
   const { data: versions } = useAnswerVersions(
@@ -44,6 +56,8 @@ export function AnswerCard({
   const reviseAnswer = useReviseAnswer(answer.id, answer.questionId);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(answer.body);
+  const ranges = answer.applicability ?? [];
+  const [rows, setRows] = useState<ApplicabilityRow[]>([]);
 
   const isAuthor = Boolean(showEngagement && me && me.id === answer.authorId);
   const latestVersionNumber =
@@ -55,7 +69,12 @@ export function AnswerCard({
   async function handleSave() {
     if (!draft.trim()) return;
     try {
-      await reviseAnswer.mutateAsync(draft.trim());
+      const edited = rowsToRanges(rows);
+      // Unchanged ranges are omitted so the revision keeps them as they are (ADR-0077).
+      await reviseAnswer.mutateAsync({
+        body: draft.trim(),
+        applicability: sameRanges(edited, ranges) ? undefined : edited,
+      });
       setIsEditing(false);
     } catch {
       // error surfaced below via reviseAnswer.error
@@ -125,6 +144,7 @@ export function AnswerCard({
             type="button"
             onClick={() => {
               setDraft(answer.body);
+              setRows(ranges.map(rowFromRange));
               setIsEditing(true);
             }}
             className="hover:text-text-primary"
@@ -164,6 +184,12 @@ export function AnswerCard({
           {isEditing ? (
             <div className="space-y-2">
               <MarkdownEditor value={draft} onChange={setDraft} rows={6} />
+              <ApplicabilityRangeEditor
+                rows={rows}
+                onChange={setRows}
+                suggestions={questionDependencies}
+                idPrefix={`answer-${answer.id}`}
+              />
               <FormError
                 error={reviseAnswer.error}
                 fallback="수정하지 못했습니다."
@@ -186,7 +212,10 @@ export function AnswerCard({
               </div>
             </div>
           ) : (
-            <MarkdownContent>{answer.body}</MarkdownContent>
+            <div className="space-y-3">
+              <MarkdownContent>{answer.body}</MarkdownContent>
+              <ApplicabilityChips ranges={ranges} />
+            </div>
           )}
           {showEngagement && (
             <CommentSection targetType="ANSWER" targetId={answer.id} />

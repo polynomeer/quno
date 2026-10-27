@@ -57,6 +57,27 @@ describe("AnswerComposer", () => {
     await waitFor(() => expect(textarea).toHaveValue(""));
   });
 
+  it("sends the applicability ranges picked from the question's stack", async () => {
+    vi.mocked(answerApi.create).mockResolvedValue(NEW_ANSWER);
+    renderWithClient(
+      <AnswerComposer
+        questionId={10}
+        questionDependencies={[{ ecosystem: "GRADLE_PLUGIN", name: "org.springframework.boot", version: "3.4.1" }]}
+      />,
+    );
+    await userEvent.type(screen.getByPlaceholderText("답변을 작성하세요 (Markdown 지원)"), "답변 내용");
+    await userEvent.click(screen.getByRole("button", { name: "+ org.springframework.boot" }));
+    await userEvent.type(screen.getByLabelText("미만"), "4.0.0");
+
+    await userEvent.click(screen.getByRole("button", { name: "Post Answer" }));
+
+    await waitFor(() =>
+      expect(answerApi.create).toHaveBeenCalledWith(10, "답변 내용", {
+        applicability: [{ ecosystem: "GRADLE_PLUGIN", name: "org.springframework.boot", fromVersion: "3.4.1", untilVersion: "4.0.0" }],
+      }),
+    );
+  });
+
   it("keeps the draft and shows the backend's error message when submitting fails", async () => {
     vi.mocked(answerApi.create).mockRejectedValue(new ApiError(403, "FORBIDDEN", "답변을 작성할 수 없습니다."));
     renderWithClient(<AnswerComposer questionId={10} />);

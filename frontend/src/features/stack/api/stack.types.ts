@@ -12,3 +12,13 @@ export interface ParsedDependencyFile {
   format: "GRADLE" | "MAVEN" | "NPM";
   dependencies: StackDependency[];
 }
+
+/** Where an answer holds for one package: `[fromVersion, untilVersion)` (Phase 63.3, ADR-0077). */
+export interface ApplicabilityRange {
+  ecosystem: Ecosystem;
+  name: string;
+  /** Inclusive lower bound. */
+  fromVersion: string | null;
+  /** Exclusive upper bound — where compatibility breaks, not the last version tried. */
+  untilVersion: string | null;
+}

@@ -45,7 +45,12 @@ class AnswerController(
         @PathVariable questionId: Long,
         @Valid @RequestBody request: WriteAnswerRequest,
     ): AnswerResponse {
-        val command = WriteAnswerCommand(questionId = questionId, authorId = authorId, body = request.body)
+        val command = WriteAnswerCommand(
+            questionId = questionId,
+            authorId = authorId,
+            body = request.body,
+            applicability = request.applicability.map { it.toDomain() },
+        )
         val result = request.liveChatRoomId?.let { writeAnswerFromLiveChatUseCase.execute(command, it) }
             ?: writeAnswerUseCase.execute(command)
         return result.toResponse()
@@ -74,7 +79,12 @@ class AnswerController(
         @PathVariable answerId: Long,
         @Valid @RequestBody request: AnswerContentRequest,
     ): AnswerMutationResponse = reviseAnswerUseCase.execute(
-        ReviseAnswerCommand(answerId = answerId, actorId = actorId, body = request.body),
+        ReviseAnswerCommand(
+            answerId = answerId,
+            actorId = actorId,
+            body = request.body,
+            applicability = request.applicability?.map { it.toDomain() },
+        ),
     ).toResponse()
 
     @GetMapping("/answers/{answerId}/versions")

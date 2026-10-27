@@ -328,7 +328,7 @@
 [ADR-0017](decisions/0017-manual-outdated-marking-and-spike-detection-scope.md)이 외부 데이터 피드가 없다는 이유로 범위 밖에 뒀던 "기술 버전 영향 감지"의 진짜 자동화를 [ADR-0033](decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md)으로 시작했다. endoflife.date를 연동해 실제 릴리스 데이터를 얻지만, 질문을 자동으로 `OUTDATED`로 전환하지는 않는다 — 감지 결과를 알림으로만 전달하고 최종 판단은 여전히 사람이 `POST /questions/{id}/outdated`로 내린다.
 
 - **스캐너(외부 API 없음)**: `TechnologyVersionScanScheduler`가 하루 1회 `domain/qunobot/TrackedTechnologies`(태그 slug → endoflife.date 제품 slug, 하드코딩된 큐레이션: kotlin, spring-boot, redis, kafka→apache-kafka, postgresql, mongodb, docker→docker-engine)의 각 제품 최신 릴리스를 조회한다. `technology_releases`에 태그당 1행(이력 아님)으로 저장하고, 저장된 버전과 실제로 달라졌을 때만 "새 릴리스"로 취급한다(처음 보는 태그는 베이스라인만 저장, 알림 없음 — 롤아웃 시점에 기존 태그 전부가 "새 릴리스"로 오탐되는 것을 막기 위해).
-- 새 릴리스가 감지되면 해당 태그가 달리고 `RESOLVED`/`OUTDATED`가 아니며 콘텐츠(question_versions 최신 `created_at`)가 릴리스일보다 오래된 질문을 찾아 `TECH_VERSION_IMPACT_DETECTED` outbox 이벤트를 발행한다(Ward 구독자 + 질문 작성자, `QUESTION_OUTDATED`와 동일한 수신자 규칙). 이 이벤트에는 다른 모든 이벤트와 달리 `actorId`가 없다 — 발행자가 사람이 아니라 스케줄러이기 때문이다.
+- 새 릴리스가 감지되면 해당 태그가 달리고 `RESOLVED`/`OUTDATED`가 아니며 콘텐츠(question_versions 최신 `created_at`)가 릴리스일보다 오래된 질문을 찾아 `TECH_VERSION_IMPACT_DETECTED` outbox 이벤트를 발행한다(Ward 구독자 + 질문 작성자, `QUESTION_OUTDATED`와 동일한 수신자 규칙). Phase 63.4부터는 답변 적용 범위가 새 버전을 포함하는 질문을 빼고, payload에 `reason`을 남긴다([ADR-0077](decisions/0077-answer-applicability-range-and-narrowed-impact.md)). 이 이벤트에는 다른 모든 이벤트와 달리 `actorId`가 없다 — 발행자가 사람이 아니라 스케줄러이기 때문이다.
 - `GET /qunobot/version-impacts?limit=`: 현재 영향권에 있는 질문을 릴리스일 내림차순으로 반환한다. `VersionImpact`(`domain/qunobot`)는 도메인 불변조건이 없는 순수 조회 모델이라 [ADR-0010](decisions/0010-metrics-read-model-skip-dto.md)과 동일하게 API 응답까지 그대로 재사용한다. Spike Detection과 달리 **Redis 캐싱은 하지 않는다** — 이 모델에 Instant/LocalDate가 섞여 있어 기존 JSON 캐시 직렬화 전례가 없고, 추적 기술 수가 작아 캐싱이 필요할 만큼 비싸지 않다고 판단했다.
 - 한 제품의 외부 API 호출이 실패해도(알 수 없는 slug, 타임아웃, 장애) 그 제품만 건너뛰고 나머지 스캔은 계속된다 — `TechnologyReleaseFeed.fetchLatest`가 예외 대신 null을 반환한다.
 
@@ -496,6 +496,17 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
   - Fork는 원 질문의 목록을 복사한다.
   - 지원하지 않는 생태계, 빈 이름, 200개 초과는 400이다.
 - `GET /questions/{id}` 응답에 `dependencies`가 들어간다.
+
+### 답변 적용 범위 (Phase 63.3, ADR-0077)
+
+- `POST /questions/{questionId}/answers`와 `POST /answers/{answerId}/versions`가 선택 필드 `applicability`를 받는다.
+  - 항목: `{ecosystem, name, fromVersion?, untilVersion?}`. `fromVersion`은 이상(포함), `untilVersion`은 미만(제외)이다.
+  - 둘 중 하나는 있어야 하고, 둘 다 있으면 `fromVersion < untilVersion`이어야 한다.
+  - 버전은 `3.2.0`·`2.2.0-RC1`·`v1.4` 같은 정확한 버전만 받는다. `^3.2`·`3.x` 같은 범위 표기는 400이다.
+  - 답변당 최대 20개, 같은 패키지는 한 번만. 어기면 400이다.
+  - 수정 요청에서 생략하면 유지하고, `[]`를 보내면 지운다.
+- `GET /questions/{questionId}/answers`와 답변 작성 응답에 `applicability`가 들어간다.
+- 버전 영향 감지(`TECH_VERSION_IMPACT_DETECTED`, `GET /qunobot/version-impacts`)는 답변 범위가 새 버전을 포함하는 질문을 뺀다. 알림 payload의 `reason`은 `NO_RANGE`(해당 제품의 범위 없음, 기존 휴리스틱) 또는 `OUT_OF_RANGE`다.
 
 ## 입력 검증 공통 원칙
 

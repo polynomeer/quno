@@ -11,6 +11,7 @@ import com.quno.qunobackend.domain.common.OutboxEvent
 import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.stack.AnswerApplicabilityRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,11 +26,13 @@ class ReviseAnswerUseCase(
     private val answerVersionRepository: AnswerVersionRepository,
     private val questionRepository: QuestionRepository,
     private val outboxEventRepository: OutboxEventRepository,
+    private val answerApplicabilityRepository: AnswerApplicabilityRepository? = null,
 ) {
     @Transactional
     fun execute(command: ReviseAnswerCommand): AnswerMutationResult {
         val answer = answerRepository.findById(command.answerId) ?: throw AnswerNotFoundException(command.answerId)
         if (answer.authorId != command.actorId) throw AnswerAccessDeniedException(command.answerId)
+        val applicability = command.applicability?.let(::checkedApplicability)
 
         val latestVersionId = requireNotNull(answer.latestVersionId) {
             "answer ${command.answerId} has no latest version yet"
@@ -47,6 +50,9 @@ class ReviseAnswerUseCase(
         )
 
         answerRepository.save(answer.withLatestVersion(requireNotNull(newVersion.id), bodyMarkdown = command.body))
+        if (applicability != null) {
+            answerApplicabilityRepository?.replaceForAnswer(command.answerId, answer.questionId, newVersion.versionNumber, applicability)
+        }
 
         // questionAuthorId is omitted (not thrown) when the question is gone — e.g. hidden by
         // moderation (Phase 16) — revising your own answer shouldn't depend on that.

@@ -13,6 +13,7 @@ import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.stack.AnswerApplicabilityRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,9 +25,11 @@ class WriteAnswerUseCase(
     private val answerVersionRepository: AnswerVersionRepository,
     private val outboxEventRepository: OutboxEventRepository,
     private val answerResultAssembler: AnswerResultAssembler,
+    private val answerApplicabilityRepository: AnswerApplicabilityRepository? = null,
 ) {
     @Transactional
     fun execute(command: WriteAnswerCommand): AnswerResult {
+        val applicability = checkedApplicability(command.applicability)
         val question = questionRepository.findById(command.questionId)
             ?: throw QuestionNotFoundException(command.questionId)
         val targetVersionNumber = questionVersionRepository.findById(requireNotNull(question.latestVersionId)).let {
@@ -50,6 +53,9 @@ class WriteAnswerUseCase(
             AnswerVersion.create(answerId = answerId, versionNumber = 1, bodyMarkdown = command.body, createdBy = command.authorId),
         )
         val saved = answerRepository.save(answer.withLatestVersion(requireNotNull(version.id)))
+        if (applicability.isNotEmpty()) {
+            answerApplicabilityRepository?.replaceForAnswer(answerId, command.questionId, versionNumber = 1, applicability)
+        }
 
         // questionAuthorId: the question's author is always notified, even if they never
         // explicitly watched their own question — see DispatchOutboxEventsUseCase's kdoc.

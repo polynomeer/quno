@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.answer.dto
 
 import com.quno.qunobackend.domain.question.DiffLine
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.stack.ApplicabilityRange
 import java.time.Instant
 
 data class AnswerResult(
@@ -18,6 +19,7 @@ data class AnswerResult(
     val updatedAt: Instant,
     /** The live chat room this answer was summarised from (ADR-0073), or null. */
     val sourceLiveChatRoomId: Long? = null,
+    val applicability: List<ApplicabilityRange> = emptyList(),
 )
 
 data class AcceptAnswerResult(

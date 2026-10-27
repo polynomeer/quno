@@ -142,6 +142,27 @@ describe("AnswerCard", () => {
     await waitFor(() => expect(screen.queryByRole("textbox")).not.toBeInTheDocument());
   });
 
+  it("shows the answer's applicability and sends ranges on save only when they changed", async () => {
+    const ranged: Answer = {
+      ...ANSWER,
+      applicability: [{ ecosystem: "NPM", name: "react", fromVersion: "18.0.0", untilVersion: null }],
+    };
+    renderWithClient(<AnswerCard answer={ranged} showEngagement />);
+    expect(screen.getByRole("list", { name: "적용 범위" })).toHaveTextContent("react18.0.0 이상");
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(answerApi.revise).toHaveBeenLastCalledWith(ANSWER.id, "original body");
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    await userEvent.type(screen.getByLabelText("미만"), "19.0.0");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(answerApi.revise).toHaveBeenLastCalledWith(ANSWER.id, "original body", [
+      { ecosystem: "NPM", name: "react", fromVersion: "18.0.0", untilVersion: "19.0.0" },
+    ]);
+  });
+
   it("stays in edit mode and shows the error when saving fails (regression: missing try/catch)", async () => {
     vi.mocked(answerApi.revise).mockRejectedValue(new ApiError(403, "FORBIDDEN", "수정 권한이 없습니다."));
     renderWithClient(<AnswerCard answer={ANSWER} showEngagement />);
