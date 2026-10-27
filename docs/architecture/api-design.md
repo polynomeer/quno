@@ -470,6 +470,18 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - 컨트롤러가 `NicknameResolver`로 응답 하나당 한 번 일괄 조회해 붙인다. 유스케이스 결과에는 닉네임이 없다.
 - 생성·수정 응답과 실시간 질문방 메시지에는 닉네임이 없다(`null` 또는 필드 없음). 프론트는 `userLabel()`로 "사용자 #id"를 대신 표시한다.
 
+## 에러 시그니처 (Phase 64, ADR-0075)
+
+스택트레이스에서 환경마다 달라지는 부분(경로·라인 번호·주소·프록시 접미사·람다 번호 등)을 지워 같은 에러를 같은 키로 묶는다. 정규화 규칙과 해시는 Phase 91 실험의 `signature.js`와 같다([ADR-0075](decisions/0075-error-signature-normalization-and-matching.md)).
+
+- `POST /error-signatures/preview`(body: `{"text": "..."}`, 최대 20,000자, 인증 필요): 시그니처와 같은 에러가 있는 질문을 반환한다. 텍스트는 저장하지 않는다.
+  - `signatures`: 각각 `exceptionClass`, `normalizedMessage`, `frames`, `signatureHash`, `messageKey`
+  - `questions`: 검색 결과와 같은 요약 형식이다. `signatureHash` 일치(근본 원인 + 상위 5프레임)가 먼저, `messageKey`만 일치하는 질문이 그다음이다.
+  - 예외가 없는 텍스트는 두 목록 모두 비어 있다.
+- **색인:** 질문 작성·수정·Fork 때 최신 판본의 로그와 본문에서 다시 계산해 `question_error_signatures`를 통째로 바꾼다. 수정으로 트레이스를 지우면 더 이상 일치하지 않는다.
+- **검색:** `GET /search?q=`에 스택트레이스를 붙여 넣으면 같은 에러의 질문이 전문검색 결과보다 앞에 온다.
+- **관련 질문:** `GET /questions/{id}/related`는 같은 에러의 질문을 태그 겹침 결과보다 앞에 둔다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
