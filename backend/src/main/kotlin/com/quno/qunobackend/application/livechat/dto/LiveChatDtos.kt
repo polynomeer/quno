@@ -5,3 +5,6 @@ import java.time.Instant
 data class LiveChatRoomResult(val id: Long, val questionId: Long, val createdBy: Long, val createdAt: Instant)
 
 data class LiveChatMessageResult(val id: String, val roomId: Long, val senderId: Long, val body: String, val createdAt: Instant)
+
+/** An unsaved answer draft built from selected messages (Phase 71, ADR-0073). */
+data class LiveChatAnswerDraftResult(val roomId: Long, val questionId: Long, val body: String, val messageCount: Int)

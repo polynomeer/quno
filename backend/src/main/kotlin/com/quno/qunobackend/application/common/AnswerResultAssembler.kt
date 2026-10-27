@@ -48,6 +48,7 @@ class AnswerResultAssembler(
                 score = scoresByAnswerId[answer.id] ?: 0L,
                 createdAt = answer.createdAt,
                 updatedAt = answer.updatedAt,
+                sourceLiveChatRoomId = answer.sourceLiveChatRoomId,
             )
         }
     }

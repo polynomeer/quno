@@ -13,6 +13,8 @@ export interface Answer {
   createdAt: string;
   updatedAt: string;
   score: number;
+  /** Set when the answer was summarised from a live chat room (Phase 71, ADR-0073). */
+  sourceLiveChatRoomId?: number | null;
 }
 
 export interface AnswerMutationResult {

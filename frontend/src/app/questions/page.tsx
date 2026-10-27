@@ -2,7 +2,6 @@
 
 import { Suspense, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "@/features/auth/hooks/useSession";
 import { useSearch } from "@/features/search/hooks/useSearch";
 import { SearchFilters } from "@/features/search/ui/SearchFilters";
 import { QuestionList } from "@/widgets/question-feed/QuestionList";
@@ -13,7 +12,6 @@ import type { QuestionStatus } from "@/shared/ui/StatusBadge";
 import type { SearchSort } from "@/features/search/api/search.types";
 
 function QuestionsSearchContent() {
-  const { isLoading: authLoading } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
@@ -86,10 +84,6 @@ function QuestionsSearchContent() {
       }),
     [results, selectedTags, selectedStatuses],
   );
-
-  if (authLoading) {
-    return <Skeleton className="h-40 w-full" />;
-  }
 
   return (
     <div className="space-y-6">

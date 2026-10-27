@@ -60,6 +60,16 @@ describe("LiveChatPanel", () => {
     expect(await screen.findByTestId("live-chat-session")).toHaveTextContent("room 5");
   });
 
+  it("links to the summarise-into-an-answer page once a room exists", async () => {
+    vi.mocked(liveChatApi.getRoom).mockResolvedValue(ROOM);
+    renderWithClient(<LiveChatPanel questionId={10} />);
+
+    expect(await screen.findByRole("link", { name: "대화를 답변으로 정리" })).toHaveAttribute(
+      "href",
+      "/questions/10/live-chat/answer",
+    );
+  });
+
   it("joins an existing room when 채팅 참여하기 is clicked", async () => {
     vi.mocked(liveChatApi.getRoom).mockResolvedValue(ROOM);
     renderWithClient(<LiveChatPanel questionId={10} />);

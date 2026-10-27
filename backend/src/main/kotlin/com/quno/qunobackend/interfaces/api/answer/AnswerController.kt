@@ -9,6 +9,7 @@ import com.quno.qunobackend.application.answer.usecase.GetAnswerVersionUseCase
 import com.quno.qunobackend.application.answer.usecase.ListAnswerVersionsUseCase
 import com.quno.qunobackend.application.answer.usecase.ListAnswersUseCase
 import com.quno.qunobackend.application.answer.usecase.ReviseAnswerUseCase
+import com.quno.qunobackend.application.answer.usecase.WriteAnswerFromLiveChatUseCase
 import com.quno.qunobackend.application.answer.usecase.WriteAnswerUseCase
 import com.quno.qunobackend.application.common.NicknameResolver
 import jakarta.validation.Valid
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1")
 class AnswerController(
     private val writeAnswerUseCase: WriteAnswerUseCase,
+    private val writeAnswerFromLiveChatUseCase: WriteAnswerFromLiveChatUseCase,
     private val listAnswersUseCase: ListAnswersUseCase,
     private val acceptAnswerUseCase: AcceptAnswerUseCase,
     private val reviseAnswerUseCase: ReviseAnswerUseCase,
@@ -43,9 +45,9 @@ class AnswerController(
         @PathVariable questionId: Long,
         @Valid @RequestBody request: WriteAnswerRequest,
     ): AnswerResponse {
-        val result = writeAnswerUseCase.execute(
-            WriteAnswerCommand(questionId = questionId, authorId = authorId, body = request.body),
-        )
+        val command = WriteAnswerCommand(questionId = questionId, authorId = authorId, body = request.body)
+        val result = request.liveChatRoomId?.let { writeAnswerFromLiveChatUseCase.execute(command, it) }
+            ?: writeAnswerUseCase.execute(command)
         return result.toResponse()
     }
 

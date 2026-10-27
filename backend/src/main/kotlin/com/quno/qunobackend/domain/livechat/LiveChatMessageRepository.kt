@@ -6,4 +6,9 @@ interface LiveChatMessageRepository {
 
     /** Most recent [limit] messages for a room, oldest first — ready to render top-to-bottom. */
     fun findRecentByRoomId(roomId: Long, limit: Int): List<LiveChatMessage>
+
+    /** The messages among [ids] that belong to [roomId]; ids from other rooms are simply absent. */
+    fun findByRoomIdAndIds(roomId: Long, ids: Collection<String>): List<LiveChatMessage>
+
+    fun existsByRoomIdAndSenderId(roomId: Long, senderId: Long): Boolean
 }
