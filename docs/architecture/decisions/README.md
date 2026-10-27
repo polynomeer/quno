@@ -97,3 +97,4 @@
 | [0070](0070-question-as-evidence-environment-snapshot-and-verification-tiers.md) | 질문은 증거 자료다: 환경 스냅샷을 이벤트 기반으로 로컬 정제 후 3계층·증상별 프로파일·기준선 델타로 자동 수집, 검증된 질문 L0~L4 등급과 Evidence Card | 승인됨 |
 | [0071](0071-web-design-v2-liquid-glass-chrome.md) | 웹 디자인 시안 v2 적용: 실제 데이터가 있는 기존 화면만 리뉴얼, 추가 기획 화면은 해당 Phase에서 시안 기준으로(목 데이터 화면 금지), 유리 효과는 헤더·탭·투표 레일 같은 크롬에만(본문 카드는 불투명), 캡슐 버튼·20~24px 카드·떨어진 카드 목록 | 승인됨 |
 | [0072](0072-disable-outbox-dispatch-scheduler-in-tests.md) | 통합 테스트 정리의 `notifications_user_id_fkey` flaky 해결: 2초 주기 `OutboxDispatchScheduler`를 프로퍼티로 끌 수 있게 하고 Gradle 테스트에서 끔(테스트는 `DispatchOutboxEventsUseCase`를 직접 호출), `user_id` 기준 정리만으로는 미커밋 INSERT 창이 안 닫힘 | 승인됨 |
+| [0074](0074-defer-kotlin-2-4-until-ktlint-support.md) | Kotlin 2.4 업그레이드 보류: 세 플러그인을 함께 올려도 ktlint(기본 엔진·1.8.0 모두)가 2.4 소스를 해석하지 못해 2.2.21 유지, ktlint 검사는 끄지 않음, Dependabot은 Kotlin 플러그인을 한 그룹으로 묶고 2.4 이상은 무시 | 승인됨 |
