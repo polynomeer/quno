@@ -8,6 +8,7 @@ import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersion
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,6 +28,7 @@ class ForkQuestionUseCase(
 
     /** Null only in unit tests that don't care about signatures; Spring always injects it. */
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
+    private val questionDependencyRepository: QuestionDependencyRepository? = null,
 ) {
     @Transactional
     fun execute(command: ForkQuestionCommand): QuestionMutationResult {
@@ -57,6 +59,11 @@ class ForkQuestionUseCase(
         }
 
         errorSignatureIndexer?.index(questionId, version.versionNumber, originVersion.bodyMarkdown, originVersion.logs)
+        // A fork starts from the same environment as its origin (ADR-0076).
+        questionDependencyRepository?.let { repository ->
+            val originDependencies = repository.findByQuestionId(command.originQuestionId)
+            if (originDependencies.isNotEmpty()) repository.replaceForQuestion(questionId, version.versionNumber, originDependencies)
+        }
         val updatedQuestion = questionRepository.save(question.withLatestVersion(requireNotNull(version.id)))
 
         return QuestionMutationResult(

@@ -69,6 +69,7 @@ class QuestionController(
                 environment = request.environment,
                 logs = request.logs,
                 tagNames = request.tags,
+                dependencies = request.dependencies.map { it.toDomain() },
             ),
         )
         return result.toResponse()
@@ -91,6 +92,7 @@ class QuestionController(
             viewCount = result.viewCount,
             createdAt = result.createdAt,
             updatedAt = result.updatedAt,
+            dependencies = result.dependencies.map { DependencyResponse(it.ecosystem, it.name, it.version) },
         )
     }
 
@@ -108,6 +110,7 @@ class QuestionController(
                 body = request.body,
                 environment = request.environment,
                 logs = request.logs,
+                dependencies = request.dependencies?.map { it.toDomain() },
             ),
         )
         return result.toResponse()
