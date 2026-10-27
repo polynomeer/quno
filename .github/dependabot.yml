@@ -5,6 +5,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # Kotlin Gradle plugins (jvm, plugin.spring, plugin.jpa) must move together; separate PRs each
+    # fail on the version mismatch. 2.4.x is held back until ktlint can parse it (ADR-0074).
+    groups:
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+    ignore:
+      - dependency-name: "org.jetbrains.kotlin*"
+        versions: [">= 2.4.0"]
 
   - package-ecosystem: npm
     directory: /frontend
