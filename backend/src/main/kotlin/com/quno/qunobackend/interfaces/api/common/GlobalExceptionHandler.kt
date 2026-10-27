@@ -23,7 +23,10 @@ import com.quno.qunobackend.domain.directask.PaymentAmountMismatchException
 import com.quno.qunobackend.domain.directask.PaymentConfirmationFailedException
 import com.quno.qunobackend.domain.directask.SelfDirectAskException
 import com.quno.qunobackend.domain.follow.SelfFollowException
+import com.quno.qunobackend.domain.livechat.InvalidLiveChatMessageSelectionException
+import com.quno.qunobackend.domain.livechat.LiveChatParticipantRequiredException
 import com.quno.qunobackend.domain.livechat.LiveChatRoomNotFoundException
+import com.quno.qunobackend.domain.livechat.LiveChatRoomQuestionMismatchException
 import com.quno.qunobackend.domain.organization.DuplicateOrganizationNameException
 import com.quno.qunobackend.domain.organization.EmailDomainVerificationExpiredException
 import com.quno.qunobackend.domain.organization.EmailDomainVerificationNotFoundException
@@ -121,6 +124,7 @@ class GlobalExceptionHandler {
         SelfDirectAskException::class,
         DirectAskAccessDeniedException::class,
         VerifiedOrganizationJoinRequiresEmailException::class,
+        LiveChatParticipantRequiredException::class,
     )
     fun handleForbidden(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse("FORBIDDEN", ex.message.orEmpty()))
 
@@ -147,6 +151,8 @@ class GlobalExceptionHandler {
         PublicEmailDomainException::class,
         InvalidVerificationCodeException::class,
         PaymentAmountMismatchException::class,
+        LiveChatRoomQuestionMismatchException::class,
+        InvalidLiveChatMessageSelectionException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

@@ -41,4 +41,7 @@ class AnswerJpaEntity(
 
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
+
+    @Column(name = "source_live_chat_room_id")
+    val sourceLiveChatRoomId: Long? = null,
 )

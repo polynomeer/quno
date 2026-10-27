@@ -25,5 +25,13 @@ class LiveChatMessageRepositoryAdapter(
         .map { it.toDomain() }
         .reversed()
 
+    override fun findByRoomIdAndIds(roomId: Long, ids: Collection<String>): List<LiveChatMessage> = if (ids.isEmpty()) {
+        emptyList()
+    } else {
+        mongoRepository.findByRoomIdAndIdIn(roomId, ids).map { it.toDomain() }
+    }
+
+    override fun existsByRoomIdAndSenderId(roomId: Long, senderId: Long): Boolean = mongoRepository.existsByRoomIdAndSenderId(roomId, senderId)
+
     private fun LiveChatMessageDocument.toDomain(): LiveChatMessage = LiveChatMessage.reconstitute(id = requireNotNull(id), roomId = roomId, senderId = senderId, body = body, createdAt = createdAt)
 }
