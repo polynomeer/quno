@@ -14,7 +14,9 @@ export function useCreateAnswerFromLiveChat(
 
   return useMutation({
     mutationFn: (body: string) =>
-      answerApi.create(questionId, body, liveChatRoomId ?? undefined),
+      liveChatRoomId === null
+        ? answerApi.create(questionId, body)
+        : answerApi.create(questionId, body, { liveChatRoomId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: answerKeys.list(questionId) });
       queryClient.invalidateQueries({

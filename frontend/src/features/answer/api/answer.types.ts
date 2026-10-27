@@ -1,4 +1,5 @@
 import type { DiffLine } from "@/features/question/api/question.types";
+import type { ApplicabilityRange } from "@/features/stack/api/stack.types";
 
 export interface Answer {
   id: number;
@@ -15,6 +16,8 @@ export interface Answer {
   score: number;
   /** Set when the answer was summarised from a live chat room (Phase 71, ADR-0073). */
   sourceLiveChatRoomId?: number | null;
+  /** Where the answer holds, per package (Phase 63.3, ADR-0077). */
+  applicability?: ApplicabilityRange[];
 }
 
 export interface AnswerMutationResult {

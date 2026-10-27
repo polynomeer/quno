@@ -225,6 +225,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
                   }
                   onAccept={() => acceptAnswer.mutate(answer.id)}
                   showEngagement
+                  questionDependencies={question.dependencies ?? []}
                 />
               ))}
             </ul>
@@ -232,7 +233,10 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
         </section>
 
         {me ? (
-          <AnswerComposer questionId={questionId} />
+          <AnswerComposer
+            questionId={questionId}
+            questionDependencies={question.dependencies ?? []}
+          />
         ) : (
           <p className="text-sm text-text-secondary">
             <Link
