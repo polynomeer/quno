@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.domain.question.Question
@@ -23,6 +24,9 @@ class ForkQuestionUseCase(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
     private val questionTagRepository: QuestionTagRepository,
+
+    /** Null only in unit tests that don't care about signatures; Spring always injects it. */
+    private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
 ) {
     @Transactional
     fun execute(command: ForkQuestionCommand): QuestionMutationResult {
@@ -52,6 +56,7 @@ class ForkQuestionUseCase(
             questionTagRepository.attach(questionId, requireNotNull(tag.id))
         }
 
+        errorSignatureIndexer?.index(questionId, version.versionNumber, originVersion.bodyMarkdown, originVersion.logs)
         val updatedQuestion = questionRepository.save(question.withLatestVersion(requireNotNull(version.id)))
 
         return QuestionMutationResult(

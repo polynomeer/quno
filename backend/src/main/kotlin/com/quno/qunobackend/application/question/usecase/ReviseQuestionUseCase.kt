@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.domain.common.OutboxEvent
@@ -23,6 +24,9 @@ class ReviseQuestionUseCase(
     private val questionRepository: QuestionRepository,
     private val questionVersionRepository: QuestionVersionRepository,
     private val outboxEventRepository: OutboxEventRepository,
+
+    /** Null only in unit tests that don't care about signatures; Spring always injects it. */
+    private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
 ) {
     @Transactional
     fun execute(command: ReviseQuestionCommand): QuestionMutationResult {
@@ -51,6 +55,8 @@ class ReviseQuestionUseCase(
         val updatedQuestion = questionRepository.save(
             question.revise(versionId = requireNotNull(newVersion.id), title = command.title),
         )
+
+        errorSignatureIndexer?.index(command.questionId, newVersion.versionNumber, command.body, command.logs)
 
         outboxEventRepository.save(
             OutboxEvent.create(
