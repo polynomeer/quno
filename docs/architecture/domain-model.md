@@ -153,13 +153,14 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 | live_chat_rooms | id, question_id(unique), created_by, created_at | hard delete 불필요(close/archive 없음 — 논의 이력이 질문과 함께 영구 보존됨). 메시지 자체는 여기 없다 — MongoDB `live_chat_messages`에 있음(Phase 24, [ADR-0036](decisions/0036-live-chat-websocket-mongodb-redis-presence.md)) |
 | question_error_signatures | id, question_id, version_number, exception_class, signature_hash, message_key, created_at | 질문 최신 판본의 로그·본문에서 다시 계산할 수 있는 파생 색인. 작성·수정·Fork 때 통째로 교체하고, 질문을 hard delete하면 `ON DELETE CASCADE`로 함께 지운다(Phase 64, [ADR-0075](decisions/0075-error-signature-normalization-and-matching.md)) |
 | question_dependencies | id, question_id, version_number, ecosystem, name, version, created_at | 작성자가 미리보기에서 고른 Stack Fingerprint 항목. 원본 의존성 파일은 저장하지 않는다. 최신 판본만 두고(수정 시 생략=유지, 빈 목록=삭제) Fork는 복사하며, 질문 hard delete 시 CASCADE(Phase 63, [ADR-0076](decisions/0076-stack-fingerprint-dependency-parsing.md)) |
+| answer_applicability_ranges | id, answer_id, question_id, version_number, ecosystem, name, from_version, until_version, created_at | 답변이 유효한 버전 범위 `[from, until)`. 답변 최신 판본만 두고(수정 시 생략=유지, 빈 목록=삭제), `question_id`는 영향 감지가 질문 단위로 읽도록 답변에서 복사한 값이다. 답변 hard delete 시 CASCADE(Phase 63.3, [ADR-0077](decisions/0077-answer-applicability-range-and-narrowed-impact.md)) |
 
 ### 삭제/FK 운영 원칙
 
 - Question/Answer/User 같은 코어 엔티티에 무분별한 `ON DELETE CASCADE`를 사용하지 않는다 (부모 한 건 삭제 시 대량 연쇄 삭제 위험 방지).
 - 질문/답변은 soft delete를 기본으로 하여 복구·감사·통계·지식 그래프의 과거 관계를 보존한다.
 - `question_tags`, `watches`, `saves`, `user_tag_follows`, `user_follows` 같은 순수 관계 데이터는 hard delete가 자연스럽다.
-- 질문 내용에서 다시 만들 수 있는 파생 색인(`question_error_signatures`, `question_dependencies`)은 예외적으로 질문에 `ON DELETE CASCADE`를 건다. 질문은 평소 soft delete라 실제로 연쇄 삭제가 일어나는 경우는 계정 삭제·테스트 정리뿐이고, 색인만 남는 쪽이 더 해롭다.
+- 질문 내용에서 다시 만들 수 있는 파생 색인(`question_error_signatures`, `question_dependencies`)과 답변 적용 범위(`answer_applicability_ranges`)는 예외적으로 질문·답변에 `ON DELETE CASCADE`를 건다. 질문은 평소 soft delete라 실제로 연쇄 삭제가 일어나는 경우는 계정 삭제·테스트 정리뿐이고, 색인만 남는 쪽이 더 해롭다.
 - Notification처럼 대량·약결합 데이터는 FK를 생략하거나 `SET NULL` 정책을 허용한다.
 - 영구 삭제가 필요하면 즉시 cascade하지 않고 retention/배치 purge 정책으로 통제한다.
 
