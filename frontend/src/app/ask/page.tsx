@@ -9,6 +9,8 @@ import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useCreateQuestion } from "@/features/question/hooks/useCreateQuestion";
 import { TagInput } from "@/features/question/ui/TagInput";
 import { SameErrorPanel } from "@/features/error-signature/ui/SameErrorPanel";
+import { StackFingerprintInput } from "@/features/stack/ui/StackFingerprintInput";
+import type { StackDependency } from "@/features/stack/api/stack.types";
 import { useSearch } from "@/features/search/hooks/useSearch";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { Input } from "@/shared/ui/Input";
@@ -48,6 +50,7 @@ export default function AskPage() {
   const router = useRouter();
   const createQuestion = useCreateQuestion();
   const [tags, setTags] = useState<string[]>([]);
+  const [dependencies, setDependencies] = useState<StackDependency[]>([]);
   const askSchema = useMemo(() => buildAskSchema(t), [t]);
 
   const {
@@ -109,6 +112,7 @@ export default function AskPage() {
         environment: values.environment?.trim() || undefined,
         logs: values.logs?.trim() || undefined,
         tags,
+        dependencies,
       });
       try {
         localStorage.removeItem(DRAFT_KEY);
@@ -233,6 +237,13 @@ export default function AskPage() {
               {...register("environment")}
             />
           </div>
+
+          <section aria-labelledby="ask-stack-heading" className="space-y-2">
+            <h2 id="ask-stack-heading" className="font-semibold">
+              {t.ask.stackLabel}
+            </h2>
+            <StackFingerprintInput onChange={setDependencies} />
+          </section>
 
           <div className="space-y-2">
             <label htmlFor="ask-logs" className="block font-semibold">

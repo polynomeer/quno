@@ -1,4 +1,5 @@
 import type { QuestionStatus } from "@/shared/ui/StatusBadge";
+import type { StackDependency } from "@/features/stack/api/stack.types";
 
 /** Shared "question summary" shape — backend's QuestionSearchResultResponse, reused across
  * search/dashboard/related/cluster (see docs/architecture/api-design.md QuestionSummaryHydrator). */
@@ -51,6 +52,8 @@ export interface QuestionDetail {
   score: number;
   /** Distinct viewers, deduplicated server-side per 30 minutes (ADR-0063). */
   viewCount: number;
+  /** Stack fingerprint of the latest version (ADR-0076); absent from older responses. */
+  dependencies?: StackDependency[];
 }
 
 export interface QuestionVersionSummary {
@@ -91,6 +94,8 @@ export interface CreateQuestionInput {
   environment?: string;
   logs?: string;
   tags: string[];
+  /** Only the entries the author kept from the parse preview (ADR-0076). */
+  dependencies?: StackDependency[];
 }
 
 export interface QuestionMutationResult {
