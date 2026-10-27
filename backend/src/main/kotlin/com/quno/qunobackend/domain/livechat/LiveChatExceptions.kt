@@ -6,12 +6,10 @@ class LiveChatRoomNotFoundException(id: Long) : RuntimeException("Live chat room
 
 /** Only the person who opened the room or someone who has posted in it may turn the conversation
  * into an answer (Phase 71, ADR-0073). */
-class LiveChatParticipantRequiredException(roomId: Long, userId: Long) :
-    RuntimeException("User $userId is not a participant of live chat room $roomId")
+class LiveChatParticipantRequiredException(roomId: Long, userId: Long) : RuntimeException("User $userId is not a participant of live chat room $roomId")
 
 /** An answer can only cite the live chat room of the question it answers. */
-class LiveChatRoomQuestionMismatchException(roomId: Long, questionId: Long) :
-    RuntimeException("Live chat room $roomId does not belong to question $questionId")
+class LiveChatRoomQuestionMismatchException(roomId: Long, questionId: Long) : RuntimeException("Live chat room $roomId does not belong to question $questionId")
 
 /** Some selected message ids are not in the room (or don't exist), or the selection is empty/too large. */
 class InvalidLiveChatMessageSelectionException(message: String) : RuntimeException(message)

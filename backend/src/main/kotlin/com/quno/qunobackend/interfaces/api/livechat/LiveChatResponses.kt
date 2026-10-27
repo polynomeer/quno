@@ -2,9 +2,9 @@ package com.quno.qunobackend.interfaces.api.livechat
 
 import com.quno.qunobackend.application.livechat.dto.LiveChatAnswerDraftResult
 import com.quno.qunobackend.application.livechat.dto.LiveChatMessageResult
+import com.quno.qunobackend.application.livechat.dto.LiveChatRoomResult
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
-import com.quno.qunobackend.application.livechat.dto.LiveChatRoomResult
 import java.time.Instant
 
 data class LiveChatRoomResponse(val id: Long, val questionId: Long, val createdBy: Long, val createdAt: Instant)
