@@ -508,6 +508,15 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - `GET /questions/{questionId}/answers`와 답변 작성 응답에 `applicability`가 들어간다.
 - 버전 영향 감지(`TECH_VERSION_IMPACT_DETECTED`, `GET /qunobot/version-impacts`)는 답변 범위가 새 버전을 포함하는 질문을 뺀다. 알림 payload의 `reason`은 `NO_RANGE`(해당 제품의 범위 없음, 기존 휴리스틱) 또는 `OUT_OF_RANGE`다.
 
+### 내 스택 (Phase 63.5, ADR-0078)
+
+- `GET /me/stack`: `{dependencies: [{ecosystem, name, version}]}`. 본인 것만 볼 수 있고 공개 프로필에는 나오지 않는다.
+- `PUT /me/stack`(body: `{dependencies: [...]}`): 목록을 통째로 바꾼다. `[]`면 비운다. 중복은 합쳐지고, 200개 초과·지원하지 않는 생태계는 400이다.
+- `GET /me/stack/ward-suggestions?limit=20`(최대 50): 내 스택과 패키지(생태계 + 이름)가 겹치는 질문.
+  - 응답 항목: `{questionId, title, status, createdAt, sharedDependencies}`. `sharedDependencies`의 버전은 질문 쪽 버전이다.
+  - 삭제된 질문, 내 질문, 이미 Watch 중인 질문은 뺀다. 겹친 패키지 수가 많은 순, 그다음 최신순이다.
+  - 제안만 한다. 구독은 사용자가 고른 질문에 기존 `POST /questions/{id}/watch`로 하며, 새 질문을 자동 구독하지 않는다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

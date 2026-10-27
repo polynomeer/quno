@@ -154,6 +154,7 @@ organizations.email_domain (unique, nullable) ──> 인증된 도메인, FK �
 | question_error_signatures | id, question_id, version_number, exception_class, signature_hash, message_key, created_at | 질문 최신 판본의 로그·본문에서 다시 계산할 수 있는 파생 색인. 작성·수정·Fork 때 통째로 교체하고, 질문을 hard delete하면 `ON DELETE CASCADE`로 함께 지운다(Phase 64, [ADR-0075](decisions/0075-error-signature-normalization-and-matching.md)) |
 | question_dependencies | id, question_id, version_number, ecosystem, name, version, created_at | 작성자가 미리보기에서 고른 Stack Fingerprint 항목. 원본 의존성 파일은 저장하지 않는다. 최신 판본만 두고(수정 시 생략=유지, 빈 목록=삭제) Fork는 복사하며, 질문 hard delete 시 CASCADE(Phase 63, [ADR-0076](decisions/0076-stack-fingerprint-dependency-parsing.md)) |
 | answer_applicability_ranges | id, answer_id, question_id, version_number, ecosystem, name, from_version, until_version, created_at | 답변이 유효한 버전 범위 `[from, until)`. 답변 최신 판본만 두고(수정 시 생략=유지, 빈 목록=삭제), `question_id`는 영향 감지가 질문 단위로 읽도록 답변에서 복사한 값이다. 답변 hard delete 시 CASCADE(Phase 63.3, [ADR-0077](decisions/0077-answer-applicability-range-and-narrowed-impact.md)) |
+| user_stack_dependencies | id, user_id, ecosystem, name, version, created_at | "내 스택". 질문 지문과 같은 모양이고 사용자당 하나의 목록을 통째로 교체한다. 본인만 볼 수 있다. 사용자의 개인 설정이라 사용자 삭제 시 CASCADE(Phase 63.5, [ADR-0078](decisions/0078-my-stack-profile-and-ward-suggestions.md)) |
 
 ### 삭제/FK 운영 원칙
 
