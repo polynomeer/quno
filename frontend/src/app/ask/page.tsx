@@ -8,6 +8,7 @@ import { z } from "zod";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
 import { useCreateQuestion } from "@/features/question/hooks/useCreateQuestion";
 import { TagInput } from "@/features/question/ui/TagInput";
+import { SameErrorPanel } from "@/features/error-signature/ui/SameErrorPanel";
 import { useSearch } from "@/features/search/hooks/useSearch";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { Input } from "@/shared/ui/Input";
@@ -94,6 +95,8 @@ export default function AskPage() {
   }, [watched, tags]);
 
   const debouncedTitle = useDebouncedValue(watched.title, 400);
+  // Logs first: that's where traces usually are, but some people paste them into the body.
+  const debouncedErrorText = useDebouncedValue(`${watched.logs ?? ""}\n${watched.body}`, 600);
   const similarQuery =
     debouncedTitle.trim().length >= 3 ? debouncedTitle.trim() : "";
   const { data: similarQuestions } = useSearch(similarQuery);
@@ -243,6 +246,8 @@ export default function AskPage() {
               {...register("logs")}
             />
           </div>
+
+          <SameErrorPanel text={debouncedErrorText} />
 
           <div className="space-y-2">
             <span className="block font-semibold">{t.ask.tagsLabel}</span>
