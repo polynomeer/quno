@@ -538,12 +538,15 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 
 - `GET /questions/{id}/engine-suggestions`: 질문 작성자만 볼 수 있다(그 외 403). 최신순.
   - 항목: `{id, kind, status, summary, targetVersionNumber, engine, engineVersion, inputHash, changedFields, proposedTitle, proposedBody, proposedEnvironment, proposedLogs, createdAt, resolvedAt}`
-  - `kind`: `SECRET_REDACTION`. `status`: `OPEN`|`ACCEPTED`|`DISMISSED`|`SUPERSEDED`
+  - `kind`: `SECRET_REDACTION`(엔진 `secret-scan`), `FENCE_STACK_TRACE`·`ADD_CODE_FENCE_LANGUAGE`·`MOVE_LONG_LOG`(엔진 `format-tidy`, [ADR-0082](decisions/0082-format-tidy-cleanup-suggestions.md))
+  - `status`: `OPEN`|`ACCEPTED`|`DISMISSED`|`SUPERSEDED`
   - `proposed*`가 `null`이면 그 필드는 바뀌지 않는다.
 - `POST /engine-suggestions/{id}/accept`: 작성자 명의로 `proposed*`를 반영한 새 판본을 만든다. 기존 리비전 경로라 Ward 알림·재색인이 같다.
   - 이미 처리된 제안은 409다.
   - 질문이 그 사이 다른 판본으로 넘어갔으면 409를 돌려주고 제안을 `SUPERSEDED`로 바꾼다.
-- `POST /engine-suggestions/{id}/dismiss`: `SECRET_REDACTION`을 무시하면 그 값들은 이 질문에서 더 이상 가리지도 제안하지도 않는다.
+- `POST /engine-suggestions/{id}/dismiss`
+  - `SECRET_REDACTION`을 무시하면 그 값들은 이 질문에서 더 이상 가리지도 제안하지도 않는다.
+  - 정리 종류를 무시하면 그 질문에서는 그 종류를 다시 제안하지 않는다. 정리 제안은 알림을 보내지 않는다.
 - **마스킹:** `GET /questions/{id}`, `/versions`, `/versions/{v}`, `/versions/{v}/diff`는 질문 작성자가 아니면(익명 포함) 비밀값을 `[가려짐: 종류]`로 바꿔 돌려준다.
   - `GET /questions/{id}`에는 `maskedSecretCount`가 들어간다(작성자에게는 0).
   - Fork는 가린 내용으로 복사한다.
