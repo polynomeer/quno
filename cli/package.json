@@ -1,0 +1,29 @@
+{
+  "name": "@quno/cli",
+  "version": "0.1.0",
+  "description": "Quno CLI and MCP server — ask, search and look up known errors from the terminal or a coding agent (Phase 65, ADR-0080).",
+  "type": "module",
+  "bin": {
+    "quno": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5",
+    "vitest": "^3.2.7"
+  }
+}
