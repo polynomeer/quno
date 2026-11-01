@@ -65,7 +65,7 @@ dependencies {
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	// system-architecture.md의 계층 규칙(도메인 순수성, 의존 방향)을 문서로만 남기지 않고
 	// 테스트로 강제한다 — 회귀를 코드 리뷰가 아니라 빌드가 잡아내도록 한다.
-	testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
+	testImplementation("com.tngtech.archunit:archunit-junit5:1.5.1")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
