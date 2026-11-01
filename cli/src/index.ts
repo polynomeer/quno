@@ -5,11 +5,13 @@ import { parseArgs } from "node:util";
 import { QunoApiError, QunoClient } from "./client.js";
 import { loadConfig } from "./config.js";
 import { askCommand } from "./commands/ask.js";
+import { captureCommand } from "./commands/capture.js";
 import type { CommandContext } from "./commands/context.js";
 import { errorsCommand } from "./commands/errors.js";
 import { loginCommand, whoamiCommand } from "./commands/login.js";
 import { searchCommand } from "./commands/search.js";
 import { serveStdio } from "./mcp/server.js";
+import { collectSnapshot, realProbe } from "./snapshot/collect.js";
 
 const HELP = `quno — Quno CLI and MCP server
 
@@ -18,8 +20,9 @@ const HELP = `quno — Quno CLI and MCP server
   quno whoami                                  토큰 주인 확인
   quno search <검색어> [--limit N] [--json]     질문 검색
   quno errors [--file 로그파일] [--json]         같은 에러를 다룬 질문 찾기(로그는 표준 입력으로도)
-  quno ask --title T (--body B | --body-file F) [--tag 태그]... [--exclude 패턴]... [--no-stack] [--yes]
-                                               질문 작성. 표준 입력은 로그, 현재 디렉터리의 빌드 파일은 스택 지문
+  quno capture [--json]                        질문에 첨부될 환경 스냅샷(Tier 0) 미리보기
+  quno ask --title T (--body B | --body-file F) [--tag 태그]... [--exclude 패턴]... [--no-stack] [--no-snapshot] [--yes]
+                                               질문 작성. 표준 입력은 로그, 빌드 파일은 스택 지문, 이 컴퓨터의 환경은 스냅샷
   quno mcp                                     MCP 서버(stdio, 읽기 전용 도구)
 
 환경 변수: QUNO_API_URL, QUNO_WEB_URL, QUNO_TOKEN (설정 파일보다 우선)`;
@@ -79,6 +82,7 @@ async function main(argv: string[]): Promise<number> {
       tag: { type: "string", multiple: true },
       exclude: { type: "string", multiple: true },
       "no-stack": { type: "boolean", default: false },
+      "no-snapshot": { type: "boolean", default: false },
       yes: { type: "boolean", default: false },
       "api-url": { type: "string" },
       "web-url": { type: "string" },
@@ -95,6 +99,7 @@ async function main(argv: string[]): Promise<number> {
     err: (line) => console.error(line),
     stdin,
     confirm: command === "ask" ? terminalConfirm() : null,
+    captureSnapshot: () => collectSnapshot(realProbe(process.cwd())),
   };
 
   switch (command) {
@@ -110,6 +115,8 @@ async function main(argv: string[]): Promise<number> {
       }
       return searchCommand(ctx, query, { limit: Number(values.limit ?? 10), json: values.json });
     }
+    case "capture":
+      return captureCommand(ctx, { json: values.json });
     case "errors":
       return errorsCommand(ctx, values.file ? readFileSync(values.file, "utf8") : stdin, { json: values.json });
     case "ask":
@@ -119,6 +126,7 @@ async function main(argv: string[]): Promise<number> {
         tags: values.tag ?? [],
         exclude: values.exclude ?? [],
         stack: !values["no-stack"],
+        snapshot: !values["no-snapshot"],
         yes: values.yes,
       });
     case undefined:

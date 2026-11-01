@@ -1,3 +1,5 @@
+import { summarizeSnapshot } from "../snapshot/collect.js";
+import type { SnapshotV1 } from "../snapshot/schema.js";
 import { dependencyLabel, detectStack } from "../stack.js";
 import type { StackDependency } from "../types.js";
 import type { CommandContext } from "./context.js";
@@ -9,6 +11,8 @@ export interface AskOptions {
   tags: string[];
   exclude: string[];
   stack: boolean;
+  /** Attach this machine's Tier 0 environment snapshot (ADR-0083). */
+  snapshot: boolean;
   yes: boolean;
 }
 
@@ -35,6 +39,12 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
     } else {
       ctx.out("스택 지문: 현재 디렉터리에서 빌드 파일을 찾지 못했습니다.");
     }
+  }
+
+  let snapshot: SnapshotV1 | null = null;
+  if (options.snapshot) {
+    snapshot = ctx.captureSnapshot();
+    ctx.out(`환경 스냅샷: ${summarizeSnapshot(snapshot)} (quno capture로 전체 내용 확인, --no-snapshot으로 제외)`);
   }
 
   if (logs) {
@@ -65,6 +75,7 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
     ...(logs ? { logs } : {}),
     ...(options.tags.length > 0 ? { tags: options.tags } : {}),
     ...(dependencies.length > 0 ? { dependencies } : {}),
+    ...(snapshot ? { environmentSnapshot: snapshot } : {}),
   });
   ctx.out(`게시했습니다: #${created.id} ${ctx.config.webUrl}/questions/${created.id}`);
   return 0;
