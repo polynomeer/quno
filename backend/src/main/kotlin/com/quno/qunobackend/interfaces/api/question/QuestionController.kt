@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import tools.jackson.databind.ObjectMapper
 import java.security.MessageDigest
 
 @RestController
@@ -53,6 +54,7 @@ class QuestionController(
     private val getQuestionTimelineUseCase: GetQuestionTimelineUseCase,
     private val recordQuestionViewUseCase: RecordQuestionViewUseCase,
     private val nicknameResolver: NicknameResolver,
+    private val objectMapper: ObjectMapper,
 ) {
 
     @PostMapping
@@ -70,6 +72,7 @@ class QuestionController(
                 logs = request.logs,
                 tagNames = request.tags,
                 dependencies = request.dependencies.map { it.toDomain() },
+                environmentSnapshot = request.environmentSnapshot?.let(objectMapper::writeValueAsString),
             ),
         )
         return result.toResponse()
@@ -95,6 +98,7 @@ class QuestionController(
             updatedAt = result.updatedAt,
             dependencies = result.dependencies.map { DependencyResponse(it.ecosystem, it.name, it.version) },
             maskedSecretCount = result.maskedSecretCount,
+            environmentSnapshot = result.environmentSnapshot?.toResponse(),
         )
     }
 
@@ -113,6 +117,7 @@ class QuestionController(
                 environment = request.environment,
                 logs = request.logs,
                 dependencies = request.dependencies?.map { it.toDomain() },
+                environmentSnapshot = request.environmentSnapshot?.let(objectMapper::writeValueAsString),
             ),
         )
         return result.toResponse()

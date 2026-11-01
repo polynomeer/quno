@@ -1,9 +1,12 @@
 package com.quno.qunobackend.interfaces.api.question
 
+import com.fasterxml.jackson.annotation.JsonRawValue
 import com.quno.qunobackend.application.cluster.dto.QuestionGraphResult
 import com.quno.qunobackend.application.question.dto.QuestionTimelineEventType
 import com.quno.qunobackend.domain.question.DiffLineType
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshot
+import com.quno.qunobackend.domain.snapshot.SnapshotSource
 import com.quno.qunobackend.domain.stack.DependencyFileFormat
 import com.quno.qunobackend.domain.stack.Ecosystem
 import com.quno.qunobackend.interfaces.api.search.QuestionSearchResultResponse
@@ -36,7 +39,22 @@ data class QuestionResponse(
     val dependencies: List<DependencyResponse>,
     /** Secret-looking values masked for this reader (ADR-0081); 0 for the author. */
     val maskedSecretCount: Int = 0,
+    val environmentSnapshot: EnvironmentSnapshotResponse? = null,
 )
+
+/** The stored snapshot (ADR-0083): provenance and the server's own fingerprint, plus the scrubbed document as-is. */
+data class EnvironmentSnapshotResponse(
+    val versionNumber: Int,
+    val schemaVersion: Int,
+    val source: SnapshotSource,
+    val collector: String?,
+    val fingerprint: String,
+    val serverRedactions: Int,
+    @get:JsonRawValue val document: String,
+    val createdAt: Instant,
+)
+
+fun EnvironmentSnapshot.toResponse() = EnvironmentSnapshotResponse(versionNumber, schemaVersion, source, collector, fingerprint, serverRedactions, document, createdAt)
 
 data class DependencyResponse(val ecosystem: Ecosystem, val name: String, val version: String?)
 

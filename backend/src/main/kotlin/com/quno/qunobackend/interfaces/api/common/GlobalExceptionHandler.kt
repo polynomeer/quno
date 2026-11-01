@@ -48,6 +48,7 @@ import com.quno.qunobackend.domain.review.QuestionNotRevisedSinceRequestExceptio
 import com.quno.qunobackend.domain.review.ReviewRequestAlreadyAddressedException
 import com.quno.qunobackend.domain.review.ReviewRequestNotFoundException
 import com.quno.qunobackend.domain.review.SelfReviewRequestException
+import com.quno.qunobackend.domain.snapshot.InvalidEnvironmentSnapshotException
 import com.quno.qunobackend.domain.stack.InvalidApplicabilityRangeException
 import com.quno.qunobackend.domain.tag.TagNotFoundException
 import com.quno.qunobackend.domain.token.InvalidPersonalAccessTokenRequestException
@@ -167,6 +168,7 @@ class GlobalExceptionHandler {
         InvalidLiveChatMessageSelectionException::class,
         InvalidApplicabilityRangeException::class,
         InvalidPersonalAccessTokenRequestException::class,
+        InvalidEnvironmentSnapshotException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

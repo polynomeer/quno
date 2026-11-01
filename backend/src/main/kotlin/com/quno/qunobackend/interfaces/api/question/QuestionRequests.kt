@@ -6,6 +6,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import tools.jackson.databind.JsonNode
 
 data class CreateQuestionRequest(
     @field:NotBlank @field:Size(max = 300)
@@ -18,6 +19,8 @@ data class CreateQuestionRequest(
     /** Entries kept from the stack fingerprint preview (ADR-0076). */
     @field:Valid @field:Size(max = StackDependency.MAX_PER_QUESTION)
     val dependencies: List<DependencyRequest> = emptyList(),
+    /** A `quno.snapshot` document from the collector or typed by hand (ADR-0083). */
+    val environmentSnapshot: JsonNode? = null,
 )
 
 /** One stack fingerprint entry; limits mirror [StackDependency] so bad input is a 400, not a 500. */
@@ -50,6 +53,8 @@ data class QuestionContentRequest(
     /** Omit to keep the current stack fingerprint; send [] to clear it (ADR-0076). */
     @field:Valid @field:Size(max = StackDependency.MAX_PER_QUESTION)
     val dependencies: List<DependencyRequest>? = null,
+    /** Omit to keep the current environment snapshot; a document replaces it (ADR-0083). */
+    val environmentSnapshot: JsonNode? = null,
 )
 
 data class MarkQuestionOutdatedRequest(

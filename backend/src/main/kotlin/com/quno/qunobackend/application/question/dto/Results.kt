@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.question.dto
 
 import com.quno.qunobackend.domain.question.DiffLine
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshot
 import com.quno.qunobackend.domain.stack.StackDependency
 import java.time.Instant
 
@@ -31,6 +32,8 @@ data class QuestionSummaryResult(
     val dependencies: List<StackDependency> = emptyList(),
     /** How many secret-looking values this reader sees masked (ADR-0081); always 0 for the author. */
     val maskedSecretCount: Int = 0,
+    /** The latest environment snapshot (ADR-0083), or null. */
+    val environmentSnapshot: EnvironmentSnapshot? = null,
 )
 
 data class QuestionVersionResult(
