@@ -116,11 +116,15 @@ class PersonalAccessTokenLifecycleE2ETest {
         val secret = call(HttpMethod.POST, "/api/v1/me/tokens", jwt, mapOf("name" to "busy", "scopes" to listOf("READ")), status().isCreated)["secret"] as String
         val fresh = call(HttpMethod.POST, "/api/v1/me/tokens", jwt, mapOf("name" to "idle", "scopes" to listOf("READ")), status().isCreated)["secret"] as String
 
-        repeat(120) { call(HttpMethod.GET, "/api/v1/me/stack", secret) }
-        call(HttpMethod.GET, "/api/v1/me/stack", secret, expected = status().isTooManyRequests)
+        // The bucket refills greedily (2 a second at 120/min), so a slow run earns back a few
+        // tokens on the way: count up to the first 429 instead of expecting it at exactly 121.
+        val sent = generateSequence(1) { it + 1 }.take(200).first { status(secret) == 429 }
+        assertTrue(sent > 120, "the first 429 came after $sent requests")
         call(HttpMethod.GET, "/api/v1/me/stack", fresh)
         call(HttpMethod.GET, "/api/v1/me/stack", jwt)
     }
+
+    private fun status(token: String): Int = mockMvc.perform(request(HttpMethod.GET, "/api/v1/me/stack").header("Authorization", "Bearer $token")).andReturn().response.status
 
     private fun call(method: HttpMethod, path: String, token: String?, body: Map<String, Any?>? = null, expected: ResultMatcher = status().isOk): Map<String, Any?> {
         val builder = request(method, path)

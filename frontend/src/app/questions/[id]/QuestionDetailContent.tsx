@@ -30,6 +30,8 @@ import { MarkdownContent } from "@/shared/ui/MarkdownContent";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { FormError } from "@/shared/ui/FormError";
 import { DependencyChips } from "@/features/stack/ui/DependencyChips";
+import { MaskedSecretsNotice } from "@/features/engine/ui/MaskedSecretsNotice";
+import { QunoBotSuggestions } from "@/features/engine/ui/QunoBotSuggestions";
 import {
   SegmentedControl,
   type SegmentOption,
@@ -145,6 +147,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
               />
             </div>
             <div className="min-w-0 flex-1 space-y-4">
+              <MaskedSecretsNotice count={question.maskedSecretCount ?? 0} />
               <MarkdownContent>{question.body}</MarkdownContent>
 
               {(question.environment || question.logs) && (
@@ -179,6 +182,8 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
             </div>
           </div>
         </article>
+
+        {me?.id === question.authorId && <QunoBotSuggestions questionId={question.id} />}
 
         {me && (
           <ReviewRequestPanel

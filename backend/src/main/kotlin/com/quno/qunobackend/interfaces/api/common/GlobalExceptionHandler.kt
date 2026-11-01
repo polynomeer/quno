@@ -22,6 +22,9 @@ import com.quno.qunobackend.domain.directask.PaymentAlreadyProcessedException
 import com.quno.qunobackend.domain.directask.PaymentAmountMismatchException
 import com.quno.qunobackend.domain.directask.PaymentConfirmationFailedException
 import com.quno.qunobackend.domain.directask.SelfDirectAskException
+import com.quno.qunobackend.domain.engine.EngineSuggestionNotFoundException
+import com.quno.qunobackend.domain.engine.EngineSuggestionNotOpenException
+import com.quno.qunobackend.domain.engine.EngineSuggestionOutdatedException
 import com.quno.qunobackend.domain.follow.SelfFollowException
 import com.quno.qunobackend.domain.livechat.InvalidLiveChatMessageSelectionException
 import com.quno.qunobackend.domain.livechat.LiveChatParticipantRequiredException
@@ -92,6 +95,8 @@ class GlobalExceptionHandler {
         PaymentAlreadyProcessedException::class,
         PaymentConfirmationFailedException::class,
         PersonalAccessTokenLimitExceededException::class,
+        EngineSuggestionNotOpenException::class,
+        EngineSuggestionOutdatedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
 
@@ -116,6 +121,7 @@ class GlobalExceptionHandler {
         LiveChatRoomNotFoundException::class,
         DirectAskPaymentNotFoundException::class,
         PersonalAccessTokenNotFoundException::class,
+        EngineSuggestionNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 

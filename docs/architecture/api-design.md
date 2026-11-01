@@ -532,6 +532,24 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
   - 삭제된 질문, 내 질문, 이미 Watch 중인 질문은 뺀다. 겹친 패키지 수가 많은 순, 그다음 최신순이다.
   - 제안만 한다. 구독은 사용자가 고른 질문에 기존 `POST /questions/{id}/watch`로 하며, 새 질문을 자동 구독하지 않는다.
 
+## 엔진 제안과 비밀값 마스킹 (Phase 78, ADR-0081)
+
+엔진은 질문 판본을 고치지 않고 제안만 남긴다. 수락하면 작성자 명의의 새 리비전이 된다([ADR-0081](decisions/0081-engine-suggestion-layer-and-secret-masking.md)).
+
+- `GET /questions/{id}/engine-suggestions`: 질문 작성자만 볼 수 있다(그 외 403). 최신순.
+  - 항목: `{id, kind, status, summary, targetVersionNumber, engine, engineVersion, inputHash, changedFields, proposedTitle, proposedBody, proposedEnvironment, proposedLogs, createdAt, resolvedAt}`
+  - `kind`: `SECRET_REDACTION`. `status`: `OPEN`|`ACCEPTED`|`DISMISSED`|`SUPERSEDED`
+  - `proposed*`가 `null`이면 그 필드는 바뀌지 않는다.
+- `POST /engine-suggestions/{id}/accept`: 작성자 명의로 `proposed*`를 반영한 새 판본을 만든다. 기존 리비전 경로라 Ward 알림·재색인이 같다.
+  - 이미 처리된 제안은 409다.
+  - 질문이 그 사이 다른 판본으로 넘어갔으면 409를 돌려주고 제안을 `SUPERSEDED`로 바꾼다.
+- `POST /engine-suggestions/{id}/dismiss`: `SECRET_REDACTION`을 무시하면 그 값들은 이 질문에서 더 이상 가리지도 제안하지도 않는다.
+- **마스킹:** `GET /questions/{id}`, `/versions`, `/versions/{v}`, `/versions/{v}/diff`는 질문 작성자가 아니면(익명 포함) 비밀값을 `[가려짐: 종류]`로 바꿔 돌려준다.
+  - `GET /questions/{id}`에는 `maskedSecretCount`가 들어간다(작성자에게는 0).
+  - Fork는 가린 내용으로 복사한다.
+- 새 비밀값 제안이 생기면 작성자에게만 `ENGINE_SECRET_DETECTED` 알림이 간다(payload `{questionAuthorId, suggestionId, count}`).
+- 기존 질문은 `EngineSweepScheduler`가 주기마다 일정 수씩 분석한다. 관련 프로퍼티는 `quno.engine.sweep.enabled`·`batch-size`·`interval-ms`이고, Gradle 테스트에서는 끈다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

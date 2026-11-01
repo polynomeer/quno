@@ -17,4 +17,7 @@ object OutboxEventTypes {
     const val DIRECT_ASK_ACCEPTED = "DIRECT_ASK_ACCEPTED"
     const val DIRECT_ASK_DECLINED = "DIRECT_ASK_DECLINED"
     const val LIVE_CHAT_STARTED = "LIVE_CHAT_STARTED"
+
+    /** Author-only (ADR-0081): watchers must not learn where a secret sits. */
+    const val ENGINE_SECRET_DETECTED = "ENGINE_SECRET_DETECTED"
 }

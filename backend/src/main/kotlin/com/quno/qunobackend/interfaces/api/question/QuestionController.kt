@@ -76,8 +76,9 @@ class QuestionController(
     }
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: Long): QuestionResponse {
-        val result = getQuestionUseCase.execute(id)
+    fun get(@AuthenticationPrincipal viewerId: Long?, @PathVariable id: Long): QuestionResponse {
+        // Anonymous readers have a non-Long principal, which resolves to null — masked like any non-author (ADR-0081).
+        val result = getQuestionUseCase.execute(id, viewerId)
         return QuestionResponse(
             id = result.id,
             authorId = result.authorId,
@@ -93,6 +94,7 @@ class QuestionController(
             createdAt = result.createdAt,
             updatedAt = result.updatedAt,
             dependencies = result.dependencies.map { DependencyResponse(it.ecosystem, it.name, it.version) },
+            maskedSecretCount = result.maskedSecretCount,
         )
     }
 
@@ -117,8 +119,8 @@ class QuestionController(
     }
 
     @GetMapping("/{id}/versions")
-    fun listVersions(@PathVariable id: Long): List<QuestionVersionSummaryResponse> {
-        val versions = listQuestionVersionsUseCase.execute(id)
+    fun listVersions(@AuthenticationPrincipal viewerId: Long?, @PathVariable id: Long): List<QuestionVersionSummaryResponse> {
+        val versions = listQuestionVersionsUseCase.execute(id, viewerId)
         val nicknames = nicknameResolver.nicknamesOf(versions.map { it.createdBy })
         return versions.map {
             QuestionVersionSummaryResponse(
@@ -132,8 +134,8 @@ class QuestionController(
     }
 
     @GetMapping("/{id}/versions/{version}")
-    fun getVersion(@PathVariable id: Long, @PathVariable version: Int): QuestionVersionResponse {
-        val result = getQuestionVersionUseCase.execute(id, version)
+    fun getVersion(@AuthenticationPrincipal viewerId: Long?, @PathVariable id: Long, @PathVariable version: Int): QuestionVersionResponse {
+        val result = getQuestionVersionUseCase.execute(id, version, viewerId)
         return QuestionVersionResponse(
             questionId = result.questionId,
             versionNumber = result.versionNumber,
@@ -149,11 +151,12 @@ class QuestionController(
     /** Diffs [version] against the version right before it, unless [from] names an earlier one explicitly. */
     @GetMapping("/{id}/versions/{version}/diff")
     fun getDiff(
+        @AuthenticationPrincipal viewerId: Long?,
         @PathVariable id: Long,
         @PathVariable version: Int,
         @RequestParam(required = false) from: Int?,
     ): QuestionVersionDiffResponse {
-        val result = getQuestionVersionDiffUseCase.execute(id, fromVersion = from ?: (version - 1), toVersion = version)
+        val result = getQuestionVersionDiffUseCase.execute(id, fromVersion = from ?: (version - 1), toVersion = version, viewerId = viewerId)
         return QuestionVersionDiffResponse(
             fromVersion = result.fromVersion,
             toVersion = result.toVersion,

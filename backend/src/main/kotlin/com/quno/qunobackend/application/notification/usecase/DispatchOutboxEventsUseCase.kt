@@ -50,8 +50,10 @@ import org.springframework.transaction.annotation.Transactional
  *     (Phase 24, ADR-0036) — only fires when a room is genuinely new, never on re-opening an
  *     existing one. Individual chat messages never produce outbox events (would be spam, same
  *     reasoning as Vote not producing one per cast).
- * CONTENT_HIDDEN, MENTIONED_IN_COMMENT, and the three DIRECT_ASK_* types are the only event
- * types that skip the base watcher fan-out entirely. The actor who caused the event is never
+ *   - ENGINE_SECRET_DETECTED: **only** the question's author (Phase 78, ADR-0081) — telling
+ *     watchers that a secret sits in a question would undo the masking.
+ * CONTENT_HIDDEN, MENTIONED_IN_COMMENT, the three DIRECT_ASK_* types and ENGINE_SECRET_DETECTED
+ * are the only event types that skip the base watcher fan-out entirely. The actor who caused the event is never
  * notified about their own action.
  */
 @Service
@@ -78,6 +80,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.DIRECT_ASK_REQUESTED,
             OutboxEventTypes.DIRECT_ASK_ACCEPTED,
             OutboxEventTypes.DIRECT_ASK_DECLINED,
+            OutboxEventTypes.ENGINE_SECRET_DETECTED,
         )
         val recipients = if (event.eventType in targetedOnlyEventTypes) {
             mutableSetOf()
@@ -103,6 +106,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.DIRECT_ASK_ACCEPTED, OutboxEventTypes.DIRECT_ASK_DECLINED ->
                 extractLong(event.payload, "requesterId")?.let(recipients::add)
             OutboxEventTypes.LIVE_CHAT_STARTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.ENGINE_SECRET_DETECTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)
 
