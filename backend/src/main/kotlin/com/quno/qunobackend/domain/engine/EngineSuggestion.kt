@@ -3,8 +3,8 @@ package com.quno.qunobackend.domain.engine
 import java.security.MessageDigest
 import java.time.Instant
 
-/** What an engine proposes (Phase 78, ADR-0081). Cleanup kinds arrive with Phase 78.5. */
-enum class EngineSuggestionKind { SECRET_REDACTION, }
+/** What an engine proposes: secrets (Phase 78.4, ADR-0081) and formatting cleanups (Phase 78.5, ADR-0082). */
+enum class EngineSuggestionKind { SECRET_REDACTION, ADD_CODE_FENCE_LANGUAGE, FENCE_STACK_TRACE, MOVE_LONG_LOG }
 
 enum class EngineSuggestionStatus { OPEN, ACCEPTED, DISMISSED, SUPERSEDED }
 

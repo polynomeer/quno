@@ -93,7 +93,7 @@ class SweepQuestionEnginesUseCase(
     private val questionVersionRepository: QuestionVersionRepository,
 ) {
     fun execute(limit: Int): Int {
-        val ids = runRepository.findQuestionIdsNeedingRun(QuestionEngine.SECRET_SCAN, QuestionEngine.SECRET_SCAN_VERSION, limit)
+        val ids = QuestionEngine.ENGINES.flatMap { (engine, version) -> runRepository.findQuestionIdsNeedingRun(engine, version, limit) }.distinct().take(limit)
         ids.forEach { id ->
             val question = questionRepository.findById(id) ?: return@forEach
             val version = question.latestVersionId?.let(questionVersionRepository::findById) ?: return@forEach

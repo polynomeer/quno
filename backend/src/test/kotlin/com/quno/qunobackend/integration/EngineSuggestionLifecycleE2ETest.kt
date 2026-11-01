@@ -23,14 +23,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Phase 78 (ADR-0081) through real HTTP and Postgres: secrets are masked on read for everyone
- * but the author (latest, old versions, diff, forks), the author alone sees and decides on the
- * QunoBot suggestion, accepting becomes a revision under the author's name, dismissing lifts the
- * masking for good, and only the author is notified.
+ * Phase 78 (ADR-0081, ADR-0082) through real HTTP and Postgres: secrets are masked on read for
+ * everyone but the author (latest, old versions, diff, forks), the author alone sees and decides on
+ * QunoBot suggestions, accepting becomes a revision under the author's name, dismissing a redaction
+ * lifts the masking for good and dismissing a cleanup kind keeps it from returning, and only the
+ * author is notified about secrets.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class EngineSecretLifecycleE2ETest {
+class EngineSuggestionLifecycleE2ETest {
 
     @Autowired
     lateinit var mockMvc: MockMvc
@@ -155,7 +156,39 @@ class EngineSecretLifecycleE2ETest {
         questionEngine.analyze(questionId, authorId, 1, QuestionContent("Sweep me", "b", null, logs))
 
         assertFalse(questionId in needing())
-        assertEquals(1, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM engine_runs WHERE question_id = ?", Int::class.java, questionId))
+        assertEquals(1, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM engine_runs WHERE question_id = ? AND engine = 'secret-scan'", Int::class.java, questionId))
+    }
+
+    @Test
+    fun `cleanups are offered one by one, a dismissed kind never returns, and moving a log fills the logs field`() {
+        val (authorId, author) = signUpAndLogin("engtidy")
+        userIds += authorId
+        val fence = "```"
+        val body = "It fails:\njava.lang.IllegalStateException: boom\n\tat a.B.c(B.kt:1)\n\tat a.B.d(B.kt:2)\n\tat a.B.e(B.kt:3)\n\nConfig:\n$fence\n{\"port\": 8080}\n$fence"
+        val questionId = (send("/api/v1/questions", author, mapOf("title" to "Tidy me", "body" to body), status().isCreated)["id"] as Number).toLong()
+        questionIds += questionId
+
+        val offered = readList("/api/v1/questions/$questionId/engine-suggestions", author)
+        assertEquals(setOf("FENCE_STACK_TRACE", "ADD_CODE_FENCE_LANGUAGE"), offered.map { it["kind"] }.toSet())
+        assertTrue(offered.all { it["engine"] == "format-tidy" && it["changedFields"] == listOf("body") })
+
+        val fenceTrace = offered.single { it["kind"] == "FENCE_STACK_TRACE" }
+        val label = offered.single { it["kind"] == "ADD_CODE_FENCE_LANGUAGE" }
+        send("/api/v1/engine-suggestions/${(fenceTrace["id"] as Number).toLong()}/dismiss", author, emptyMap())
+        send("/api/v1/engine-suggestions/${(label["id"] as Number).toLong()}/accept", author, emptyMap())
+
+        assertTrue((read("/api/v1/questions/$questionId", author)["body"] as String).contains("${fence}json\n{"))
+        val open = readList("/api/v1/questions/$questionId/engine-suggestions", author).filter { it["status"] == "OPEN" }
+        assertEquals(emptyList(), open, "the trace fence was dismissed and the language is in place")
+
+        val log = (1..35).joinToString("\n") { "2026-11-01 10:00:${"%02d".format(it % 60)} INFO line $it" }
+        send("/api/v1/questions/$questionId/versions", author, mapOf("title" to "Tidy me", "body" to "Startup hangs.\n\n$fence\n$log\n$fence"))
+        val move = readList("/api/v1/questions/$questionId/engine-suggestions", author).single { it["status"] == "OPEN" }
+        assertEquals("MOVE_LONG_LOG", move["kind"])
+        send("/api/v1/engine-suggestions/${(move["id"] as Number).toLong()}/accept", author, emptyMap())
+        val moved = read("/api/v1/questions/$questionId", author)
+        assertEquals("Startup hangs.", moved["body"])
+        assertEquals(log, moved["logs"])
     }
 
     private fun ask(token: String, title: String): Long {
