@@ -1,11 +1,13 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.engine.QuestionEngine
 import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.domain.common.OutboxEvent
 import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
+import com.quno.qunobackend.domain.engine.QuestionContent
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
@@ -29,6 +31,7 @@ class ReviseQuestionUseCase(
     /** Null only in unit tests that don't care about signatures; Spring always injects it. */
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
+    private val questionEngine: QuestionEngine? = null,
 ) {
     @Transactional
     fun execute(command: ReviseQuestionCommand): QuestionMutationResult {
@@ -59,6 +62,7 @@ class ReviseQuestionUseCase(
         )
 
         errorSignatureIndexer?.index(command.questionId, newVersion.versionNumber, command.body, command.logs)
+        questionEngine?.analyze(command.questionId, question.authorId, newVersion.versionNumber, QuestionContent(command.title, command.body, command.environment, command.logs))
         command.dependencies?.let {
             questionDependencyRepository?.replaceForQuestion(command.questionId, newVersion.versionNumber, checkedDependencies(it))
         }

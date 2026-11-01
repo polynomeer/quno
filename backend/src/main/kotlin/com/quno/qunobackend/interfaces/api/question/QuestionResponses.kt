@@ -34,6 +34,8 @@ data class QuestionResponse(
     val updatedAt: Instant,
     /** The latest version's stack fingerprint (ADR-0076). */
     val dependencies: List<DependencyResponse>,
+    /** Secret-looking values masked for this reader (ADR-0081); 0 for the author. */
+    val maskedSecretCount: Int = 0,
 )
 
 data class DependencyResponse(val ecosystem: Ecosystem, val name: String, val version: String?)

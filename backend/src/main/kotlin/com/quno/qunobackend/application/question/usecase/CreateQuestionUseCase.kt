@@ -1,8 +1,10 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.engine.QuestionEngine
 import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
+import com.quno.qunobackend.domain.engine.QuestionContent
 import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersion
@@ -30,6 +32,7 @@ class CreateQuestionUseCase(
     /** Null only in unit tests that don't care about signatures; Spring always injects it. */
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
+    private val questionEngine: QuestionEngine? = null,
 ) {
     @Transactional
     fun execute(command: CreateQuestionCommand): QuestionMutationResult {
@@ -58,6 +61,7 @@ class CreateQuestionUseCase(
             }
 
         errorSignatureIndexer?.index(questionId, version.versionNumber, command.body, command.logs)
+        questionEngine?.analyze(questionId, command.authorId, version.versionNumber, QuestionContent(command.title, command.body, command.environment, command.logs))
         if (command.dependencies.isNotEmpty()) {
             questionDependencyRepository?.replaceForQuestion(questionId, version.versionNumber, checkedDependencies(command.dependencies))
         }

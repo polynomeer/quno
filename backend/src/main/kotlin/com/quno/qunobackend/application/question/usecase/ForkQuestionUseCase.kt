@@ -1,8 +1,11 @@
 package com.quno.qunobackend.application.question.usecase
 
+import com.quno.qunobackend.application.engine.QuestionContentMasker
+import com.quno.qunobackend.application.engine.QuestionEngine
 import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
+import com.quno.qunobackend.domain.engine.QuestionContent
 import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
@@ -29,6 +32,8 @@ class ForkQuestionUseCase(
     /** Null only in unit tests that don't care about signatures; Spring always injects it. */
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
+    private val questionEngine: QuestionEngine? = null,
+    private val contentMasker: QuestionContentMasker? = null,
 ) {
     @Transactional
     fun execute(command: ForkQuestionCommand): QuestionMutationResult {
@@ -37,8 +42,16 @@ class ForkQuestionUseCase(
         val originVersion = questionVersionRepository.findById(requireNotNull(origin.latestVersionId))
             ?: throw QuestionNotFoundException(command.originQuestionId)
 
+        // A fork is someone else's copy: it starts from what they could see, secrets masked (ADR-0081).
+        val mask = contentMasker?.forViewer(command.originQuestionId, origin.authorId, command.actorId) ?: { it }
+        val content = QuestionContent(
+            title = requireNotNull(mask(originVersion.title)),
+            body = requireNotNull(mask(originVersion.bodyMarkdown)),
+            environment = mask(originVersion.environment),
+            logs = mask(originVersion.logs),
+        )
         val question = questionRepository.save(
-            Question.open(authorId = command.actorId, title = originVersion.title, originQuestionId = origin.id),
+            Question.open(authorId = command.actorId, title = content.title, originQuestionId = origin.id),
         )
         val questionId = requireNotNull(question.id)
 
@@ -46,10 +59,10 @@ class ForkQuestionUseCase(
             QuestionVersion.create(
                 questionId = questionId,
                 versionNumber = 1,
-                title = originVersion.title,
-                bodyMarkdown = originVersion.bodyMarkdown,
-                environment = originVersion.environment,
-                logs = originVersion.logs,
+                title = content.title,
+                bodyMarkdown = content.body,
+                environment = content.environment,
+                logs = content.logs,
                 createdBy = command.actorId,
             ),
         )
@@ -58,7 +71,8 @@ class ForkQuestionUseCase(
             questionTagRepository.attach(questionId, requireNotNull(tag.id))
         }
 
-        errorSignatureIndexer?.index(questionId, version.versionNumber, originVersion.bodyMarkdown, originVersion.logs)
+        errorSignatureIndexer?.index(questionId, version.versionNumber, content.body, content.logs)
+        questionEngine?.analyze(questionId, command.actorId, version.versionNumber, content)
         // A fork starts from the same environment as its origin (ADR-0076).
         questionDependencyRepository?.let { repository ->
             val originDependencies = repository.findByQuestionId(command.originQuestionId)

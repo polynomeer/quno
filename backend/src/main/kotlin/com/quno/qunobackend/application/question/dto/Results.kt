@@ -29,6 +29,8 @@ data class QuestionSummaryResult(
     val updatedAt: Instant,
     /** The latest version's stack fingerprint (ADR-0076). */
     val dependencies: List<StackDependency> = emptyList(),
+    /** How many secret-looking values this reader sees masked (ADR-0081); always 0 for the author. */
+    val maskedSecretCount: Int = 0,
 )
 
 data class QuestionVersionResult(
