@@ -1,12 +1,29 @@
 "use client";
 
-import type { EngineField, EngineSuggestion } from "../api/engine.api";
+import type { EngineField, EngineSuggestion, EngineSuggestionKind } from "../api/engine.api";
+import { lineDiff } from "../lib/line-diff";
 import { useEngineSuggestions, useResolveEngineSuggestion } from "../hooks/useEngineSuggestions";
 import { QunoBotIcon } from "./QunoBotIcon";
 import { Button } from "@/shared/ui/Button";
 import { FormError } from "@/shared/ui/FormError";
+import { cn } from "@/shared/lib/cn";
 
 const FIELD_LABEL: Record<EngineField, string> = { title: "제목", body: "본문", environment: "환경", logs: "로그" };
+
+/** Why QunoBot thinks so, and what "무시" means, per kind (ADR-0081, ADR-0082). */
+const KIND_COPY: Record<EngineSuggestionKind, { basis: string; dismiss: string }> = {
+  SECRET_REDACTION: { basis: "패턴 + 엔트로피", dismiss: "무시 — 비밀값이 아니에요" },
+  ADD_CODE_FENCE_LANGUAGE: { basis: "코드 모양", dismiss: "무시 — 이 질문에서 다시 제안하지 않아요" },
+  FENCE_STACK_TRACE: { basis: "스택 프레임 3줄 이상", dismiss: "무시 — 이 질문에서 다시 제안하지 않아요" },
+  MOVE_LONG_LOG: { basis: "30줄 이상의 로그", dismiss: "무시 — 이 질문에서 다시 제안하지 않아요" },
+};
+
+export interface CurrentContent {
+  title: string;
+  body: string;
+  environment: string | null;
+  logs: string | null;
+}
 
 function proposedText(suggestion: EngineSuggestion, field: EngineField): string | null {
   return {
@@ -22,7 +39,7 @@ function proposedText(suggestion: EngineSuggestion, field: EngineField): string 
  * design v2). The engine never edits: accepting makes a revision under the author's name,
  * dismissing a redaction says "this is not a secret" and unmasks it for everyone (ADR-0081).
  */
-export function QunoBotSuggestions({ questionId }: { questionId: number }) {
+export function QunoBotSuggestions({ questionId, current }: { questionId: number; current: CurrentContent }) {
   const { data } = useEngineSuggestions(questionId, true);
   const resolve = useResolveEngineSuggestion(questionId);
   const open = (data ?? []).filter((suggestion) => suggestion.status === "OPEN");
@@ -55,7 +72,7 @@ export function QunoBotSuggestions({ questionId }: { questionId: number }) {
               <div className="flex flex-wrap items-center gap-2.5">
                 <p className="min-w-0 flex-[1_1_320px] text-sm">
                   {suggestion.summary}{" "}
-                  <span className="text-text-secondary">· 근거: 패턴 + 엔트로피</span>
+                  <span className="text-text-secondary">· 근거: {KIND_COPY[suggestion.kind].basis}</span>
                 </p>
                 <Button onClick={() => resolve.mutate({ id: suggestion.id, action: "accept" })} disabled={resolve.isPending}>
                   {busy && resolve.variables?.action === "accept" ? "반영 중..." : "수락"}
@@ -64,7 +81,7 @@ export function QunoBotSuggestions({ questionId }: { questionId: number }) {
                   variant="ghost"
                   onClick={() => resolve.mutate({ id: suggestion.id, action: "dismiss" })}
                   disabled={resolve.isPending}
-                  aria-label="무시 — 비밀값이 아니에요"
+                  aria-label={KIND_COPY[suggestion.kind].dismiss}
                 >
                   무시
                 </Button>
@@ -81,8 +98,24 @@ export function QunoBotSuggestions({ questionId }: { questionId: number }) {
                 {suggestion.changedFields.map((field) => (
                   <div key={field} className="mt-2">
                     <p className="font-medium text-text-secondary">{FIELD_LABEL[field]}</p>
-                    <pre className="mt-1 max-h-64 overflow-auto rounded-xl bg-code-bg p-3 font-mono text-code-fg whitespace-pre-wrap">
-                      {proposedText(suggestion, field)}
+                    <pre
+                      aria-label={`${FIELD_LABEL[field]} 변경`}
+                      className="mt-1 max-h-64 overflow-auto rounded-xl bg-code-bg p-3 font-mono text-code-fg whitespace-pre-wrap"
+                    >
+                      {lineDiff(current[field] ?? "", proposedText(suggestion, field) ?? "").map((row, index) => (
+                        <span
+                          key={index}
+                          className={cn(
+                            "block",
+                            row.type === "added" && "bg-success/20",
+                            row.type === "removed" && "bg-danger/20 line-through opacity-80",
+                            row.type === "gap" && "opacity-60",
+                          )}
+                        >
+                          {row.type === "added" ? "+ " : row.type === "removed" ? "- " : "  "}
+                          {row.text}
+                        </span>
+                      ))}
                     </pre>
                   </div>
                 ))}
