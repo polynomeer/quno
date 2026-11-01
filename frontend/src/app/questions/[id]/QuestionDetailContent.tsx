@@ -183,7 +183,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
           </div>
         </article>
 
-        {me?.id === question.authorId && <QunoBotSuggestions questionId={question.id} />}
+        {me?.id === question.authorId && <QunoBotSuggestions questionId={question.id} current={question} />}
 
         {me && (
           <ReviewRequestPanel

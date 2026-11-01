@@ -1,7 +1,7 @@
 import { httpClient } from "@/shared/api/http-client";
 
 /** Mirrors backend EngineSuggestionResponse (Phase 78, ADR-0081). */
-export type EngineSuggestionKind = "SECRET_REDACTION";
+export type EngineSuggestionKind = "SECRET_REDACTION" | "ADD_CODE_FENCE_LANGUAGE" | "FENCE_STACK_TRACE" | "MOVE_LONG_LOG";
 export type EngineSuggestionStatus = "OPEN" | "ACCEPTED" | "DISMISSED" | "SUPERSEDED";
 export type EngineField = "title" | "body" | "environment" | "logs";
 

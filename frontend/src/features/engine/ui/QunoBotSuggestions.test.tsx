@@ -31,6 +31,8 @@ const SUGGESTION: EngineSuggestion = {
   resolvedAt: null,
 };
 
+const CURRENT = { title: "t", body: "b", environment: null, logs: "aws.accessKeyId=AKIA-placeholder" };
+
 function renderWithClient(ui: ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
@@ -45,17 +47,17 @@ describe("QunoBotSuggestions", () => {
 
   it("shows only open suggestions with what would change and where it came from", async () => {
     vi.mocked(engineApi.list).mockResolvedValue([SUGGESTION, { ...SUGGESTION, id: 4, status: "SUPERSEDED" }]);
-    renderWithClient(<QunoBotSuggestions questionId={10} />);
+    renderWithClient(<QunoBotSuggestions questionId={10} current={CURRENT} />);
 
     expect(await screen.findByRole("heading", { name: "QunoBot 제안 1건" })).toBeInTheDocument();
-    expect(screen.getByText("aws.accessKeyId=[REDACTED]")).toBeInTheDocument();
+    expect(screen.getByLabelText("로그 변경")).toHaveTextContent("- aws.accessKeyId=AKIA-placeholder+ aws.accessKeyId=[REDACTED]");
     expect(screen.getByText(/secret-scan@1 · v1 · 입력 abcdef012345/)).toBeInTheDocument();
     expect(screen.getByText(/폐기하고 새로 발급/)).toBeInTheDocument();
   });
 
   it("accepts or dismisses by id", async () => {
     vi.mocked(engineApi.list).mockResolvedValue([SUGGESTION]);
-    renderWithClient(<QunoBotSuggestions questionId={10} />);
+    renderWithClient(<QunoBotSuggestions questionId={10} current={CURRENT} />);
 
     await userEvent.click(await screen.findByRole("button", { name: "수락" }));
     await waitFor(() => expect(engineApi.accept).toHaveBeenCalledWith(5));
@@ -63,9 +65,21 @@ describe("QunoBotSuggestions", () => {
     await waitFor(() => expect(engineApi.dismiss).toHaveBeenCalledWith(5));
   });
 
+  it("labels cleanup kinds with their own basis and dismissal", async () => {
+    vi.mocked(engineApi.list).mockResolvedValue([
+      { ...SUGGESTION, kind: "ADD_CODE_FENCE_LANGUAGE", engine: "format-tidy", summary: "언어를 붙여요", changedFields: ["body"], proposedLogs: null, proposedBody: "```json\n{}\n```" },
+    ]);
+    renderWithClient(<QunoBotSuggestions questionId={10} current={{ ...CURRENT, body: "```\n{}\n```" }} />);
+
+    expect(await screen.findByText(/근거: 코드 모양/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "무시 — 이 질문에서 다시 제안하지 않아요" })).toBeInTheDocument();
+    expect(screen.queryByText(/폐기하고 새로 발급/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("본문 변경")).toHaveTextContent("- ```+ ```json");
+  });
+
   it("renders nothing without open suggestions", async () => {
     vi.mocked(engineApi.list).mockResolvedValue([{ ...SUGGESTION, status: "ACCEPTED" }]);
-    const { container } = renderWithClient(<QunoBotSuggestions questionId={10} />);
+    const { container } = renderWithClient(<QunoBotSuggestions questionId={10} current={CURRENT} />);
     await waitFor(() => expect(engineApi.list).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
   });
