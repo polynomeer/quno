@@ -47,6 +47,9 @@ import com.quno.qunobackend.domain.review.ReviewRequestNotFoundException
 import com.quno.qunobackend.domain.review.SelfReviewRequestException
 import com.quno.qunobackend.domain.stack.InvalidApplicabilityRangeException
 import com.quno.qunobackend.domain.tag.TagNotFoundException
+import com.quno.qunobackend.domain.token.InvalidPersonalAccessTokenRequestException
+import com.quno.qunobackend.domain.token.PersonalAccessTokenLimitExceededException
+import com.quno.qunobackend.domain.token.PersonalAccessTokenNotFoundException
 import com.quno.qunobackend.domain.user.DuplicateEmailException
 import com.quno.qunobackend.domain.user.DuplicateNicknameException
 import com.quno.qunobackend.domain.user.InvalidCredentialsException
@@ -88,6 +91,7 @@ class GlobalExceptionHandler {
         EmailDomainVerificationExpiredException::class,
         PaymentAlreadyProcessedException::class,
         PaymentConfirmationFailedException::class,
+        PersonalAccessTokenLimitExceededException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
 
@@ -111,6 +115,7 @@ class GlobalExceptionHandler {
         EmailDomainVerificationNotFoundException::class,
         LiveChatRoomNotFoundException::class,
         DirectAskPaymentNotFoundException::class,
+        PersonalAccessTokenNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
@@ -155,6 +160,7 @@ class GlobalExceptionHandler {
         LiveChatRoomQuestionMismatchException::class,
         InvalidLiveChatMessageSelectionException::class,
         InvalidApplicabilityRangeException::class,
+        InvalidPersonalAccessTokenRequestException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

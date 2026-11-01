@@ -1,7 +1,9 @@
 package com.quno.qunobackend.infrastructure.config
 
+import com.quno.qunobackend.application.token.usecase.AuthenticatePersonalAccessTokenUseCase
 import com.quno.qunobackend.application.user.TokenProvider
 import com.quno.qunobackend.infrastructure.security.JwtAuthenticationFilter
+import com.quno.qunobackend.infrastructure.security.PersonalAccessTokenFilter
 import com.quno.qunobackend.infrastructure.security.RateLimitFilter
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -28,6 +30,7 @@ class SecurityConfig(
     private val tokenProvider: TokenProvider,
     private val corsProperties: CorsProperties,
     private val rateLimitProperties: RateLimitProperties,
+    private val authenticatePersonalAccessTokenUseCase: AuthenticatePersonalAccessTokenUseCase,
 ) {
 
     @Bean
@@ -50,6 +53,8 @@ class SecurityConfig(
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.addFilterBefore(JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter::class.java)
+        // Personal access tokens (ADR-0079) answer for themselves: 401/403/429 before the JWT path is tried.
+        http.addFilterBefore(PersonalAccessTokenFilter(authenticatePersonalAccessTokenUseCase, rateLimitProperties), JwtAuthenticationFilter::class.java)
         http.addFilterBefore(RateLimitFilter(rateLimitProperties), UsernamePasswordAuthenticationFilter::class.java)
         http {
             cors { configurationSource = corsConfigurationSource() }

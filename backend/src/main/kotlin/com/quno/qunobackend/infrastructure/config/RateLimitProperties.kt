@@ -7,9 +7,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties
  * 않도록 사실상 무제한에 가깝게 두고(E2E 테스트가 같은 Spring 컨텍스트를 공유하며 로그인/회원가입을
  * 여러 번 호출한다), 운영에서만 `application-prod.yml`이 좁게 덮어쓴다. Override via
  * QUNO_RATE_LIMIT_CAPACITY / QUNO_RATE_LIMIT_REFILL_PERIOD_SECONDS.
+ *
+ * [tokenCapacity]/[tokenRefillPeriodSeconds]는 개인 액세스 토큰 하나당 전체 API 한도다(ADR-0079).
+ * IP 한도와 달리 로컬·운영이 같다 — 테스트는 토큰 요청을 몇 번만 보내므로 막히지 않는다.
  */
 @ConfigurationProperties(prefix = "quno.rate-limit")
 data class RateLimitProperties(
     val capacity: Long = 1_000,
     val refillPeriodSeconds: Long = 60,
+    val tokenCapacity: Long = 120,
+    val tokenRefillPeriodSeconds: Long = 60,
 )

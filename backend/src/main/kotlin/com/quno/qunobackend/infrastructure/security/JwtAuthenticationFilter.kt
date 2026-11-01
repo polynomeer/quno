@@ -23,7 +23,8 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val header = request.getHeader("Authorization")
-        if (header != null && header.startsWith(BEARER_PREFIX)) {
+        // Personal access tokens are PersonalAccessTokenFilter's; it has already set the context.
+        if (header != null && header.startsWith(BEARER_PREFIX) && SecurityContextHolder.getContext().authentication == null) {
             val token = header.removePrefix(BEARER_PREFIX).trim()
             runCatching { tokenProvider.validateAccessToken(token) }
                 .onSuccess { userId ->

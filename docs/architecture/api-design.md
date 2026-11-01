@@ -71,6 +71,21 @@
   - `/error`를 막아두면 컨트롤러에서 uncaught exception이 발생했을 때 Boot의 내부 forward가 이 필터 체인에서 다시 미인증 처리되어, 실제 원인(예: 500)이 아니라 **401로 위장**되어 클라이언트에 보인다 (Phase 2.6에서 `uq_tags_slug_active` 제약 위반이 401로 보이는 문제로 실제 발견함). 새 예외 타입을 추가할 때 GlobalExceptionHandler에 매핑을 빠뜨리면 이 문제가 재현되니 주의.
 - Refresh Token은 서버 측 저장/revocation 목록 없이 서명·만료만 검증하는 순수 stateless 방식이다. 탈취 대응(조기 폐기 등)이 필요해지면 Redis 기반 revocation을 후속 단계에서 추가한다.
 
+### 개인 액세스 토큰 (Phase 65.1·65.4, ADR-0079)
+
+CLI·MCP 서버처럼 브라우저 밖의 클라이언트는 JWT 대신 개인 액세스 토큰을 `Authorization: Bearer quno_pat_…`로 보낸다([ADR-0079](decisions/0079-personal-access-tokens-and-scopes.md)).
+
+- `POST /me/tokens`(body: `{name, scopes: ["READ"|"ASK"], lifetimeDays?: 30|90|365}`, 기본 90일): `201 {secret, token}`. `secret`은 이 응답에서만 볼 수 있고 서버에는 SHA-256 해시만 남는다.
+- `GET /me/tokens`: 내 토큰 목록(최신순). `displayPrefix`(원문 앞 12자), `scopes`, `createdAt`, `expiresAt`, `lastUsedAt`(5분 단위로 갱신), `revokedAt`. 원문은 없다.
+- `DELETE /me/tokens/{id}`: 폐기(멱등, 204). 남의 토큰 id는 404다.
+- 유효한 토큰은 사용자당 10개까지(초과 409). 이름 1~100자, 스코프 1개 이상, 기간은 세 값 중 하나(아니면 400).
+- 스코프 판정은 `PersonalAccessTokenFilter`가 허용 목록으로 한다.
+  - `READ`: 모든 `GET`, `POST /error-signatures/preview`, `POST /stack-fingerprints/parse`
+  - `ASK`: `POST /questions`, `POST /questions/{id}/versions`
+  - 그 밖의 요청과 `/me/tokens/**`는 어떤 스코프로도 403이다. 토큰 관리는 JWT 세션에서만 한다.
+- 알 수 없거나 만료·폐기된 `quno_pat_` 토큰은 공개 `GET`에서도 401이다. 잘못된 JWT처럼 익명 요청으로 바꾸지 않는다.
+- 토큰마다 분당 120회(`quno.rate-limit.token-capacity`)를 넘으면 429다.
+
 ## 페이지네이션
 
 목록형 API(`GET /api/v1/questions`, `/api/v1/search`, `/api/v1/me/notifications` 등)는 페이지 번호 기반보다 **cursor pagination**을 권장한다. 예: `created_at` 또는 `last_activity_at` + `id`를 커서로 사용하면 데이터가 계속 추가되는 상황에서도 중복/누락을 줄일 수 있다. 현재 `/search`, `/related`는 `limit`만 받는 단순 형태이며, cursor는 MVP 이후 트래픽이 실제로 커졌을 때 도입한다.

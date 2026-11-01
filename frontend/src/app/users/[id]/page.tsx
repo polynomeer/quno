@@ -122,7 +122,23 @@ export default function UserProfilePage({ params }: PageProps<"/users/[id]">) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {isOwnProfile ? (
-                me && <DirectAskSettingsToggle accepts={me.acceptsDirectAsk} />
+                me && (
+                  <>
+                    <DirectAskSettingsToggle accepts={me.acceptsDirectAsk} />
+                    <Link
+                      href="/my-stack"
+                      className="inline-flex h-11 items-center rounded-full bg-surface-subtle px-4 text-sm font-semibold text-text-primary hover:bg-border"
+                    >
+                      내 스택
+                    </Link>
+                    <Link
+                      href="/settings/tokens"
+                      className="inline-flex h-11 items-center rounded-full bg-surface-subtle px-4 text-sm font-semibold text-text-primary hover:bg-border"
+                    >
+                      액세스 토큰
+                    </Link>
+                  </>
+                )
               ) : (
                 <RequestDirectAskPanel targetUserId={userId} />
               )}
