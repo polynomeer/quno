@@ -231,6 +231,7 @@ quno/
 │       ├── entities/                # 도메인 모델 공용 타입/훅
 │       ├── widgets/                 # 여러 feature를 조합한 화면 단위 위젯
 │       └── shared/                  # 공용 UI/유틸/HTTP 클라이언트
+├── cli/                            # quno CLI + 읽기 전용 MCP 서버 (TypeScript, Phase 65)
 ├── docs/
 │   ├── product/                    # 비전 · MVP 범위 · 상용화/품질 개선 계획
 │   ├── architecture/                # 시스템 아키텍처 · 도메인 모델 · API 설계 · ADR
@@ -275,9 +276,10 @@ cd frontend && npm run test:e2e
 | 시스템 아키텍처, 패키지 구조 | [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md) |
 | 도메인 모델, ERD, SQL 흐름 | [docs/architecture/domain-model.md](docs/architecture/domain-model.md) |
 | REST API 설계 | [docs/architecture/api-design.md](docs/architecture/api-design.md) |
-| **"왜 이렇게 결정했는가" (ADR 70개)** | [docs/architecture/decisions/](docs/architecture/decisions/README.md) |
+| **"왜 이렇게 결정했는가" (ADR 80개)** | [docs/architecture/decisions/](docs/architecture/decisions/README.md) |
 | **기술적으로 어려웠던 문제와 진단 과정** | [docs/engineering/technical-deep-dives.md](docs/engineering/technical-deep-dives.md) |
 | 프론트엔드 UX/디자인 시스템 | [docs/frontend/](docs/frontend/README.md) |
+| 터미널·코딩 에이전트에서 쓰기(CLI·MCP) | [cli/README.md](cli/README.md) |
 | 운영 런북 | [docs/operations/runbook.md](docs/operations/runbook.md) |
 | 전체 개발 진행 기록(Phase별) | [PLAN.md](PLAN.md) |
 

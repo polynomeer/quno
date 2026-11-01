@@ -20,6 +20,7 @@
 | Migration | Flyway |
 | Search | 초기 lexical search, 이후 OpenSearch/Elasticsearch 계열 검토 |
 | Object Storage | 스크린샷/재현 영상 등 첨부파일 (MVP 이후) |
+| CLI · MCP 서버 | TypeScript npm 패키지 `cli/`(`quno`, `quno mcp`). 개인 액세스 토큰으로 REST API를 부른다(Phase 65, [ADR-0079](decisions/0079-personal-access-tokens-and-scopes.md)·[ADR-0080](decisions/0080-quno-cli-and-mcp-server-typescript-package.md)) |
 
 MVP는 MSA보다 **모듈형 모놀리스**를 선택한다. 배포 복잡도를 낮추면서도 도메인 경계를 패키지 레벨에서 명확히 하여, 트래픽이나 조직 규모가 커질 때 Search·Notification·Insight 등을 독립 서비스로 분리할 수 있도록 한다.
 
