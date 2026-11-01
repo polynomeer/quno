@@ -15,7 +15,8 @@ export type NotificationType =
   | "DIRECT_ASK_REQUESTED"
   | "DIRECT_ASK_ACCEPTED"
   | "DIRECT_ASK_DECLINED"
-  | "LIVE_CHAT_STARTED";
+  | "LIVE_CHAT_STARTED"
+  | "ENGINE_SECRET_DETECTED";
 
 export interface Notification {
   id: number;

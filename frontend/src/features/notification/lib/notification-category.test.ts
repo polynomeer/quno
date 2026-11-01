@@ -8,6 +8,7 @@ describe("notificationCategory", () => {
     ["MENTIONED_IN_COMMENT", "conversation"],
     ["DIRECT_ASK_REQUESTED", "conversation"],
     ["QUESTION_OUTDATED", "change"],
+    ["ENGINE_SECRET_DETECTED", "change"],
   ])("puts %s under %s", (type, category) => {
     expect(notificationCategory(type)).toBe(category);
   });

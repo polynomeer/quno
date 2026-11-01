@@ -54,6 +54,8 @@ export interface QuestionDetail {
   viewCount: number;
   /** Stack fingerprint of the latest version (ADR-0076); absent from older responses. */
   dependencies?: StackDependency[];
+  /** Secret-looking values masked for this reader by QunoBot (ADR-0081); 0 for the author. */
+  maskedSecretCount?: number;
 }
 
 export interface QuestionVersionSummary {

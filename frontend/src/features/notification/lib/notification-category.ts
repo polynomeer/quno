@@ -19,6 +19,7 @@ const CATEGORY: Record<NotificationType, NotificationCategory> = {
   QUESTION_OUTDATED: "change",
   TECH_VERSION_IMPACT_DETECTED: "change",
   CONTENT_HIDDEN: "change",
+  ENGINE_SECRET_DETECTED: "change",
 };
 
 /** Types the backend adds later land in "change" until they're mapped here. */

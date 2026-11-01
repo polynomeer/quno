@@ -55,6 +55,13 @@ export function describeNotification(notification: Notification): DescribedNotif
       return { message: "Direct Ask 요청이 거절되었습니다 (환불 처리됨)", href: "/direct-asks?role=sent" };
     case "LIVE_CHAT_STARTED":
       return { message: "실시간 질문방이 열렸습니다", href: `${href}#live-chat` };
+    case "ENGINE_SECRET_DETECTED": {
+      const count = typeof payload.count === "number" ? payload.count : null;
+      return {
+        message: `QunoBot이 질문에서 비밀값으로 보이는 문자열${count ? ` ${count}개` : ""}를 찾아 공개 화면에서 가렸습니다`,
+        href: `${questionHref}#qunobot`,
+      };
+    }
     case "TECH_VERSION_IMPACT_DETECTED": {
       const tagSlug = typeof payload.tagSlug === "string" ? payload.tagSlug : null;
       const latestVersion = typeof payload.latestVersion === "string" ? payload.latestVersion : null;
