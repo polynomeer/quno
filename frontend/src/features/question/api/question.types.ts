@@ -56,6 +56,35 @@ export interface QuestionDetail {
   dependencies?: StackDependency[];
   /** Secret-looking values masked for this reader by QunoBot (ADR-0081); 0 for the author. */
   maskedSecretCount?: number;
+  /** The latest environment snapshot (Phase 93, ADR-0083), or null. */
+  environmentSnapshot?: EnvironmentSnapshot | null;
+}
+
+/** Mirrors backend EnvironmentSnapshotResponse; `document` is the scrubbed `quno.snapshot/1`. */
+export interface EnvironmentSnapshot {
+  versionNumber: number;
+  schemaVersion: number;
+  source: "COLLECTOR" | "MANUAL";
+  collector: string | null;
+  fingerprint: string;
+  serverRedactions: number;
+  createdAt: string;
+  document: {
+    capturedAt?: string;
+    tiers?: number[];
+    tier0?: {
+      os?: { name?: string; version?: string | null; arch?: string };
+      runtimes?: { name: string; vendor: string | null; version: string | null }[];
+      container?: { docker?: boolean; wsl?: boolean; rosetta?: boolean };
+      locale?: { lang?: string | null; encoding?: string | null; timezone?: string | null };
+      tools?: { name: string; version: string }[];
+      ide?: string | null;
+      ci?: { isCi?: boolean; provider?: string | null };
+      git?: { commit?: string | null; dirty?: boolean | null; remoteHost?: string | null } | null;
+      dependencies?: { resolution?: string; source?: string | null; items?: { ecosystem: string; name: string; version: string }[] };
+      jvmArgs?: string[];
+    };
+  };
 }
 
 export interface QuestionVersionSummary {
