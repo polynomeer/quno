@@ -5,6 +5,7 @@ import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.search.usecase.QuestionSearchUseCase
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.springframework.stereotype.Service
 
 /**
@@ -19,20 +20,20 @@ class GetQuestionGraphUseCase(
     private val hydrator: QuestionSummaryHydrator,
     private val questionSearchUseCase: QuestionSearchUseCase,
 ) {
-    fun execute(questionId: Long): QuestionGraphResult {
+    fun execute(questionId: Long, viewer: QuestionViewer): QuestionGraphResult {
         val question = questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
 
         val clusterMembers = question.clusterId?.let { clusterId ->
             val memberIds = questionRepository.findAllByClusterId(clusterId).mapNotNull { it.id }.filter { it != questionId }
-            hydrator.hydrate(memberIds)
+            hydrator.hydrate(memberIds, viewer)
         } ?: emptyList()
 
-        val forkedFrom = question.originQuestionId?.let { originId -> hydrator.hydrate(listOf(originId)).firstOrNull() }
+        val forkedFrom = question.originQuestionId?.let { originId -> hydrator.hydrate(listOf(originId), viewer).firstOrNull() }
 
         val forkIds = questionRepository.findAllByOriginQuestionId(questionId).mapNotNull { it.id }
-        val forks = hydrator.hydrate(forkIds)
+        val forks = hydrator.hydrate(forkIds, viewer)
 
-        val related = questionSearchUseCase.related(questionId)
+        val related = questionSearchUseCase.related(questionId, viewer = viewer)
 
         return QuestionGraphResult(
             questionId = questionId,

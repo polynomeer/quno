@@ -2,6 +2,7 @@ package com.quno.qunobackend.interfaces.api.question
 
 import com.quno.qunobackend.application.cluster.usecase.GetQuestionGraphUseCase
 import com.quno.qunobackend.application.common.NicknameResolver
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.ForkQuestionCommand
 import com.quno.qunobackend.application.question.dto.MarkQuestionOutdatedCommand
@@ -55,6 +56,7 @@ class QuestionController(
     private val recordQuestionViewUseCase: RecordQuestionViewUseCase,
     private val nicknameResolver: NicknameResolver,
     private val objectMapper: ObjectMapper,
+    private val access: QuestionAccess,
 ) {
 
     @PostMapping
@@ -73,6 +75,7 @@ class QuestionController(
                 tagNames = request.tags,
                 dependencies = request.dependencies.map { it.toDomain() },
                 environmentSnapshot = request.environmentSnapshot?.let(objectMapper::writeValueAsString),
+                organizationId = request.organizationId,
             ),
         )
         return result.toResponse()
@@ -99,6 +102,9 @@ class QuestionController(
             dependencies = result.dependencies.map { DependencyResponse(it.ecosystem, it.name, it.version) },
             maskedSecretCount = result.maskedSecretCount,
             environmentSnapshot = result.environmentSnapshot?.toResponse(),
+            visibility = result.visibility,
+            organizationId = result.organizationId,
+            organizationName = result.organizationName,
         )
     }
 
@@ -204,9 +210,10 @@ class QuestionController(
 
     @GetMapping("/{id}/related")
     fun related(
+        @AuthenticationPrincipal viewerId: Long?,
         @PathVariable id: Long,
         @RequestParam(required = false) limit: Int?,
-    ): List<QuestionSearchResultResponse> = questionSearchUseCase.related(id, limit ?: 5).map { it.toResponse() }
+    ): List<QuestionSearchResultResponse> = questionSearchUseCase.related(id, limit ?: 5, access.viewer(viewerId)).map { it.toResponse() }
 
     @PostMapping("/{id}/outdated")
     fun markOutdated(
@@ -225,10 +232,10 @@ class QuestionController(
     fun fork(@AuthenticationPrincipal actorId: Long, @PathVariable id: Long): QuestionMutationResponse = forkQuestionUseCase.execute(ForkQuestionCommand(originQuestionId = id, actorId = actorId)).toResponse()
 
     @GetMapping("/{id}/forks")
-    fun forks(@PathVariable id: Long): List<QuestionSearchResultResponse> = listQuestionForksUseCase.execute(id).map { it.toResponse() }
+    fun forks(@AuthenticationPrincipal viewerId: Long, @PathVariable id: Long): List<QuestionSearchResultResponse> = listQuestionForksUseCase.execute(id, access.viewer(viewerId)).map { it.toResponse() }
 
     @GetMapping("/{id}/graph")
-    fun graph(@PathVariable id: Long): QuestionGraphResponse = getQuestionGraphUseCase.execute(id).toResponse()
+    fun graph(@AuthenticationPrincipal viewerId: Long, @PathVariable id: Long): QuestionGraphResponse = getQuestionGraphUseCase.execute(id, access.viewer(viewerId)).toResponse()
 
     private fun anonymousViewerKey(request: HttpServletRequest): String {
         val raw = "${request.remoteAddr}|${request.getHeader("User-Agent").orEmpty()}"

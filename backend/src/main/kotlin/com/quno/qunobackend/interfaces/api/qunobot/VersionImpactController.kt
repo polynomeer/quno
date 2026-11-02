@@ -1,7 +1,9 @@
 package com.quno.qunobackend.interfaces.api.qunobot
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.qunobot.usecase.GetVersionImpactsUseCase
 import com.quno.qunobackend.domain.qunobot.VersionImpact
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -11,8 +13,9 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/qunobot/version-impacts")
 class VersionImpactController(
     private val getVersionImpactsUseCase: GetVersionImpactsUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @GetMapping
-    fun get(@RequestParam(required = false) limit: Int?): List<VersionImpact> = getVersionImpactsUseCase.execute(limit ?: 10)
+    fun get(@AuthenticationPrincipal viewerId: Long, @RequestParam(required = false) limit: Int?): List<VersionImpact> = getVersionImpactsUseCase.execute(limit ?: 10, access.viewer(viewerId))
 }

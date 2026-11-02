@@ -10,6 +10,7 @@ import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.answer.Answer
 import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionVersion
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.Tag
 import com.quno.qunobackend.domain.vote.Vote
 import com.quno.qunobackend.domain.vote.VoteTargetType
@@ -38,7 +39,7 @@ class QuestionSummaryHydratorTest {
         voteRepository.save(Vote(voterId = 99L, targetType = VoteTargetType.QUESTION, targetId = requireNotNull(q2.id), value = 1))
 
         val missingId = 999L
-        val result = hydrator.hydrate(listOf(requireNotNull(q2.id), missingId, requireNotNull(q1.id)))
+        val result = hydrator.hydrate(listOf(requireNotNull(q2.id), missingId, requireNotNull(q1.id)), viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(listOf(q2.id, q1.id), result.map { it.id })
         assertEquals(listOf("kotlin"), result.first { it.id == q1.id }.tags)
@@ -57,7 +58,7 @@ class QuestionSummaryHydratorTest {
         val accepted = answerRepository.save(Answer.write(questionId, 3L, "second", targetVersionNumber = 3))
         questionRepository.save(question.resolve(requireNotNull(accepted.id)))
 
-        val result = hydrator.hydrate(listOf(questionId)).single()
+        val result = hydrator.hydrate(listOf(questionId), viewer = QuestionViewer.ANONYMOUS).single()
 
         assertEquals(2, result.answerCount)
         assertEquals(true, result.hasAcceptedAnswer)
@@ -66,6 +67,6 @@ class QuestionSummaryHydratorTest {
 
     @Test
     fun `returns empty for an empty id list without querying anything`() {
-        assertEquals(emptyList(), hydrator.hydrate(emptyList()))
+        assertEquals(emptyList(), hydrator.hydrate(emptyList(), viewer = QuestionViewer.ANONYMOUS))
     }
 }

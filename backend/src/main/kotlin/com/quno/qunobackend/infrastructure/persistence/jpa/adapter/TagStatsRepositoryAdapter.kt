@@ -1,5 +1,6 @@
 package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.TagContributor
 import com.quno.qunobackend.domain.tag.TagQuestionSort
 import com.quno.qunobackend.domain.tag.TagStatsRepository
@@ -11,10 +12,10 @@ class TagStatsRepositoryAdapter(
     private val tagStatsJpaRepository: TagStatsJpaRepository,
 ) : TagStatsRepository {
 
-    override fun findQuestionIds(tagId: Long, sort: TagQuestionSort, limit: Int): List<Long> = when (sort) {
-        TagQuestionSort.LATEST -> tagStatsJpaRepository.findLatestQuestionIds(tagId, limit)
-        TagQuestionSort.UNANSWERED -> tagStatsJpaRepository.findUnansweredQuestionIds(tagId, limit)
-        TagQuestionSort.TOP -> tagStatsJpaRepository.findTopQuestionIds(tagId, limit)
+    override fun findQuestionIds(tagId: Long, sort: TagQuestionSort, limit: Int, viewer: QuestionViewer): List<Long> = when (sort) {
+        TagQuestionSort.LATEST -> tagStatsJpaRepository.findLatestQuestionIds(tagId, limit, viewer.userIdForSql(), viewer.organizationIdsForSql())
+        TagQuestionSort.UNANSWERED -> tagStatsJpaRepository.findUnansweredQuestionIds(tagId, limit, viewer.userIdForSql(), viewer.organizationIdsForSql())
+        TagQuestionSort.TOP -> tagStatsJpaRepository.findTopQuestionIds(tagId, limit, viewer.userIdForSql(), viewer.organizationIdsForSql())
     }
 
     override fun findTopContributors(tagId: Long, limit: Int): List<TagContributor> = tagStatsJpaRepository.findTopContributors(tagId, limit)

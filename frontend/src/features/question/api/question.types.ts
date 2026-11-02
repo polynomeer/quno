@@ -16,7 +16,11 @@ export interface QuestionSummary {
   viewCount: number;
   createdAt: string;
   updatedAt: string;
+  /** ORG questions are visible to one organization's members only (Phase 79, ADR-0085). */
+  visibility?: QuestionVisibility;
 }
+
+export type QuestionVisibility = "PUBLIC" | "ORG";
 
 /** "질문의 생애" panel — `GET /questions/{id}/timeline`, newest first (ADR-0062). Acceptance is the
  * `accepted` flag on an ANSWER_POSTED event; the backend doesn't record when it happened. */
@@ -58,6 +62,9 @@ export interface QuestionDetail {
   maskedSecretCount?: number;
   /** The latest environment snapshot (Phase 93, ADR-0083), or null. */
   environmentSnapshot?: EnvironmentSnapshot | null;
+  visibility?: QuestionVisibility;
+  organizationId?: number | null;
+  organizationName?: string | null;
 }
 
 /** Mirrors backend EnvironmentSnapshotResponse; `document` is the scrubbed `quno.snapshot/1`. */
@@ -154,6 +161,8 @@ export interface CreateQuestionInput {
   tags: string[];
   /** Only the entries the author kept from the parse preview (ADR-0076). */
   dependencies?: StackDependency[];
+  /** Ask one verified organization privately (Phase 79, ADR-0085); omitted = public. */
+  organizationId?: number;
 }
 
 export interface QuestionMutationResult {

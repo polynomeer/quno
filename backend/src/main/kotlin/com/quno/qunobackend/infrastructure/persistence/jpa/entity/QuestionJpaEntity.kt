@@ -1,6 +1,7 @@
 package com.quno.qunobackend.infrastructure.persistence.jpa.entity
 
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -39,6 +40,13 @@ class QuestionJpaEntity(
 
     @Column(name = "origin_question_id")
     val originQuestionId: Long?,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    val visibility: QuestionVisibility,
+
+    @Column(name = "organization_id")
+    val organizationId: Long?,
 
     @Column(name = "deleted_at")
     val deletedAt: Instant?,

@@ -565,6 +565,26 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - 새 비밀값 제안이 생기면 작성자에게만 `ENGINE_SECRET_DETECTED` 알림이 간다(payload `{questionAuthorId, suggestionId, count}`).
 - 기존 질문은 `EngineSweepScheduler`가 주기마다 일정 수씩 분석한다. 관련 프로퍼티는 `quno.engine.sweep.enabled`·`batch-size`·`interval-ms`이고, Gradle 테스트에서는 끈다.
 
+## 비공개 질문과 공개 범위 (Phase 79, ADR-0085)
+
+- `POST /questions`의 선택 필드 `organizationId`: 그 조직 멤버만 볼 수 있는 질문(ORG)으로 만든다. 생략하면 공개(PUBLIC)다.
+  - 작성자가 그 조직 멤버이고 조직이 **인증 조직**이어야 한다. 아니면 400이다. 커뮤니티 조직은 누구나 가입하므로 쓸 수 없다.
+  - 범위는 작성 후 바뀌지 않는다. 수정(`/versions`)은 범위를 유지하고, Fork는 원본 범위를 잇는다.
+- `GET /questions/{id}` 응답에 `visibility`, `organizationId`, `organizationName`이 붙고, 목록 요약에는 `visibility`가 붙는다.
+- **볼 수 없는 질문은 존재하지 않는 질문과 똑같이 404다**(403 아님). 다음 경로의 읽기·쓰기가 모두 같은 규칙을 따른다.
+  - 대상 경로
+    - `/questions/{id}/**`
+    - `/answers/{id}/**`
+    - `/comments/{id}/**`
+    - `/live-chat/{id}/**`
+    - `/direct-asks/{id}/**`
+    - `/engine-suggestions/{id}/**`
+  - STOMP `/topic/questions/{id}/presence`, `/topic/live-chat/{roomId}`, `/app/live-chat/{roomId}/send`는 구독·전송이 거절된다.
+- 검색, 관련 질문, 태그별 질문, 추천, 에러 시그니처 미리보기, 버전 영향, 프로필, 저장·Watch·알림·Direct Ask 목록, 스택 Ward 제안에는 보는 사람이 볼 수 있는 질문만 나온다.
+- 대시보드 인기·오늘 해결·재활성, 트렌드 태그, 태그 스파이크, Flow, 태그 기여자·연관 태그는 공개 질문만 센다.
+- "같은 문제" 클러스터는 범위가 같은 질문끼리만 묶인다(다르면 400). 비공개 질문의 Direct Ask는 그 조직 멤버에게만 보낼 수 있다(아니면 400).
+- 평판·배지 수에는 비공개 활동도 들어간다(숫자만, ADR-0085의 의도적 잔여).
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

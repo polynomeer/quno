@@ -1,10 +1,12 @@
 package com.quno.qunobackend.interfaces.api.user
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.user.usecase.GetUserProfileUseCase
 import com.quno.qunobackend.interfaces.api.answer.toResponse
 import com.quno.qunobackend.interfaces.api.organization.toResponse
 import com.quno.qunobackend.interfaces.api.search.toResponse
 import com.quno.qunobackend.interfaces.api.tag.toResponse
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -15,11 +17,12 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/users")
 class UserProfileController(
     private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @GetMapping("/{id}/profile")
-    fun getProfile(@PathVariable id: Long): UserProfileResponse {
-        val result = getUserProfileUseCase.execute(id)
+    fun getProfile(@AuthenticationPrincipal viewerId: Long?, @PathVariable id: Long): UserProfileResponse {
+        val result = getUserProfileUseCase.execute(id, access.viewer(viewerId))
         return UserProfileResponse(
             userId = result.userId,
             nickname = result.nickname,

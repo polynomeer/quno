@@ -20,6 +20,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryUserTagFollowRepository
 import com.quno.qunobackend.application.user.dto.SignUpCommand
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.user.UserNotFoundException
 import org.junit.jupiter.api.Test
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -82,7 +83,7 @@ class GetUserProfileUseCaseTest {
         val tag = tagRepository.findBySlug("redis") ?: error("tag should exist")
         followTagUseCase.execute(userId, requireNotNull(tag.id))
 
-        val result = useCase.execute(userId)
+        val result = useCase.execute(userId, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals("alice", result.nickname)
         assertEquals(listOf(ownQuestionId), result.questions.map { it.id })
@@ -92,6 +93,6 @@ class GetUserProfileUseCaseTest {
 
     @Test
     fun `throws when the user does not exist`() {
-        assertFailsWith<UserNotFoundException> { useCase.execute(999L) }
+        assertFailsWith<UserNotFoundException> { useCase.execute(999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 }

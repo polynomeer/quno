@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.watch
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.watch.usecase.ListMyWatchesUseCase
 import com.quno.qunobackend.application.watch.usecase.UnwatchQuestionUseCase
 import com.quno.qunobackend.application.watch.usecase.WatchQuestionUseCase
@@ -19,6 +20,7 @@ class WatchController(
     private val watchQuestionUseCase: WatchQuestionUseCase,
     private val unwatchQuestionUseCase: UnwatchQuestionUseCase,
     private val listMyWatchesUseCase: ListMyWatchesUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @PostMapping("/questions/{questionId}/watch")
@@ -34,7 +36,7 @@ class WatchController(
     }
 
     @GetMapping("/me/watches")
-    fun myWatches(@AuthenticationPrincipal userId: Long): List<WatchedQuestionResponse> = listMyWatchesUseCase.execute(userId).map {
+    fun myWatches(@AuthenticationPrincipal userId: Long): List<WatchedQuestionResponse> = listMyWatchesUseCase.execute(userId, access.viewer(userId)).map {
         WatchedQuestionResponse(questionId = it.questionId, title = it.title, status = it.status)
     }
 }

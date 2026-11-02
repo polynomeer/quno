@@ -6,6 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRequireAuth } from "@/features/auth/hooks/useRequireAuth";
+import { useSession } from "@/features/auth/hooks/useSession";
+import { useUserProfile } from "@/entities/user/hooks/useUserProfile";
+import { VisibilityPicker } from "@/features/question/ui/VisibilityPicker";
 import { useCreateQuestion } from "@/features/question/hooks/useCreateQuestion";
 import { TagInput } from "@/features/question/ui/TagInput";
 import { SameErrorPanel } from "@/features/error-signature/ui/SameErrorPanel";
@@ -51,6 +54,10 @@ export default function AskPage() {
   const createQuestion = useCreateQuestion();
   const [tags, setTags] = useState<string[]>([]);
   const [dependencies, setDependencies] = useState<StackDependency[]>([]);
+  // null = public. Deliberately not part of the saved draft: a stale draft must never post privately-meant text publicly or vice versa.
+  const [organizationId, setOrganizationId] = useState<number | null>(null);
+  const { data: me } = useSession();
+  const { data: myProfile } = useUserProfile(me?.id ?? 0, Boolean(me?.id));
   const askSchema = useMemo(() => buildAskSchema(t), [t]);
 
   const {
@@ -113,6 +120,7 @@ export default function AskPage() {
         logs: values.logs?.trim() || undefined,
         tags,
         dependencies,
+        ...(organizationId !== null ? { organizationId } : {}),
       });
       try {
         localStorage.removeItem(DRAFT_KEY);
@@ -259,6 +267,8 @@ export default function AskPage() {
           </div>
 
           <SameErrorPanel text={debouncedErrorText} />
+
+          <VisibilityPicker organizations={myProfile?.organizations ?? []} value={organizationId} onChange={setOrganizationId} />
 
           <div className="space-y-2">
             <span className="block font-semibold">{t.ask.tagsLabel}</span>

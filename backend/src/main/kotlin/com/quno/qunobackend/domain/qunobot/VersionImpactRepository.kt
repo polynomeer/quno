@@ -1,5 +1,6 @@
 package com.quno.qunobackend.domain.qunobot
 
+import com.quno.qunobackend.domain.question.QuestionViewer
 import java.time.LocalDate
 
 /** Port implemented by infrastructure/persistence/jpa/adapter/VersionImpactRepositoryAdapter. */
@@ -13,5 +14,5 @@ interface VersionImpactRepository {
 
     /** Same shape, across every tracked tag currently in technology_releases — the live view
      * behind `GET /qunobot/version-impacts`. Ranked by release date descending. */
-    fun findVersionImpacts(limit: Int): List<VersionImpact>
+    fun findVersionImpacts(limit: Int, viewer: QuestionViewer): List<VersionImpact>
 }

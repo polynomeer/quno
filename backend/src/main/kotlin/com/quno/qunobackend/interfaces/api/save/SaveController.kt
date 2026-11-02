@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.save
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.save.usecase.ListMySavesUseCase
 import com.quno.qunobackend.application.save.usecase.SaveQuestionUseCase
 import com.quno.qunobackend.application.save.usecase.UnsaveQuestionUseCase
@@ -19,6 +20,7 @@ class SaveController(
     private val saveQuestionUseCase: SaveQuestionUseCase,
     private val unsaveQuestionUseCase: UnsaveQuestionUseCase,
     private val listMySavesUseCase: ListMySavesUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @PostMapping("/questions/{questionId}/save")
@@ -34,7 +36,7 @@ class SaveController(
     }
 
     @GetMapping("/me/saves")
-    fun mySaves(@AuthenticationPrincipal userId: Long): List<SavedQuestionResponse> = listMySavesUseCase.execute(userId).map {
+    fun mySaves(@AuthenticationPrincipal userId: Long): List<SavedQuestionResponse> = listMySavesUseCase.execute(userId, access.viewer(userId)).map {
         SavedQuestionResponse(questionId = it.questionId, title = it.title, status = it.status)
     }
 }

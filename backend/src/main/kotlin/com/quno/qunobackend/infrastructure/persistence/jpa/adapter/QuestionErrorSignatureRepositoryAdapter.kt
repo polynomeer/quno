@@ -2,6 +2,7 @@ package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 
 import com.quno.qunobackend.domain.errorsignature.ErrorSignature
 import com.quno.qunobackend.domain.errorsignature.QuestionErrorSignatureRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.infrastructure.persistence.jpa.entity.QuestionErrorSignatureJpaEntity
 import com.quno.qunobackend.infrastructure.persistence.jpa.repository.QuestionErrorSignatureJpaRepository
 import org.springframework.stereotype.Component
@@ -34,6 +35,7 @@ class QuestionErrorSignatureRepositoryAdapter(
         messageKeys: Collection<String>,
         excludeQuestionId: Long?,
         limit: Int,
+        viewer: QuestionViewer,
     ): List<Long> {
         if (signatureHashes.isEmpty() && messageKeys.isEmpty()) return emptyList()
         return jpaRepository.findMatchingQuestionIds(
@@ -41,6 +43,8 @@ class QuestionErrorSignatureRepositoryAdapter(
             keys = messageKeys.ifEmpty { listOf(NO_MATCH) },
             excludeQuestionId = excludeQuestionId ?: -1L,
             limit = limit,
+            viewerId = viewer.userIdForSql(),
+            viewerOrgIds = viewer.organizationIdsForSql(),
         )
     }
 

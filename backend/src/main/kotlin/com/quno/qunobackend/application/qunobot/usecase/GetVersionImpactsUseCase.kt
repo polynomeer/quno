@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.qunobot.usecase
 
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.TrackedTechnologies
 import com.quno.qunobackend.domain.qunobot.VersionImpact
 import com.quno.qunobackend.domain.qunobot.VersionImpactRepository
@@ -17,8 +18,9 @@ class GetVersionImpactsUseCase(
     private val versionImpactRepository: VersionImpactRepository,
     private val answerApplicabilityRepository: AnswerApplicabilityRepository? = null,
 ) {
-    fun execute(limit: Int): List<VersionImpact> {
-        val impacts = versionImpactRepository.findVersionImpacts(limit)
+    /** Lists question titles, so only questions [viewer] may see (ADR-0085). */
+    fun execute(limit: Int, viewer: QuestionViewer): List<VersionImpact> {
+        val impacts = versionImpactRepository.findVersionImpacts(limit, viewer)
         val ranges = answerApplicabilityRepository?.findByQuestionIds(impacts.map { it.questionId }.toSet()).orEmpty()
         return impacts.filter { impact ->
             val patterns = TrackedTechnologies.PACKAGES[impact.tagSlug].orEmpty()

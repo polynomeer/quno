@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.qunobot.usecase
 
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.AffectedQuestion
 import com.quno.qunobackend.domain.qunobot.VersionImpact
 import com.quno.qunobackend.domain.qunobot.VersionImpactRepository
@@ -12,5 +13,5 @@ class InMemoryVersionImpactRepository : VersionImpactRepository {
 
     override fun findAffectedQuestions(tagSlug: String, sinceDate: LocalDate, limit: Int): List<AffectedQuestion> = (affectedQuestionsByTag[tagSlug] ?: emptyList()).take(limit)
 
-    override fun findVersionImpacts(limit: Int): List<VersionImpact> = versionImpacts.take(limit)
+    override fun findVersionImpacts(limit: Int, viewer: QuestionViewer): List<VersionImpact> = versionImpacts.take(limit)
 }

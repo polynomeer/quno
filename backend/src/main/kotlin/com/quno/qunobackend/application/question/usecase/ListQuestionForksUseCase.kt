@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.search.dto.QuestionSearchResult
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.springframework.stereotype.Service
 
 @Service
@@ -11,9 +12,9 @@ class ListQuestionForksUseCase(
     private val questionRepository: QuestionRepository,
     private val hydrator: QuestionSummaryHydrator,
 ) {
-    fun execute(questionId: Long): List<QuestionSearchResult> {
+    fun execute(questionId: Long, viewer: QuestionViewer): List<QuestionSearchResult> {
         questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
         val forkIds = questionRepository.findAllByOriginQuestionId(questionId).mapNotNull { it.id }
-        return hydrator.hydrate(forkIds)
+        return hydrator.hydrate(forkIds, viewer)
     }
 }

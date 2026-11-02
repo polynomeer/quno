@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.errorsignature.dto.ErrorSignaturePreviewResult
 import com.quno.qunobackend.domain.errorsignature.ErrorSignatureExtractor
 import com.quno.qunobackend.domain.errorsignature.QuestionErrorSignatureRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.springframework.stereotype.Service
 
 /**
@@ -15,9 +16,9 @@ class PreviewErrorSignaturesUseCase(
     private val questionErrorSignatureRepository: QuestionErrorSignatureRepository,
     private val hydrator: QuestionSummaryHydrator,
 ) {
-    fun execute(text: String, limit: Int = 10): ErrorSignaturePreviewResult {
+    fun execute(text: String, viewer: QuestionViewer, limit: Int = 10): ErrorSignaturePreviewResult {
         val signatures = ErrorSignatureExtractor.extractAll(text)
-        val questionIds = questionErrorSignatureRepository.findQuestionIdsMatching(signatures, excludeQuestionId = null, limit = limit)
-        return ErrorSignaturePreviewResult(signatures = signatures, questions = hydrator.hydrate(questionIds))
+        val questionIds = questionErrorSignatureRepository.findQuestionIdsMatching(signatures, excludeQuestionId = null, limit = limit, viewer = viewer)
+        return ErrorSignaturePreviewResult(signatures = signatures, questions = hydrator.hydrate(questionIds, viewer))
     }
 }

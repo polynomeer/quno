@@ -1,5 +1,7 @@
 package com.quno.qunobackend.domain.tag
 
+import com.quno.qunobackend.domain.question.QuestionViewer
+
 /** Latest = newest first. Unanswered = no non-deleted answers, newest first. Top = highest net
  * vote score first (Phase 28, ADR-0040) — mirrors SearchSort's RELEVANCE/SCORE split. */
 enum class TagQuestionSort { LATEST, UNANSWERED, TOP }
@@ -8,7 +10,7 @@ data class TagContributor(val userId: Long, val nickname: String, val answerCoun
 
 /** Port implemented by infrastructure/persistence/jpa/adapter/TagStatsRepositoryAdapter. */
 interface TagStatsRepository {
-    fun findQuestionIds(tagId: Long, sort: TagQuestionSort, limit: Int): List<Long>
+    fun findQuestionIds(tagId: Long, sort: TagQuestionSort, limit: Int, viewer: QuestionViewer): List<Long>
 
     /** Ranked by how many answers they've posted to questions carrying this tag. */
     fun findTopContributors(tagId: Long, limit: Int): List<TagContributor>

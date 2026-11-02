@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { PrivateBadge } from "@/features/question/ui/PrivateBadge";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
 import { useSession } from "@/features/auth/hooks/useSession";
@@ -53,6 +54,10 @@ const SORT_OPTIONS: SegmentOption<AnswerSort>[] = [
 export function QuestionDetailContent({ questionId }: { questionId: number }) {
   const { data: me, isLoading: authLoading } = useSession();
   const { data: question, isLoading, isError, error } = useQuestion(questionId);
+  // The server rendered a neutral title for a private question (its fetch is anonymous); members get the real one here.
+  useEffect(() => {
+    if (question?.visibility === "ORG") document.title = `${question.title} - Quno`;
+  }, [question?.visibility, question?.title]);
   const { data: related } = useRelatedQuestions(questionId);
   const { data: answers } = useAnswers(questionId);
   const acceptAnswer = useAcceptAnswer(questionId);
@@ -99,6 +104,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
           <header className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={question.status} />
+              {question.visibility === "ORG" && <PrivateBadge organizationName={question.organizationName} />}
             </div>
             <h1 className="max-w-[900px] text-[26px] leading-snug font-bold tracking-tight sm:text-[28px]">
               {question.title}

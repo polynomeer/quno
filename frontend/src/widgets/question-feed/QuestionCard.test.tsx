@@ -72,4 +72,20 @@ describe("QuestionCard", () => {
 
     expect(screen.queryByRole("link", { name: "spring-boot" })).not.toBeInTheDocument();
   });
+
+  it("marks private questions with a lock and leaves public ones alone", () => {
+    const { rerender } = render(
+      <ul>
+        <QuestionCard question={question} />
+      </ul>,
+    );
+    expect(screen.queryByText("비공개")).not.toBeInTheDocument();
+
+    rerender(
+      <ul>
+        <QuestionCard question={{ ...question, visibility: "ORG" }} />
+      </ul>,
+    );
+    expect(screen.getByText("비공개")).toBeInTheDocument();
+  });
 });

@@ -8,6 +8,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -32,7 +33,7 @@ class ListQuestionForksUseCaseTest {
         val fork1 = forkQuestionUseCase.execute(ForkQuestionCommand(originId, actorId = 2L)).id
         val fork2 = forkQuestionUseCase.execute(ForkQuestionCommand(originId, actorId = 3L)).id
 
-        val result = listQuestionForksUseCase.execute(originId)
+        val result = listQuestionForksUseCase.execute(originId, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(setOf(fork1, fork2), result.map { it.id }.toSet())
     }
@@ -41,11 +42,11 @@ class ListQuestionForksUseCaseTest {
     fun `returns nothing for a question with no forks`() {
         val originId = aQuestion()
 
-        assertEquals(emptyList(), listQuestionForksUseCase.execute(originId))
+        assertEquals(emptyList(), listQuestionForksUseCase.execute(originId, viewer = QuestionViewer.ANONYMOUS))
     }
 
     @Test
     fun `rejects a question that does not exist`() {
-        assertFailsWith<QuestionNotFoundException> { listQuestionForksUseCase.execute(999L) }
+        assertFailsWith<QuestionNotFoundException> { listQuestionForksUseCase.execute(999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 }

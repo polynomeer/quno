@@ -3,6 +3,7 @@ package com.quno.qunobackend.application.qunobot.usecase
 import com.quno.qunobackend.application.answer.usecase.InMemoryAnswerApplicabilityRepository
 import com.quno.qunobackend.application.common.InMemoryOutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.AffectedQuestion
 import com.quno.qunobackend.domain.qunobot.FetchedTechnologyRelease
 import com.quno.qunobackend.domain.qunobot.VersionImpact
@@ -109,7 +110,7 @@ class ApplyTechnologyReleaseUseCaseTest {
         )
         applicabilityRepository.replaceForAnswer(400L, 40L, 1, listOf(ApplicabilityRange(Ecosystem.GRADLE_PLUGIN, "org.jetbrains.kotlin.jvm", "2.0.0", "3.0.0")))
 
-        val impacts = GetVersionImpactsUseCase(versionImpactRepository, applicabilityRepository).execute(limit = 10)
+        val impacts = GetVersionImpactsUseCase(versionImpactRepository, applicabilityRepository).execute(limit = 10, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(listOf(41L), impacts.map { it.questionId })
     }

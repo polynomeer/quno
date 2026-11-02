@@ -9,6 +9,7 @@ import com.quno.qunobackend.domain.answer.AnswerRepository
 import com.quno.qunobackend.domain.organization.OrganizationMembershipRepository
 import com.quno.qunobackend.domain.organization.OrganizationRepository
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.TagRepository
 import com.quno.qunobackend.domain.tag.UserTagFollowRepository
 import com.quno.qunobackend.domain.user.UserNotFoundException
@@ -28,13 +29,16 @@ class GetUserProfileUseCase(
     private val hydrator: QuestionSummaryHydrator,
     private val answerResultAssembler: AnswerResultAssembler,
 ) {
-    fun execute(userId: Long): UserProfileResult {
+    /** Public (ADR-0042), so both lists keep only what [viewer] may see (Phase 79, ADR-0085). */
+    fun execute(userId: Long, viewer: QuestionViewer): UserProfileResult {
         val user = userRepository.findById(userId) ?: throw UserNotFoundException(userId)
 
         val questionIds = questionRepository.findAllByAuthorId(userId).mapNotNull { it.id }
-        val questions = hydrator.hydrate(questionIds)
+        val questions = hydrator.hydrate(questionIds, viewer)
 
-        val answers = answerResultAssembler.toResults(answerRepository.findAllByAuthorId(userId))
+        val allAnswers = answerRepository.findAllByAuthorId(userId)
+        val visibleQuestionIds = questionRepository.findAllByIds(allAnswers.map { it.questionId }.distinct()).filter(viewer::canSee).mapNotNull { it.id }.toSet()
+        val answers = answerResultAssembler.toResults(allAnswers.filter { it.questionId in visibleQuestionIds })
 
         // 팔로우 태그/소속 조직 둘 다 id 하나씩 findById(+countMembers)를 부르고 있었다
         // (quality-improvement-plan.md Q-2) — 이 엔드포인트가 공개(ADR-0042)라 배치로 바꾼다.

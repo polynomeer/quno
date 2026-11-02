@@ -1,11 +1,13 @@
 package com.quno.qunobackend.interfaces.api.errorsignature
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.errorsignature.usecase.PreviewErrorSignaturesUseCase
 import com.quno.qunobackend.domain.errorsignature.ErrorSignatureExtractor
 import com.quno.qunobackend.interfaces.api.search.toResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -23,9 +25,10 @@ data class ErrorSignaturePreviewRequest(
 @RestController
 class ErrorSignatureController(
     private val previewErrorSignaturesUseCase: PreviewErrorSignaturesUseCase,
+    private val access: QuestionAccess,
 ) {
     @PostMapping("/api/v1/error-signatures/preview")
-    fun preview(@Valid @RequestBody request: ErrorSignaturePreviewRequest): ErrorSignaturePreviewResponse = previewErrorSignaturesUseCase.execute(request.text).let { result ->
+    fun preview(@AuthenticationPrincipal viewerId: Long?, @Valid @RequestBody request: ErrorSignaturePreviewRequest): ErrorSignaturePreviewResponse = previewErrorSignaturesUseCase.execute(request.text, access.viewer(viewerId)).let { result ->
         ErrorSignaturePreviewResponse(
             signatures = result.signatures.map {
                 ErrorSignatureResponse(

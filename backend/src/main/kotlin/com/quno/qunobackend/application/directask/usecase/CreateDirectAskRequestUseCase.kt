@@ -11,8 +11,11 @@ import com.quno.qunobackend.domain.directask.DirectAskRequest
 import com.quno.qunobackend.domain.directask.DirectAskRequestRepository
 import com.quno.qunobackend.domain.directask.DuplicateDirectAskException
 import com.quno.qunobackend.domain.directask.SelfDirectAskException
+import com.quno.qunobackend.domain.organization.OrganizationMembershipRepository
+import com.quno.qunobackend.domain.question.PrivateQuestionNotAllowedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.user.UserNotFoundException
 import com.quno.qunobackend.domain.user.UserRepository
 import org.springframework.beans.factory.annotation.Value
@@ -33,12 +36,21 @@ class CreateDirectAskRequestUseCase(
     private val directAskPaymentRepository: DirectAskPaymentRepository,
     @Value("\${quno.direct-ask.fee-amount}") private val feeAmount: Long,
     @Value("\${quno.toss.client-key}") private val tossClientKey: String,
+    /** Null only in unit tests about public questions; Spring always injects it. */
+    private val membershipRepository: OrganizationMembershipRepository? = null,
 ) {
     @Transactional
     fun execute(command: CreateDirectAskRequestCommand): CreateDirectAskRequestResult {
         if (command.requesterId == command.targetUserId) throw SelfDirectAskException(command.requesterId)
-        questionRepository.findById(command.questionId) ?: throw QuestionNotFoundException(command.questionId)
+        val question = questionRepository.findById(command.questionId) ?: throw QuestionNotFoundException(command.questionId)
         val target = userRepository.findById(command.targetUserId) ?: throw UserNotFoundException(command.targetUserId)
+        // Asking someone outside the organization would hand them the private question (ADR-0085).
+        if (question.visibility == QuestionVisibility.ORG && command.targetUserId != question.authorId) {
+            val organizationId = requireNotNull(question.organizationId)
+            if (membershipRepository?.isMember(organizationId, command.targetUserId) != true) {
+                throw PrivateQuestionNotAllowedException("a private question can only be direct-asked of members of its organization")
+            }
+        }
         if (!target.acceptsDirectAsk) throw DirectAskNotAcceptedException(command.targetUserId)
         if (directAskRequestRepository.existsOpen(command.questionId, command.targetUserId)) {
             throw DuplicateDirectAskException(command.questionId, command.targetUserId)

@@ -1,7 +1,9 @@
 package com.quno.qunobackend.interfaces.api.search
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.search.usecase.QuestionSearchUseCase
 import com.quno.qunobackend.domain.search.SearchSort
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -11,10 +13,12 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/search")
 class SearchController(
     private val questionSearchUseCase: QuestionSearchUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @GetMapping
     fun search(
+        @AuthenticationPrincipal viewerId: Long?,
         @RequestParam q: String,
         @RequestParam(required = false) limit: Int?,
         /** Unrecognized/missing values fall back to relevance (Phase 20, ADR-0032) — a sort
@@ -22,6 +26,6 @@ class SearchController(
         @RequestParam(required = false) sort: String?,
     ): List<QuestionSearchResultResponse> {
         val resolvedSort = SearchSort.entries.find { it.name.equals(sort, ignoreCase = true) } ?: SearchSort.RELEVANCE
-        return questionSearchUseCase.search(q, limit ?: 20, resolvedSort).map { it.toResponse() }
+        return questionSearchUseCase.search(q, limit ?: 20, resolvedSort, access.viewer(viewerId)).map { it.toResponse() }
     }
 }

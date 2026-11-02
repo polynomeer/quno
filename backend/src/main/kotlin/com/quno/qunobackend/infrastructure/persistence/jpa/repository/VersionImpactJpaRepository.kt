@@ -60,10 +60,11 @@ interface VersionImpactJpaRepository : Repository<QuestionJpaEntity, Long> {
             ) lc ON lc.question_id = q.id
             WHERE q.status NOT IN ('RESOLVED', 'OUTDATED')
               AND lc.latest_content_at < tr.latest_release_date
+              AND (q.visibility = 'PUBLIC' OR q.author_id = :viewerId OR q.organization_id IN (:viewerOrgIds))
             ORDER BY tr.latest_release_date DESC, q.id DESC
             LIMIT :limit
         """,
         nativeQuery = true,
     )
-    fun findVersionImpacts(@Param("limit") limit: Int): List<VersionImpactProjection>
+    fun findVersionImpacts(@Param("limit") limit: Int, @Param("viewerId") viewerId: Long, @Param("viewerOrgIds") viewerOrgIds: Collection<Long>): List<VersionImpactProjection>
 }

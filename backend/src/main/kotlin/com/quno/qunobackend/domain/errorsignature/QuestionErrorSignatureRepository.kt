@@ -1,5 +1,7 @@
 package com.quno.qunobackend.domain.errorsignature
 
+import com.quno.qunobackend.domain.question.QuestionViewer
+
 /** Port implemented by infrastructure/persistence/jpa/adapter/QuestionErrorSignatureRepositoryAdapter. */
 interface QuestionErrorSignatureRepository {
     /** Drops whatever was indexed for the question and stores [signatures] for [versionNumber]. */
@@ -14,10 +16,12 @@ interface QuestionErrorSignatureRepository {
         messageKeys: Collection<String>,
         excludeQuestionId: Long?,
         limit: Int,
+        viewer: QuestionViewer,
     ): List<Long>
 
-    /** [findMatchingQuestionIds] keyed by whole signatures — what every caller actually has. */
-    fun findQuestionIdsMatching(signatures: List<ErrorSignature>, excludeQuestionId: Long?, limit: Int): List<Long> = if (signatures.isEmpty()) {
+    /** [findMatchingQuestionIds] keyed by whole signatures — what every caller actually has. Only
+     * questions [viewer] may see (Phase 79, ADR-0085). */
+    fun findQuestionIdsMatching(signatures: List<ErrorSignature>, excludeQuestionId: Long?, limit: Int, viewer: QuestionViewer): List<Long> = if (signatures.isEmpty()) {
         emptyList()
     } else {
         findMatchingQuestionIds(
@@ -25,6 +29,7 @@ interface QuestionErrorSignatureRepository {
             messageKeys = signatures.map { it.messageKey }.distinct(),
             excludeQuestionId = excludeQuestionId,
             limit = limit,
+            viewer = viewer,
         )
     }
 }
