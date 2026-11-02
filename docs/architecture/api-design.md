@@ -615,6 +615,21 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
   - 저장소·고정 커밋·명세 불일치, 대체된 캡슐, 같은 실행 시도는 409다.
 - 위 질문 단위 경로는 모두 공개 범위 게이트(ADR-0085)를 따른다.
 
+### 버전 매트릭스와 실행 계획 (Phase 81, ADR-0088)
+
+- 캡슐 `PUT`에 선택 필드 `matrixPackage`, `matrixVersions`(최대 5개, 버전 형식)가 있다. 패키지 없이 버전만 주면 400이다.
+- 패널 응답은 다음과 같다.
+  - `latestByCell`: 환경 × `dependencyVersion` 칸별 최신 실행
+  - `plannedVersions`: 다음 실행이 돌 버전 목록. 패키지가 없으면 `[null]`이다.
+  - `nextDueAt`: 다음 정기 실행 시각. 지금 차례이면 `null`이다.
+- `POST /reproduction-runs/plan`(`X-Quno-Attestation`): 본문 `{capsuleId}`에 `{due, reason, matrix: [{version}], nextDueAt}`로 답한다.
+  - `reason`: `manual`, `rerun-requested`, `first-run`, `interval`, `not-due`
+  - 차례가 아니면 `matrix`는 빈 배열이다.
+- 결과 보고 본문에 `dependencyVersion`이 더해진다.
+  - 패키지가 없는 캡슐에 버전을 보내면 409다.
+  - 버전 형식이 아니어도 409다.
+- `GET /metrics/reproduction`(로그인): 최근 30일 `{since, runs, conclusiveRuns, trustedRuns, runnerMinutes, cells, flakyCells, activeCapsules, disputes}`
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
