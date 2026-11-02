@@ -8,6 +8,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,7 +37,7 @@ class MarkQuestionsAsSameProblemUseCaseTest {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
 
-        val result = useCase.execute(a, b)
+        val result = useCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(setOf(a, b), result.memberQuestionIds.toSet())
         assertNull(result.representativeAnswerId)
@@ -49,9 +50,9 @@ class MarkQuestionsAsSameProblemUseCaseTest {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
         val c = questionAskedBy(3L)
-        val first = useCase.execute(a, b)
+        val first = useCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
-        val result = useCase.execute(c, a)
+        val result = useCase.execute(c, a, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(first.clusterId, result.clusterId)
         assertEquals(setOf(a, b, c), result.memberQuestionIds.toSet())
@@ -61,9 +62,9 @@ class MarkQuestionsAsSameProblemUseCaseTest {
     fun `marking two questions already in the same cluster is a no-op`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val first = useCase.execute(a, b)
+        val first = useCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
-        val result = useCase.execute(a, b)
+        val result = useCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(first.clusterId, result.clusterId)
         assertEquals(setOf(a, b), result.memberQuestionIds.toSet())
@@ -75,10 +76,10 @@ class MarkQuestionsAsSameProblemUseCaseTest {
         val b = questionAskedBy(2L)
         val c = questionAskedBy(3L)
         val d = questionAskedBy(4L)
-        val firstCluster = useCase.execute(a, b)
-        val secondCluster = useCase.execute(c, d)
+        val firstCluster = useCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
+        val secondCluster = useCase.execute(c, d, viewer = QuestionViewer.ANONYMOUS)
 
-        val result = useCase.execute(a, c)
+        val result = useCase.execute(a, c, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(firstCluster.clusterId, result.clusterId)
         assertEquals(setOf(a, b, c, d), result.memberQuestionIds.toSet())
@@ -90,16 +91,16 @@ class MarkQuestionsAsSameProblemUseCaseTest {
     fun `merging does not carry over the absorbed cluster's Super Answer`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val absorbed = useCase.execute(a, b)
+        val absorbed = useCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
         questionClusterRepository.save(
             requireNotNull(questionClusterRepository.findById(absorbed.clusterId)).designateSuperAnswer(999L),
         )
         val c = questionAskedBy(3L)
         val d = questionAskedBy(4L)
-        useCase.execute(c, d)
+        useCase.execute(c, d, viewer = QuestionViewer.ANONYMOUS)
 
         // c is the surviving cluster here — a's cluster (with the Super Answer) is the one absorbed.
-        val result = useCase.execute(c, a)
+        val result = useCase.execute(c, a, viewer = QuestionViewer.ANONYMOUS)
 
         assertNull(result.representativeAnswerId)
     }
@@ -108,13 +109,13 @@ class MarkQuestionsAsSameProblemUseCaseTest {
     fun `rejects marking a question as the same problem as itself`() {
         val a = questionAskedBy(1L)
 
-        assertFailsWith<CannotClusterWithSelfException> { useCase.execute(a, a) }
+        assertFailsWith<CannotClusterWithSelfException> { useCase.execute(a, a, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
     fun `rejects a question id that does not exist`() {
         val a = questionAskedBy(1L)
 
-        assertFailsWith<QuestionNotFoundException> { useCase.execute(a, 999L) }
+        assertFailsWith<QuestionNotFoundException> { useCase.execute(a, 999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 }

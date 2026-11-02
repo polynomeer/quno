@@ -7,6 +7,7 @@ import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
 import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
+import com.quno.qunobackend.domain.cluster.ClusterScopeMismatchException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.comment.CommentAccessDeniedException
 import com.quno.qunobackend.domain.comment.CommentAlreadyDeletedException
@@ -37,6 +38,7 @@ import com.quno.qunobackend.domain.organization.InvalidVerificationCodeException
 import com.quno.qunobackend.domain.organization.OrganizationNotFoundException
 import com.quno.qunobackend.domain.organization.PublicEmailDomainException
 import com.quno.qunobackend.domain.organization.VerifiedOrganizationJoinRequiresEmailException
+import com.quno.qunobackend.domain.question.PrivateQuestionNotAllowedException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
@@ -169,6 +171,8 @@ class GlobalExceptionHandler {
         InvalidApplicabilityRangeException::class,
         InvalidPersonalAccessTokenRequestException::class,
         InvalidEnvironmentSnapshotException::class,
+        ClusterScopeMismatchException::class,
+        PrivateQuestionNotAllowedException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

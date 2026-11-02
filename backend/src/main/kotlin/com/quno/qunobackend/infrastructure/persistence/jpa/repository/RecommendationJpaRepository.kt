@@ -19,6 +19,7 @@ interface RecommendationJpaRepository : Repository<QuestionJpaEntity, Long> {
                 WHERE utf.user_id = :userId
                   AND q.deleted_at IS NULL
                   AND q.author_id <> :userId
+                  AND (q.visibility = 'PUBLIC' OR q.author_id = :viewerId OR q.organization_id IN (:viewerOrgIds))
                 GROUP BY q.id, q.created_at
             ) m
             LEFT JOIN (
@@ -32,5 +33,5 @@ interface RecommendationJpaRepository : Repository<QuestionJpaEntity, Long> {
         """,
         nativeQuery = true,
     )
-    fun recommendQuestionIdsByTagFollows(@Param("userId") userId: Long, @Param("limit") limit: Int): List<Long>
+    fun recommendQuestionIdsByTagFollows(@Param("userId") userId: Long, @Param("limit") limit: Int, @Param("viewerId") viewerId: Long, @Param("viewerOrgIds") viewerOrgIds: Collection<Long>): List<Long>
 }

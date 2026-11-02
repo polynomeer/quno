@@ -10,6 +10,7 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionViewCou
 import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepository
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -37,7 +38,7 @@ class RecommendQuestionsUseCaseTest {
         ).id
         recommendationRepository.recommendationsByUser = mapOf(1L to listOf(q1))
 
-        val result = useCase.execute(userId = 1L)
+        val result = useCase.execute(QuestionViewer(1L, emptySet()))
 
         assertEquals(listOf(q1), result.map { it.id })
         assertEquals(listOf("redis"), result.single().tags)
@@ -45,6 +46,6 @@ class RecommendQuestionsUseCaseTest {
 
     @Test
     fun `returns nothing for a user with no recommendations`() {
-        assertTrue(useCase.execute(userId = 999L).isEmpty())
+        assertTrue(useCase.execute(QuestionViewer(999L, emptySet())).isEmpty())
     }
 }

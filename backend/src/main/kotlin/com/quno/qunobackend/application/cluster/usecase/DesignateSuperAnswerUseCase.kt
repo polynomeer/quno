@@ -8,6 +8,7 @@ import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
 import com.quno.qunobackend.domain.cluster.QuestionClusterRepository
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,15 +25,17 @@ class DesignateSuperAnswerUseCase(
     private val getClusterUseCase: GetClusterUseCase,
 ) {
     @Transactional
-    fun execute(clusterId: Long, answerId: Long): ClusterDetailResult {
+    fun execute(clusterId: Long, answerId: Long, viewer: QuestionViewer): ClusterDetailResult {
         val cluster = questionClusterRepository.findById(clusterId) ?: throw ClusterNotFoundException(clusterId)
         val answer = answerRepository.findById(answerId) ?: throw AnswerNotFoundException(answerId)
+        // answerId comes from the request body, so the URL gate never saw it (ADR-0085).
+        if (questionRepository.findById(answer.questionId)?.let(viewer::canSee) != true) throw AnswerNotFoundException(answerId)
         if (!answer.isAccepted) throw AnswerNotAcceptedException(answerId)
 
         val memberQuestionIds = questionRepository.findAllByClusterId(clusterId).mapNotNull { it.id }
         if (answer.questionId !in memberQuestionIds) throw AnswerNotInClusterException(answerId, clusterId)
 
         questionClusterRepository.save(cluster.designateSuperAnswer(answerId))
-        return getClusterUseCase.execute(clusterId)
+        return getClusterUseCase.execute(clusterId, viewer)
     }
 }

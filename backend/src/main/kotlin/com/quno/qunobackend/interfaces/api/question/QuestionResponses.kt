@@ -5,6 +5,7 @@ import com.quno.qunobackend.application.cluster.dto.QuestionGraphResult
 import com.quno.qunobackend.application.question.dto.QuestionTimelineEventType
 import com.quno.qunobackend.domain.question.DiffLineType
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshot
 import com.quno.qunobackend.domain.snapshot.SnapshotSource
 import com.quno.qunobackend.domain.snapshot.SnapshotSymptom
@@ -41,6 +42,10 @@ data class QuestionResponse(
     /** Secret-looking values masked for this reader (ADR-0081); 0 for the author. */
     val maskedSecretCount: Int = 0,
     val environmentSnapshot: EnvironmentSnapshotResponse? = null,
+    /** PUBLIC, or ORG with the organization it belongs to (Phase 79, ADR-0085). */
+    val visibility: QuestionVisibility = QuestionVisibility.PUBLIC,
+    val organizationId: Long? = null,
+    val organizationName: String? = null,
 )
 
 /** The stored snapshot (ADR-0083): provenance and the server's own fingerprint, plus the scrubbed document as-is. */

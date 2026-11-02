@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.stack
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.stack.usecase.MyStackUseCase
 import com.quno.qunobackend.application.stack.usecase.SuggestStackWardsUseCase
 import jakarta.validation.Valid
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 class MyStackController(
     private val myStackUseCase: MyStackUseCase,
     private val suggestStackWardsUseCase: SuggestStackWardsUseCase,
+    private val access: QuestionAccess,
 ) {
     @GetMapping
     fun get(@AuthenticationPrincipal userId: Long): MyStackResponse = MyStackResponse(myStackUseCase.get(userId).map { it.toResponse() })
@@ -28,5 +30,5 @@ class MyStackController(
     fun wardSuggestions(
         @AuthenticationPrincipal userId: Long,
         @RequestParam(defaultValue = "20") limit: Int,
-    ): List<StackWardSuggestionResponse> = suggestStackWardsUseCase.execute(userId, limit).map { it.toResponse() }
+    ): List<StackWardSuggestionResponse> = suggestStackWardsUseCase.execute(userId, limit, access.viewer(userId)).map { it.toResponse() }
 }

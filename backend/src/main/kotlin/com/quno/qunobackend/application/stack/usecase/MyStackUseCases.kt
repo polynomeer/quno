@@ -3,6 +3,7 @@ package com.quno.qunobackend.application.stack.usecase
 import com.quno.qunobackend.application.question.usecase.checkedDependencies
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import com.quno.qunobackend.domain.stack.StackDependency
 import com.quno.qunobackend.domain.stack.StackMatchRepository
@@ -46,13 +47,13 @@ class SuggestStackWardsUseCase(
     private val questionRepository: QuestionRepository,
     private val questionDependencyRepository: QuestionDependencyRepository,
 ) {
-    fun execute(userId: Long, limit: Int): List<StackWardSuggestionResult> {
+    fun execute(userId: Long, limit: Int, viewer: QuestionViewer = QuestionViewer(userId, emptySet())): List<StackWardSuggestionResult> {
         val myPackages = userStackRepository.findByUserId(userId).map { it.ecosystem to it.name }.toSet()
         if (myPackages.isEmpty()) return emptyList()
 
         val matches = stackMatchRepository.findQuestionsSharingStack(userId, limit.coerceIn(1, MAX_LIMIT))
         val ids = matches.map { it.questionId }
-        val questions = questionRepository.findAllByIds(ids).associateBy { it.id }
+        val questions = questionRepository.findAllByIds(ids).filter(viewer::canSee).associateBy { it.id }
         val dependencies = questionDependencyRepository.findByQuestionIds(ids)
         return matches.mapNotNull { match ->
             val question = questions[match.questionId] ?: return@mapNotNull null

@@ -28,6 +28,7 @@ interface FlowJpaRepository : Repository<QuestionJpaEntity, Long> {
                 GROUP BY aggregate_id
             ) outdated ON outdated.question_id = q.id
             WHERE q.deleted_at IS NULL
+              AND q.visibility = 'PUBLIC'
               AND latest.latest_version_at > outdated.outdated_at
             ORDER BY latest.latest_version_at DESC
             LIMIT :limit
@@ -38,9 +39,12 @@ interface FlowJpaRepository : Repository<QuestionJpaEntity, Long> {
 
     @Query(
         value = """
-            SELECT id FROM question_clusters
-            WHERE representative_answer_id IS NOT NULL
-            ORDER BY updated_at DESC
+            SELECT c.id FROM question_clusters c
+            JOIN answers a ON a.id = c.representative_answer_id
+            JOIN questions q ON q.id = a.question_id
+            WHERE c.representative_answer_id IS NOT NULL
+              AND q.visibility = 'PUBLIC'
+            ORDER BY c.updated_at DESC
             LIMIT :limit
         """,
         nativeQuery = true,

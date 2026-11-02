@@ -10,6 +10,7 @@ import com.quno.qunobackend.application.recommendation.usecase.RecommendQuestion
 import com.quno.qunobackend.domain.dashboard.DashboardRepository
 import com.quno.qunobackend.domain.flow.FlowCardType
 import com.quno.qunobackend.domain.flow.FlowRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.SpikeDetectionRepository
 import org.springframework.stereotype.Service
 
@@ -31,10 +32,13 @@ class GetDashboardUseCase(
     private val flowRepository: FlowRepository,
     private val spikeDetectionRepository: SpikeDetectionRepository,
 ) {
-    fun execute(userId: Long): DashboardResult {
-        val popularQuestions = hydrator.hydrate(dashboardRepository.findPopularQuestionIds(POPULAR_QUESTIONS_LIMIT))
-        val wardUpdates = listMyNotificationsUseCase.execute(userId).take(WARD_UPDATES_LIMIT)
-        val followingTagsFeed = recommendQuestionsUseCase.execute(userId, FOLLOWING_FEED_LIMIT)
+    /** Community lists (popular, resolved, reopened, trending) only ever rank PUBLIC questions — their
+     * ranking is cached and shared by everyone (ADR-0085); the hydrator re-checks [viewer] anyway. */
+    fun execute(viewer: QuestionViewer): DashboardResult {
+        val userId = requireNotNull(viewer.userId)
+        val popularQuestions = hydrator.hydrate(dashboardRepository.findPopularQuestionIds(POPULAR_QUESTIONS_LIMIT), viewer)
+        val wardUpdates = listMyNotificationsUseCase.execute(userId, viewer).take(WARD_UPDATES_LIMIT)
+        val followingTagsFeed = recommendQuestionsUseCase.execute(viewer, FOLLOWING_FEED_LIMIT)
         val trendingTags = dashboardRepository.findTrendingTags(TRENDING_TAGS_LIMIT).map {
             TagTrendResult(id = it.id, name = it.name, slug = it.slug, questionCount = it.questionCount)
         }
@@ -49,8 +53,8 @@ class GetDashboardUseCase(
             )
             ?.let { DashboardHeadline(text = it.headline, questionId = it.questionId) }
 
-        val resolvedToday = hydrator.hydrate(dashboardRepository.findResolvedTodayQuestionIds(RESOLVED_TODAY_LIMIT))
-        val reopenedKnowledge = hydrator.hydrate(flowRepository.findRecentlyReopenedQuestionIds(REOPENED_LIMIT))
+        val resolvedToday = hydrator.hydrate(dashboardRepository.findResolvedTodayQuestionIds(RESOLVED_TODAY_LIMIT), viewer)
+        val reopenedKnowledge = hydrator.hydrate(flowRepository.findRecentlyReopenedQuestionIds(REOPENED_LIMIT), viewer)
         val trendingErrors = spikeDetectionRepository.findSpikingTags(TRENDING_ERRORS_LIMIT)
 
         return DashboardResult(

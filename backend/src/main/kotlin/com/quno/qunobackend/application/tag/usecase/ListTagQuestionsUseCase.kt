@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.tag.usecase
 
 import com.quno.qunobackend.application.common.QuestionSummaryHydrator
 import com.quno.qunobackend.application.search.dto.QuestionSearchResult
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.TagNotFoundException
 import com.quno.qunobackend.domain.tag.TagQuestionSort
 import com.quno.qunobackend.domain.tag.TagRepository
@@ -16,8 +17,8 @@ class ListTagQuestionsUseCase(
     private val tagStatsRepository: TagStatsRepository,
     private val hydrator: QuestionSummaryHydrator,
 ) {
-    fun execute(tagId: Long, sort: TagQuestionSort, limit: Int = 20): List<QuestionSearchResult> {
+    fun execute(tagId: Long, sort: TagQuestionSort, viewer: QuestionViewer, limit: Int = 20): List<QuestionSearchResult> {
         tagRepository.findById(tagId) ?: throw TagNotFoundException(tagId)
-        return hydrator.hydrate(tagStatsRepository.findQuestionIds(tagId, sort, limit))
+        return hydrator.hydrate(tagStatsRepository.findQuestionIds(tagId, sort, limit, viewer), viewer)
     }
 }

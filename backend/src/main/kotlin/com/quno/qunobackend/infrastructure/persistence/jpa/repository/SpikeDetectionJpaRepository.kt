@@ -25,7 +25,7 @@ interface SpikeDetectionJpaRepository : Repository<QuestionJpaEntity, Long> {
             FROM tags t
             JOIN question_tags qt ON qt.tag_id = t.id
             JOIN questions q ON q.id = qt.question_id
-            WHERE t.deleted_at IS NULL AND q.deleted_at IS NULL AND q.created_at >= NOW() - INTERVAL '15 days'
+            WHERE t.deleted_at IS NULL AND q.deleted_at IS NULL AND q.visibility = 'PUBLIC' AND q.created_at >= NOW() - INTERVAL '15 days'
             GROUP BY t.id, t.name, t.slug
             HAVING COUNT(DISTINCT CASE WHEN q.created_at >= NOW() - INTERVAL '1 day' THEN q.id END) >= 3
             ORDER BY spikeRatio DESC, recentCount DESC

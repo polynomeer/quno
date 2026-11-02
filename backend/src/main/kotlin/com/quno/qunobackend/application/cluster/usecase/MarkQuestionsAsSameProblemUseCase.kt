@@ -2,10 +2,12 @@ package com.quno.qunobackend.application.cluster.usecase
 
 import com.quno.qunobackend.application.cluster.dto.ClusterResult
 import com.quno.qunobackend.domain.cluster.CannotClusterWithSelfException
+import com.quno.qunobackend.domain.cluster.ClusterScopeMismatchException
 import com.quno.qunobackend.domain.cluster.QuestionCluster
 import com.quno.qunobackend.domain.cluster.QuestionClusterRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -22,10 +24,16 @@ class MarkQuestionsAsSameProblemUseCase(
     private val questionClusterRepository: QuestionClusterRepository,
 ) {
     @Transactional
-    fun execute(questionId: Long, relatedQuestionId: Long): ClusterResult {
+    fun execute(questionId: Long, relatedQuestionId: Long, viewer: QuestionViewer): ClusterResult {
         if (questionId == relatedQuestionId) throw CannotClusterWithSelfException(questionId)
-        val question = questionRepository.findById(questionId) ?: throw QuestionNotFoundException(questionId)
-        val related = questionRepository.findById(relatedQuestionId) ?: throw QuestionNotFoundException(relatedQuestionId)
+        val question = questionRepository.findById(questionId)?.takeIf(viewer::canSee) ?: throw QuestionNotFoundException(questionId)
+        // The related id comes from the request body, so the URL gate never saw it (ADR-0085).
+        val related = questionRepository.findById(relatedQuestionId)?.takeIf(viewer::canSee) ?: throw QuestionNotFoundException(relatedQuestionId)
+        // A cluster shares its super answer with every member, so it never mixes scopes: all PUBLIC,
+        // or all of one organization. Checking these two is enough — every cluster already holds that.
+        if (question.visibility != related.visibility || question.organizationId != related.organizationId) {
+            throw ClusterScopeMismatchException(questionId, relatedQuestionId)
+        }
 
         val clusterId = when {
             question.clusterId != null && question.clusterId == related.clusterId -> question.clusterId

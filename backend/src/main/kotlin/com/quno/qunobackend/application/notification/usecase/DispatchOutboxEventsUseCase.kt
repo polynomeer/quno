@@ -5,6 +5,9 @@ import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.notification.Notification
 import com.quno.qunobackend.domain.notification.NotificationRepository
+import com.quno.qunobackend.domain.organization.OrganizationMembershipRepository
+import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.watch.WatchRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -61,6 +64,9 @@ class DispatchOutboxEventsUseCase(
     private val outboxEventRepository: OutboxEventRepository,
     private val watchRepository: WatchRepository,
     private val notificationRepository: NotificationRepository,
+    /** Both null only in unit tests about public questions; Spring always injects them. */
+    private val questionRepository: QuestionRepository? = null,
+    private val membershipRepository: OrganizationMembershipRepository? = null,
 ) {
     @Transactional
     fun execute(batchSize: Int = 50): Int {
@@ -110,7 +116,7 @@ class DispatchOutboxEventsUseCase(
         }
         actorId?.let(recipients::remove)
 
-        recipients.forEach { recipientId ->
+        recipients.filter { canBeNotified(questionId, it) }.forEach { recipientId ->
             notificationRepository.save(
                 Notification.create(
                     userId = recipientId,
@@ -123,6 +129,18 @@ class DispatchOutboxEventsUseCase(
         }
 
         outboxEventRepository.markPublished(requireNotNull(event.id))
+    }
+
+    /**
+     * A private question's watchers or @mentioned users may never have been, or may no longer be,
+     * members — they get no notification about it (ADR-0085). Membership is checked at dispatch,
+     * not when the event was written, so leaving the organization stops notifications at once.
+     */
+    private fun canBeNotified(questionId: Long, recipientId: Long): Boolean {
+        val question = questionRepository?.findById(questionId) ?: return true
+        if (question.visibility != QuestionVisibility.ORG || recipientId == question.authorId) return true
+        val organizationId = requireNotNull(question.organizationId)
+        return membershipRepository?.isMember(organizationId, recipientId) ?: false
     }
 
     private fun extractLong(json: String, field: String): Long? = Regex(""""$field"\s*:\s*(\d+)""").find(json)?.groupValues?.get(1)?.toLong()

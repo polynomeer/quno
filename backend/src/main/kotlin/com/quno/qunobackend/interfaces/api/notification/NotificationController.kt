@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.notification
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.notification.usecase.ListMyNotificationsUseCase
 import com.quno.qunobackend.application.notification.usecase.MarkAllNotificationsReadUseCase
 import org.springframework.http.HttpStatus
@@ -15,10 +16,11 @@ import org.springframework.web.bind.annotation.RestController
 class NotificationController(
     private val listMyNotificationsUseCase: ListMyNotificationsUseCase,
     private val markAllNotificationsReadUseCase: MarkAllNotificationsReadUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @GetMapping
-    fun list(@AuthenticationPrincipal userId: Long): List<NotificationResponse> = listMyNotificationsUseCase.execute(userId).map { it.toResponse() }
+    fun list(@AuthenticationPrincipal userId: Long): List<NotificationResponse> = listMyNotificationsUseCase.execute(userId, access.viewer(userId)).map { it.toResponse() }
 
     @PostMapping("/mark-read")
     @ResponseStatus(HttpStatus.NO_CONTENT)

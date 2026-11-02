@@ -13,6 +13,8 @@ data class CreateQuestionCommand(
     val dependencies: List<StackDependency> = emptyList(),
     /** A `quno.snapshot` JSON document (ADR-0083); scrubbed and fingerprinted again on the server. */
     val environmentSnapshot: String? = null,
+    /** Set to ask one verified organization privately (Phase 79, ADR-0085); null = public. */
+    val organizationId: Long? = null,
 )
 
 data class ReviseQuestionCommand(

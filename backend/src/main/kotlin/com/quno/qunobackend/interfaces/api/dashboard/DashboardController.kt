@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.dashboard
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.dashboard.usecase.GetDashboardUseCase
 import com.quno.qunobackend.interfaces.api.notification.toResponse
 import com.quno.qunobackend.interfaces.api.search.toResponse
@@ -12,11 +13,12 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/dashboard")
 class DashboardController(
     private val getDashboardUseCase: GetDashboardUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @GetMapping
     fun get(@AuthenticationPrincipal userId: Long): DashboardResponse {
-        val result = getDashboardUseCase.execute(userId)
+        val result = getDashboardUseCase.execute(access.viewer(userId))
         return DashboardResponse(
             popularQuestions = result.popularQuestions.map { it.toResponse() },
             wardUpdates = result.wardUpdates.map { it.toResponse() },

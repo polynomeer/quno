@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.question.dto
 
 import com.quno.qunobackend.domain.question.DiffLine
 import com.quno.qunobackend.domain.question.QuestionStatus
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshot
 import com.quno.qunobackend.domain.stack.StackDependency
 import java.time.Instant
@@ -34,6 +35,10 @@ data class QuestionSummaryResult(
     val maskedSecretCount: Int = 0,
     /** The latest environment snapshot (ADR-0083), or null. */
     val environmentSnapshot: EnvironmentSnapshot? = null,
+    /** Phase 79 (ADR-0085): ORG questions show whose they are. */
+    val visibility: QuestionVisibility = QuestionVisibility.PUBLIC,
+    val organizationId: Long? = null,
+    val organizationName: String? = null,
 )
 
 data class QuestionVersionResult(

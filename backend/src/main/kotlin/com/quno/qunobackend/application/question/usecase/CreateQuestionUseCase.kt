@@ -2,14 +2,17 @@ package com.quno.qunobackend.application.question.usecase
 
 import com.quno.qunobackend.application.engine.QuestionEngine
 import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
+import com.quno.qunobackend.application.question.PrivateQuestionPolicy
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.snapshot.EnvironmentSnapshotAttacher
 import com.quno.qunobackend.domain.engine.QuestionContent
+import com.quno.qunobackend.domain.question.PrivateQuestionNotAllowedException
 import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersion
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import com.quno.qunobackend.domain.tag.Tag
@@ -35,10 +38,23 @@ class CreateQuestionUseCase(
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
     private val questionEngine: QuestionEngine? = null,
     private val snapshotAttacher: EnvironmentSnapshotAttacher? = null,
+    private val privateQuestionPolicy: PrivateQuestionPolicy? = null,
 ) {
     @Transactional
     fun execute(command: CreateQuestionCommand): QuestionMutationResult {
-        val question = questionRepository.save(Question.open(authorId = command.authorId, title = command.title))
+        command.organizationId?.let { organizationId ->
+            // Fail closed: without the policy (a hand-built test) a private question is refused, not made public.
+            val policy = privateQuestionPolicy ?: throw PrivateQuestionNotAllowedException("private questions are not available here")
+            policy.checkCanAsk(command.authorId, organizationId)
+        }
+        val question = questionRepository.save(
+            Question.open(
+                authorId = command.authorId,
+                title = command.title,
+                visibility = if (command.organizationId == null) QuestionVisibility.PUBLIC else QuestionVisibility.ORG,
+                organizationId = command.organizationId,
+            ),
+        )
         val questionId = requireNotNull(question.id)
 
         val version = questionVersionRepository.save(

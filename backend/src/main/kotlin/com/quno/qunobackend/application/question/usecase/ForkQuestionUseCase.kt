@@ -51,7 +51,15 @@ class ForkQuestionUseCase(
             logs = mask(originVersion.logs),
         )
         val question = questionRepository.save(
-            Question.open(authorId = command.actorId, title = content.title, originQuestionId = origin.id),
+            // A fork copies the origin's content, so it keeps the origin's scope (ADR-0085): forking
+            // never turns a private question public.
+            Question.open(
+                authorId = command.actorId,
+                title = content.title,
+                originQuestionId = origin.id,
+                visibility = origin.visibility,
+                organizationId = origin.organizationId,
+            ),
         )
         val questionId = requireNotNull(question.id)
 

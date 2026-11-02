@@ -11,6 +11,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.search.SearchSort
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -41,7 +42,7 @@ class QuestionSearchUseCaseTest {
         val kafka = question("Kafka lag", listOf("kafka"))
         searchRepository.searchResults = listOf(kafka, redis)
 
-        val result = useCase.search("anything")
+        val result = useCase.search("anything", viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(listOf(kafka, redis), result.map { it.id })
         assertEquals(listOf("redis"), result.last().tags)
@@ -49,14 +50,14 @@ class QuestionSearchUseCaseTest {
 
     @Test
     fun `search defaults to relevance sort`() {
-        useCase.search("anything")
+        useCase.search("anything", viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(SearchSort.RELEVANCE, searchRepository.lastSort)
     }
 
     @Test
     fun `search passes an explicit score sort through to the repository`() {
-        useCase.search("anything", sort = SearchSort.SCORE)
+        useCase.search("anything", sort = SearchSort.SCORE, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(SearchSort.SCORE, searchRepository.lastSort)
     }
@@ -65,12 +66,12 @@ class QuestionSearchUseCaseTest {
     fun `search silently skips ids that no longer resolve to a question`() {
         searchRepository.searchResults = listOf(999L)
 
-        assertTrue(useCase.search("anything").isEmpty())
+        assertTrue(useCase.search("anything", viewer = QuestionViewer.ANONYMOUS).isEmpty())
     }
 
     @Test
     fun `related requires the question to exist`() {
-        assertFailsWith<QuestionNotFoundException> { useCase.related(999L) }
+        assertFailsWith<QuestionNotFoundException> { useCase.related(999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
@@ -79,7 +80,7 @@ class QuestionSearchUseCaseTest {
         val q2 = question("Redis pool exhaustion")
         searchRepository.relatedResults = mapOf(q1 to listOf(q2))
 
-        val result = useCase.related(q1)
+        val result = useCase.related(q1, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(listOf(q2), result.map { it.id })
     }

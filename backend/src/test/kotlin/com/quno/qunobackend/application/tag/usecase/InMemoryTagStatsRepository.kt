@@ -1,5 +1,6 @@
 package com.quno.qunobackend.application.tag.usecase
 
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.TagContributor
 import com.quno.qunobackend.domain.tag.TagQuestionSort
 import com.quno.qunobackend.domain.tag.TagStatsRepository
@@ -13,7 +14,7 @@ class InMemoryTagStatsRepository : TagStatsRepository {
      * InMemorySearchRepository.lastSort (the real ranking is SQL, verified by curl, not here). */
     var lastSort: TagQuestionSort? = null
 
-    override fun findQuestionIds(tagId: Long, sort: TagQuestionSort, limit: Int): List<Long> {
+    override fun findQuestionIds(tagId: Long, sort: TagQuestionSort, limit: Int, viewer: QuestionViewer): List<Long> {
         lastSort = sort
         return (questionIdsBySort[sort] ?: emptyList()).take(limit)
     }

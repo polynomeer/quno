@@ -1,5 +1,7 @@
 package com.quno.qunobackend.domain.recommendation
 
+import com.quno.qunobackend.domain.question.QuestionViewer
+
 /**
  * Port implemented by infrastructure/persistence/jpa/adapter/RecommendationRepositoryAdapter.
  * MVP scoring is intentionally simple and explainable — see
@@ -10,5 +12,5 @@ interface RecommendationRepository {
      * Candidates are questions tagged with something the user follows (excluding their own
      * questions), scored by `matched_tag_count * 3 + min(answer_count, 5)`, most relevant first.
      */
-    fun recommendQuestionIdsByTagFollows(userId: Long, limit: Int): List<Long>
+    fun recommendQuestionIdsByTagFollows(userId: Long, limit: Int, viewer: QuestionViewer): List<Long>
 }

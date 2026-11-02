@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.directask
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.directask.dto.ConfirmDirectAskPaymentCommand
 import com.quno.qunobackend.application.directask.dto.CreateDirectAskRequestCommand
 import com.quno.qunobackend.application.directask.usecase.ConfirmDirectAskPaymentUseCase
@@ -27,6 +28,7 @@ class DirectAskController(
     private val confirmDirectAskPaymentUseCase: ConfirmDirectAskPaymentUseCase,
     private val respondToDirectAskRequestUseCase: RespondToDirectAskRequestUseCase,
     private val listMyDirectAsksUseCase: ListMyDirectAsksUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @PostMapping("/questions/{questionId}/direct-asks")
@@ -72,7 +74,7 @@ class DirectAskController(
         @AuthenticationPrincipal userId: Long,
         @RequestParam(defaultValue = "received") role: String,
     ): List<DirectAskRequestListItemResponse> {
-        val results = if (role == "sent") listMyDirectAsksUseCase.executeSent(userId) else listMyDirectAsksUseCase.executeReceived(userId)
+        val results = if (role == "sent") listMyDirectAsksUseCase.executeSent(userId, access.viewer(userId)) else listMyDirectAsksUseCase.executeReceived(userId, access.viewer(userId))
         return results.map { it.toResponse() }
     }
 }

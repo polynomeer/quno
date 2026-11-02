@@ -21,6 +21,7 @@ import com.quno.qunobackend.domain.answer.AnswerNotFoundException
 import com.quno.qunobackend.domain.cluster.AnswerNotAcceptedException
 import com.quno.qunobackend.domain.cluster.AnswerNotInClusterException
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -65,11 +66,11 @@ class DesignateSuperAnswerUseCaseTest {
     fun `designates an accepted answer from a cluster member as the Super Answer`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val marked = markQuestionsAsSameProblemUseCase.execute(a, b)
+        val marked = markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
         val answer = writeAnswerUseCase.execute(WriteAnswerCommand(questionId = a, authorId = 3L, body = "fix"))
         acceptAnswerUseCase.execute(AcceptAnswerCommand(answerId = answer.id, actorId = 1L))
 
-        val result = useCase.execute(marked.clusterId, answer.id)
+        val result = useCase.execute(marked.clusterId, answer.id, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(answer.id, result.representativeAnswerId)
     }
@@ -78,10 +79,10 @@ class DesignateSuperAnswerUseCaseTest {
     fun `rejects an answer that has not been accepted`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val marked = markQuestionsAsSameProblemUseCase.execute(a, b)
+        val marked = markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
         val answer = writeAnswerUseCase.execute(WriteAnswerCommand(questionId = a, authorId = 3L, body = "fix"))
 
-        assertFailsWith<AnswerNotAcceptedException> { useCase.execute(marked.clusterId, answer.id) }
+        assertFailsWith<AnswerNotAcceptedException> { useCase.execute(marked.clusterId, answer.id, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
@@ -89,24 +90,24 @@ class DesignateSuperAnswerUseCaseTest {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
         val outsider = questionAskedBy(3L)
-        val marked = markQuestionsAsSameProblemUseCase.execute(a, b)
+        val marked = markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
         val answer = writeAnswerUseCase.execute(WriteAnswerCommand(questionId = outsider, authorId = 4L, body = "fix"))
         acceptAnswerUseCase.execute(AcceptAnswerCommand(answerId = answer.id, actorId = 3L))
 
-        assertFailsWith<AnswerNotInClusterException> { useCase.execute(marked.clusterId, answer.id) }
+        assertFailsWith<AnswerNotInClusterException> { useCase.execute(marked.clusterId, answer.id, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
     fun `rejects a cluster id that does not exist`() {
-        assertFailsWith<ClusterNotFoundException> { useCase.execute(999L, 1L) }
+        assertFailsWith<ClusterNotFoundException> { useCase.execute(999L, 1L, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
     fun `rejects an answer id that does not exist`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val marked = markQuestionsAsSameProblemUseCase.execute(a, b)
+        val marked = markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
-        assertFailsWith<AnswerNotFoundException> { useCase.execute(marked.clusterId, 999L) }
+        assertFailsWith<AnswerNotFoundException> { useCase.execute(marked.clusterId, 999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 }

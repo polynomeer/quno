@@ -21,6 +21,8 @@ data class CreateQuestionRequest(
     val dependencies: List<DependencyRequest> = emptyList(),
     /** A `quno.snapshot` document from the collector or typed by hand (ADR-0083). */
     val environmentSnapshot: JsonNode? = null,
+    /** Ask one verified organization privately (Phase 79, ADR-0085); omitted = public. */
+    val organizationId: Long? = null,
 )
 
 /** One stack fingerprint entry; limits mirror [StackDependency] so bad input is a 400, not a 500. */

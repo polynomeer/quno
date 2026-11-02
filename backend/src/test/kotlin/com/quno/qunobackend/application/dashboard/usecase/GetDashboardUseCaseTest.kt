@@ -20,6 +20,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.dashboard.TagTrend
 import com.quno.qunobackend.domain.notification.Notification
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.TagSpike
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -87,7 +88,7 @@ class GetDashboardUseCaseTest {
 
         spikeDetectionRepository.spikingTags = listOf(TagSpike(1L, "redis", "redis", recentCount = 9, baselineAveragePerDay = 1.0, spikeRatio = 9.0))
 
-        val result = useCase.execute(userId = 10L)
+        val result = useCase.execute(QuestionViewer(10L, emptySet()))
 
         assertEquals(listOf(popular), result.popularQuestions.map { it.id })
         assertEquals(1, result.wardUpdates.size)
@@ -107,14 +108,14 @@ class GetDashboardUseCaseTest {
         ).id
         dashboardRepository.popularQuestionIds = listOf(popular)
 
-        val result = useCase.execute(userId = 10L)
+        val result = useCase.execute(QuestionViewer(10L, emptySet()))
 
         assertEquals(popular, result.headline?.questionId)
     }
 
     @Test
     fun `headline is null when there is no signal at all`() {
-        val result = useCase.execute(userId = 10L)
+        val result = useCase.execute(QuestionViewer(10L, emptySet()))
 
         assertNull(result.headline)
     }

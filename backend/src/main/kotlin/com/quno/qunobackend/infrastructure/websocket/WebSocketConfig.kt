@@ -18,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 class WebSocketConfig(
     private val stompAuthChannelInterceptor: StompAuthChannelInterceptor,
+    private val stompQuestionVisibilityInterceptor: StompQuestionVisibilityInterceptor,
 ) : WebSocketMessageBrokerConfigurer {
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
@@ -30,6 +31,7 @@ class WebSocketConfig(
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
-        registration.interceptors(stompAuthChannelInterceptor)
+        // Authentication first: the visibility check reads the user it sets on CONNECT.
+        registration.interceptors(stompAuthChannelInterceptor, stompQuestionVisibilityInterceptor)
     }
 }

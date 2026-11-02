@@ -19,6 +19,7 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
             LEFT JOIN question_tags qt ON qt.question_id = q.id
             LEFT JOIN tags t ON t.id = qt.tag_id AND t.deleted_at IS NULL
             WHERE q.deleted_at IS NULL
+              AND (q.visibility = 'PUBLIC' OR q.author_id = :viewerId OR q.organization_id IN (:viewerOrgIds))
               AND (
                 to_tsvector('simple', v.title || ' ' || v.body_markdown || ' ' || coalesce(v.logs, ''))
                   @@ plainto_tsquery('simple', :query)
@@ -29,7 +30,7 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
         """,
         nativeQuery = true,
     )
-    fun searchQuestionIdsByRelevance(@Param("query") query: String, @Param("limit") limit: Int): List<Long>
+    fun searchQuestionIdsByRelevance(@Param("query") query: String, @Param("limit") limit: Int, @Param("viewerId") viewerId: Long, @Param("viewerOrgIds") viewerOrgIds: Collection<Long>): List<Long>
 
     /** Same candidate set as [searchQuestionIdsByRelevance], ordered by net vote score instead
      * (Phase 20, ADR-0032). */
@@ -44,6 +45,7 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
                 SELECT target_id, SUM(value) AS vote_score FROM votes WHERE target_type = 'QUESTION' GROUP BY target_id
             ) sv ON sv.target_id = q.id
             WHERE q.deleted_at IS NULL
+              AND (q.visibility = 'PUBLIC' OR q.author_id = :viewerId OR q.organization_id IN (:viewerOrgIds))
               AND (
                 to_tsvector('simple', v.title || ' ' || v.body_markdown || ' ' || coalesce(v.logs, ''))
                   @@ plainto_tsquery('simple', :query)
@@ -55,7 +57,7 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
         """,
         nativeQuery = true,
     )
-    fun searchQuestionIdsByScore(@Param("query") query: String, @Param("limit") limit: Int): List<Long>
+    fun searchQuestionIdsByScore(@Param("query") query: String, @Param("limit") limit: Int, @Param("viewerId") viewerId: Long, @Param("viewerOrgIds") viewerOrgIds: Collection<Long>): List<Long>
 
     @Query(
         value = """
@@ -64,11 +66,12 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
             JOIN question_tags qt2 ON qt2.tag_id = qt1.tag_id AND qt2.question_id <> qt1.question_id
             JOIN questions q ON q.id = qt2.question_id
             WHERE qt1.question_id = :questionId AND q.deleted_at IS NULL
+              AND (q.visibility = 'PUBLIC' OR q.author_id = :viewerId OR q.organization_id IN (:viewerOrgIds))
             GROUP BY qt2.question_id
             ORDER BY COUNT(*) DESC, qt2.question_id DESC
             LIMIT :limit
         """,
         nativeQuery = true,
     )
-    fun findRelatedQuestionIds(@Param("questionId") questionId: Long, @Param("limit") limit: Int): List<Long>
+    fun findRelatedQuestionIds(@Param("questionId") questionId: Long, @Param("limit") limit: Int, @Param("viewerId") viewerId: Long, @Param("viewerOrgIds") viewerOrgIds: Collection<Long>): List<Long>
 }

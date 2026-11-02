@@ -1,5 +1,6 @@
 package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.AffectedQuestion
 import com.quno.qunobackend.domain.qunobot.VersionImpact
 import com.quno.qunobackend.domain.qunobot.VersionImpactRepository
@@ -16,7 +17,7 @@ class VersionImpactRepositoryAdapter(
         AffectedQuestion(questionId = it.getQuestionId(), questionAuthorId = it.getQuestionAuthorId())
     }
 
-    override fun findVersionImpacts(limit: Int): List<VersionImpact> = jpaRepository.findVersionImpacts(limit).map {
+    override fun findVersionImpacts(limit: Int, viewer: QuestionViewer): List<VersionImpact> = jpaRepository.findVersionImpacts(limit, viewer.userIdForSql(), viewer.organizationIdsForSql()).map {
         VersionImpact(
             questionId = it.getQuestionId(),
             questionTitle = it.getQuestionTitle(),

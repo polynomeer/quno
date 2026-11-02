@@ -20,6 +20,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.flow.FlowCardType
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.qunobot.TagSpike
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -103,7 +104,7 @@ class GetActivityFeedUseCaseTest {
     fun `builds a cluster super answer card referencing the answer's question title`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val marked = markQuestionsAsSameProblemUseCase.execute(a, b)
+        val marked = markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
         val answer = writeAnswerUseCase.execute(WriteAnswerCommand(questionId = a, authorId = 3L, body = "fix"))
         acceptAnswerUseCase.execute(AcceptAnswerCommand(answerId = answer.id, actorId = 1L))
         questionClusterRepository.save(questionClusterRepository.findById(marked.clusterId)!!.designateSuperAnswer(answer.id))

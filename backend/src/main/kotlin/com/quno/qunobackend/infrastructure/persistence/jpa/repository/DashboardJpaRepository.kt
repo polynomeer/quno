@@ -22,6 +22,7 @@ interface DashboardJpaRepository : Repository<QuestionJpaEntity, Long> {
                 SELECT target_id, SUM(value) AS vote_score FROM votes WHERE target_type = 'QUESTION' GROUP BY target_id
             ) v ON v.target_id = q.id
             WHERE q.deleted_at IS NULL
+              AND q.visibility = 'PUBLIC'
             ORDER BY (COALESCE(w.watch_count, 0) * 3 + COALESCE(a.answer_count, 0) * 2 + COALESCE(v.vote_score, 0) * 1) DESC, q.created_at DESC
             LIMIT :limit
         """,
@@ -37,6 +38,7 @@ interface DashboardJpaRepository : Repository<QuestionJpaEntity, Long> {
             JOIN questions q ON q.id = qt.question_id
             WHERE t.deleted_at IS NULL
               AND q.deleted_at IS NULL
+              AND q.visibility = 'PUBLIC'
               AND q.created_at >= NOW() - INTERVAL '7 days'
             GROUP BY t.id, t.name, t.slug
             ORDER BY questionCount DESC, t.id DESC
@@ -49,7 +51,7 @@ interface DashboardJpaRepository : Repository<QuestionJpaEntity, Long> {
     @Query(
         value = """
             SELECT id FROM questions
-            WHERE status = 'RESOLVED' AND deleted_at IS NULL AND updated_at >= date_trunc('day', NOW())
+            WHERE status = 'RESOLVED' AND deleted_at IS NULL AND visibility = 'PUBLIC' AND updated_at >= date_trunc('day', NOW())
             ORDER BY updated_at DESC
             LIMIT :limit
         """,

@@ -8,6 +8,7 @@ import com.quno.qunobackend.application.question.usecase.InMemoryQuestionReposit
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionVersionRepository
 import com.quno.qunobackend.application.question.usecase.InMemoryQuestionViewCountRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
+import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.Tag
 import com.quno.qunobackend.domain.tag.TagNotFoundException
 import com.quno.qunobackend.domain.tag.TagQuestionSort
@@ -41,7 +42,7 @@ class ListTagQuestionsUseCaseTest {
         val q2 = question("Null safety question")
         tagStatsRepository.questionIdsBySort = mapOf(TagQuestionSort.TOP to listOf(q2, q1))
 
-        val result = useCase.execute(tagId, TagQuestionSort.TOP)
+        val result = useCase.execute(tagId, TagQuestionSort.TOP, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(listOf(q2, q1), result.map { it.id })
         assertEquals(TagQuestionSort.TOP, tagStatsRepository.lastSort)
@@ -51,7 +52,7 @@ class ListTagQuestionsUseCaseTest {
     fun `defaults are not assumed — passes the given sort through untouched`() {
         val tagId = requireNotNull(tagRepository.save(Tag.create("Kotlin")).id)
 
-        useCase.execute(tagId, TagQuestionSort.UNANSWERED)
+        useCase.execute(tagId, TagQuestionSort.UNANSWERED, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(TagQuestionSort.UNANSWERED, tagStatsRepository.lastSort)
     }
@@ -61,11 +62,11 @@ class ListTagQuestionsUseCaseTest {
         val tagId = requireNotNull(tagRepository.save(Tag.create("Kotlin")).id)
         tagStatsRepository.questionIdsBySort = mapOf(TagQuestionSort.LATEST to listOf(999L))
 
-        assertTrue(useCase.execute(tagId, TagQuestionSort.LATEST).isEmpty())
+        assertTrue(useCase.execute(tagId, TagQuestionSort.LATEST, viewer = QuestionViewer.ANONYMOUS).isEmpty())
     }
 
     @Test
     fun `rejects a tag that does not exist`() {
-        assertFailsWith<TagNotFoundException> { useCase.execute(999L, TagQuestionSort.LATEST) }
+        assertFailsWith<TagNotFoundException> { useCase.execute(999L, TagQuestionSort.LATEST, viewer = QuestionViewer.ANONYMOUS) }
     }
 }

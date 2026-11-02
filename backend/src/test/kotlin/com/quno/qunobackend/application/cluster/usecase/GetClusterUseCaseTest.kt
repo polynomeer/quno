@@ -13,6 +13,7 @@ import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.cluster.ClusterNotFoundException
 import com.quno.qunobackend.domain.cluster.QuestionNotInAnyClusterException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -45,9 +46,9 @@ class GetClusterUseCaseTest {
     fun `returns the cluster's member questions`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        val marked = markQuestionsAsSameProblemUseCase.execute(a, b)
+        val marked = markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
-        val result = useCase.execute(marked.clusterId)
+        val result = useCase.execute(marked.clusterId, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(setOf(a, b), result.members.map { it.id }.toSet())
     }
@@ -56,26 +57,26 @@ class GetClusterUseCaseTest {
     fun `looking up a cluster by an unclustered question fails`() {
         val a = questionAskedBy(1L)
 
-        assertFailsWith<QuestionNotInAnyClusterException> { useCase.executeForQuestion(a) }
+        assertFailsWith<QuestionNotInAnyClusterException> { useCase.executeForQuestion(a, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
     fun `looking up a cluster for a question that does not exist fails`() {
-        assertFailsWith<QuestionNotFoundException> { useCase.executeForQuestion(999L) }
+        assertFailsWith<QuestionNotFoundException> { useCase.executeForQuestion(999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
     fun `looking up a cluster id that does not exist fails`() {
-        assertFailsWith<ClusterNotFoundException> { useCase.execute(999L) }
+        assertFailsWith<ClusterNotFoundException> { useCase.execute(999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 
     @Test
     fun `looking up a cluster via the owning question returns the same cluster`() {
         val a = questionAskedBy(1L)
         val b = questionAskedBy(2L)
-        markQuestionsAsSameProblemUseCase.execute(a, b)
+        markQuestionsAsSameProblemUseCase.execute(a, b, viewer = QuestionViewer.ANONYMOUS)
 
-        val result = useCase.executeForQuestion(a)
+        val result = useCase.executeForQuestion(a, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(setOf(a, b), result.members.map { it.id }.toSet())
     }

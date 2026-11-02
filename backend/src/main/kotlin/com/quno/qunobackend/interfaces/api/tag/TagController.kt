@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.tag
 
+import com.quno.qunobackend.application.common.QuestionAccess
 import com.quno.qunobackend.application.tag.usecase.FollowTagUseCase
 import com.quno.qunobackend.application.tag.usecase.GetTagUseCase
 import com.quno.qunobackend.application.tag.usecase.ListRelatedTagsUseCase
@@ -36,6 +37,7 @@ class TagController(
     private val listRelatedTagsUseCase: ListRelatedTagsUseCase,
     private val followTagUseCase: FollowTagUseCase,
     private val unfollowTagUseCase: UnfollowTagUseCase,
+    private val access: QuestionAccess,
 ) {
 
     @GetMapping
@@ -50,12 +52,13 @@ class TagController(
 
     @GetMapping("/{id}/questions")
     fun questions(
+        @AuthenticationPrincipal viewerId: Long?,
         @PathVariable id: Long,
         @RequestParam(required = false) sort: String?,
         @RequestParam(required = false) limit: Int?,
     ): List<QuestionSearchResultResponse> {
         val resolvedSort = TagQuestionSort.entries.find { it.name.equals(sort, ignoreCase = true) } ?: TagQuestionSort.LATEST
-        return listTagQuestionsUseCase.execute(id, resolvedSort, limit ?: 20).map { it.toResponse() }
+        return listTagQuestionsUseCase.execute(id, resolvedSort, access.viewer(viewerId), limit ?: 20).map { it.toResponse() }
     }
 
     @GetMapping("/{id}/contributors")

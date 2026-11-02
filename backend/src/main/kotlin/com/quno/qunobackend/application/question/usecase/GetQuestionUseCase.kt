@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.question.usecase
 
 import com.quno.qunobackend.application.engine.QuestionContentMasker
 import com.quno.qunobackend.application.question.dto.QuestionSummaryResult
+import com.quno.qunobackend.domain.organization.OrganizationRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
@@ -24,6 +25,7 @@ class GetQuestionUseCase(
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
     private val contentMasker: QuestionContentMasker? = null,
     private val environmentSnapshotRepository: EnvironmentSnapshotRepository? = null,
+    private val organizationRepository: OrganizationRepository? = null,
 ) {
     /** [viewerId] null is an anonymous reader: secrets are masked for everyone but the author (ADR-0081). */
     fun execute(questionId: Long, viewerId: Long? = null): QuestionSummaryResult {
@@ -53,6 +55,9 @@ class GetQuestionUseCase(
             dependencies = questionDependencyRepository?.findByQuestionId(questionId).orEmpty(),
             maskedSecretCount = maskedCount,
             environmentSnapshot = environmentSnapshotRepository?.findByQuestionId(questionId),
+            visibility = question.visibility,
+            organizationId = question.organizationId,
+            organizationName = question.organizationId?.let { organizationRepository?.findById(it)?.name },
         )
     }
 }

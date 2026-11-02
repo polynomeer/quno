@@ -22,6 +22,8 @@ class InMemoryQuestionRepository : QuestionRepository {
                 acceptedAnswerId = question.acceptedAnswerId,
                 clusterId = question.clusterId,
                 originQuestionId = question.originQuestionId,
+                visibility = question.visibility,
+                organizationId = question.organizationId,
                 deletedAt = question.deletedAt,
                 createdAt = question.createdAt,
                 updatedAt = question.updatedAt,

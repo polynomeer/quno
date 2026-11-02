@@ -9,3 +9,6 @@ class QuestionNotInAnyClusterException(questionId: Long) : RuntimeException("Que
 class AnswerNotInClusterException(answerId: Long, clusterId: Long) : RuntimeException("Answer $answerId does not belong to a question in cluster $clusterId")
 
 class AnswerNotAcceptedException(answerId: Long) : RuntimeException("Only an accepted answer can become a Super Answer: $answerId")
+
+/** A cluster never mixes a public question with a private one, or two organizations (ADR-0085). */
+class ClusterScopeMismatchException(questionId: Long, relatedQuestionId: Long) : RuntimeException("Questions $questionId and $relatedQuestionId have different visibility and can't share a cluster")

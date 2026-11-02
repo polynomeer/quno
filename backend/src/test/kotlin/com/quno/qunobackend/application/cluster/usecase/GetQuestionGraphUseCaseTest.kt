@@ -15,6 +15,7 @@ import com.quno.qunobackend.application.tag.usecase.InMemoryQuestionTagRepositor
 import com.quno.qunobackend.application.tag.usecase.InMemoryTagRepository
 import com.quno.qunobackend.application.vote.usecase.InMemoryVoteRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionViewer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -43,12 +44,12 @@ class GetQuestionGraphUseCaseTest {
     fun `combines cluster members, fork lineage, and related questions`() {
         val origin = aQuestion()
         val clusterMate = aQuestion()
-        markQuestionsAsSameProblemUseCase.execute(origin, clusterMate)
+        markQuestionsAsSameProblemUseCase.execute(origin, clusterMate, viewer = QuestionViewer.ANONYMOUS)
         val fork = forkQuestionUseCase.execute(ForkQuestionCommand(origin, actorId = 2L)).id
         val related = aQuestion()
         searchRepository.relatedResults = mapOf(origin to listOf(related))
 
-        val result = getQuestionGraphUseCase.execute(origin)
+        val result = getQuestionGraphUseCase.execute(origin, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(setOf(clusterMate), result.clusterMembers.map { it.id }.toSet())
         assertNull(result.forkedFrom)
@@ -61,7 +62,7 @@ class GetQuestionGraphUseCaseTest {
         val origin = aQuestion()
         val fork = forkQuestionUseCase.execute(ForkQuestionCommand(origin, actorId = 2L)).id
 
-        val result = getQuestionGraphUseCase.execute(fork)
+        val result = getQuestionGraphUseCase.execute(fork, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(origin, result.forkedFrom?.id)
     }
@@ -70,7 +71,7 @@ class GetQuestionGraphUseCaseTest {
     fun `a question with no cluster or forks returns empty lists, not an error`() {
         val questionId = aQuestion()
 
-        val result = getQuestionGraphUseCase.execute(questionId)
+        val result = getQuestionGraphUseCase.execute(questionId, viewer = QuestionViewer.ANONYMOUS)
 
         assertEquals(emptyList(), result.clusterMembers)
         assertEquals(emptyList(), result.forks)
@@ -79,6 +80,6 @@ class GetQuestionGraphUseCaseTest {
 
     @Test
     fun `rejects a question that does not exist`() {
-        assertFailsWith<QuestionNotFoundException> { getQuestionGraphUseCase.execute(999L) }
+        assertFailsWith<QuestionNotFoundException> { getQuestionGraphUseCase.execute(999L, viewer = QuestionViewer.ANONYMOUS) }
     }
 }

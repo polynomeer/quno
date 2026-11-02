@@ -17,8 +17,11 @@ interface QuestionErrorSignatureJpaRepository : JpaRepository<QuestionErrorSigna
         value = """
             SELECT s.question_id
             FROM question_error_signatures s
+            JOIN questions q ON q.id = s.question_id
             WHERE (s.signature_hash IN (:hashes) OR s.message_key IN (:keys))
               AND s.question_id <> :excludeQuestionId
+              AND q.deleted_at IS NULL
+              AND (q.visibility = 'PUBLIC' OR q.author_id = :viewerId OR q.organization_id IN (:viewerOrgIds))
             GROUP BY s.question_id
             ORDER BY MIN(CASE WHEN s.signature_hash IN (:hashes) THEN 0 ELSE 1 END), MAX(s.created_at) DESC
             LIMIT :limit
@@ -30,5 +33,7 @@ interface QuestionErrorSignatureJpaRepository : JpaRepository<QuestionErrorSigna
         @Param("keys") keys: Collection<String>,
         @Param("excludeQuestionId") excludeQuestionId: Long,
         @Param("limit") limit: Int,
+        @Param("viewerId") viewerId: Long,
+        @Param("viewerOrgIds") viewerOrgIds: Collection<Long>,
     ): List<Long>
 }
