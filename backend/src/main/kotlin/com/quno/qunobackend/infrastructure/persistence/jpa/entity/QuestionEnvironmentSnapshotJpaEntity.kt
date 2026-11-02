@@ -23,6 +23,7 @@ class QuestionEnvironmentSnapshotJpaEntity(
     @Column(name = "collector") val collector: String?,
     @Column(name = "fingerprint", nullable = false) val fingerprint: String,
     @Column(name = "server_redactions", nullable = false) val serverRedactions: Int,
+    @Column(name = "symptom") val symptom: String?,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "document", nullable = false)
     val document: String,

@@ -6,6 +6,13 @@ import java.time.Instant
 /** Who produced a snapshot (ADR-0083) — shown as provenance, not proof: an open client can't hold a secret key. */
 enum class SnapshotSource { COLLECTOR, MANUAL }
 
+/**
+ * What a failure looked like (Phase 93.3, ADR-0084), named by the collector from the failing
+ * command's output. The server keeps it as a column so snapshots can be grouped by symptom and
+ * environment; a name it doesn't know is stored as null rather than refused.
+ */
+enum class SnapshotSymptom { OUT_OF_MEMORY, DB_TIMEOUT, DEPENDENCY_RESOLUTION, TEST_FAILURE, BUILD_FAILURE }
+
 class InvalidEnvironmentSnapshotException(message: String) : RuntimeException(message)
 
 /**
@@ -21,6 +28,8 @@ data class EnvironmentSnapshot(
     val collector: String?,
     val fingerprint: String,
     val serverRedactions: Int,
+    /** From `tier1.symptom`; null for Tier 0-only snapshots. */
+    val symptom: SnapshotSymptom?,
     /** The scrubbed JSON document as stored. */
     val document: String,
     val createdAt: Instant,
@@ -33,6 +42,7 @@ data class NormalizedSnapshot(
     val collector: String?,
     val fingerprint: String,
     val serverRedactions: Int,
+    val symptom: SnapshotSymptom?,
     val document: String,
 )
 
@@ -61,6 +71,9 @@ object EnvironmentFingerprint {
     const val SUPPORTED_SCHEMA_VERSION = 1
     const val MAX_DOCUMENT_BYTES = 64 * 1024
     const val MAX_DEPENDENCIES = 500
+
+    /** 0 = always, 1 = diagnostics of a failure, 2 = opt-in runtime state (ADR-0070). */
+    val KNOWN_TIERS = setOf(0, 1, 2)
 
     fun of(osName: String?, arch: String?, docker: Boolean, wsl: Boolean, runtimes: List<FingerprintRuntime>): String {
         val tuple = buildList {

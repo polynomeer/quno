@@ -23,7 +23,8 @@ import kotlin.test.assertTrue
 /**
  * Phase 93 (ADR-0083) through real HTTP and Postgres: a snapshot sent with a question is scrubbed
  * again and fingerprinted by the server, kept by a revision that omits it, replaced by one that
- * sends it, not copied into forks, and refused when its schema is unknown or it is too large.
+ * sends it, not copied into forks, and refused when its schema is unknown, it is too large or it carries Tier 2 without opting in.
+ * A failure snapshot's symptom lands in its own column (Phase 93.3, ADR-0084).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -82,6 +83,7 @@ class EnvironmentSnapshotLifecycleE2ETest {
         assertEquals("COLLECTOR", stored["source"])
         assertEquals("quno-cli 0.2.0", stored["collector"])
         assertEquals(1, stored["serverRedactions"])
+        assertNull(stored["symptom"], "Tier 0 only")
         val fingerprint = stored["fingerprint"] as String
         assertEquals(16, fingerprint.length)
         @Suppress("UNCHECKED_CAST")
@@ -108,6 +110,22 @@ class EnvironmentSnapshotLifecycleE2ETest {
     }
 
     @Test
+    fun `a failure snapshot stores its symptom in its own column`() {
+        val (userId, token) = signUpAndLogin("snapfail")
+        userIds += userId
+        val failure = snapshot("21.0.5").plus("tiers" to listOf(0, 1)).plus(
+            "tier1" to mapOf(
+                "command" to mapOf("argv" to listOf("./gradlew", "test"), "exitCode" to 1, "durationMs" to 4200),
+                "symptom" to "OUT_OF_MEMORY",
+            ),
+        )
+        val questionId = ask(token, "OOM in tests", failure)
+
+        assertEquals("OUT_OF_MEMORY", snapshotOf(questionId, token)!!["symptom"])
+        assertEquals("OUT_OF_MEMORY", jdbcTemplate.queryForObject("SELECT symptom FROM question_environment_snapshots WHERE question_id = ?", String::class.java, questionId))
+    }
+
+    @Test
     fun `unknown schemas, oversized documents and non-objects are a 400`() {
         val (userId, token) = signUpAndLogin("snapbad")
         userIds += userId
@@ -117,6 +135,7 @@ class EnvironmentSnapshotLifecycleE2ETest {
         post(snapshot("21").plus("padding" to "x".repeat(70 * 1024)))
         post(listOf(1, 2))
         post(snapshot("21").plus("source" to "ROBOT"))
+        post(snapshot("21").plus("tier2" to mapOf("cpus" to 8)))
         assertEquals(0, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM questions WHERE author_id = ?", Int::class.java, userId))
     }
 
