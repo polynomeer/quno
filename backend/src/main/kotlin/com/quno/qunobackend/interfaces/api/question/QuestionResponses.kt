@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonRawValue
 import com.quno.qunobackend.application.cluster.dto.QuestionGraphResult
 import com.quno.qunobackend.application.question.dto.QuestionTimelineEventType
 import com.quno.qunobackend.domain.question.DiffLineType
+import com.quno.qunobackend.domain.question.PromotionFinding
+import com.quno.qunobackend.domain.question.PromotionFindingSeverity
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshot
@@ -46,6 +48,8 @@ data class QuestionResponse(
     val visibility: QuestionVisibility = QuestionVisibility.PUBLIC,
     val organizationId: Long? = null,
     val organizationName: String? = null,
+    /** The public card this private question was promoted to (ADR-0086); only ever set on the private side. */
+    val promotedQuestionId: Long? = null,
 )
 
 /** The stored snapshot (ADR-0083): provenance and the server's own fingerprint, plus the scrubbed document as-is. */
@@ -119,3 +123,17 @@ data class QuestionTimelineEventResponse(
     val answerId: Long?,
     val accepted: Boolean,
 )
+
+/** What may still be internal in a promotion draft (ADR-0086). BLOCK findings stop the promotion. */
+data class PromotionCheckResponse(val findings: List<PromotionFindingResponse>)
+
+data class PromotionFindingResponse(
+    val field: String,
+    val label: String,
+    val start: Int,
+    val end: Int,
+    val excerpt: String,
+    val severity: PromotionFindingSeverity,
+)
+
+fun PromotionFinding.toResponse() = PromotionFindingResponse(field, label, start, end, excerpt, severity)
