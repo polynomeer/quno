@@ -34,7 +34,8 @@ pbpaste | quno login --api-url https://api.quno.example --web-url https://quno.e
 | `quno search hikari pool` | 질문 검색(`--limit`, `--json`) |
 | `cat error.log \| quno errors` | 같은 에러(예외 클래스 + 상위 프레임)를 다룬 질문 찾기. `--file`로도 줄 수 있음 |
 | `cat error.log \| quno ask --title "..." --body "..."` | 질문 작성. 표준 입력은 로그가 됨 |
-| `quno capture` | 질문에 첨부될 환경 스냅샷(Tier 0)을 그대로 보여줌(`--json`이면 JSON만) |
+| `quno run -- ./gradlew test` | 명령을 실행하고, 실패하면 환경 스냅샷과 마지막 출력 200줄을 이 컴퓨터에만 기록. 종료 코드는 그대로 |
+| `quno capture` | 질문에 첨부될 환경 스냅샷을 그대로 보여줌. `--last-failure`면 `quno run`이 기록한 실패(`--json`이면 JSON만) |
 
 `quno ask`는 게시 전에 다음을 보여줍니다.
 
@@ -51,9 +52,29 @@ pbpaste | quno login --api-url https://api.quno.example --web-url https://quno.e
   - 정확히 무엇이 나가는지는 `quno capture`로 확인할 수 있습니다([ADR-0083](../docs/architecture/decisions/0083-environment-snapshot-tier0-collector.md)).
 - 원본 빌드 파일은 서버에 저장되지 않습니다.
 
+### 실패를 기록해 질문하기
+
+```bash
+quno run -- ./gradlew test
+```
+
+```bash
+quno ask --last-failure --title "테스트 중 Hikari 커넥션 타임아웃" --body "로컬 Postgres로 돌릴 때만 납니다."
+```
+
+- 출력은 그대로 보이고, 마지막 200줄만 메모리에 둡니다. 성공하면 "마지막으로 잘 되던 때"의 기준선(커밋·해석된 의존성·설정 파일)만, 실패하면 정제한 스냅샷과 출력 꼬리를 `~/.local/state/quno/`에 권한 600으로 남깁니다. 아무 데도 보내지 않습니다.
+- 증상(메모리 부족·DB 연결 시간 초과·의존성 해석 실패·테스트 실패·빌드 실패)을 판별해, 그 증상에 필요한 진단만 담습니다.
+  - 허용목록 환경 변수(`SPRING_PROFILES_ACTIVE`, `*_OPTS` 등. 그 외 변수는 읽지 않음)
+  - `application*.yml`·`.properties`의 **키만**(값은 보내지 않음)
+  - 이번 실행에서 실패한 JUnit 테스트
+- 마지막 성공 이후의 커밋 수, 바뀐 파일 이름, 해석된 의존성 버전 변화도 붙습니다.
+- `ask --last-failure`는 출력 꼬리를 질문의 로그로 씁니다(표준 입력으로 로그를 주면 그쪽이 우선).
+- `--preset minimal`(환경 식별 정보만) · `standard`(기본) · `detailed`(메모리·디스크·cgroup 한도, Tier 2까지).
+- `--omit tier0.git --omit tier1.env`처럼 필드를 뺄 수 있고, 뺀 필드는 질문에 "작성자가 뺀 항목"으로 표시됩니다([ADR-0084](../docs/architecture/decisions/0084-environment-snapshot-failure-diagnostics.md)).
+
 ## MCP 서버
 
-읽기 전용 도구 4개를 제공합니다. 출력은 본문 필드당 4,000자, 응답 전체 20,000자에서 잘립니다.
+Quno API를 읽는 도구 4개와, 이 컴퓨터의 환경을 보여 주는 `capture_environment`를 제공합니다. 출력은 본문 필드당 4,000자, 응답 전체 20,000자에서 잘립니다.
 
 | 도구 | 하는 일 |
 |---|---|
@@ -61,6 +82,7 @@ pbpaste | quno login --api-url https://api.quno.example --web-url https://quno.e
 | `search_questions` | 키워드 검색 |
 | `get_question` | 질문과 답변(채택 답변 먼저, 적용 버전 범위 포함) |
 | `get_my_stack` | 웹에서 저장한 "내 스택" |
+| `capture_environment` | 이 컴퓨터의 환경 스냅샷을 만들어 보여 줌(전송 안 함). `failure`에 실패한 명령·종료 코드·출력을 넣으면 진단을 더하고 로컬에 기록해, 사용자가 `quno ask --last-failure`로 올릴 수 있게 함 |
 
 Claude Code에 연결하는 예:
 

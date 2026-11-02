@@ -1,24 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { collectSnapshot, lockedDependencies, remoteHost, scrubIdentity, scrubJvmArgs, summarizeSnapshot, type Probe } from "../src/snapshot/collect.js";
+import { collectSnapshot, lockedDependencies, remoteHost, scrubIdentity, scrubJvmArgs, summarizeSnapshot } from "../src/snapshot/collect.js";
+import { fakeProbe } from "./fake-probe.js";
 
-function probe(overrides: Partial<Probe> = {}, files: Record<string, string> = {}, commands: Record<string, string> = {}): Probe {
-  return {
-    cwd: "/Users/minji/work/app",
-    platform: "darwin",
-    arch: "arm64",
-    run: (command, args) => commands[[command, ...args].join(" ")] ?? null,
-    read: (path) => files[path] ?? null,
-    exists: (path) => path in files,
-    env: {},
-    home: "/Users/minji",
-    user: "minji",
-    host: "minji-mbp.corp.example",
-    kernel: "24.1.0",
-    nodeVersion: "v22.11.0",
-    intl: { locale: "ko-KR", timezone: "Asia/Seoul" },
-    ...overrides,
-  };
-}
+const probe = fakeProbe;
 
 describe("collectSnapshot", () => {
   it("collects Tier 0 from release files, wrappers, lock files and git without touching other env values", () => {

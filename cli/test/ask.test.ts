@@ -50,6 +50,7 @@ function setup(stdin: string | null, confirm: CommandContext["confirm"]) {
     stdin,
     confirm,
     captureSnapshot: () => SNAPSHOT,
+    lastFailure: () => null,
   };
   return { ctx, calls, out, err };
 }

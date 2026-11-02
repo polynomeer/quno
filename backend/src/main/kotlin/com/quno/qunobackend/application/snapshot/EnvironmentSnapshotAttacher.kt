@@ -24,6 +24,7 @@ class EnvironmentSnapshotAttacher(
                 collector = normalized.collector,
                 fingerprint = normalized.fingerprint,
                 serverRedactions = normalized.serverRedactions,
+                symptom = normalized.symptom,
                 document = normalized.document,
                 createdAt = Instant.now(),
             ),

@@ -51,4 +51,48 @@ describe("EnvironmentSnapshotPanel", () => {
     expect(screen.getByText("수동 입력")).toBeInTheDocument();
     expect(screen.getByText(/신뢰도가 낮아요/)).toBeInTheDocument();
   });
+
+  it("shows the failure diagnosis, what changed since the last success, Tier 2 and omitted fields", () => {
+    const failure: EnvironmentSnapshot = {
+      ...SNAPSHOT,
+      symptom: "DB_TIMEOUT",
+      document: {
+        tiers: [0, 1, 2],
+        tier0: { os: { name: "macOS", version: "15.1", arch: "arm64" } },
+        tier1: {
+          command: { argv: ["./gradlew", "test"], exitCode: 1, durationMs: 4200 },
+          symptom: "DB_TIMEOUT",
+          logWindow: { keptLines: 200, totalLines: 1532, attachedAs: "logs" },
+          env: [{ name: "SPRING_PROFILES_ACTIVE", value: "local" }],
+          configKeys: [{ file: "src/main/resources/application.yml", keys: ["spring.datasource.url", "spring.datasource.hikari.maximum-pool-size"] }],
+          failedTests: [{ suite: "com.acme.BillingTest", name: "refunds", message: "Connection is not available" }],
+        },
+        tier2: { memory: { totalMb: 16384, freeMb: 512 }, cpus: 10, diskFreeMb: null, cgroupMemoryLimitMb: 2048 },
+        delta: {
+          since: { capturedAt: new Date(Date.now() - 2 * 3600_000).toISOString(), commit: "b".repeat(40) },
+          commits: 3,
+          changedFiles: ["build.gradle.kts", "src/main/resources/application.yml"],
+          changedFileCount: 2,
+          dependencies: [{ name: "com.zaxxer:HikariCP", from: "5.1.0", to: "6.0.0" }],
+          configFiles: ["src/main/resources/application.yml"],
+        },
+        omitted: ["tier0.git"],
+      },
+    };
+    render(<EnvironmentSnapshotPanel snapshot={failure} />);
+
+    expect(screen.getByText("DB 연결 시간 초과")).toBeInTheDocument();
+    expect(screen.getByText("./gradlew test")).toBeInTheDocument();
+    expect(screen.getByText("1 · 4.2초")).toBeInTheDocument();
+    expect(screen.getByText("마지막 200/1532줄 · 로그 칸에 첨부")).toBeInTheDocument();
+    expect(screen.getByText("BillingTest.refunds")).toBeInTheDocument();
+    expect(screen.getByText(/spring.datasource.url, spring.datasource.hikari.maximum-pool-size/)).toBeInTheDocument();
+    expect(screen.getByText("16.0GB 중 512MB 여유")).toBeInTheDocument();
+    expect(screen.getByText("2.0GB")).toBeInTheDocument();
+    expect(screen.getByText(/마지막으로 성공한 뒤 바뀐 것 \(2시간 전 · 커밋 bbbbbbb\)/)).toBeInTheDocument();
+    expect(screen.getByText("HikariCP 5.1.0 → 6.0.0")).toBeInTheDocument();
+    expect(screen.getByText("build.gradle.kts")).toBeInTheDocument();
+    expect(screen.getByText(/작성자가 뺀 항목: tier0.git\./)).toBeInTheDocument();
+    expect(screen.queryByText(/잠금 파일이 없어/)).not.toBeInTheDocument();
+  });
 });

@@ -7,6 +7,7 @@ import com.quno.qunobackend.domain.snapshot.InvalidEnvironmentSnapshotException
 import com.quno.qunobackend.domain.snapshot.NormalizedSnapshot
 import com.quno.qunobackend.domain.snapshot.SnapshotNormalizer
 import com.quno.qunobackend.domain.snapshot.SnapshotSource
+import com.quno.qunobackend.domain.snapshot.SnapshotSymptom
 import org.springframework.stereotype.Component
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
@@ -43,6 +44,16 @@ class JacksonSnapshotNormalizer(
             throw InvalidEnvironmentSnapshotException("an environment snapshot can list at most ${EnvironmentFingerprint.MAX_DEPENDENCIES} dependencies")
         }
 
+        val tiers = (root.path("tiers") as? ArrayNode)?.let { array -> (0 until array.size()).map { array.get(it).asInt(-1) } } ?: listOf(0)
+        if (!EnvironmentFingerprint.KNOWN_TIERS.containsAll(tiers)) {
+            throw InvalidEnvironmentSnapshotException("tiers must be among ${EnvironmentFingerprint.KNOWN_TIERS}")
+        }
+        // Tier 2 is opt-in (ADR-0070): runtime state without the opt-in marker is a collector bug, not data to keep.
+        if (root.has("tier2") && 2 !in tiers) {
+            throw InvalidEnvironmentSnapshotException("tier2 needs 2 in tiers — it is opt-in")
+        }
+        val symptom = root.path("tier1").path("symptom").textOrNull()?.let { name -> SnapshotSymptom.entries.firstOrNull { it.name == name } }
+
         val redactions = scrub(root)
         val runtimes = (tier0.path("runtimes") as? ArrayNode)?.let { array ->
             (0 until array.size()).map { index ->
@@ -68,6 +79,7 @@ class JacksonSnapshotNormalizer(
             },
             fingerprint = fingerprint,
             serverRedactions = redactions,
+            symptom = symptom,
             document = objectMapper.writeValueAsString(root),
         )
     }

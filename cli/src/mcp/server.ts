@@ -2,7 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { QunoApiError, type QunoClient } from "../client.js";
-import { getMyStack, getQuestion, searchKnownIssues, searchQuestions, type ToolOutput } from "./tools.js";
+import { OmitPathError } from "../snapshot/compose.js";
+import { captureEnvironment, getMyStack, getQuestion, searchKnownIssues, searchQuestions, type LocalEnvironment, type ToolOutput } from "./tools.js";
 
 const VERSION = "0.1.0";
 const readOnly = { readOnlyHint: true, openWorldHint: true } as const;
@@ -12,13 +13,17 @@ async function run(produce: () => Promise<ToolOutput>) {
     const output = await produce();
     return { content: [{ type: "text" as const, text: output.json }], structuredContent: output.value };
   } catch (error) {
-    const message = error instanceof QunoApiError ? `Quno API ${error.status} ${error.code}: ${error.message}` : String(error);
+    const message =
+      error instanceof QunoApiError ? `Quno API ${error.status} ${error.code}: ${error.message}` : error instanceof OmitPathError ? error.message : String(error);
     return { content: [{ type: "text" as const, text: message }], isError: true };
   }
 }
 
-/** Read-only tools over the Quno API (Phase 65.3, ADR-0080). A READ-scoped token is enough. */
-export function createServer(client: QunoClient, webUrl: string): McpServer {
+/**
+ * Read-only tools over the Quno API (Phase 65.3, ADR-0080) — a READ-scoped token is enough — plus
+ * `capture_environment` (Phase 93.5, ADR-0084), which reads this machine and sends nothing.
+ */
+export function createServer(client: QunoClient, webUrl: string, local?: LocalEnvironment): McpServer {
   const server = new McpServer({ name: "quno", version: VERSION });
 
   server.registerTool(
@@ -76,9 +81,37 @@ export function createServer(client: QunoClient, webUrl: string): McpServer {
     () => run(() => getMyStack(client)),
   );
 
+  if (local) {
+    server.registerTool(
+      "capture_environment",
+      {
+        title: "Capture environment",
+        description:
+          "이 컴퓨터의 환경 스냅샷(OS·JDK·컨테이너·로케일·잠금 파일의 해석된 의존성)을 만들어 보여 준다. 아무 데도 보내지 않는다. " +
+          "명령이 실패했으면 failure에 명령(argv)·종료 코드·출력을 넣는다. 그러면 증상(메모리 부족·DB 시간 초과·의존성 해석 실패·테스트 실패·빌드 실패)에 맞는 진단과 " +
+          "마지막으로 성공한 뒤 바뀐 것(커밋 수·파일 이름·의존성 버전)을 더하고, 사용자가 quno ask --last-failure로 올릴 수 있게 이 컴퓨터에 기록한다. " +
+          "결과는 사용자에게 보여 주고, 질문에 붙일지는 사용자가 정한다.",
+        inputSchema: {
+          preset: z.enum(["minimal", "standard", "detailed"]).optional().describe("minimal: 환경 식별 정보만, standard: 기본, detailed: 메모리·디스크·cgroup 한도까지(사용자가 원할 때만)"),
+          omit: z.array(z.string().max(100)).max(20).optional().describe("뺄 필드(점 구분). 예: tier0.git, tier0.dependencies, tier1.env, delta"),
+          failure: z
+            .object({
+              argv: z.array(z.string().max(1_000)).min(1).max(100).describe("실행한 명령과 인자"),
+              exitCode: z.number().int().describe("종료 코드"),
+              output: z.string().max(1_000_000).describe("명령의 출력(stdout+stderr). 마지막 200줄만 남긴다"),
+            })
+            .optional(),
+          useLastFailure: z.boolean().optional().describe("새로 만들지 않고 quno run이나 이전 호출이 기록한 마지막 실패를 보여 준다"),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+      },
+      (input) => run(async () => captureEnvironment(local, input)),
+    );
+  }
+
   return server;
 }
 
-export async function serveStdio(client: QunoClient, webUrl: string): Promise<void> {
-  await createServer(client, webUrl).connect(new StdioServerTransport());
+export async function serveStdio(client: QunoClient, webUrl: string, local?: LocalEnvironment): Promise<void> {
+  await createServer(client, webUrl, local).connect(new StdioServerTransport());
 }

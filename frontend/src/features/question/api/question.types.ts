@@ -68,6 +68,8 @@ export interface EnvironmentSnapshot {
   collector: string | null;
   fingerprint: string;
   serverRedactions: number;
+  /** From `tier1.symptom` (Phase 93.3, ADR-0084); null for Tier 0-only snapshots. */
+  symptom?: SnapshotSymptom | null;
   createdAt: string;
   document: {
     capturedAt?: string;
@@ -84,8 +86,33 @@ export interface EnvironmentSnapshot {
       dependencies?: { resolution?: string; source?: string | null; items?: { ecosystem: string; name: string; version: string }[] };
       jvmArgs?: string[];
     };
+    tier1?: {
+      command?: { argv?: string[]; exitCode?: number | null; signal?: string | null; durationMs?: number | null };
+      symptom?: SnapshotSymptom | null;
+      logWindow?: { keptLines: number; totalLines: number; attachedAs?: string } | null;
+      env?: { name: string; value: string }[];
+      configKeys?: { file: string; keys: string[] }[];
+      failedTests?: { suite: string; name: string; message: string | null }[];
+    };
+    tier2?: {
+      memory?: { totalMb: number; freeMb: number };
+      cpus?: number;
+      diskFreeMb?: number | null;
+      cgroupMemoryLimitMb?: number | null;
+    };
+    delta?: {
+      since?: { capturedAt?: string; commit?: string | null };
+      commits?: number | null;
+      changedFiles?: string[];
+      changedFileCount?: number;
+      dependencies?: { name: string; from: string | null; to: string | null }[];
+      configFiles?: string[];
+    } | null;
+    omitted?: string[];
   };
 }
+
+export type SnapshotSymptom = "OUT_OF_MEMORY" | "DB_TIMEOUT" | "DEPENDENCY_RESOLUTION" | "TEST_FAILURE" | "BUILD_FAILURE";
 
 export interface QuestionVersionSummary {
   versionNumber: number;
