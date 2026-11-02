@@ -598,6 +598,23 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - 비공개 질문의 `GET /questions/{id}`에 `promotedQuestionId`가 붙는다. 공개 카드는 원본을 가리키지 않는다.
 - 평판의 채택 수에는 자기 질문에 단 자기 답변의 채택이 들어가지 않는다.
 
+## 재현 러너 v0 (Phase 80, ADR-0087)
+
+- `GET /questions/{id}/reproduction`(비로그인 허용): `{capsule, latestByEnvironment, recentRuns}`를 돌려준다.
+  - `capsule`은 활성 캡슐이고, 없으면 `null`이다.
+  - 실행 항목: `result`(`REPRODUCED`·`NOT_REPRODUCED`·`BUILD_FAILED`·`INCONCLUSIVE`), `exitCode`, `commitSha`, `environment`, `runnerEnvironment`, `trustedWorkflow`, `runUrl`, `durationMs`, `finishedAt`, `hasLog`
+- `PUT /questions/{id}/reproduction`(작성자만): `{repository, ref, kind, command}`로 캡슐을 붙이거나 바꾼다. 이전 캡슐은 대체된다.
+  - 저장소는 `owner/name` 또는 `https://github.com/owner/name`이다.
+  - `kind`는 `SCRIPT`·`GRADLE`·`DOCKERFILE`이다.
+- `POST /questions/{id}/reproduction/rerun-requests`(로그인): `{reason}`. 이의 제기다. 이미 열려 있으면 409이고, 다음 실행이 오면 닫힌다.
+- `GET /questions/{id}/reproduction/runs/{runId}/log`(비로그인 허용): 비밀값을 가린 로그 꼬리다. 오래된 실행은 `logTail`이 `null`이다.
+- `POST /reproduction-runs`: GitHub Actions가 호출하며, 사용자 인증 없이 `X-Quno-Attestation: <GitHub OIDC 토큰>`만으로 인증한다.
+  - 본문: `{capsuleId, kind, command, buildFailed, exitCode, environment, durationMs, logTail}`
+  - 응답: 201 `{runId, result}`
+  - 토큰이 없거나 유효하지 않으면 401이다.
+  - 저장소·고정 커밋·명세 불일치, 대체된 캡슐, 같은 실행 시도는 409다.
+- 위 질문 단위 경로는 모두 공개 범위 게이트(ADR-0085)를 따른다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
