@@ -6,6 +6,7 @@ import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
 import com.quno.qunobackend.domain.question.QuestionViewCountRepository
+import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshotRepository
 import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
 import com.quno.qunobackend.domain.vote.VoteRepository
@@ -22,6 +23,7 @@ class GetQuestionUseCase(
     /** Null only in unit tests that don't care about the stack fingerprint; Spring always injects it. */
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
     private val contentMasker: QuestionContentMasker? = null,
+    private val environmentSnapshotRepository: EnvironmentSnapshotRepository? = null,
 ) {
     /** [viewerId] null is an anonymous reader: secrets are masked for everyone but the author (ADR-0081). */
     fun execute(questionId: Long, viewerId: Long? = null): QuestionSummaryResult {
@@ -50,6 +52,7 @@ class GetQuestionUseCase(
             updatedAt = question.updatedAt,
             dependencies = questionDependencyRepository?.findByQuestionId(questionId).orEmpty(),
             maskedSecretCount = maskedCount,
+            environmentSnapshot = environmentSnapshotRepository?.findByQuestionId(questionId),
         )
     }
 }

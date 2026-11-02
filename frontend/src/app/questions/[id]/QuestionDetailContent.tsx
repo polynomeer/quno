@@ -31,6 +31,7 @@ import { Skeleton } from "@/shared/ui/Skeleton";
 import { FormError } from "@/shared/ui/FormError";
 import { DependencyChips } from "@/features/stack/ui/DependencyChips";
 import { MaskedSecretsNotice } from "@/features/engine/ui/MaskedSecretsNotice";
+import { EnvironmentSnapshotPanel } from "@/features/snapshot/ui/EnvironmentSnapshotPanel";
 import { QunoBotSuggestions } from "@/features/engine/ui/QunoBotSuggestions";
 import {
   SegmentedControl,
@@ -177,6 +178,8 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
                   )}
                 </details>
               )}
+
+              <EnvironmentSnapshotPanel snapshot={question.environmentSnapshot} />
 
               <CommentSection targetType="QUESTION" targetId={question.id} />
             </div>

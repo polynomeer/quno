@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.engine.QuestionEngine
 import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.CreateQuestionCommand
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
+import com.quno.qunobackend.application.snapshot.EnvironmentSnapshotAttacher
 import com.quno.qunobackend.domain.engine.QuestionContent
 import com.quno.qunobackend.domain.question.Question
 import com.quno.qunobackend.domain.question.QuestionRepository
@@ -33,6 +34,7 @@ class CreateQuestionUseCase(
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
     private val questionEngine: QuestionEngine? = null,
+    private val snapshotAttacher: EnvironmentSnapshotAttacher? = null,
 ) {
     @Transactional
     fun execute(command: CreateQuestionCommand): QuestionMutationResult {
@@ -61,6 +63,7 @@ class CreateQuestionUseCase(
             }
 
         errorSignatureIndexer?.index(questionId, version.versionNumber, command.body, command.logs)
+        command.environmentSnapshot?.let { snapshotAttacher?.attach(questionId, version.versionNumber, it) }
         questionEngine?.analyze(questionId, command.authorId, version.versionNumber, QuestionContent(command.title, command.body, command.environment, command.logs))
         if (command.dependencies.isNotEmpty()) {
             questionDependencyRepository?.replaceForQuestion(questionId, version.versionNumber, checkedDependencies(command.dependencies))

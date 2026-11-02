@@ -34,6 +34,7 @@ pbpaste | quno login --api-url https://api.quno.example --web-url https://quno.e
 | `quno search hikari pool` | 질문 검색(`--limit`, `--json`) |
 | `cat error.log \| quno errors` | 같은 에러(예외 클래스 + 상위 프레임)를 다룬 질문 찾기. `--file`로도 줄 수 있음 |
 | `cat error.log \| quno ask --title "..." --body "..."` | 질문 작성. 표준 입력은 로그가 됨 |
+| `quno capture` | 질문에 첨부될 환경 스냅샷(Tier 0)을 그대로 보여줌(`--json`이면 JSON만) |
 
 `quno ask`는 게시 전에 다음을 보여줍니다.
 
@@ -44,6 +45,10 @@ pbpaste | quno login --api-url https://api.quno.example --web-url https://quno.e
 
 - 사내 패키지는 `--exclude 'com.acme:*'`(반복 가능, 끝에 `*`면 접두사 일치)로 뺍니다.
 - 스택 지문을 아예 붙이지 않으려면 `--no-stack`을 씁니다.
+- 이 컴퓨터의 환경 스냅샷(OS·JDK·Node·컨테이너·로케일·도구 버전·git 커밋·잠금 파일의 해석된 의존성)도 함께 붙습니다. `--no-snapshot`으로 뺄 수 있습니다.
+  - 홈 경로·사용자명·호스트명은 지우고, git 원격은 호스트만 남깁니다.
+  - 환경 변수는 CI 표시 같은 정해진 이름이 있는지만 보고, 값은 읽지 않습니다.
+  - 정확히 무엇이 나가는지는 `quno capture`로 확인할 수 있습니다([ADR-0083](../docs/architecture/decisions/0083-environment-snapshot-tier0-collector.md)).
 - 원본 빌드 파일은 서버에 저장되지 않습니다.
 
 ## MCP 서버

@@ -5,7 +5,28 @@ import { describe, expect, it } from "vitest";
 import { askCommand, type AskOptions } from "../src/commands/ask.js";
 import type { CommandContext } from "../src/commands/context.js";
 import { errorsCommand } from "../src/commands/errors.js";
+import type { SnapshotV1 } from "../src/snapshot/schema.js";
 import { QUESTION_SUMMARY, fakeClient, type Recorded } from "./fake-api.js";
+
+const SNAPSHOT: SnapshotV1 = {
+  schemaVersion: 1,
+  source: "COLLECTOR",
+  collector: { name: "quno-cli", version: "0.2.0" },
+  capturedAt: "2026-11-01T00:00:00.000Z",
+  tiers: [0],
+  tier0: {
+    os: { name: "macOS", version: "15.1", arch: "arm64", kernel: "24.1.0" },
+    runtimes: [{ name: "java", vendor: "Eclipse Adoptium", version: "21.0.5" }],
+    container: { docker: false, wsl: false, rosetta: false },
+    locale: { lang: "ko_KR", encoding: "UTF-8", timezone: "Asia/Seoul" },
+    tools: [],
+    ide: null,
+    ci: { isCi: false, provider: null },
+    git: null,
+    dependencies: { resolution: "none", source: null, items: [] },
+    jvmArgs: [],
+  },
+};
 
 const BOOT = { ecosystem: "GRADLE_PLUGIN", name: "org.springframework.boot", version: "4.0.8" };
 const ACME = { ecosystem: "MAVEN", name: "com.acme:billing-common", version: "0.14.0" };
@@ -28,11 +49,12 @@ function setup(stdin: string | null, confirm: CommandContext["confirm"]) {
     err: (line) => err.push(line),
     stdin,
     confirm,
+    captureSnapshot: () => SNAPSHOT,
   };
   return { ctx, calls, out, err };
 }
 
-const OPTIONS: AskOptions = { title: "Pool exhausted", body: "Connections never return.", tags: [], exclude: ["com.acme:*"], stack: true, yes: false };
+const OPTIONS: AskOptions = { title: "Pool exhausted", body: "Connections never return.", tags: [], exclude: ["com.acme:*"], stack: true, snapshot: true, yes: false };
 const posts = (calls: Recorded[]) => calls.filter((c) => c.method === "POST" && c.path === "/api/v1/questions");
 
 describe("quno ask", () => {
@@ -42,6 +64,7 @@ describe("quno ask", () => {
     expect(await askCommand(ctx, OPTIONS)).toBe(0);
 
     expect(out).toContain("스택 지문: build.gradle.kts에서 1개, 1개 제외");
+    expect(out.some((line) => line.startsWith("환경 스냅샷: macOS 15.1 arm64 · Eclipse Adoptium 21.0.5 · 잠금 파일 없음"))).toBe(true);
     expect(out.some((line) => line.includes("같은 에러를 다룬 질문이 이미 1건"))).toBe(true);
     expect(posts(calls)[0]).toMatchObject({
       body: {
@@ -49,6 +72,7 @@ describe("quno ask", () => {
         body: "Connections never return.",
         logs: "java.sql.SQLTransientConnectionException: HikariPool-1\n\tat x",
         dependencies: [BOOT],
+        environmentSnapshot: SNAPSHOT,
       },
     });
     expect(out.at(-1)).toBe("게시했습니다: #99 http://web.test/questions/99");
@@ -70,11 +94,12 @@ describe("quno ask", () => {
     expect(posts(confirmed.calls)).toHaveLength(1);
   });
 
-  it("leaves the stack out with --no-stack and needs a title and body", async () => {
+  it("leaves the stack and the snapshot out with --no-stack --no-snapshot, and needs a title and body", async () => {
     const { ctx, calls } = setup(null, async () => true);
-    await askCommand(ctx, { ...OPTIONS, stack: false });
+    await askCommand(ctx, { ...OPTIONS, stack: false, snapshot: false });
     expect(calls.some((c) => c.path === "/api/v1/stack-fingerprints/parse")).toBe(false);
     expect(posts(calls)[0]?.body).not.toHaveProperty("dependencies");
+    expect(posts(calls)[0]?.body).not.toHaveProperty("environmentSnapshot");
 
     expect(await askCommand(ctx, { ...OPTIONS, body: " " })).toBe(2);
   });

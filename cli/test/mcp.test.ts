@@ -52,7 +52,23 @@ describe("quno mcp", () => {
 
   it("get_question puts the accepted answer first, clips long bodies and caps the answers", async () => {
     const mcp = await connect({
-      "GET /api/v1/questions/11": () => ({ json: { ...QUESTION_SUMMARY, versionNumber: 1, body: "b".repeat(MAX_FIELD_CHARS + 10), environment: null, logs: null, dependencies: [] } }),
+      "GET /api/v1/questions/11": () => ({
+        json: {
+          ...QUESTION_SUMMARY,
+          versionNumber: 1,
+          body: "b".repeat(MAX_FIELD_CHARS + 10),
+          environment: null,
+          logs: null,
+          dependencies: [],
+          environmentSnapshot: {
+            source: "COLLECTOR",
+            collector: "quno-cli 0.2.0",
+            fingerprint: "0123456789abcdef",
+            serverRedactions: 0,
+            document: { tier0: { os: { name: "macOS", arch: "arm64" }, runtimes: [{ name: "java", vendor: "Amazon Corretto", version: "21.0.10" }], jvmArgs: ["-Xmx2g"] } },
+          },
+        },
+      }),
       "GET /api/v1/questions/11/answers": () => ({
         json: [
           answer(1, { score: 9 }),
@@ -69,6 +85,10 @@ describe("quno mcp", () => {
     expect(value.body.length).toBe(MAX_FIELD_CHARS + 1);
     expect(value.bodyOrLogsTruncated).toBe(true);
     expect(value).toMatchObject({ answerCount: 7, moreAnswersAt: "http://web.test/questions/11" });
+    expect(value).toMatchObject({
+      environmentSnapshot: { fingerprint: "0123456789abcdef", source: "COLLECTOR", runtimes: [{ name: "java", vendor: "Amazon Corretto", version: "21.0.10" }] },
+    });
+    expect(JSON.stringify(value), "only the summary an agent needs").not.toContain("-Xmx2g");
   });
 
   it("reports API failures as tool errors instead of crashing", async () => {

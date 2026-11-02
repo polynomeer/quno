@@ -4,6 +4,7 @@ import com.quno.qunobackend.application.engine.QuestionEngine
 import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureIndexer
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
+import com.quno.qunobackend.application.snapshot.EnvironmentSnapshotAttacher
 import com.quno.qunobackend.domain.common.OutboxEvent
 import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
@@ -32,6 +33,7 @@ class ReviseQuestionUseCase(
     private val errorSignatureIndexer: QuestionErrorSignatureIndexer? = null,
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
     private val questionEngine: QuestionEngine? = null,
+    private val snapshotAttacher: EnvironmentSnapshotAttacher? = null,
 ) {
     @Transactional
     fun execute(command: ReviseQuestionCommand): QuestionMutationResult {
@@ -62,6 +64,7 @@ class ReviseQuestionUseCase(
         )
 
         errorSignatureIndexer?.index(command.questionId, newVersion.versionNumber, command.body, command.logs)
+        command.environmentSnapshot?.let { snapshotAttacher?.attach(command.questionId, newVersion.versionNumber, it) }
         questionEngine?.analyze(command.questionId, question.authorId, newVersion.versionNumber, QuestionContent(command.title, command.body, command.environment, command.logs))
         command.dependencies?.let {
             questionDependencyRepository?.replaceForQuestion(command.questionId, newVersion.versionNumber, checkedDependencies(it))

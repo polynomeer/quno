@@ -1,6 +1,6 @@
 import type { QunoClient } from "../client.js";
 import { boundedJson, clip } from "../limits.js";
-import type { QuestionSummary } from "../types.js";
+import type { QuestionDetail, QuestionSummary } from "../types.js";
 
 /** What every tool returns: pretty JSON for the text channel and the same object as structured content. */
 export interface ToolOutput {
@@ -48,6 +48,21 @@ export async function searchQuestions(client: QunoClient, webUrl: string, input:
 
 const MAX_ANSWERS = 5;
 
+/** What an agent needs to compare environments, not the whole document (ADR-0083). */
+function snapshotSummary(snapshot: NonNullable<QuestionDetail["environmentSnapshot"]>) {
+  const tier0 = snapshot.document.tier0 ?? {};
+  return {
+    fingerprint: snapshot.fingerprint,
+    source: snapshot.source,
+    collector: snapshot.collector,
+    os: tier0.os ?? null,
+    runtimes: tier0.runtimes ?? [],
+    container: tier0.container ?? null,
+    locale: tier0.locale ?? null,
+    resolvedDependencies: (tier0.dependencies?.items ?? []).slice(0, 50),
+  };
+}
+
 export async function getQuestion(client: QunoClient, webUrl: string, input: { id: number }): Promise<ToolOutput> {
   const [question, answers] = await Promise.all([client.getQuestion(input.id), client.answers(input.id)]);
   const body = clip(question.body);
@@ -76,6 +91,7 @@ export async function getQuestion(client: QunoClient, webUrl: string, input: { i
       tags: question.tags,
       environment: question.environment,
       dependencies: question.dependencies ?? [],
+      environmentSnapshot: question.environmentSnapshot ? snapshotSummary(question.environmentSnapshot) : null,
       body: body.text,
       logs: logs.text,
       ...(body.truncated || logs.truncated ? { bodyOrLogsTruncated: true } : {}),
