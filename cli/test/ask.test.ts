@@ -79,6 +79,19 @@ describe("quno ask", () => {
     expect(out.at(-1)).toBe("게시했습니다: #99 http://web.test/questions/99");
   });
 
+  it("asks one organization privately with --org, and says so before posting", async () => {
+    const { ctx, calls, out } = setup(null, async () => true);
+
+    expect(await askCommand(ctx, { ...OPTIONS, organizationId: 62 })).toBe(0);
+
+    expect(out).toContain("공개 범위: 조직 #62 멤버만");
+    expect(posts(calls)[0]).toMatchObject({ body: { organizationId: 62 } });
+    const publicAsk = setup(null, async () => true);
+    await askCommand(publicAsk.ctx, OPTIONS);
+    expect(publicAsk.out).toContain("공개 범위: 전체 공개");
+    expect(posts(publicAsk.calls)[0]?.body).not.toHaveProperty("organizationId");
+  });
+
   it("posts nothing when the author says no", async () => {
     const { ctx, calls } = setup(null, async () => false);
     expect(await askCommand(ctx, OPTIONS)).toBe(1);

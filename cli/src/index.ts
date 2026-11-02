@@ -29,8 +29,9 @@ const HELP = `quno — Quno CLI and MCP server
   quno capture [--last-failure] [--preset P] [--omit 필드]... [--json]
                                                질문에 첨부될 환경 스냅샷 미리보기
   quno ask --title T (--body B | --body-file F) [--tag 태그]... [--exclude 패턴]... [--no-stack] [--no-snapshot]
-           [--last-failure] [--preset P] [--omit 필드]... [--yes]
-                                               질문 작성. 표준 입력은 로그, 빌드 파일은 스택 지문, 이 컴퓨터의 환경은 스냅샷
+           [--last-failure] [--preset P] [--omit 필드]... [--org 조직ID] [--yes]
+                                               질문 작성. 표준 입력은 로그, 빌드 파일은 스택 지문, 이 컴퓨터의 환경은 스냅샷.
+                                               --org를 주면 그 인증 조직 멤버만 보는 비공개 질문
   quno mcp                                     MCP 서버(stdio)
 
 프리셋(--preset): minimal(환경 식별 정보만) · standard(기본) · detailed(메모리·디스크·cgroup 한도까지, Tier 2)
@@ -133,6 +134,7 @@ async function main(argv: string[]): Promise<number> {
       "no-stack": { type: "boolean", default: false },
       "no-snapshot": { type: "boolean", default: false },
       "last-failure": { type: "boolean", default: false },
+      org: { type: "string" },
       ...optionSpec,
       yes: { type: "boolean", default: false },
       "api-url": { type: "string" },
@@ -146,6 +148,11 @@ async function main(argv: string[]): Promise<number> {
     return 2;
   }
   const omit = values.omit ?? [];
+  const organizationId = values.org === undefined ? undefined : Number(values.org);
+  if (organizationId !== undefined && !(Number.isInteger(organizationId) && organizationId > 0)) {
+    console.error("--org에는 조직 ID(양의 정수)를 넣어 주세요. 조직 ID는 웹의 조직 페이지 주소에 있습니다.");
+    return 2;
+  }
 
   const needsStdin = command === "login" || command === "errors" || command === "ask";
   const stdin = needsStdin && !(command === "errors" && values.file) ? await readStdin() : null;
@@ -189,6 +196,7 @@ async function main(argv: string[]): Promise<number> {
         lastFailure: values["last-failure"],
         preset,
         omit,
+        organizationId,
         yes: values.yes,
       });
     case undefined:

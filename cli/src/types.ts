@@ -85,6 +85,8 @@ export interface NewQuestion {
   dependencies?: StackDependency[];
   /** A `quno.snapshot/1` document (ADR-0083). */
   environmentSnapshot?: unknown;
+  /** Only members of this verified organization will see it (ADR-0085). */
+  organizationId?: number;
 }
 
 /** The server's view of a stored snapshot: its own fingerprint, provenance, and the document. */
