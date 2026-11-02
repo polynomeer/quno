@@ -585,6 +585,19 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - "같은 문제" 클러스터는 범위가 같은 질문끼리만 묶인다(다르면 400). 비공개 질문의 Direct Ask는 그 조직 멤버에게만 보낼 수 있다(아니면 400).
 - 평판·배지 수에는 비공개 활동도 들어간다(숫자만, ADR-0085의 의도적 잔여).
 
+### 정제 후 공개 (Phase 79.3, ADR-0086)
+
+- `POST /questions/{id}/promotion/check`: 본문 `{title, body, environment?, logs?, tags, solution}`의 사내 정보 후보를 돌려준다.
+  - 응답은 `{findings: [{field, label, start, end, excerpt, severity}]}`이다. `severity`는 `BLOCK` 또는 `WARN`이다.
+  - `excerpt`는 비밀값을 앞 4자만 보여 준다.
+- `POST /questions/{id}/promotion`: 같은 본문으로 새 공개 질문과 작성자의 해결 답변(채택됨)을 만들고 201과 새 질문을 돌려준다.
+  - 작성자가 아니면 403이다.
+  - 공개 질문이거나 채택된 답변이 없으면 400이다.
+  - `BLOCK` 항목이 남아 있으면 400이다.
+  - 이미 승격했으면 409다.
+- 비공개 질문의 `GET /questions/{id}`에 `promotedQuestionId`가 붙는다. 공개 카드는 원본을 가리키지 않는다.
+- 평판의 채택 수에는 자기 질문에 단 자기 답변의 채택이 들어가지 않는다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
