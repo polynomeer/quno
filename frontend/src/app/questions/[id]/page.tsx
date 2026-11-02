@@ -31,8 +31,10 @@ export async function generateMetadata({ params }: PageProps<"/questions/[id]">)
   const { id } = await params;
   const question = await fetchQuestionForMetadata(id);
 
+  // This fetch is anonymous, so a private question (Phase 79, ADR-0085) looks missing here too.
+  // A neutral title says nothing either way; the client sets the real one for members.
   if (!question) {
-    return { title: "질문을 찾을 수 없습니다" };
+    return { title: "질문", robots: { index: false } };
   }
 
   const description = excerpt(question.body);

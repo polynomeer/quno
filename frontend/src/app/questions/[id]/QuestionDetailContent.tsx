@@ -1,7 +1,7 @@
 "use client";
 
 import { PrivateBadge } from "@/features/question/ui/PrivateBadge";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
 import { useSession } from "@/features/auth/hooks/useSession";
@@ -54,6 +54,10 @@ const SORT_OPTIONS: SegmentOption<AnswerSort>[] = [
 export function QuestionDetailContent({ questionId }: { questionId: number }) {
   const { data: me, isLoading: authLoading } = useSession();
   const { data: question, isLoading, isError, error } = useQuestion(questionId);
+  // The server rendered a neutral title for a private question (its fetch is anonymous); members get the real one here.
+  useEffect(() => {
+    if (question?.visibility === "ORG") document.title = `${question.title} - Quno`;
+  }, [question?.visibility, question?.title]);
   const { data: related } = useRelatedQuestions(questionId);
   const { data: answers } = useAnswers(questionId);
   const acceptAnswer = useAcceptAnswer(questionId);
