@@ -4,19 +4,27 @@ import com.quno.qunobackend.domain.engine.SecretDetector
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
+import com.quno.qunobackend.domain.question.QuestionViewCountRepository
 import com.quno.qunobackend.domain.reproduction.DuplicateReproductionRunException
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsule
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleNotFoundException
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleRepository
 import com.quno.qunobackend.domain.reproduction.ReproductionKind
+import com.quno.qunobackend.domain.reproduction.ReproductionMatrix
+import com.quno.qunobackend.domain.reproduction.ReproductionMetrics
+import com.quno.qunobackend.domain.reproduction.ReproductionPlan
 import com.quno.qunobackend.domain.reproduction.ReproductionResult
 import com.quno.qunobackend.domain.reproduction.ReproductionRun
 import com.quno.qunobackend.domain.reproduction.ReproductionRunMismatchException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunNotFoundException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunRepository
+import com.quno.qunobackend.domain.reproduction.ReproductionSchedule
 import com.quno.qunobackend.domain.reproduction.RunAttestationVerifier
+import com.quno.qunobackend.domain.stack.AnswerApplicabilityRepository
+import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 import java.time.Instant
 
 data class ReproductionCapsuleResult(
@@ -29,6 +37,8 @@ data class ReproductionCapsuleResult(
     val createdAt: Instant,
     val rerunRequestedAt: Instant?,
     val rerunReason: String?,
+    val matrixPackage: String?,
+    val matrixVersions: List<String>,
 )
 
 data class ReproductionRunSummary(
@@ -43,12 +53,18 @@ data class ReproductionRunSummary(
     val durationMs: Long?,
     val finishedAt: Instant,
     val hasLog: Boolean,
+    val dependencyVersion: String?,
 )
 
-/** What the question page shows (Phase 80.3): the capsule, the newest run per environment and the recent history. */
+/**
+ * What the question page shows (Phase 80.3, 81.3): the capsule, the newest run per matrix cell
+ * (environment × version), the versions the next run will walk, and the recent history.
+ */
 data class ReproductionPanelResult(
     val capsule: ReproductionCapsuleResult?,
-    val latestByEnvironment: List<ReproductionRunSummary>,
+    val latestByCell: List<ReproductionRunSummary>,
+    val plannedVersions: List<String?>,
+    val nextDueAt: Instant?,
     val recentRuns: List<ReproductionRunSummary>,
 )
 
@@ -61,6 +77,8 @@ data class AttachReproductionCapsuleCommand(
     val ref: String,
     val kind: ReproductionKind,
     val command: String,
+    val matrixPackage: String? = null,
+    val matrixVersions: List<String> = emptyList(),
 )
 
 /** What the workflow says it ran and saw. Where, which commit and which run come from the token instead. */
@@ -73,13 +91,41 @@ data class ReportReproductionRunCommand(
     val environment: String,
     val durationMs: Long?,
     val logTail: String?,
+    /** The matrix cell's version; null outside a matrix. */
+    val dependencyVersion: String? = null,
 )
 
 data class ReportedRunResult(val runId: Long, val result: ReproductionResult)
 
-private fun ReproductionCapsule.toResult() = ReproductionCapsuleResult(requireNotNull(id), repository, ref, kind, command, createdBy, createdAt, rerunRequestedAt, rerunReason)
+private fun ReproductionCapsule.toResult() = ReproductionCapsuleResult(requireNotNull(id), repository, ref, kind, command, createdBy, createdAt, rerunRequestedAt, rerunReason, matrixPackage, matrixVersions)
 
-private fun ReproductionRun.toSummary() = ReproductionRunSummary(requireNotNull(id), result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, logTail != null)
+private fun ReproductionRun.toSummary() = ReproductionRunSummary(requireNotNull(id), result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, logTail != null, dependencyVersion)
+
+/** The plan for a capsule right now (Phase 81.2): due or not, and which versions. Shared by the page and the workflow. */
+@Service
+class ReproductionPlanner(
+    private val runRepository: ReproductionRunRepository,
+    private val viewCountRepository: QuestionViewCountRepository,
+    private val dependencyRepository: QuestionDependencyRepository,
+    private val applicabilityRepository: AnswerApplicabilityRepository,
+) {
+    fun plan(capsule: ReproductionCapsule, eventName: String?, now: Instant = Instant.now()): ReproductionPlan {
+        val lastRunAt = runRepository.lastFinishedAt(requireNotNull(capsule.id))
+        val viewCount = viewCountRepository.countByQuestionId(capsule.questionId)
+        val reason = ReproductionSchedule.dueReason(eventName, capsule.rerunRequestedAt != null, lastRunAt, viewCount, now)
+        val nextDueAt = lastRunAt?.plus(ReproductionSchedule.intervalFor(viewCount))
+        return ReproductionPlan(due = reason != null, reason = reason ?: "not-due", versions = versions(capsule), nextDueAt = nextDueAt)
+    }
+
+    fun versions(capsule: ReproductionCapsule): List<String?> {
+        val target = capsule.matrixPackage ?: return listOf(null)
+        val questionVersion = dependencyRepository.findByQuestionId(capsule.questionId).firstOrNull { it.name.equals(target, ignoreCase = true) }?.version
+        val edges = applicabilityRepository.findByQuestionIds(listOf(capsule.questionId))[capsule.questionId].orEmpty()
+            .filter { it.name.equals(target, ignoreCase = true) }
+            .flatMap { listOfNotNull(it.fromVersion, it.untilVersion) }
+        return ReproductionMatrix.plan(capsule, questionVersion, edges)
+    }
+}
 
 /**
  * Attaching a capsule (Phase 80, ADR-0087). The question's author owns its reproduction target;
@@ -94,7 +140,7 @@ class AttachReproductionCapsuleUseCase(
     fun execute(command: AttachReproductionCapsuleCommand): ReproductionCapsuleResult {
         val question = questionRepository.findByIdForUpdate(command.questionId) ?: throw QuestionNotFoundException(command.questionId)
         if (question.authorId != command.actorId) throw QuestionAccessDeniedException(command.questionId)
-        val capsule = ReproductionCapsule.attach(command.questionId, command.repository, command.ref, command.kind, command.command, command.actorId)
+        val capsule = ReproductionCapsule.attach(command.questionId, command.repository, command.ref, command.kind, command.command, command.actorId, command.matrixPackage, command.matrixVersions)
         capsuleRepository.findActiveByQuestionId(command.questionId)?.let { capsuleRepository.save(it.supersede()) }
         return capsuleRepository.save(capsule).toResult()
     }
@@ -104,13 +150,17 @@ class AttachReproductionCapsuleUseCase(
 class GetReproductionPanelUseCase(
     private val capsuleRepository: ReproductionCapsuleRepository,
     private val runRepository: ReproductionRunRepository,
+    private val planner: ReproductionPlanner,
 ) {
     fun execute(questionId: Long): ReproductionPanelResult {
-        val capsule = capsuleRepository.findActiveByQuestionId(questionId) ?: return ReproductionPanelResult(null, emptyList(), emptyList())
+        val capsule = capsuleRepository.findActiveByQuestionId(questionId) ?: return ReproductionPanelResult(null, emptyList(), emptyList(), null, emptyList())
         val capsuleId = requireNotNull(capsule.id)
+        val plan = planner.plan(capsule, eventName = null)
         return ReproductionPanelResult(
             capsule = capsule.toResult(),
-            latestByEnvironment = runRepository.findLatestPerEnvironment(capsuleId).map { it.toSummary() },
+            latestByCell = runRepository.findLatestPerCell(capsuleId).map { it.toSummary() },
+            plannedVersions = plan.versions,
+            nextDueAt = if (plan.due) null else plan.nextDueAt,
             recentRuns = runRepository.findRecentByCapsuleId(capsuleId, RECENT_RUNS).map { it.toSummary() },
         )
     }
@@ -159,10 +209,10 @@ class RecordReproductionRunUseCase(
         val capsule = capsuleRepository.findByIdForUpdate(command.capsuleId)
             ?: throw ReproductionCapsuleNotFoundException("reproduction capsule ${command.capsuleId} not found")
         val capsuleId = requireNotNull(capsule.id)
-        if (!capsule.active) throw ReproductionRunMismatchException("capsule $capsuleId was replaced; update the workflow to the new capsule")
-        if (!capsule.isFrom(attestation.repository)) throw ReproductionRunMismatchException("capsule $capsuleId belongs to ${capsule.repository}, not ${attestation.repository}")
-        capsule.pinnedSha?.let { if (it != attestation.sha) throw ReproductionRunMismatchException("capsule $capsuleId is pinned to $it, the run was ${attestation.sha}") }
+        capsule.checkRunFrom(attestation)
         if (!capsule.matches(command.kind, command.command)) throw ReproductionRunMismatchException("the run's kind/command differ from capsule $capsuleId")
+        val dependencyVersion = command.dependencyVersion?.trim()?.takeIf { it.isNotEmpty() }?.take(MAX_VERSION)
+        capsule.checkCell(dependencyVersion)
         if (runRepository.exists(capsuleId, attestation.runId, attestation.runAttempt)) throw DuplicateReproductionRunException(attestation.runId, attestation.runAttempt)
 
         val tail = command.logTail?.let(::tailOf)
@@ -185,6 +235,8 @@ class RecordReproductionRunUseCase(
                 logTail = tail?.let { SecretDetector.redact(it) },
                 maskedSecretCount = masked,
                 finishedAt = Instant.now(),
+                dependencyVersion = dependencyVersion,
+                eventName = attestation.eventName,
             ),
         )
         if (capsule.rerunRequestedAt != null) capsuleRepository.save(capsule.rerunAnswered())
@@ -200,5 +252,38 @@ class RecordReproductionRunUseCase(
         const val MAX_LOG_LINES = 200
         const val MAX_LOG_CHARS = 64 * 1024
         const val MAX_ENVIRONMENT = 200
+        const val MAX_VERSION = 100
+    }
+}
+
+/**
+ * What a scheduled workflow asks before it runs (Phase 81.2, ADR-0088): the same token as a report
+ * proves the caller, and the answer is the capsule's matrix if it is due, or "skip" with when it
+ * will be. Nothing about the question is returned — only the capsule's own package versions.
+ */
+@Service
+class PlanReproductionRunUseCase(
+    private val verifier: RunAttestationVerifier,
+    private val capsuleRepository: ReproductionCapsuleRepository,
+    private val planner: ReproductionPlanner,
+) {
+    fun execute(attestationToken: String, capsuleId: Long): ReproductionPlan {
+        val attestation = verifier.verify(attestationToken)
+        val capsule = capsuleRepository.findById(capsuleId) ?: throw ReproductionCapsuleNotFoundException("reproduction capsule $capsuleId not found")
+        capsule.checkRunFrom(attestation)
+        val plan = planner.plan(capsule, attestation.eventName)
+        return if (plan.due) plan else plan.copy(versions = emptyList())
+    }
+}
+
+/** Runner health over the last [WINDOW] (Phase 81.4). */
+@Service
+class GetReproductionMetricsUseCase(
+    private val runRepository: ReproductionRunRepository,
+) {
+    fun execute(now: Instant = Instant.now()): ReproductionMetrics = runRepository.metrics(now.minus(WINDOW))
+
+    companion object {
+        val WINDOW: Duration = Duration.ofDays(30)
     }
 }

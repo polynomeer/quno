@@ -81,6 +81,7 @@ class GithubOidcRunAttestationVerifier(
             workflowRef = workflowRef,
             runnerEnvironment = claims["runner_environment"] as? String ?: "unknown",
             trustedWorkflow = workflowRef.startsWith(properties.trustedWorkflowPrefix),
+            eventName = (claims["event_name"] as? String)?.take(40),
         )
     }
 

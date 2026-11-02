@@ -121,6 +121,7 @@ class SecurityConfig(
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction/runs/{runId}/log", permitAll)
                 // Reported by GitHub Actions, not a user: the OIDC token in X-Quno-Attestation is the credential.
                 authorize(HttpMethod.POST, "/api/v1/reproduction-runs", permitAll)
+                authorize(HttpMethod.POST, "/api/v1/reproduction-runs/plan", permitAll)
                 // Public read access, part 2 (Phase 30, ADR-0042) — tags, organizations, user
                 // profiles. Same method-scoped principle: the write verbs on these same paths
                 // (tag edit, org create/join/leave, follow) still require auth.
