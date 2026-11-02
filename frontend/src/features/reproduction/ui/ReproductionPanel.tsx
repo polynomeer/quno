@@ -54,15 +54,28 @@ export function ReproductionPanel({ questionId, isAuthor, signedIn }: { question
       ) : capsule ? (
         <>
           <CapsuleSummary capsule={capsule} />
-          {data.latestByEnvironment.length === 0 ? (
+          {data.latestByCell.length === 0 ? (
             <p className="text-sm text-text-secondary">아직 실행 결과가 없어요.</p>
+          ) : capsule.matrixPackage ? (
+            <>
+              <MatrixTable runs={data.latestByCell} plannedVersions={data.plannedVersions} />
+              <details className="text-xs">
+                <summary className="cursor-pointer font-semibold text-text-secondary hover:text-text-primary">칸별 실행 로그</summary>
+                <ul className="mt-2 space-y-2">
+                  {data.latestByCell.map((run) => (
+                    <RunRow key={run.id} questionId={questionId} run={run} />
+                  ))}
+                </ul>
+              </details>
+            </>
           ) : (
             <ul className="space-y-2">
-              {data.latestByEnvironment.map((run) => (
+              {data.latestByCell.map((run) => (
                 <RunRow key={run.id} questionId={questionId} run={run} />
               ))}
             </ul>
           )}
+          {data.nextDueAt && <p className="text-xs text-text-secondary">다음 정기 실행 {relativeTime(data.nextDueAt)}</p>}
           <RerunRequest questionId={questionId} capsule={capsule} signedIn={signedIn} />
           {isAuthor && <WorkflowSnippet capsule={capsule} />}
         </>
@@ -89,6 +102,63 @@ function CapsuleSummary({ capsule }: { capsule: ReproductionCapsule }) {
       <p className="font-mono text-[12px] break-all text-text-secondary">
         {capsule.kind} · {capsule.command}
       </p>
+      {capsule.matrixPackage && (
+        <p className="text-xs text-text-secondary">
+          버전 매트릭스: <span className="font-mono break-all">{capsule.matrixPackage}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Versions down, environments across (Phase 81.3): where the bug shows and where it stops showing,
+ * at a glance. Planned versions without a run yet stay as empty rows so the gaps are visible.
+ */
+function MatrixTable({ runs, plannedVersions }: { runs: ReproductionRun[]; plannedVersions: (string | null)[] }) {
+  const environments = [...new Set(runs.map((run) => run.environment))];
+  const versions = [...new Set([...plannedVersions, ...runs.map((run) => run.dependencyVersion)].filter((v): v is string => v !== null))];
+  const cell = (version: string, environment: string) => runs.find((run) => run.dependencyVersion === version && run.environment === environment);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-xs">
+        <thead>
+          <tr className="text-text-secondary">
+            <th scope="col" className="py-1 pr-2 font-semibold">
+              버전
+            </th>
+            {environments.map((environment) => (
+              <th key={environment} scope="col" className="py-1 pr-2 font-semibold">
+                {environment}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {versions.map((version) => (
+            <tr key={version} className="border-t border-border">
+              <th scope="row" className="py-1.5 pr-2 font-mono font-semibold text-text-primary">
+                {version}
+              </th>
+              {environments.map((environment) => {
+                const run = cell(version, environment);
+                return (
+                  <td key={environment} className="py-1.5 pr-2">
+                    {run ? (
+                      <span className={`inline-flex h-[20px] items-center rounded-full px-1.5 text-[11px] font-semibold ${RESULT[run.result].className}`}>
+                        {RESULT[run.result].label}
+                      </span>
+                    ) : (
+                      <span className="text-text-secondary">—</span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -102,6 +172,7 @@ function RunRow({ questionId, run }: { questionId: number; run: ReproductionRun 
     <li className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <span className={`inline-flex h-[22px] items-center rounded-full px-2 text-[11px] font-semibold ${result.className}`}>{result.label}</span>
+        {run.dependencyVersion && <span className="font-mono text-[12px] text-text-primary">{run.dependencyVersion}</span>}
         <span className="text-text-body">{run.environment}</span>
         <span className="text-text-secondary">· {relativeTime(run.finishedAt)}</span>
       </div>
@@ -199,10 +270,22 @@ function CapsuleForm({ questionId, current, onDone }: { questionId: number; curr
   const [ref, setRef] = useState(current?.ref ?? "main");
   const [kind, setKind] = useState<ReproductionKind>(current?.kind ?? "GRADLE");
   const [command, setCommand] = useState(current?.command ?? "");
+  const [matrixPackage, setMatrixPackage] = useState(current?.matrixPackage ?? "");
+  const [matrixVersions, setMatrixVersions] = useState(current?.matrixVersions.join(", ") ?? "");
 
   async function submit() {
+    const versions = matrixVersions
+      .split(",")
+      .map((version) => version.trim())
+      .filter(Boolean);
     try {
-      await attach.mutateAsync({ repository: repository.trim(), ref: ref.trim(), kind, command: command.trim() });
+      await attach.mutateAsync({
+        repository: repository.trim(),
+        ref: ref.trim(),
+        kind,
+        command: command.trim(),
+        ...(matrixPackage.trim() ? { matrixPackage: matrixPackage.trim(), matrixVersions: versions } : {}),
+      });
       onDone();
     } catch {
       // surfaced below via attach.error
@@ -246,6 +329,35 @@ function CapsuleForm({ questionId, current, onDone }: { questionId: number; curr
         <Input id="capsule-command" className="font-mono text-[13px]" value={command} onChange={(event) => setCommand(event.target.value)} />
         <p className="text-xs text-text-secondary">{KIND_HINT[kind]}. 버그가 보이면 실패(0이 아닌 종료 코드), 고쳐졌으면 성공해야 해요.</p>
       </div>
+      <div className="space-y-1">
+        <label htmlFor="capsule-matrix-package" className="block text-xs font-semibold">
+          버전 매트릭스 패키지 (선택)
+        </label>
+        <Input
+          id="capsule-matrix-package"
+          className="font-mono text-[13px]"
+          placeholder="com.zaxxer:HikariCP"
+          value={matrixPackage}
+          onChange={(event) => setMatrixPackage(event.target.value)}
+        />
+        <p className="text-xs text-text-secondary">
+          질문의 스택 지문과 답변의 적용 범위 경계에서 최대 5개 버전을 골라 버전마다 실행해요. 빌드는 QUNO_VERSION(Gradle은 qunoVersion 속성)으로 버전을 받아요.
+        </p>
+      </div>
+      {matrixPackage.trim() && (
+        <div className="space-y-1">
+          <label htmlFor="capsule-matrix-versions" className="block text-xs font-semibold">
+            꼭 돌릴 버전 (쉼표로 구분, 선택)
+          </label>
+          <Input
+            id="capsule-matrix-versions"
+            className="font-mono text-[13px]"
+            placeholder="4.0.3, 6.0.0"
+            value={matrixVersions}
+            onChange={(event) => setMatrixVersions(event.target.value)}
+          />
+        </div>
+      )}
       {current && <p className="text-xs text-warning">캡슐을 바꾸면 지금까지의 실행 결과는 새 캡슐에 이어지지 않아요.</p>}
       <FormError error={attach.error} fallback="재현 캡슐을 저장하지 못했습니다." size="xs" />
       <div className="flex gap-2">
@@ -263,7 +375,10 @@ function CapsuleForm({ questionId, current, onDone }: { questionId: number; curr
 /** What the author adds to the repository: Quno's reusable workflow with this capsule's spec. */
 export function workflowSnippet(capsule: ReproductionCapsule, apiBaseUrl: string): string {
   const javaLine = capsule.kind === "GRADLE" ? '\n      java-version: "21"' : "";
-  return `name: Quno reproduction
+  const matrixNote = capsule.matrixPackage
+    ? `\n# ${capsule.matrixPackage} 버전은 QUNO_VERSION(Gradle은 findProperty("qunoVersion"))으로 들어옵니다.`
+    : "";
+  return `name: Quno reproduction${matrixNote}
 on:
   workflow_dispatch:
   schedule: [{ cron: "17 3 * * *" }]
@@ -299,8 +414,8 @@ function WorkflowSnippet({ capsule }: { capsule: ReproductionCapsule }) {
       <summary className="cursor-pointer font-semibold text-text-secondary hover:text-text-primary">워크플로 설정</summary>
       <div className="mt-2 space-y-2">
         <p className="text-text-secondary">
-          저장소의 <code className="font-mono">.github/workflows/quno-reproduce.yml</code>로 추가하세요. 매일 한 번, 그리고 Actions 탭에서 직접 실행할
-          때 결과를 보내요. 비밀값은 필요 없어요.
+          저장소의 <code className="font-mono">.github/workflows/quno-reproduce.yml</code>로 추가하세요. 매일 Quno에 실행할 차례인지 묻고(조회가 많은
+          질문일수록 자주), Actions 탭에서 직접 실행하거나 이의 제기가 있으면 바로 돌아요. 비밀값은 필요 없어요.
         </p>
         <pre className="overflow-auto rounded-xl bg-surface-subtle p-3 font-mono text-[11px] leading-relaxed text-text-primary">{snippet}</pre>
         <Button variant="secondary" className="min-h-8 px-3 text-xs" onClick={copy}>

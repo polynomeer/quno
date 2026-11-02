@@ -14,6 +14,9 @@ export interface ReproductionCapsule {
   createdAt: string;
   rerunRequestedAt: string | null;
   rerunReason: string | null;
+  /** The package whose versions the matrix walks (Phase 81, ADR-0088); null = one cell. */
+  matrixPackage: string | null;
+  matrixVersions: string[];
 }
 
 export interface ReproductionRun {
@@ -30,11 +33,18 @@ export interface ReproductionRun {
   durationMs: number | null;
   finishedAt: string;
   hasLog: boolean;
+  /** The matrix cell's version; null outside a matrix. */
+  dependencyVersion: string | null;
 }
 
 export interface ReproductionPanel {
   capsule: ReproductionCapsule | null;
-  latestByEnvironment: ReproductionRun[];
+  /** Newest run per matrix cell (environment × dependencyVersion). */
+  latestByCell: ReproductionRun[];
+  /** Versions the next run walks; `[null]` without a matrix package. */
+  plannedVersions: (string | null)[];
+  /** When the scheduled run is next due; null when due now. */
+  nextDueAt: string | null;
   recentRuns: ReproductionRun[];
 }
 
@@ -49,4 +59,6 @@ export interface AttachCapsuleInput {
   ref: string;
   kind: ReproductionKind;
   command: string;
+  matrixPackage?: string;
+  matrixVersions?: string[];
 }
