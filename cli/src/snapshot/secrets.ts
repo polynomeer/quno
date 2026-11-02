@@ -63,7 +63,7 @@ const RULES: Rule[] = [
   { regex: /\bAIza[0-9A-Za-z_-]{35}\b/g },
   { regex: /\bquno_pat_[A-Za-z0-9_-]{20,}/g },
   { regex: /\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g },
-  { regex: /\b[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^\s:/@]+:([^\s@/]{3,})@/dg, group: 1 },
+  { regex: /\b[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^\s:/@]+:([^\s@/]{3,})@/dg, group: 1, accept: (text, start, end) => text.slice(start, end) !== REDACTED },
   {
     regex: /\b[\w.-]*(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[:=]\s*["']?([^\s"',;]{8,})/dgi,
     group: 1,

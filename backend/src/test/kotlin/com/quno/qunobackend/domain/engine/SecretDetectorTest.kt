@@ -32,6 +32,7 @@ class SecretDetectorTest {
         assertTrue(labels("password=changeme").isEmpty(), "low-entropy sample values stay readable")
         assertTrue(labels("password=\${DB_PASSWORD}").isEmpty(), "placeholders are not secrets")
         assertTrue(labels("token: <your-token-here>").isEmpty())
+        assertTrue(labels("jdbc:postgresql://quno:[REDACTED]@db.internal/quno").isEmpty(), "already redacted by the collector")
     }
 
     @Test

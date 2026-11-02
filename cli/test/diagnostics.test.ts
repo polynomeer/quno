@@ -157,6 +157,7 @@ describe("secret leak corpus (Phase 93.7, shared with the server)", () => {
   it("redacts every corpus value from free text", () => {
     const leaked = corpus.filter((entry) => redactSecrets(entry.context).text.includes(entry.value)).map((entry) => entry.label);
     expect(leaked).toEqual([]);
+    expect(redactSecrets("jdbc:postgresql://app:[REDACTED]@db/app").count).toBe(0);
   });
 
   it("leaves no corpus value in a failure snapshot, wherever it was planted", () => {

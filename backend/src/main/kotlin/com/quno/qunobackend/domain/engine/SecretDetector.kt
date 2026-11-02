@@ -24,7 +24,8 @@ object SecretDetector {
         Rule("Google API 키", Regex("""\bAIza[0-9A-Za-z_\-]{35}\b""")),
         Rule("Quno 액세스 토큰", Regex("""\bquno_pat_[A-Za-z0-9_\-]{20,}""")),
         Rule("JWT", Regex("""\beyJ[A-Za-z0-9_\-]{8,}\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}""")),
-        Rule("URL 속 비밀번호", Regex("""\b[a-zA-Z][a-zA-Z0-9+.\-]*://[^\s:/@]+:([^\s@/]{3,})@"""), group = 1),
+        // A password the collector already replaced is not a new finding (ADR-0084).
+        Rule("URL 속 비밀번호", Regex("""\b[a-zA-Z][a-zA-Z0-9+.\-]*://[^\s:/@]+:([^\s@/]{3,})@"""), group = 1, accept = { text, range -> text.substring(range) != REDACTED }),
         Rule(
             "비밀값",
             Regex("""(?i)\b[\w.\-]*(?:password|passwd|pwd|secret|token|api[_\-]?key|access[_\-]?key|client[_\-]?secret)["']?\s*[:=]\s*["']?([^\s"',;]{8,})"""),
