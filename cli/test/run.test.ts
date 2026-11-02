@@ -30,6 +30,7 @@ function setup() {
   return { ctx, store, deps, err, written };
 }
 
+// process.exit() would drop output still buffered on the pipe; the scripts set exitCode instead.
 const node = (script: string) => [process.execPath, "-e", script];
 
 describe("quno run", () => {
@@ -44,7 +45,7 @@ describe("quno run", () => {
 
   it("freezes a failure with its exit code, scrubbed tail and symptom, and suggests Tier 2 for memory", async () => {
     const { ctx, store, deps, err } = setup();
-    const script = "for (let i = 0; i < 250; i++) console.log('line ' + i); console.error('java.lang.OutOfMemoryError: Java heap space'); console.error('password=Vb1Kc9Wd3Fs6'); process.exit(3)";
+    const script = "for (let i = 0; i < 250; i++) console.log('line ' + i); console.error('java.lang.OutOfMemoryError: Java heap space'); console.error('password=Vb1Kc9Wd3Fs6'); process.exitCode = 3";
     expect(await runCommand(ctx, node(script), { omit: [] }, deps)).toBe(3);
 
     const frozen = store.data["last-failure"] as FrozenFailure;
