@@ -532,14 +532,17 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
   - 삭제된 질문, 내 질문, 이미 Watch 중인 질문은 뺀다. 겹친 패키지 수가 많은 순, 그다음 최신순이다.
   - 제안만 한다. 구독은 사용자가 고른 질문에 기존 `POST /questions/{id}/watch`로 하며, 새 질문을 자동 구독하지 않는다.
 
-### 환경 스냅샷 (Phase 93, ADR-0083)
+### 환경 스냅샷 (Phase 93, ADR-0083·0084)
 
 - `POST /questions`와 `POST /questions/{id}/versions`가 선택 필드 `environmentSnapshot`(`quno.snapshot/1` JSON 객체)을 받는다.
   - 수정 요청에서 생략하면 기존 스냅샷을 유지하고, 보내면 바꾼다. Fork는 복사하지 않는다.
   - 서버는 모든 문자열 값을 비밀값 탐지기로 다시 가리고(`serverRedactions`), 환경 지문을 직접 계산해 문서의 `fingerprint`를 덮어쓴다. 지문은 OS·아키텍처·컨테이너·런타임 메이저 버전 기준 SHA-256 16자리다.
   - `schemaVersion`이 1이 아니거나, 64KB를 넘거나, 객체가 아니거나, `source`가 `COLLECTOR`|`MANUAL`이 아니면 400이다. 의존성은 500개까지다.
-- `GET /questions/{id}` 응답의 `environmentSnapshot`: `{versionNumber, schemaVersion, source, collector, fingerprint, serverRedactions, document, createdAt}` 또는 `null`
-- 수집은 CLI `quno capture`/`quno ask`가 로컬에서 한다([cli/README.md](../../cli/README.md)).
+  - `tiers`는 0·1·2만 허용하고, `tiers`에 2가 없는데 `tier2`가 있으면 400이다(Tier 2는 옵트인, ADR-0084).
+- `GET /questions/{id}` 응답의 `environmentSnapshot`: `{versionNumber, schemaVersion, source, collector, fingerprint, serverRedactions, symptom, document, createdAt}` 또는 `null`
+  - `symptom`은 문서의 `tier1.symptom`(`OUT_OF_MEMORY`·`DB_TIMEOUT`·`DEPENDENCY_RESOLUTION`·`TEST_FAILURE`·`BUILD_FAILURE`)이다. Tier 0만 있거나 서버가 모르는 이름이면 `null`이다.
+  - 문서의 `tier1`(명령·종료 코드·로그 창 정보·환경 변수·설정 키·실패한 테스트), `tier2`(메모리·CPU·디스크·cgroup), `delta`(마지막 성공 이후 변화), `omitted`(작성자가 뺀 필드)는 그대로 보관해 돌려준다. 실패 직전 출력은 문서가 아니라 질문의 `logs`로 온다.
+- 수집은 CLI `quno run`/`quno capture`/`quno ask`와 MCP `capture_environment`가 로컬에서 한다([cli/README.md](../../cli/README.md)).
 
 ## 엔진 제안과 비밀값 마스킹 (Phase 78, ADR-0081)
 
