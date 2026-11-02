@@ -16,7 +16,8 @@ const VISIBLE_KEYS = 8;
 
 const VISIBLE_DEPENDENCIES = 6;
 
-type Row = { key: string; value: string };
+/** [wide] rows (a long command line) take the full width of the two-column grid. */
+type Row = { key: string; value: string; wide?: boolean };
 
 function rowsOf(snapshot: EnvironmentSnapshot): Row[] {
   const tier0 = snapshot.document.tier0 ?? {};
@@ -60,7 +61,8 @@ function diagnosticRows(snapshot: EnvironmentSnapshot): Row[] {
     if (value) rows.push({ key, value });
   };
   if (tier1) {
-    push("명령", tier1.command?.argv?.join(" "));
+    const command = tier1.command?.argv?.join(" ");
+    if (command) rows.push({ key: "명령", value: command, wide: true });
     const exit = tier1.command?.exitCode ?? tier1.command?.signal;
     const seconds = tier1.command?.durationMs != null ? ` · ${(tier1.command.durationMs / 1000).toFixed(1)}초` : "";
     if (exit != null) push("종료 코드", `${exit}${seconds}`);
@@ -80,7 +82,7 @@ function Rows({ rows }: { rows: Row[] }) {
   return (
     <dl className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
       {rows.map((row) => (
-        <div key={`${row.key}-${row.value}`} className="flex justify-between gap-2.5 border-b border-border py-1.5">
+        <div key={`${row.key}-${row.value}`} className={cn("flex justify-between gap-2.5 border-b border-border py-1.5", row.wide && "sm:col-span-2")}>
           <dt className="shrink-0 text-text-secondary">{row.key}</dt>
           <dd className="text-right font-mono text-xs break-all">{row.value}</dd>
         </div>
@@ -107,7 +109,7 @@ function Delta({ delta }: { delta: NonNullable<EnvironmentSnapshot["document"]["
         {delta.configFiles?.length ? ` · 설정 파일 ${delta.configFiles.join(", ")}` : ""}
       </p>
       {(delta.dependencies?.length ?? 0) > 0 && (
-        <ul className="mt-1 font-mono text-xs">
+        <ul className="mt-1 font-mono text-xs break-all">
           {delta.dependencies!.map((dependency) => (
             <li key={dependency.name}>
               {dependency.name.split(":").pop()} {dependency.from ?? "(없음)"} → {dependency.to ?? "(제거)"}
@@ -116,7 +118,7 @@ function Delta({ delta }: { delta: NonNullable<EnvironmentSnapshot["document"]["
         </ul>
       )}
       {files.length > 0 && (
-        <ul className="mt-1 font-mono text-xs text-text-secondary">
+        <ul className="mt-1 font-mono text-xs break-all text-text-secondary">
           {files.slice(0, VISIBLE_FILES).map((file) => (
             <li key={file}>{file}</li>
           ))}
