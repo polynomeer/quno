@@ -2,6 +2,7 @@
 
 import { PrivateBadge } from "@/features/question/ui/PrivateBadge";
 import { PromotionPanel } from "@/features/question/ui/PromotionPanel";
+import { ReproductionPanel } from "@/features/reproduction/ui/ReproductionPanel";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
@@ -270,6 +271,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
       <aside className="min-w-0 space-y-4">
         {me && <LiveChatPanel questionId={question.id} />}
         <QuestionTimeline questionId={question.id} />
+        <ReproductionPanel questionId={question.id} isAuthor={me?.id === question.authorId} signedIn={Boolean(me)} />
         {me && (
           <>
             <ClusterPanel

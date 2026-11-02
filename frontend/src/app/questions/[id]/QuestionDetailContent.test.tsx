@@ -34,6 +34,7 @@ vi.mock("@/features/cluster/ui/ClusterPanel", () => ({ ClusterPanel: () => <div 
 vi.mock("@/features/question/ui/ForkPanel", () => ({ ForkPanel: () => <div data-testid="fork-panel" /> }));
 vi.mock("@/features/live-chat/ui/LiveChatPanel", () => ({ LiveChatPanel: () => <div data-testid="live-chat-panel" /> }));
 vi.mock("@/features/engine/ui/QunoBotSuggestions", () => ({ QunoBotSuggestions: () => <div data-testid="qunobot-suggestions" /> }));
+vi.mock("@/features/reproduction/ui/ReproductionPanel", () => ({ ReproductionPanel: () => <div data-testid="reproduction-panel" /> }));
 vi.mock("@/features/answer/ui/AnswerCard", () => ({
   AnswerCard: ({ answer, canAccept, onAccept, isAccepting }: { answer: Answer; canAccept?: boolean; onAccept?: () => void; isAccepting?: boolean }) => (
     <li data-testid={`answer-${answer.id}`}>
