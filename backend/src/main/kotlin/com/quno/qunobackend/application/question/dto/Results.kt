@@ -39,6 +39,7 @@ data class QuestionSummaryResult(
     val visibility: QuestionVisibility = QuestionVisibility.PUBLIC,
     val organizationId: Long? = null,
     val organizationName: String? = null,
+    val promotedQuestionId: Long? = null,
 )
 
 data class QuestionVersionResult(

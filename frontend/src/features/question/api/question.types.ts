@@ -65,6 +65,8 @@ export interface QuestionDetail {
   visibility?: QuestionVisibility;
   organizationId?: number | null;
   organizationName?: string | null;
+  /** The sanitized public card this private question was promoted to (ADR-0086); private side only. */
+  promotedQuestionId?: number | null;
 }
 
 /** Mirrors backend EnvironmentSnapshotResponse; `document` is the scrubbed `quno.snapshot/1`. */
@@ -182,4 +184,26 @@ export interface QuestionGraph {
   forkedFrom: QuestionSummary | null;
   forks: QuestionSummary[];
   relatedQuestions: QuestionSummary[];
+}
+
+/** What the author wants the public card to say (Phase 79.3, ADR-0086); `solution` becomes its accepted answer. */
+export interface PromotionDraft {
+  title: string;
+  body: string;
+  environment?: string;
+  logs?: string;
+  tags: string[];
+  solution: string;
+}
+
+export type PromotionField = "title" | "body" | "environment" | "logs" | "tags" | "solution";
+
+/** BLOCK stops the promotion; WARN is for the author to judge. `excerpt` never shows a secret in full. */
+export interface PromotionFinding {
+  field: PromotionField;
+  label: string;
+  start: number;
+  end: number;
+  excerpt: string;
+  severity: "BLOCK" | "WARN";
 }

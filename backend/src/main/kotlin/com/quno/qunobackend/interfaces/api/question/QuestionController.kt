@@ -18,6 +18,7 @@ import com.quno.qunobackend.application.question.usecase.GetQuestionVersionUseCa
 import com.quno.qunobackend.application.question.usecase.ListQuestionForksUseCase
 import com.quno.qunobackend.application.question.usecase.ListQuestionVersionsUseCase
 import com.quno.qunobackend.application.question.usecase.MarkQuestionOutdatedUseCase
+import com.quno.qunobackend.application.question.usecase.PromoteQuestionUseCase
 import com.quno.qunobackend.application.question.usecase.RecordQuestionViewUseCase
 import com.quno.qunobackend.application.question.usecase.ReviseQuestionUseCase
 import com.quno.qunobackend.application.search.usecase.QuestionSearchUseCase
@@ -57,6 +58,7 @@ class QuestionController(
     private val nicknameResolver: NicknameResolver,
     private val objectMapper: ObjectMapper,
     private val access: QuestionAccess,
+    private val promoteQuestionUseCase: PromoteQuestionUseCase,
 ) {
 
     @PostMapping
@@ -105,6 +107,7 @@ class QuestionController(
             visibility = result.visibility,
             organizationId = result.organizationId,
             organizationName = result.organizationName,
+            promotedQuestionId = result.promotedQuestionId,
         )
     }
 
@@ -236,6 +239,23 @@ class QuestionController(
 
     @GetMapping("/{id}/graph")
     fun graph(@AuthenticationPrincipal viewerId: Long, @PathVariable id: Long): QuestionGraphResponse = getQuestionGraphUseCase.execute(id, access.viewer(viewerId)).toResponse()
+
+    /** Previews what may still be internal in a promotion draft (Phase 79.3, ADR-0086). Author only. */
+    @PostMapping("/{id}/promotion/check")
+    fun checkPromotion(
+        @AuthenticationPrincipal actorId: Long,
+        @PathVariable id: Long,
+        @Valid @RequestBody request: PromoteQuestionRequest,
+    ): PromotionCheckResponse = PromotionCheckResponse(promoteQuestionUseCase.check(id, actorId, request.toDraft()).map { it.toResponse() })
+
+    /** Creates the sanitized public card; refused while BLOCK findings remain. */
+    @PostMapping("/{id}/promotion")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun promote(
+        @AuthenticationPrincipal actorId: Long,
+        @PathVariable id: Long,
+        @Valid @RequestBody request: PromoteQuestionRequest,
+    ): QuestionMutationResponse = promoteQuestionUseCase.execute(id, actorId, request.toDraft()).toResponse()
 
     private fun anonymousViewerKey(request: HttpServletRequest): String {
         val raw = "${request.remoteAddr}|${request.getHeader("User-Agent").orEmpty()}"

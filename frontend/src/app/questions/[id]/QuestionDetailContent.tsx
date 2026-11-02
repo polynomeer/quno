@@ -1,6 +1,7 @@
 "use client";
 
 import { PrivateBadge } from "@/features/question/ui/PrivateBadge";
+import { PromotionPanel } from "@/features/question/ui/PromotionPanel";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
@@ -191,6 +192,8 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
             </div>
           </div>
         </article>
+
+        <PromotionPanel question={question} isAuthor={me?.id === question.authorId} />
 
         {me?.id === question.authorId && <QunoBotSuggestions questionId={question.id} current={question} />}
 

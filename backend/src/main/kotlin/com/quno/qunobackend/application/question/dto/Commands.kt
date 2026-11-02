@@ -40,3 +40,13 @@ data class ForkQuestionCommand(
     val originQuestionId: Long,
     val actorId: Long,
 )
+
+/** What the author wants the public card to say (Phase 79.3, ADR-0086); [solution] becomes its accepted answer. */
+data class PromotionDraft(
+    val title: String,
+    val body: String,
+    val environment: String?,
+    val logs: String?,
+    val tags: List<String>,
+    val solution: String,
+)

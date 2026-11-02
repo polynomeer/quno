@@ -4,9 +4,11 @@ import com.quno.qunobackend.application.engine.QuestionContentMasker
 import com.quno.qunobackend.application.question.dto.QuestionSummaryResult
 import com.quno.qunobackend.domain.organization.OrganizationRepository
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionPromotionRepository
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
 import com.quno.qunobackend.domain.question.QuestionViewCountRepository
+import com.quno.qunobackend.domain.question.QuestionVisibility
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshotRepository
 import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
@@ -26,6 +28,7 @@ class GetQuestionUseCase(
     private val contentMasker: QuestionContentMasker? = null,
     private val environmentSnapshotRepository: EnvironmentSnapshotRepository? = null,
     private val organizationRepository: OrganizationRepository? = null,
+    private val promotionRepository: QuestionPromotionRepository? = null,
 ) {
     /** [viewerId] null is an anonymous reader: secrets are masked for everyone but the author (ADR-0081). */
     fun execute(questionId: Long, viewerId: Long? = null): QuestionSummaryResult {
@@ -58,6 +61,7 @@ class GetQuestionUseCase(
             visibility = question.visibility,
             organizationId = question.organizationId,
             organizationName = question.organizationId?.let { organizationRepository?.findById(it)?.name },
+            promotedQuestionId = if (question.visibility == QuestionVisibility.ORG) promotionRepository?.findPublicQuestionId(questionId) else null,
         )
     }
 }

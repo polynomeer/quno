@@ -39,9 +39,12 @@ import com.quno.qunobackend.domain.organization.OrganizationNotFoundException
 import com.quno.qunobackend.domain.organization.PublicEmailDomainException
 import com.quno.qunobackend.domain.organization.VerifiedOrganizationJoinRequiresEmailException
 import com.quno.qunobackend.domain.question.PrivateQuestionNotAllowedException
+import com.quno.qunobackend.domain.question.PromotionBlockedException
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
+import com.quno.qunobackend.domain.question.QuestionAlreadyPromotedException
 import com.quno.qunobackend.domain.question.QuestionAlreadyResolvedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
+import com.quno.qunobackend.domain.question.QuestionPromotionNotAllowedException
 import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
 import com.quno.qunobackend.domain.report.ModeratorAccessDeniedException
 import com.quno.qunobackend.domain.report.ReportAlreadyResolvedException
@@ -100,6 +103,7 @@ class GlobalExceptionHandler {
         PersonalAccessTokenLimitExceededException::class,
         EngineSuggestionNotOpenException::class,
         EngineSuggestionOutdatedException::class,
+        QuestionAlreadyPromotedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
 
@@ -173,6 +177,8 @@ class GlobalExceptionHandler {
         InvalidEnvironmentSnapshotException::class,
         ClusterScopeMismatchException::class,
         PrivateQuestionNotAllowedException::class,
+        QuestionPromotionNotAllowedException::class,
+        PromotionBlockedException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

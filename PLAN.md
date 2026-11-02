@@ -903,7 +903,7 @@ IDE 연동(88)의 선행 조건이다. 지금 질문에는 공개 범위 개념�
 
 - [x] 79.1 설계·ADR — 공개 범위 모델(PUBLIC|ORG), 조직 멤버만 조회, 비공개 질문은 외부 모델 전송·러너 실행 기본 금지. **누수 경로 전수 점검 목록**: 검색, 피드, Flow, 대시보드, 관련 질문, Cluster, 태그·프로필 목록, sitemap, OG, 알림 payload, 전역 `@Cacheable` 캐시(공개 캐시에 비공개가 섞이지 않게) — 인증 조직만, 숨긴 질문은 404, URL 게이트+viewer 필수 하이드레이터+SQL 필터([ADR-0085](docs/architecture/decisions/0085-org-private-questions-and-visibility-gate.md))
 - [x] 79.2 백엔드 — 범위 필드와 접근 제어, 모든 조회 경로에 필터 적용 — STOMP 구독, 알림 발송 시점 재검사, Fork 범위 상속, 같은 범위끼리만 클러스터, Direct Ask는 멤버에게만 포함
-- [ ] 79.3 정제 후 공개 — 비공개 질문이 해결되면 사내 정보를 제거·일반화한 공개 카드로 승격하자고 제안(작성자가 편집·승인)
+- [x] 79.3 정제 후 공개 — 비공개 질문이 해결되면 사내 정보를 제거·일반화한 공개 카드로 승격하자고 제안(작성자가 편집·승인) — 범위 전환이 아닌 새 카드+작성자 해결 답변, 조직 식별자·비밀값 차단·내부로 보이는 값 경고, 연결은 비공개 쪽에만, 자기 채택은 평판 제외, CLI `ask --org`([ADR-0086](docs/architecture/decisions/0086-sanitized-promotion-of-private-questions.md))
 - [x] 79.4 프론트엔드 — 질문 작성 시 공개 범위 선택, 비공개 표시
 - [x] 79.5 검증·문서화 — 모든 목록·검색 API에 대한 누수 테스트, 다른 조직·비로그인 접근 거부 테스트 — `PrivateQuestionLeakE2ETest`
 

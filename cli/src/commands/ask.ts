@@ -18,6 +18,8 @@ export interface AskOptions {
   lastFailure?: boolean;
   preset?: Preset;
   omit?: string[];
+  /** Ask this verified organization privately (Phase 79, ADR-0085); omitted = public. */
+  organizationId?: number;
   yes: boolean;
 }
 
@@ -76,6 +78,7 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
   }
 
   ctx.out(`제목: ${options.title}`);
+  ctx.out(`공개 범위: ${options.organizationId ? `조직 #${options.organizationId} 멤버만` : "전체 공개"}`);
   const logSource = logs && logs === failureLogs ? " (quno run이 기록한 실패 직전 출력)" : "";
   ctx.out(`로그: ${logs ? `${logs.trimEnd().split("\n").length}줄${logSource}` : "없음"} · 태그: ${options.tags.join(", ") || "없음"}`);
 
@@ -97,6 +100,7 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
     ...(options.tags.length > 0 ? { tags: options.tags } : {}),
     ...(dependencies.length > 0 ? { dependencies } : {}),
     ...(snapshot ? { environmentSnapshot: snapshot } : {}),
+    ...(options.organizationId ? { organizationId: options.organizationId } : {}),
   });
   ctx.out(`게시했습니다: #${created.id} ${ctx.config.webUrl}/questions/${created.id}`);
   return 0;

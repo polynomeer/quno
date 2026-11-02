@@ -3,6 +3,8 @@ import type {
   CreateQuestionInput,
   QuestionDetail,
   QuestionGraph,
+  PromotionDraft,
+  PromotionFinding,
   QuestionMutationResult,
   QuestionSummary,
   QuestionTimelineEvent,
@@ -29,4 +31,8 @@ export const questionApi = {
     httpClient.post<QuestionMutationResult>(`/api/v1/questions/${id}/outdated`, { reason }),
   fork: (id: number) => httpClient.post<QuestionMutationResult>(`/api/v1/questions/${id}/fork`),
   getGraph: (id: number) => httpClient.get<QuestionGraph>(`/api/v1/questions/${id}/graph`),
+  checkPromotion: (id: number, draft: PromotionDraft) =>
+    httpClient.post<{ findings: PromotionFinding[] }>(`/api/v1/questions/${id}/promotion/check`, draft),
+  promote: (id: number, draft: PromotionDraft) =>
+    httpClient.post<QuestionMutationResult>(`/api/v1/questions/${id}/promotion`, draft),
 };

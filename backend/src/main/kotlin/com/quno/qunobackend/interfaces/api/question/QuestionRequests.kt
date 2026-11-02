@@ -1,5 +1,6 @@
 package com.quno.qunobackend.interfaces.api.question
 
+import com.quno.qunobackend.application.question.dto.PromotionDraft
 import com.quno.qunobackend.domain.stack.Ecosystem
 import com.quno.qunobackend.domain.stack.StackDependency
 import jakarta.validation.Valid
@@ -63,3 +64,26 @@ data class MarkQuestionOutdatedRequest(
     @field:NotBlank
     val reason: String,
 )
+
+/** The public card a private question becomes (Phase 79.3, ADR-0086). Same limits as a new question. */
+data class PromoteQuestionRequest(
+    @field:NotBlank @field:Size(max = 300)
+    val title: String,
+    @field:NotBlank
+    val body: String,
+    val environment: String? = null,
+    val logs: String? = null,
+    val tags: List<String> = emptyList(),
+    /** The author's write-up of what solved it; becomes the card's accepted answer. */
+    @field:NotBlank
+    val solution: String,
+) {
+    fun toDraft() = PromotionDraft(
+        title = title.trim(),
+        body = body.trim(),
+        environment = environment?.trim()?.takeIf { it.isNotEmpty() },
+        logs = logs?.trim()?.takeIf { it.isNotEmpty() },
+        tags = tags,
+        solution = solution.trim(),
+    )
+}
