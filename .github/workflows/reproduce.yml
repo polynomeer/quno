@@ -1,0 +1,153 @@
+# Quno reproduction runner v0 (Phase 80, ADR-0087) — a reusable workflow other repositories call.
+#
+# It builds and runs one reproduction capsule in the caller's own GitHub Actions, then reports the
+# result to Quno with a GitHub OIDC token. Quno trusts the report because the token's
+# job_workflow_ref names this file: the caller can choose what to run, but not how the exit code is
+# read or what gets reported. Nothing here runs for this repository itself (workflow_call only).
+#
+# Caller (in the capsule's repository):
+#
+#   name: Quno reproduction
+#   on:
+#     workflow_dispatch:
+#     schedule: [{ cron: "17 3 * * *" }]
+#   permissions:
+#     contents: read
+#     id-token: write
+#   jobs:
+#     reproduce:
+#       uses: polynomeer/quno/.github/workflows/reproduce.yml@main
+#       with:
+#         quno-url: https://api.quno.example
+#         capsule-id: 12
+#         kind: GRADLE
+#         command: test --tests 'demo.PoolTest'
+#         java-version: "21"
+#
+# Exit codes follow `git bisect run`: 0 = the bug did not show, 125 = can't tell, 1..127 = the bug
+# showed. A failing build step is reported as BUILD_FAILED.
+name: Quno reproduce
+
+on:
+  workflow_call:
+    inputs:
+      quno-url:
+        description: Quno API base URL
+        type: string
+        required: true
+      capsule-id:
+        description: The capsule's id, shown on the question page
+        type: number
+        required: true
+      kind:
+        description: SCRIPT, GRADLE or DOCKERFILE — must match the capsule
+        type: string
+        required: true
+      command:
+        description: The capsule's command (or Dockerfile path for DOCKERFILE) — must match the capsule
+        type: string
+        required: true
+      java-version:
+        type: string
+        default: ""
+      node-version:
+        type: string
+        default: ""
+      runs-on:
+        type: string
+        default: ubuntu-latest
+      timeout-minutes:
+        type: number
+        default: 20
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  reproduce:
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    env:
+      # Inputs travel as environment variables, never interpolated into scripts.
+      QUNO_URL: ${{ inputs.quno-url }}
+      CAPSULE_ID: ${{ inputs.capsule-id }}
+      KIND: ${{ inputs.kind }}
+      COMMAND: ${{ inputs.command }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - if: inputs.java-version != ''
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+
+      - if: inputs.node-version != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Build
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          case "$KIND" in
+            SCRIPT) echo "no build step" | tee quno-build.log ;;
+            GRADLE) ./gradlew --no-daemon testClasses 2>&1 | tee quno-build.log ;;
+            DOCKERFILE) docker build -t quno-capsule -f "$COMMAND" . 2>&1 | tee quno-build.log ;;
+            *) echo "unknown kind: $KIND" | tee quno-build.log; exit 2 ;;
+          esac
+
+      - name: Reproduce
+        id: run
+        if: steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          start=$SECONDS
+          set +e
+          case "$KIND" in
+            SCRIPT) bash -c "$COMMAND" ;;
+            GRADLE) bash -c "./gradlew --no-daemon $COMMAND" ;;
+            DOCKERFILE) docker run --rm quno-capsule ;;
+          esac > quno-run.log 2>&1
+          code=$?
+          set -e
+          echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+          echo "duration-ms=$(( (SECONDS - start) * 1000 ))" >> "$GITHUB_OUTPUT"
+          tail -n 200 quno-run.log
+
+      - name: Report to Quno
+        if: always() && steps.build.outcome != 'skipped'
+        shell: bash
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          EXIT_CODE: ${{ steps.run.outputs.exit-code }}
+          DURATION_MS: ${{ steps.run.outputs.duration-ms }}
+          NODE_VERSION: ${{ inputs.node-version }}
+        run: |
+          token=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=quno" | jq -r .value)
+          environment="${ImageOS:-$RUNNER_OS}"
+          if command -v java >/dev/null; then environment="$environment · java $(java -version 2>&1 | head -1 | sed -E 's/.*version "([^"]+)".*/\1/')"; fi
+          if command -v node >/dev/null && [ -n "$NODE_VERSION" ]; then environment="$environment · node $(node --version)"; fi
+          if [ "$BUILD_OUTCOME" = success ]; then log=quno-run.log; build_failed=false; else log=quno-build.log; build_failed=true; fi
+          jq -n \
+            --argjson capsuleId "$CAPSULE_ID" \
+            --arg kind "$KIND" \
+            --arg command "$COMMAND" \
+            --argjson buildFailed "$build_failed" \
+            --arg exitCode "$EXIT_CODE" \
+            --arg environment "$environment" \
+            --arg durationMs "$DURATION_MS" \
+            --rawfile log <(tail -n 200 "$log" 2>/dev/null || true) \
+            '{capsuleId: $capsuleId, kind: $kind, command: $command, buildFailed: $buildFailed,
+              exitCode: ($exitCode | tonumber? // null), environment: $environment,
+              durationMs: ($durationMs | tonumber? // null), logTail: $log}' > quno-report.json
+          curl -sSf -X POST "$QUNO_URL/api/v1/reproduction-runs" \
+            -H "Content-Type: application/json" \
+            -H "X-Quno-Attestation: $token" \
+            --data @quno-report.json

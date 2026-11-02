@@ -49,6 +49,13 @@ import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
 import com.quno.qunobackend.domain.report.ModeratorAccessDeniedException
 import com.quno.qunobackend.domain.report.ReportAlreadyResolvedException
 import com.quno.qunobackend.domain.report.ReportNotFoundException
+import com.quno.qunobackend.domain.reproduction.DuplicateReproductionRunException
+import com.quno.qunobackend.domain.reproduction.InvalidReproductionCapsuleException
+import com.quno.qunobackend.domain.reproduction.InvalidRunAttestationException
+import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleNotFoundException
+import com.quno.qunobackend.domain.reproduction.ReproductionRunMismatchException
+import com.quno.qunobackend.domain.reproduction.ReproductionRunNotFoundException
+import com.quno.qunobackend.domain.reproduction.RerunAlreadyRequestedException
 import com.quno.qunobackend.domain.review.QuestionNotRevisedSinceRequestException
 import com.quno.qunobackend.domain.review.ReviewRequestAlreadyAddressedException
 import com.quno.qunobackend.domain.review.ReviewRequestNotFoundException
@@ -104,10 +111,13 @@ class GlobalExceptionHandler {
         EngineSuggestionNotOpenException::class,
         EngineSuggestionOutdatedException::class,
         QuestionAlreadyPromotedException::class,
+        ReproductionRunMismatchException::class,
+        DuplicateReproductionRunException::class,
+        RerunAlreadyRequestedException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
 
-    @ExceptionHandler(InvalidCredentialsException::class, InvalidTokenException::class)
+    @ExceptionHandler(InvalidCredentialsException::class, InvalidTokenException::class, InvalidRunAttestationException::class)
     fun handleUnauthorized(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse("UNAUTHORIZED", ex.message.orEmpty()))
 
     @ExceptionHandler(
@@ -129,6 +139,8 @@ class GlobalExceptionHandler {
         DirectAskPaymentNotFoundException::class,
         PersonalAccessTokenNotFoundException::class,
         EngineSuggestionNotFoundException::class,
+        ReproductionCapsuleNotFoundException::class,
+        ReproductionRunNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
@@ -179,6 +191,7 @@ class GlobalExceptionHandler {
         PrivateQuestionNotAllowedException::class,
         QuestionPromotionNotAllowedException::class,
         PromotionBlockedException::class,
+        InvalidReproductionCapsuleException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

@@ -116,6 +116,11 @@ class SecurityConfig(
                 authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/comments", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/comments/{commentId}/versions", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/search", permitAll)
+                // Reproduction status is part of what a shared question shows (Phase 80, ADR-0087).
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction/runs/{runId}/log", permitAll)
+                // Reported by GitHub Actions, not a user: the OIDC token in X-Quno-Attestation is the credential.
+                authorize(HttpMethod.POST, "/api/v1/reproduction-runs", permitAll)
                 // Public read access, part 2 (Phase 30, ADR-0042) — tags, organizations, user
                 // profiles. Same method-scoped principle: the write verbs on these same paths
                 // (tag edit, org create/join/leave, follow) still require auth.

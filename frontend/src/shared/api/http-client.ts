@@ -2,7 +2,7 @@ import { ApiError, RequestTimeoutError } from "./api-error";
 import { tokenStorage } from "@/shared/lib/token-storage";
 
 /** Base URL of the Kotlin Spring Boot API (see docs/architecture/system-architecture.md). */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8081";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8081";
 
 /**
  * Default client-side request timeout (see ADR-0058). The backend's own dependency timeouts
