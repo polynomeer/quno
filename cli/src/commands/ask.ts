@@ -1,5 +1,6 @@
 import { summarizeSnapshot } from "../snapshot/collect.js";
-import type { SnapshotV1 } from "../snapshot/schema.js";
+import { omitFields, summarizeFailure } from "../snapshot/compose.js";
+import type { Preset, SnapshotV1 } from "../snapshot/schema.js";
 import { dependencyLabel, detectStack } from "../stack.js";
 import type { StackDependency } from "../types.js";
 import type { CommandContext } from "./context.js";
@@ -13,6 +14,10 @@ export interface AskOptions {
   stack: boolean;
   /** Attach this machine's Tier 0 environment snapshot (ADR-0083). */
   snapshot: boolean;
+  /** Attach what `quno run` froze: its snapshot, and its output tail as logs unless stdin has logs (ADR-0084). */
+  lastFailure?: boolean;
+  preset?: Preset;
+  omit?: string[];
   yes: boolean;
 }
 
@@ -26,7 +31,20 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
     ctx.err("--title과 --body(또는 --body-file)가 필요합니다.");
     return 2;
   }
-  const logs = ctx.stdin?.trim() ? ctx.stdin : undefined;
+  let snapshot: SnapshotV1 | null = null;
+  let failureLogs: string | null = null;
+  if (options.lastFailure) {
+    const frozen = ctx.lastFailure();
+    if (!frozen) {
+      ctx.err("기록된 실패가 없습니다. quno run -- <명령>으로 실행하면 실패할 때 기록됩니다.");
+      return 2;
+    }
+    failureLogs = frozen.logs;
+    if (options.snapshot) snapshot = omitFields(frozen.snapshot, options.omit ?? []);
+  } else if (options.snapshot) {
+    snapshot = ctx.captureSnapshot({ preset: options.preset, omit: options.omit ?? [] });
+  }
+  const logs = ctx.stdin?.trim() ? ctx.stdin : (failureLogs ?? undefined);
 
   let dependencies: StackDependency[] = [];
   if (options.stack) {
@@ -41,10 +59,12 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
     }
   }
 
-  let snapshot: SnapshotV1 | null = null;
-  if (options.snapshot) {
-    snapshot = ctx.captureSnapshot();
-    ctx.out(`환경 스냅샷: ${summarizeSnapshot(snapshot)} (quno capture로 전체 내용 확인, --no-snapshot으로 제외)`);
+  if (snapshot) {
+    const preview = options.lastFailure ? "quno capture --last-failure" : "quno capture";
+    ctx.out(`환경 스냅샷: ${summarizeSnapshot(snapshot)} (${preview}로 전체 내용 확인, --no-snapshot으로 제외)`);
+    const failure = summarizeFailure(snapshot);
+    if (failure) ctx.out(`실패 진단: ${failure}`);
+    if (snapshot.omitted?.length) ctx.out(`뺀 필드: ${snapshot.omitted.join(", ")}`);
   }
 
   if (logs) {
@@ -56,7 +76,8 @@ export async function askCommand(ctx: CommandContext, options: AskOptions): Prom
   }
 
   ctx.out(`제목: ${options.title}`);
-  ctx.out(`로그: ${logs ? `${logs.trimEnd().split("\n").length}줄` : "없음"} · 태그: ${options.tags.join(", ") || "없음"}`);
+  const logSource = logs && logs === failureLogs ? " (quno run이 기록한 실패 직전 출력)" : "";
+  ctx.out(`로그: ${logs ? `${logs.trimEnd().split("\n").length}줄${logSource}` : "없음"} · 태그: ${options.tags.join(", ") || "없음"}`);
 
   if (!options.yes) {
     if (!ctx.confirm) {

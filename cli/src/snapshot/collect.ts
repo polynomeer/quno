@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { homedir, hostname, release, userInfo } from "node:os";
+import { existsSync, readdirSync, readFileSync, statfsSync, statSync } from "node:fs";
+import { availableParallelism, freemem, homedir, hostname, release, totalmem, userInfo } from "node:os";
 import { join } from "node:path";
 import type { SnapshotV1, Tier0 } from "./schema.js";
 
@@ -15,6 +15,11 @@ export interface Probe {
   run: (command: string, args: string[], cwd?: string) => string | null;
   read: (path: string) => string | null;
   exists: (path: string) => boolean;
+  /** File names in [dir]; empty when it doesn't exist. */
+  list: (dir: string) => string[];
+  mtimeMs: (path: string) => number | null;
+  /** Read only for Tier 2, which is opt-in. */
+  system: () => { totalMemBytes: number; freeMemBytes: number; cpus: number; diskFreeBytes: number | null };
   env: NodeJS.ProcessEnv;
   home: string;
   user: string;
@@ -48,6 +53,30 @@ export function realProbe(cwd: string): Probe {
       }
     },
     exists: existsSync,
+    list: (dir) => {
+      try {
+        return readdirSync(dir);
+      } catch {
+        return [];
+      }
+    },
+    mtimeMs: (path) => {
+      try {
+        return statSync(path).mtimeMs;
+      } catch {
+        return null;
+      }
+    },
+    system: () => {
+      let diskFreeBytes: number | null = null;
+      try {
+        const stats = statfsSync(cwd);
+        diskFreeBytes = stats.bavail * stats.bsize;
+      } catch {
+        // not every filesystem reports it
+      }
+      return { totalMemBytes: totalmem(), freeMemBytes: freemem(), cpus: availableParallelism(), diskFreeBytes };
+    },
     env: process.env,
     home: homedir(),
     user: (() => {
@@ -74,7 +103,7 @@ const CI_MARKERS: [string, string][] = [
   ["TF_BUILD", "azure-pipelines"],
 ];
 
-const SENSITIVE_PROPERTY = /password|passwd|secret|token|credential|apikey|api_key|private[_-]?key|(^|[._-])key$/i;
+export const SENSITIVE_PROPERTY = /password|passwd|secret|token|credential|apikey|api_key|private[_-]?key|(^|[._-])key$/i;
 
 function first(text: string | null, pattern: RegExp): string | null {
   return text?.match(pattern)?.[1] ?? null;
@@ -259,15 +288,16 @@ export function collectSnapshot(probe: Probe, now = new Date()): SnapshotV1 {
 
 /** One line for previews: `macOS 15.1 arm64 · Eclipse Adoptium 21.0.5 · lockfile 의존성 42개`. */
 export function summarizeSnapshot(snapshot: SnapshotV1): string {
-  const { os, runtimes, container, dependencies } = snapshot.tier0;
-  const java = runtimes.find((runtime) => runtime.name === "java");
+  // Fields may be missing when the user omitted them (ADR-0084).
+  const { os, runtimes, container, dependencies } = snapshot.tier0 as Partial<SnapshotV1["tier0"]>;
+  const java = runtimes?.find((runtime) => runtime.name === "java");
   return [
-    [os.name, os.version, os.arch].filter(Boolean).join(" "),
+    os ? [os.name, os.version, os.arch].filter(Boolean).join(" ") : null,
     java ? [java.vendor, java.version].filter(Boolean).join(" ") : null,
-    container.docker ? "Docker" : null,
-    container.wsl ? "WSL" : null,
-    container.rosetta ? "Rosetta" : null,
-    dependencies.resolution === "lockfile" ? `${dependencies.source} 의존성 ${dependencies.items.length}개` : "잠금 파일 없음",
+    container?.docker ? "Docker" : null,
+    container?.wsl ? "WSL" : null,
+    container?.rosetta ? "Rosetta" : null,
+    dependencies === undefined ? null : dependencies.resolution === "lockfile" ? `${dependencies.source} 의존성 ${dependencies.items.length}개` : "잠금 파일 없음",
   ]
     .filter(Boolean)
     .join(" · ");

@@ -3,7 +3,9 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
 import { MAX_FIELD_CHARS } from "../src/limits.js";
 import { createServer } from "../src/mcp/server.js";
+import { memoryStore, type FrozenFailure } from "../src/snapshot/state.js";
 import { QUESTION_SUMMARY, fakeClient } from "./fake-api.js";
+import { fakeProbe } from "./fake-probe.js";
 
 const answer = (id: number, extra: object = {}) => ({
   id,
@@ -17,9 +19,9 @@ const answer = (id: number, extra: object = {}) => ({
   ...extra,
 });
 
-async function connect(routes: Parameters<typeof fakeClient>[0]) {
+async function connect(routes: Parameters<typeof fakeClient>[0], local?: Parameters<typeof createServer>[2]) {
   const { client } = fakeClient(routes);
-  const server = createServer(client, "http://web.test");
+  const server = createServer(client, "http://web.test", local);
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
   const mcp = new Client({ name: "test", version: "0" });
@@ -34,6 +36,37 @@ describe("quno mcp", () => {
 
     expect(tools.map((tool) => tool.name).sort()).toEqual(["get_my_stack", "get_question", "search_known_issues", "search_questions"]);
     expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);
+  });
+
+  it("capture_environment builds a scrubbed snapshot locally and freezes a reported failure", async () => {
+    const store = memoryStore();
+    const mcp = await connect({}, { probe: () => fakeProbe({ env: { NODE_ENV: "test" } }), store });
+    const { tools } = await mcp.listTools();
+    const capture = tools.find((tool) => tool.name === "capture_environment");
+    expect(capture?.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, openWorldHint: false });
+
+    const plain = (await mcp.callTool({ name: "capture_environment", arguments: {} })).structuredContent as Record<string, unknown>;
+    expect(plain.summary).toBe("macOS arm64 · 잠금 파일 없음");
+    expect(plain.frozenAsLastFailure).toBe(false);
+    expect(store.data["last-failure"]).toBeUndefined();
+
+    const output = `${"noise\n".repeat(300)}java.lang.OutOfMemoryError: Java heap space at /Users/minji/work/app\nAuthorization: Bearer quno_pat_q8Zr2Lm4Nx7Vb1Kc9Wd3Fs6Ht0Yj5`;
+    const result = await mcp.callTool({ name: "capture_environment", arguments: { failure: { argv: ["npm", "test"], exitCode: 1, output } } });
+    const value = result.structuredContent as { failure: string; logs: string; frozenAsLastFailure: boolean; snapshot: { tiers: number[] } };
+    expect(value.failure).toContain("메모리 부족 · npm test → 1 · 로그 200/302줄");
+    expect(value.snapshot.tiers).toEqual([0, 1]);
+    expect(value.logs).toContain("OutOfMemoryError: Java heap space at ~/work/app");
+    expect(value.logs).not.toContain("quno_pat_q8Zr");
+    expect(value.frozenAsLastFailure).toBe(true);
+    expect((store.data["last-failure"] as FrozenFailure).logs).toBe(value.logs);
+
+    const again = (await mcp.callTool({ name: "capture_environment", arguments: { useLastFailure: true, omit: ["tier1.env"] } })).structuredContent as {
+      snapshot: { omitted: string[] };
+    };
+    expect(again.snapshot.omitted).toEqual(["tier1.env"]);
+
+    const refused = await mcp.callTool({ name: "capture_environment", arguments: { omit: ["schemaVersion"] } });
+    expect(refused.isError).toBe(true);
   });
 
   it("search_known_issues returns matches with links and a next step", async () => {
