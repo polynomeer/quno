@@ -1,5 +1,6 @@
 "use client";
 
+import { PrivateBadge } from "@/features/question/ui/PrivateBadge";
 import { useState } from "react";
 import Link from "next/link";
 import { ApiError, RequestTimeoutError } from "@/shared/api/api-error";
@@ -99,6 +100,7 @@ export function QuestionDetailContent({ questionId }: { questionId: number }) {
           <header className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={question.status} />
+              {question.visibility === "ORG" && <PrivateBadge organizationName={question.organizationName} />}
             </div>
             <h1 className="max-w-[900px] text-[26px] leading-snug font-bold tracking-tight sm:text-[28px]">
               {question.title}

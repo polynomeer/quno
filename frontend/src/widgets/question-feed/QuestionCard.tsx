@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PrivateBadge } from "@/features/question/ui/PrivateBadge";
 import { StatusBadge } from "@/shared/ui/StatusBadge";
 import { TagChip } from "@/shared/ui/TagChip";
 import { isWithin, relativeTime } from "@/shared/lib/relative-time";
@@ -57,6 +58,7 @@ export function QuestionCard({ question, compact = false }: { question: Question
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <StatusBadge status={question.status} />
+          {question.visibility === "ORG" && <PrivateBadge />}
           {compact ? (
             <span className="font-mono text-text-secondary">
               {question.score} score · {question.answerCount} 답변
