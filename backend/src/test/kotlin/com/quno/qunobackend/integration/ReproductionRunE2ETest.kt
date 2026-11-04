@@ -59,6 +59,13 @@ class ReproductionRunE2ETest {
             run("DELETE FROM reproduction_runs WHERE capsule_id IN (SELECT id FROM reproduction_capsules WHERE question_id = ?)", id)
             run("DELETE FROM reproduction_capsules WHERE question_id = ?", id)
             run("UPDATE questions SET latest_version_id = NULL WHERE id = ?", id)
+            run("UPDATE questions SET accepted_answer_id = NULL WHERE id = ?", id)
+            run("DELETE FROM answer_applicability_ranges WHERE question_id = ?", id)
+            run("DELETE FROM answer_versions WHERE answer_id IN (SELECT id FROM answers WHERE question_id = ?)", id)
+            run("DELETE FROM answers WHERE question_id = ?", id)
+            run("DELETE FROM question_dependencies WHERE question_id = ?", id)
+            run("DELETE FROM outbox_events WHERE aggregate_id = ?", id)
+            run("DELETE FROM notifications WHERE question_id = ?", id)
             run("DELETE FROM question_tags WHERE question_id = ?", id)
             run("DELETE FROM question_error_signatures WHERE question_id = ?", id)
             run("DELETE FROM engine_runs WHERE question_id = ?", id)
@@ -70,7 +77,10 @@ class ReproductionRunE2ETest {
             run("DELETE FROM organization_memberships WHERE organization_id = ?", id)
             run("DELETE FROM organizations WHERE id = ?", id)
         }
-        userIds.forEach { id -> run("DELETE FROM users WHERE id = ?", id) }
+        userIds.forEach { id ->
+            run("DELETE FROM notifications WHERE user_id = ?", id)
+            run("DELETE FROM users WHERE id = ?", id)
+        }
     }
 
     @Test
@@ -115,7 +125,7 @@ class ReproductionRunE2ETest {
         val panel = send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200)
 
         @Suppress("UNCHECKED_CAST")
-        val latest = (panel["latestByEnvironment"] as List<Map<String, Any?>>).associateBy { it["environment"] }
+        val latest = (panel["latestByCell"] as List<Map<String, Any?>>).associateBy { it["environment"] }
         assertEquals("REPRODUCED", latest["ubuntu24 · java 21.0.5"]?.get("result"))
         assertEquals(true, latest["ubuntu24 · java 21.0.5"]?.get("trustedWorkflow"))
         assertEquals("NOT_REPRODUCED", latest["macos15 · java 21.0.5"]?.get("result"))
@@ -142,6 +152,71 @@ class ReproductionRunE2ETest {
         report(oidc(repository, runId = 1006, sha = sha), report + ("capsuleId" to pinnedId), 201)
         @Suppress("UNCHECKED_CAST")
         assertEquals(1, (send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200)["recentRuns"] as List<Any>).size)
+    }
+
+    @Test
+    fun `a matrix walks the question's versions, and the scheduled workflow asks before it runs`() {
+        val author = signUp("rpmatrix")
+        val questionId = send(
+            HttpMethod.POST,
+            "/api/v1/questions",
+            author,
+            mapOf(
+                "title" to "Pool leaks after upgrading HikariCP",
+                "body" to "connections never return",
+                "dependencies" to listOf(mapOf("ecosystem" to "MAVEN", "name" to "com.zaxxer:HikariCP", "version" to "^5.1.0")),
+            ),
+            201,
+        ).long("id").also { questionIds += it }
+        // An answer says the fix holds until 6.0.0 — an edge worth running.
+        val helper = signUp("rphelper")
+        send(
+            HttpMethod.POST,
+            "/api/v1/questions/$questionId/answers",
+            helper,
+            mapOf("body" to "Set leakDetectionThreshold.", "applicability" to listOf(mapOf("ecosystem" to "MAVEN", "name" to "com.zaxxer:HikariCP", "fromVersion" to "5.0.0", "untilVersion" to "6.0.0"))),
+            201,
+        )
+        val repository = "octo-${UUID.randomUUID().toString().take(6)}/hikari-matrix"
+        val spec = mapOf("repository" to repository, "ref" to "main", "kind" to "GRADLE", "command" to "test", "matrixPackage" to "com.zaxxer:HikariCP", "matrixVersions" to listOf("4.0.3"))
+        assertEquals(400, status(HttpMethod.PUT, "/api/v1/questions/$questionId/reproduction", author, spec + ("matrixVersions" to listOf("latest"))))
+        val capsuleId = send(HttpMethod.PUT, "/api/v1/questions/$questionId/reproduction", author, spec, 200).long("id")
+
+        // First scheduled run: due, and the matrix is the author's, the question's and the answer's versions in order.
+        val plan = plan(oidc(repository), capsuleId, 200)
+        assertEquals(true, plan["due"])
+        assertEquals("first-run", plan["reason"])
+        @Suppress("UNCHECKED_CAST")
+        assertEquals(listOf("4.0.3", "5.0.0", "5.1.0", "6.0.0"), (plan["matrix"] as List<Map<String, Any?>>).map { it["version"] })
+        assertEquals(409, plan(oidc("someone/else"), capsuleId, null)["_status"])
+        assertEquals(401, plan("not-a-token", capsuleId, null)["_status"])
+
+        val base = mapOf("capsuleId" to capsuleId, "kind" to "GRADLE", "command" to "test", "environment" to "ubuntu24 · java 21.0.5")
+        listOf("4.0.3" to 0, "5.1.0" to 1, "6.0.0" to 1).forEachIndexed { i, (version, exit) ->
+            report(oidc(repository, runId = 2000L + i), base + mapOf("exitCode" to exit, "dependencyVersion" to version), 201)
+        }
+        assertEquals(409, report(oidc(repository, runId = 2100), base + mapOf("exitCode" to 1, "dependencyVersion" to "not-a-version")))
+
+        // Just ran: the next scheduled run is skipped until the interval passes; a manual run or a dispute goes at once.
+        val skipped = plan(oidc(repository), capsuleId, 200)
+        assertEquals(false, skipped["due"])
+        assertEquals(emptyList<Any>(), skipped["matrix"])
+        assertNotNull(skipped["nextDueAt"])
+        assertEquals("manual", plan(oidc(repository, eventName = "workflow_dispatch"), capsuleId, 200)["reason"])
+        send(HttpMethod.POST, "/api/v1/questions/$questionId/reproduction/rerun-requests", helper, mapOf("reason" to "6.0.1에서도 확인해 주세요"), 200)
+        assertEquals("rerun-requested", plan(oidc(repository), capsuleId, 200)["reason"])
+
+        val panel = send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200)
+
+        @Suppress("UNCHECKED_CAST")
+        val cells = (panel["latestByCell"] as List<Map<String, Any?>>).associate { it["dependencyVersion"] to it["result"] }
+        assertEquals<Map<Any?, Any?>>(mapOf("4.0.3" to "NOT_REPRODUCED", "5.1.0" to "REPRODUCED", "6.0.0" to "REPRODUCED"), cells)
+        assertEquals(listOf("4.0.3", "5.0.0", "5.1.0", "6.0.0"), panel["plannedVersions"])
+
+        val metrics = send(HttpMethod.GET, "/api/v1/metrics/reproduction", author, null, 200)
+        assertTrue((metrics["runs"] as Number).toLong() >= 3)
+        assertTrue((metrics["disputes"] as Number).toLong() >= 1)
+        assertEquals(401, status(HttpMethod.GET, "/api/v1/metrics/reproduction", null, null))
     }
 
     @Test
@@ -178,6 +253,7 @@ class ReproductionRunE2ETest {
         expiresInSeconds: Long = 300,
         workflowRef: String = "polynomeer/quno/.github/workflows/reproduce.yml@refs/heads/main",
         signer: KeyPair = KEYS,
+        eventName: String = "schedule",
     ): String = Jwts.builder()
         .header().keyId(if (signer === KEYS) KID else "other-kid").and()
         .issuer(ISSUER)
@@ -189,10 +265,19 @@ class ReproductionRunE2ETest {
         .claim("run_attempt", "1")
         .claim("job_workflow_ref", workflowRef)
         .claim("runner_environment", "github-hosted")
+        .claim("event_name", eventName)
         .issuedAt(Date())
         .expiration(Date(System.currentTimeMillis() + expiresInSeconds * 1000))
         .signWith(signer.private, Jwts.SIG.RS256)
         .compact()
+
+    /** The plan's body, or `_status` alone when [expected] is null. */
+    private fun plan(token: String, capsuleId: Long, expected: Int?): Map<String, Any?> {
+        val response = perform(HttpMethod.POST, "/api/v1/reproduction-runs/plan", null, mapOf("capsuleId" to capsuleId), token)
+        if (expected == null) return mapOf("_status" to response.status)
+        assertEquals(expected, response.status, response.contentAsString)
+        return readMap(response.contentAsString)
+    }
 
     private fun report(token: String, body: Map<String, Any?>): Int = perform(HttpMethod.POST, "/api/v1/reproduction-runs", null, body, token).status
 

@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReproductionPanel, workflowSnippet } from "./ReproductionPanel";
@@ -25,6 +25,8 @@ const CAPSULE: ReproductionCapsule = {
   createdAt: "2026-11-01T00:00:00Z",
   rerunRequestedAt: null,
   rerunReason: null,
+  matrixPackage: null,
+  matrixVersions: [],
 };
 
 const RUN: ReproductionRun = {
@@ -39,6 +41,7 @@ const RUN: ReproductionRun = {
   durationMs: 4200,
   finishedAt: new Date(Date.now() - 3 * 3_600_000).toISOString(),
   hasLog: true,
+  dependencyVersion: null,
 };
 
 function renderPanel(panel: Panel, props: { isAuthor?: boolean; signedIn?: boolean } = {}) {
@@ -53,7 +56,7 @@ describe("ReproductionPanel", () => {
 
   it("shows the newest result per environment and its log on demand", async () => {
     vi.mocked(reproductionApi.log).mockResolvedValue({ runId: 5, logTail: "PoolTest > leaks FAILED\n[REDACTED]", maskedSecretCount: 1 });
-    renderPanel({ capsule: CAPSULE, latestByEnvironment: [RUN, { ...RUN, id: 6, result: "NOT_REPRODUCED", environment: "macos15", trustedWorkflow: false }], recentRuns: [] });
+    renderPanel({ capsule: CAPSULE, latestByCell: [RUN, { ...RUN, id: 6, result: "NOT_REPRODUCED", environment: "macos15", trustedWorkflow: false }], recentRuns: [], plannedVersions: [null], nextDueAt: null });
 
     expect(await screen.findByText("재현됨")).toBeInTheDocument();
     expect(screen.getByText("ubuntu24 · java 21.0.5")).toBeInTheDocument();
@@ -69,7 +72,7 @@ describe("ReproductionPanel", () => {
 
   it("lets a signed-in reader dispute a result, and shows an open request instead", async () => {
     vi.mocked(reproductionApi.requestRerun).mockResolvedValue({ ...CAPSULE, rerunRequestedAt: new Date().toISOString(), rerunReason: "21.0.6에선 안 돼요" });
-    renderPanel({ capsule: CAPSULE, latestByEnvironment: [RUN], recentRuns: [] }, { signedIn: true });
+    renderPanel({ capsule: CAPSULE, latestByCell: [RUN], recentRuns: [], plannedVersions: [null], nextDueAt: null }, { signedIn: true });
 
     await userEvent.click(await screen.findByRole("button", { name: "결과에 이의 제기" }));
     await userEvent.type(screen.getByLabelText("무엇이 다른가요?"), "21.0.6에선 안 돼요");
@@ -78,24 +81,67 @@ describe("ReproductionPanel", () => {
   });
 
   it("shows an outstanding rerun request to everyone", async () => {
-    renderPanel({ capsule: { ...CAPSULE, rerunRequestedAt: new Date().toISOString(), rerunReason: "환경이 달라요" }, latestByEnvironment: [], recentRuns: [] });
+    renderPanel({ capsule: { ...CAPSULE, rerunRequestedAt: new Date().toISOString(), rerunReason: "환경이 달라요" }, latestByCell: [], recentRuns: [], plannedVersions: [null], nextDueAt: null });
     expect(await screen.findByText(/재실행 요청됨 · 환경이 달라요/)).toBeInTheDocument();
     expect(screen.getByText("아직 실행 결과가 없어요.")).toBeInTheDocument();
   });
 
   it("offers the author a capsule form when there is none, and hides the panel from others", async () => {
-    const { container, unmount } = renderPanel({ capsule: null, latestByEnvironment: [], recentRuns: [] });
+    const { container, unmount } = renderPanel({ capsule: null, latestByCell: [], recentRuns: [], plannedVersions: [null], nextDueAt: null });
     await vi.waitFor(() => expect(reproductionApi.panel).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
     unmount();
 
     vi.mocked(reproductionApi.attach).mockResolvedValue(CAPSULE);
-    renderPanel({ capsule: null, latestByEnvironment: [], recentRuns: [] }, { isAuthor: true, signedIn: true });
+    renderPanel({ capsule: null, latestByCell: [], recentRuns: [], plannedVersions: [null], nextDueAt: null }, { isAuthor: true, signedIn: true });
     await userEvent.click(await screen.findByRole("button", { name: "재현 캡슐 붙이기" }));
     await userEvent.type(screen.getByLabelText("공개 GitHub 저장소"), "octo/repro-demo");
     await userEvent.type(screen.getByLabelText("명령"), "test");
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
     expect(reproductionApi.attach).toHaveBeenCalledWith(7, { repository: "octo/repro-demo", ref: "main", kind: "GRADLE", command: "test" });
+  });
+});
+
+describe("ReproductionPanel matrix", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("lays out versions against environments, keeping planned versions without a run", async () => {
+    const matrix = { ...CAPSULE, matrixPackage: "com.zaxxer:HikariCP", matrixVersions: ["4.0.3"] };
+    renderPanel({
+      capsule: matrix,
+      latestByCell: [
+        { ...RUN, id: 1, dependencyVersion: "4.0.3", result: "NOT_REPRODUCED" },
+        { ...RUN, id: 2, dependencyVersion: "5.1.0", result: "REPRODUCED" },
+      ],
+      plannedVersions: ["4.0.3", "5.1.0", "6.0.0"],
+      nextDueAt: new Date(Date.now() + 5 * 86_400_000 + 3_600_000).toISOString(),
+      recentRuns: [],
+    });
+
+    const table = await screen.findByRole("table");
+    const rows = within(table).getAllByRole("row");
+    expect(rows.map((row) => row.textContent)).toEqual(["버전ubuntu24 · java 21.0.5", "4.0.3재현 안 됨", "5.1.0재현됨", "6.0.0—"]);
+    expect(screen.getByText("다음 정기 실행 5일 후")).toBeInTheDocument();
+    expect(screen.getByText("com.zaxxer:HikariCP")).toBeInTheDocument();
+  });
+
+  it("sends the matrix package and versions from the form", async () => {
+    vi.mocked(reproductionApi.attach).mockResolvedValue(CAPSULE);
+    renderPanel({ capsule: null, latestByCell: [], recentRuns: [], plannedVersions: [null], nextDueAt: null }, { isAuthor: true, signedIn: true });
+    await userEvent.click(await screen.findByRole("button", { name: "재현 캡슐 붙이기" }));
+    await userEvent.type(screen.getByLabelText("공개 GitHub 저장소"), "octo/repro-demo");
+    await userEvent.type(screen.getByLabelText("명령"), "test");
+    await userEvent.type(screen.getByLabelText("버전 매트릭스 패키지 (선택)"), "com.zaxxer:HikariCP");
+    await userEvent.type(screen.getByLabelText("꼭 돌릴 버전 (쉼표로 구분, 선택)"), "4.0.3, 6.0.0");
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    expect(reproductionApi.attach).toHaveBeenCalledWith(7, {
+      repository: "octo/repro-demo",
+      ref: "main",
+      kind: "GRADLE",
+      command: "test",
+      matrixPackage: "com.zaxxer:HikariCP",
+      matrixVersions: ["4.0.3", "6.0.0"],
+    });
   });
 });
 

@@ -52,6 +52,16 @@ class ReproductionCapsuleJpaEntity(
 
     @Column(name = "rerun_reason")
     val rerunReason: String?,
+
+    @Column(name = "matrix_package")
+    val matrixPackage: String?,
+
+    /** Comma-separated; versions never contain commas. */
+    @Column(name = "matrix_versions")
+    val matrixVersions: String?,
+
+    @Column(name = "rerun_request_count", nullable = false)
+    val rerunRequestCount: Int,
 )
 
 @Entity
@@ -106,4 +116,10 @@ class ReproductionRunJpaEntity(
 
     @Column(name = "finished_at", nullable = false)
     val finishedAt: Instant,
+
+    @Column(name = "dependency_version")
+    val dependencyVersion: String?,
+
+    @Column(name = "event_name")
+    val eventName: String?,
 )

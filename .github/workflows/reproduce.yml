@@ -24,6 +24,11 @@
 #         command: test --tests 'demo.PoolTest'
 #         java-version: "21"
 #
+# With a matrix package on the capsule (Phase 81, ADR-0088), the plan job asks Quno for up to five
+# versions and runs one job per version, exposing it as QUNO_VERSION (and the Gradle property
+# `qunoVersion`, e.g. `implementation("com.zaxxer:HikariCP:${findProperty("qunoVersion") ?: "5.1.0"}")`).
+# A scheduled run that isn't due yet is skipped, so a daily cron costs almost nothing.
+#
 # Exit codes follow `git bisect run`: 0 = the bug did not show, 125 = can't tell, 1..127 = the bug
 # showed. A failing build step is reported as BUILD_FAILED.
 name: Quno reproduce
@@ -65,7 +70,37 @@ permissions:
   id-token: write
 
 jobs:
+  # Asks Quno whether this run is due and which versions to walk (Phase 81, ADR-0088). A scheduled
+  # run that isn't due yet ends here; a manual run or an open 이의 제기 always goes.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      due: ${{ steps.plan.outputs.due }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - name: Ask Quno
+        id: plan
+        shell: bash
+        env:
+          QUNO_URL: ${{ inputs.quno-url }}
+          CAPSULE_ID: ${{ inputs.capsule-id }}
+        run: |
+          token=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=quno" | jq -r .value)
+          plan=$(curl -sSf -X POST "$QUNO_URL/api/v1/reproduction-runs/plan" \
+            -H "Content-Type: application/json" \
+            -H "X-Quno-Attestation: $token" \
+            --data "$(jq -n --argjson capsuleId "$CAPSULE_ID" '{capsuleId: $capsuleId}')")
+          echo "$plan" | jq .
+          echo "due=$(echo "$plan" | jq -r .due)" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(echo "$plan" | jq -c .matrix)" >> "$GITHUB_OUTPUT"
+
   reproduce:
+    needs: plan
+    if: needs.plan.outputs.due == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ${{ inputs.runs-on }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     env:
@@ -74,10 +109,18 @@ jobs:
       CAPSULE_ID: ${{ inputs.capsule-id }}
       KIND: ${{ inputs.kind }}
       COMMAND: ${{ inputs.command }}
+      # The matrix cell's version of the capsule's package; empty outside a matrix.
+      QUNO_VERSION: ${{ matrix.cell.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      # Gradle reads it as the project property `qunoVersion`; scripts and Docker builds read QUNO_VERSION.
+      - name: Matrix cell
+        if: env.QUNO_VERSION != ''
+        shell: bash
+        run: echo "ORG_GRADLE_PROJECT_qunoVersion=$QUNO_VERSION" >> "$GITHUB_ENV"
 
       - if: inputs.java-version != ''
         uses: actions/setup-java@v4
@@ -99,7 +142,7 @@ jobs:
           case "$KIND" in
             SCRIPT) echo "no build step" | tee quno-build.log ;;
             GRADLE) ./gradlew --no-daemon testClasses 2>&1 | tee quno-build.log ;;
-            DOCKERFILE) docker build -t quno-capsule -f "$COMMAND" . 2>&1 | tee quno-build.log ;;
+            DOCKERFILE) docker build -t quno-capsule --build-arg "QUNO_VERSION=$QUNO_VERSION" -f "$COMMAND" . 2>&1 | tee quno-build.log ;;
             *) echo "unknown kind: $KIND" | tee quno-build.log; exit 2 ;;
           esac
 
@@ -113,7 +156,7 @@ jobs:
           case "$KIND" in
             SCRIPT) bash -c "$COMMAND" ;;
             GRADLE) bash -c "./gradlew --no-daemon $COMMAND" ;;
-            DOCKERFILE) docker run --rm quno-capsule ;;
+            DOCKERFILE) docker run --rm -e QUNO_VERSION quno-capsule ;;
           esac > quno-run.log 2>&1
           code=$?
           set -e
@@ -143,10 +186,12 @@ jobs:
             --arg exitCode "$EXIT_CODE" \
             --arg environment "$environment" \
             --arg durationMs "$DURATION_MS" \
+            --arg dependencyVersion "$QUNO_VERSION" \
             --rawfile log <(tail -n 200 "$log" 2>/dev/null || true) \
             '{capsuleId: $capsuleId, kind: $kind, command: $command, buildFailed: $buildFailed,
               exitCode: ($exitCode | tonumber? // null), environment: $environment,
-              durationMs: ($durationMs | tonumber? // null), logTail: $log}' > quno-report.json
+              durationMs: ($durationMs | tonumber? // null), logTail: $log,
+              dependencyVersion: (if $dependencyVersion == "" then null else $dependencyVersion end)}' > quno-report.json
           curl -sSf -X POST "$QUNO_URL/api/v1/reproduction-runs" \
             -H "Content-Type: application/json" \
             -H "X-Quno-Attestation: $token" \

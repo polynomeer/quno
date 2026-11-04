@@ -2,7 +2,9 @@ package com.quno.qunobackend.interfaces.api.reproduction
 
 import com.quno.qunobackend.application.reproduction.AttachReproductionCapsuleCommand
 import com.quno.qunobackend.application.reproduction.AttachReproductionCapsuleUseCase
+import com.quno.qunobackend.application.reproduction.GetReproductionMetricsUseCase
 import com.quno.qunobackend.application.reproduction.GetReproductionPanelUseCase
+import com.quno.qunobackend.application.reproduction.PlanReproductionRunUseCase
 import com.quno.qunobackend.application.reproduction.RecordReproductionRunUseCase
 import com.quno.qunobackend.application.reproduction.ReportReproductionRunCommand
 import com.quno.qunobackend.application.reproduction.ReproductionCapsuleResult
@@ -12,6 +14,7 @@ import com.quno.qunobackend.application.reproduction.ReproductionRunSummary
 import com.quno.qunobackend.application.reproduction.RequestReproductionRerunUseCase
 import com.quno.qunobackend.domain.reproduction.InvalidRunAttestationException
 import com.quno.qunobackend.domain.reproduction.ReproductionKind
+import com.quno.qunobackend.domain.reproduction.ReproductionMetrics
 import com.quno.qunobackend.domain.reproduction.ReproductionResult
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -42,6 +45,8 @@ class ReproductionController(
     private val panelUseCase: GetReproductionPanelUseCase,
     private val rerunUseCase: RequestReproductionRerunUseCase,
     private val recordUseCase: RecordReproductionRunUseCase,
+    private val planUseCase: PlanReproductionRunUseCase,
+    private val metricsUseCase: GetReproductionMetricsUseCase,
 ) {
 
     @GetMapping("/questions/{id}/reproduction")
@@ -53,7 +58,7 @@ class ReproductionController(
         @PathVariable id: Long,
         @Valid @RequestBody request: AttachReproductionCapsuleRequest,
     ): ReproductionCapsuleResponse = attachUseCase.execute(
-        AttachReproductionCapsuleCommand(id, actorId, request.repository, request.ref, requireNotNull(request.kind), request.command),
+        AttachReproductionCapsuleCommand(id, actorId, request.repository, request.ref, requireNotNull(request.kind), request.command, request.matrixPackage, request.matrixVersions),
     ).toResponse()
 
     @PostMapping("/questions/{id}/reproduction/rerun-requests")
@@ -84,10 +89,26 @@ class ReproductionController(
                 environment = request.environment,
                 durationMs = request.durationMs,
                 logTail = request.logTail,
+                dependencyVersion = request.dependencyVersion,
             ),
         )
         return ReportedRunResponse(result.runId, result.result)
     }
+
+    /** Asked by the scheduled workflow before it runs (Phase 81.2): due or not, and the matrix. */
+    @PostMapping("/reproduction-runs/plan")
+    fun plan(
+        @RequestHeader(ATTESTATION_HEADER, required = false) attestation: String?,
+        @Valid @RequestBody request: PlanRequest,
+    ): ReproductionPlanResponse {
+        val token = attestation?.trim()?.takeIf { it.isNotEmpty() } ?: throw InvalidRunAttestationException("missing $ATTESTATION_HEADER")
+        val plan = planUseCase.execute(token, requireNotNull(request.capsuleId))
+        return ReproductionPlanResponse(plan.due, plan.reason, plan.versions.map { MatrixCellResponse(it) }, plan.nextDueAt)
+    }
+
+    /** Runner health over the last 30 days (Phase 81.4); signed-in users, like `/metrics`. */
+    @GetMapping("/metrics/reproduction")
+    fun metrics(): ReproductionMetrics = metricsUseCase.execute()
 
     companion object {
         const val ATTESTATION_HEADER = "X-Quno-Attestation"
@@ -103,7 +124,22 @@ data class AttachReproductionCapsuleRequest(
     val kind: ReproductionKind?,
     @field:NotBlank @field:Size(max = 1000)
     val command: String,
+    /** Walk several versions of this package (Phase 81, ADR-0088). */
+    @field:Size(max = 200)
+    val matrixPackage: String? = null,
+    @field:Size(max = 5)
+    val matrixVersions: List<String> = emptyList(),
 )
+
+data class PlanRequest(
+    @field:NotNull
+    val capsuleId: Long?,
+)
+
+/** `version` is null for a capsule without a matrix package; the workflow then runs one cell. */
+data class MatrixCellResponse(val version: String?)
+
+data class ReproductionPlanResponse(val due: Boolean, val reason: String, val matrix: List<MatrixCellResponse>, val nextDueAt: Instant?)
 
 data class RerunRequest(
     @field:NotBlank @field:Size(max = 500)
@@ -125,6 +161,8 @@ data class ReportReproductionRunRequest(
     /** Trimmed to the last 200 lines / 64KB on the server anyway; a hard cap keeps the request small. */
     @field:Size(max = 256 * 1024)
     val logTail: String? = null,
+    @field:Size(max = 100)
+    val dependencyVersion: String? = null,
 )
 
 data class ReportedRunResponse(val runId: Long, val result: ReproductionResult)
@@ -139,6 +177,8 @@ data class ReproductionCapsuleResponse(
     val createdAt: Instant,
     val rerunRequestedAt: Instant?,
     val rerunReason: String?,
+    val matrixPackage: String?,
+    val matrixVersions: List<String>,
 )
 
 data class ReproductionRunResponse(
@@ -153,20 +193,26 @@ data class ReproductionRunResponse(
     val durationMs: Long?,
     val finishedAt: Instant,
     val hasLog: Boolean,
+    val dependencyVersion: String?,
 )
 
 data class ReproductionPanelResponse(
     val capsule: ReproductionCapsuleResponse?,
-    val latestByEnvironment: List<ReproductionRunResponse>,
+    /** Newest run per matrix cell (environment × dependencyVersion). */
+    val latestByCell: List<ReproductionRunResponse>,
+    /** Versions the next run walks; `[null]` without a matrix package. */
+    val plannedVersions: List<String?>,
+    /** When the scheduled run is next due; null when it is due now. */
+    val nextDueAt: Instant?,
     val recentRuns: List<ReproductionRunResponse>,
 )
 
 data class ReproductionRunLogResponse(val runId: Long, val logTail: String?, val maskedSecretCount: Int)
 
-private fun ReproductionCapsuleResult.toResponse() = ReproductionCapsuleResponse(id, repository, ref, kind, command, createdBy, createdAt, rerunRequestedAt, rerunReason)
+private fun ReproductionCapsuleResult.toResponse() = ReproductionCapsuleResponse(id, repository, ref, kind, command, createdBy, createdAt, rerunRequestedAt, rerunReason, matrixPackage, matrixVersions)
 
-private fun ReproductionRunSummary.toResponse() = ReproductionRunResponse(id, result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, hasLog)
+private fun ReproductionRunSummary.toResponse() = ReproductionRunResponse(id, result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, hasLog, dependencyVersion)
 
-private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByEnvironment.map { it.toResponse() }, recentRuns.map { it.toResponse() })
+private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() })
 
 private fun ReproductionRunLogResult.toResponse() = ReproductionRunLogResponse(runId, logTail, maskedSecretCount)

@@ -2,6 +2,7 @@ package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsule
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleRepository
+import com.quno.qunobackend.domain.reproduction.ReproductionMetrics
 import com.quno.qunobackend.domain.reproduction.ReproductionRun
 import com.quno.qunobackend.domain.reproduction.ReproductionRunRepository
 import com.quno.qunobackend.infrastructure.persistence.jpa.entity.ReproductionCapsuleJpaEntity
@@ -10,6 +11,7 @@ import com.quno.qunobackend.infrastructure.persistence.jpa.repository.Reproducti
 import com.quno.qunobackend.infrastructure.persistence.jpa.repository.ReproductionRunJpaRepository
 import org.springframework.data.domain.Limit
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 class ReproductionCapsuleRepositoryAdapter(
@@ -37,6 +39,9 @@ class ReproductionCapsuleRepositoryAdapter(
         rerunRequestedAt = rerunRequestedAt,
         rerunRequestedBy = rerunRequestedBy,
         rerunReason = rerunReason,
+        matrixPackage = matrixPackage,
+        matrixVersions = matrixVersions.takeIf { it.isNotEmpty() }?.joinToString(","),
+        rerunRequestCount = rerunRequestCount,
     )
 
     private fun ReproductionCapsuleJpaEntity.toDomain() = ReproductionCapsule.reconstitute(
@@ -52,6 +57,9 @@ class ReproductionCapsuleRepositoryAdapter(
         rerunRequestedAt = rerunRequestedAt,
         rerunRequestedBy = rerunRequestedBy,
         rerunReason = rerunReason,
+        matrixPackage = matrixPackage,
+        matrixVersions = matrixVersions?.split(',')?.filter { it.isNotEmpty() }.orEmpty(),
+        rerunRequestCount = rerunRequestCount,
     )
 }
 
@@ -68,7 +76,23 @@ class ReproductionRunRepositoryAdapter(
 
     override fun findRecentByCapsuleId(capsuleId: Long, limit: Int): List<ReproductionRun> = jpaRepository.findByCapsuleIdOrderByFinishedAtDescIdDesc(capsuleId, Limit.of(limit)).map { it.toDomain() }
 
-    override fun findLatestPerEnvironment(capsuleId: Long): List<ReproductionRun> = jpaRepository.findLatestPerEnvironment(capsuleId).map { it.toDomain() }.sortedByDescending { it.finishedAt }
+    override fun findLatestPerCell(capsuleId: Long): List<ReproductionRun> = jpaRepository.findLatestPerCell(capsuleId).map { it.toDomain() }.sortedByDescending { it.finishedAt }
+
+    override fun lastFinishedAt(capsuleId: Long): Instant? = jpaRepository.lastFinishedAt(capsuleId)
+
+    override fun metrics(since: Instant): ReproductionMetrics = jpaRepository.metrics(since).let {
+        ReproductionMetrics(
+            since = since,
+            runs = it.getRuns(),
+            conclusiveRuns = it.getConclusiveRuns(),
+            trustedRuns = it.getTrustedRuns(),
+            runnerMinutes = it.getRunnerMinutes(),
+            cells = it.getCells(),
+            flakyCells = it.getFlakyCells(),
+            activeCapsules = it.getActiveCapsules(),
+            disputes = it.getDisputes(),
+        )
+    }
 
     override fun pruneLogs(capsuleId: Long, keep: Int) = jpaRepository.pruneLogs(capsuleId, keep)
 
@@ -89,6 +113,8 @@ class ReproductionRunRepositoryAdapter(
         logTail = logTail,
         maskedSecretCount = maskedSecretCount,
         finishedAt = finishedAt,
+        dependencyVersion = dependencyVersion,
+        eventName = eventName,
     )
 
     private fun ReproductionRunJpaEntity.toDomain() = ReproductionRun(
@@ -108,5 +134,7 @@ class ReproductionRunRepositoryAdapter(
         logTail = logTail,
         maskedSecretCount = maskedSecretCount,
         finishedAt = finishedAt,
+        dependencyVersion = dependencyVersion,
+        eventName = eventName,
     )
 }
