@@ -56,6 +56,71 @@ interface EnvironmentSnapshotRepository {
     fun replaceForQuestion(snapshot: EnvironmentSnapshot)
 
     fun findByQuestionId(questionId: Long): EnvironmentSnapshot?
+
+    /** Distinct environments by how many public questions share them (Phase 93.6, ADR-0089). */
+    fun findEnvironmentGroups(limit: Int): List<EnvironmentGroup> = emptyList()
+}
+
+/** The fields of a snapshot that decide its fingerprint, read back out of the document. */
+data class EnvironmentCore(
+    val osName: String?,
+    val arch: String?,
+    val docker: Boolean,
+    val wsl: Boolean,
+    val runtimes: List<FingerprintRuntime>,
+) {
+    /** `macOS arm64 · java 21 · node 22`: patch versions stay out, like the fingerprint. */
+    val label: String
+        get() = buildList {
+            add(listOfNotNull(osName, arch).joinToString(" ").ifEmpty { "알 수 없는 OS" })
+            if (docker) add("Docker")
+            if (wsl) add("WSL")
+            runtimes.sortedBy { it.name.lowercase() }.forEach { add("${it.name} ${EnvironmentFingerprint.major(it.version)}") }
+        }.joinToString(" · ")
+}
+
+/** One distinct environment: the fingerprint is the dedup key, the count is what impact views read. */
+data class EnvironmentGroup(val fingerprint: String, val questionCount: Long, val lastSeenAt: Instant, val core: EnvironmentCore)
+
+/** Reads [EnvironmentCore] out of a stored document — JSON handling stays out of the domain. */
+fun interface EnvironmentCoreReader {
+    fun read(document: String): EnvironmentCore
+}
+
+/**
+ * What to put in the reusable workflow to come close to a reported environment (Phase 93.6,
+ * ADR-0089). GitHub's hosted runners are the only choice at this stage, so this is the nearest
+ * image, not the same machine; [notes] says what could not be matched.
+ */
+data class EnvironmentRecipe(val runsOn: String, val javaVersion: String?, val nodeVersion: String?, val notes: List<String>) {
+    companion object {
+        fun from(core: EnvironmentCore): EnvironmentRecipe {
+            val os = core.osName.orEmpty().lowercase()
+            val arm = core.arch.orEmpty().lowercase().let { it.contains("arm") || it.contains("aarch") }
+            val runsOn = when {
+                os.contains("mac") || os.contains("darwin") -> if (arm) "macos-latest" else "macos-13"
+                os.contains("windows") -> "windows-latest"
+                arm -> "ubuntu-24.04-arm"
+                else -> "ubuntu-latest"
+            }
+            val java = core.runtimes.firstOrNull { it.name.equals("java", ignoreCase = true) }
+            val node = core.runtimes.firstOrNull { it.name.equals("node", ignoreCase = true) }
+            val notes = buildList {
+                if (core.osName.isNullOrBlank()) add("OS를 알 수 없어 Linux 러너로 잡았어요.")
+                if (core.docker) add("보고된 환경은 Docker 안이었어요. Dockerfile 캡슐이 더 가까워요.")
+                if (core.wsl) add("보고된 환경은 WSL이었어요. Linux 러너로 잡았어요.")
+                if (java?.vendor != null && !java.vendor.contains("adoptium", ignoreCase = true) && !java.vendor.contains("temurin", ignoreCase = true)) {
+                    add("보고된 JDK는 ${java.vendor}지만 워크플로는 Temurin을 써요.")
+                }
+            }
+            return EnvironmentRecipe(
+                runsOn = runsOn,
+                javaVersion = java?.let { EnvironmentFingerprint.major(it.version) }?.takeIf { it != "?" },
+                nodeVersion = node?.let { EnvironmentFingerprint.major(it.version) }?.takeIf { it != "?" },
+                notes = notes,
+            )
+        }
+    }
 }
 
 /** A runtime as the fingerprint sees it: name, vendor, major version. */

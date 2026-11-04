@@ -116,6 +116,11 @@ class SecurityConfig(
                 authorize(HttpMethod.GET, "/api/v1/answers/{answerId}/comments", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/comments/{commentId}/versions", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/search", permitAll)
+                // Counts over public questions only (Phase 93.6, ADR-0089).
+                authorize(HttpMethod.GET, "/api/v1/environments", permitAll)
+                // A question's level and Evidence Card, for readers and agents alike (Phase 94, ADR-0089).
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/verification", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/evidence-card", permitAll)
                 // Reproduction status is part of what a shared question shows (Phase 80, ADR-0087).
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction/runs/{runId}/log", permitAll)
