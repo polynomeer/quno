@@ -7,9 +7,12 @@ import com.quno.qunobackend.domain.question.QuestionVersionRepository
 import com.quno.qunobackend.domain.question.QuestionViewCountRepository
 import com.quno.qunobackend.domain.question.QuestionViewer
 import com.quno.qunobackend.domain.tag.QuestionTagRepository
+import com.quno.qunobackend.domain.verification.QuestionVerificationRepository
+import com.quno.qunobackend.domain.verification.QuestionVerifier
 import com.quno.qunobackend.domain.vote.VoteRepository
 import com.quno.qunobackend.domain.vote.VoteTargetType
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 /**
  * Turns ranked question ids (from Search, Related, or Recommendation) into display summaries.
@@ -25,6 +28,8 @@ class QuestionSummaryHydrator(
     private val answerRepository: AnswerRepository,
     private val questionVersionRepository: QuestionVersionRepository,
     private val questionViewCountRepository: QuestionViewCountRepository,
+    /** Null only in unit tests that don't care about levels; Spring always injects it. */
+    private val verificationRepository: QuestionVerificationRepository? = null,
 ) {
     /** Silently drops ids that no longer resolve to a question (e.g. deleted since ranking ran).
      * Batches every lookup instead of querying per id — `ids` is often a ranked list
@@ -43,6 +48,7 @@ class QuestionSummaryHydrator(
         val answerCountsByQuestionId = answerRepository.countByQuestionIds(ids)
         val versionNumbersByQuestionId = questionVersionRepository.findLatestVersionNumbersByQuestionIds(ids)
         val viewCountsByQuestionId = questionViewCountRepository.countsByQuestionIds(ids)
+        val verifiedLevels = verificationRepository?.findVerifiedLevels(ids, Instant.now().minus(QuestionVerifier.FRESH_FOR)).orEmpty()
 
         return ids.mapNotNull { id ->
             val question = questionsById[id] ?: return@mapNotNull null
@@ -60,6 +66,7 @@ class QuestionSummaryHydrator(
                 viewCount = viewCountsByQuestionId[id] ?: 0L,
                 createdAt = question.createdAt,
                 updatedAt = question.updatedAt,
+                verifiedLevel = verifiedLevels[id],
             )
         }
     }

@@ -1,6 +1,8 @@
 package com.quno.qunobackend.application.reproduction
 
+import com.quno.qunobackend.application.verification.QuestionVerificationService
 import com.quno.qunobackend.domain.engine.SecretDetector
+import com.quno.qunobackend.domain.errorsignature.ErrorSignatureExtractor
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
@@ -20,6 +22,9 @@ import com.quno.qunobackend.domain.reproduction.ReproductionRunNotFoundException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunRepository
 import com.quno.qunobackend.domain.reproduction.ReproductionSchedule
 import com.quno.qunobackend.domain.reproduction.RunAttestationVerifier
+import com.quno.qunobackend.domain.snapshot.EnvironmentCoreReader
+import com.quno.qunobackend.domain.snapshot.EnvironmentRecipe
+import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshotRepository
 import com.quno.qunobackend.domain.stack.AnswerApplicabilityRepository
 import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
 import org.springframework.stereotype.Service
@@ -66,6 +71,8 @@ data class ReproductionPanelResult(
     val plannedVersions: List<String?>,
     val nextDueAt: Instant?,
     val recentRuns: List<ReproductionRunSummary>,
+    /** Workflow settings nearest the question's snapshot (Phase 93.6); null without one. */
+    val recipe: EnvironmentRecipe? = null,
 )
 
 data class ReproductionRunLogResult(val runId: Long, val logTail: String?, val maskedSecretCount: Int)
@@ -135,6 +142,7 @@ class ReproductionPlanner(
 class AttachReproductionCapsuleUseCase(
     private val questionRepository: QuestionRepository,
     private val capsuleRepository: ReproductionCapsuleRepository,
+    private val verificationService: QuestionVerificationService? = null,
 ) {
     @Transactional
     fun execute(command: AttachReproductionCapsuleCommand): ReproductionCapsuleResult {
@@ -142,7 +150,10 @@ class AttachReproductionCapsuleUseCase(
         if (question.authorId != command.actorId) throw QuestionAccessDeniedException(command.questionId)
         val capsule = ReproductionCapsule.attach(command.questionId, command.repository, command.ref, command.kind, command.command, command.actorId, command.matrixPackage, command.matrixVersions)
         capsuleRepository.findActiveByQuestionId(command.questionId)?.let { capsuleRepository.save(it.supersede()) }
-        return capsuleRepository.save(capsule).toResult()
+        val saved = capsuleRepository.save(capsule).toResult()
+        // The old capsule's runs stop counting, so a level earned through them goes with them.
+        verificationService?.refresh(command.questionId)
+        return saved
     }
 }
 
@@ -151,9 +162,12 @@ class GetReproductionPanelUseCase(
     private val capsuleRepository: ReproductionCapsuleRepository,
     private val runRepository: ReproductionRunRepository,
     private val planner: ReproductionPlanner,
+    private val snapshotRepository: EnvironmentSnapshotRepository,
+    private val coreReader: EnvironmentCoreReader,
 ) {
     fun execute(questionId: Long): ReproductionPanelResult {
-        val capsule = capsuleRepository.findActiveByQuestionId(questionId) ?: return ReproductionPanelResult(null, emptyList(), emptyList(), null, emptyList())
+        val recipe = snapshotRepository.findByQuestionId(questionId)?.let { EnvironmentRecipe.from(coreReader.read(it.document)) }
+        val capsule = capsuleRepository.findActiveByQuestionId(questionId) ?: return ReproductionPanelResult(null, emptyList(), emptyList(), null, emptyList(), recipe)
         val capsuleId = requireNotNull(capsule.id)
         val plan = planner.plan(capsule, eventName = null)
         return ReproductionPanelResult(
@@ -162,6 +176,7 @@ class GetReproductionPanelUseCase(
             plannedVersions = plan.versions,
             nextDueAt = if (plan.due) null else plan.nextDueAt,
             recentRuns = runRepository.findRecentByCapsuleId(capsuleId, RECENT_RUNS).map { it.toSummary() },
+            recipe = recipe,
         )
     }
 
@@ -202,6 +217,7 @@ class RecordReproductionRunUseCase(
     private val verifier: RunAttestationVerifier,
     private val capsuleRepository: ReproductionCapsuleRepository,
     private val runRepository: ReproductionRunRepository,
+    private val verificationService: QuestionVerificationService? = null,
 ) {
     @Transactional
     fun execute(attestationToken: String, command: ReportReproductionRunCommand): ReportedRunResult {
@@ -216,6 +232,8 @@ class RecordReproductionRunUseCase(
         if (runRepository.exists(capsuleId, attestation.runId, attestation.runAttempt)) throw DuplicateReproductionRunException(attestation.runId, attestation.runAttempt)
 
         val tail = command.logTail?.let(::tailOf)
+        // From the raw tail: masking a value must not change which error this was.
+        val signatures = ErrorSignatureExtractor.extractAll(tail).take(MAX_SIGNATURES)
         val masked = tail?.let { SecretDetector.find(it).count { finding -> it.substring(finding.start, finding.end) != SecretDetector.REDACTED } } ?: 0
         val run = runRepository.save(
             ReproductionRun(
@@ -237,10 +255,14 @@ class RecordReproductionRunUseCase(
                 finishedAt = Instant.now(),
                 dependencyVersion = dependencyVersion,
                 eventName = attestation.eventName,
+                signatureHashes = signatures.mapNotNull { it.signatureHash }.distinct(),
+                messageKeys = signatures.map { it.messageKey }.distinct(),
+                exceptionClass = signatures.firstOrNull()?.exceptionClass?.take(255),
             ),
         )
         if (capsule.rerunRequestedAt != null) capsuleRepository.save(capsule.rerunAnswered())
         runRepository.pruneLogs(capsuleId, KEEP_LOGS)
+        verificationService?.refresh(capsule.questionId)
         return ReportedRunResult(requireNotNull(run.id), run.result)
     }
 
@@ -253,6 +275,7 @@ class RecordReproductionRunUseCase(
         const val MAX_LOG_CHARS = 64 * 1024
         const val MAX_ENVIRONMENT = 200
         const val MAX_VERSION = 100
+        const val MAX_SIGNATURES = 10
     }
 }
 

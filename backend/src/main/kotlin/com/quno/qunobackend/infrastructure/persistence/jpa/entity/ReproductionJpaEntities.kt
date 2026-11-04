@@ -122,4 +122,14 @@ class ReproductionRunJpaEntity(
 
     @Column(name = "event_name")
     val eventName: String?,
+
+    /** Comma-separated 16-hex keys, like matrix_versions. */
+    @Column(name = "signature_hashes")
+    val signatureHashes: String?,
+
+    @Column(name = "message_keys")
+    val messageKeys: String?,
+
+    @Column(name = "exception_class")
+    val exceptionClass: String?,
 )

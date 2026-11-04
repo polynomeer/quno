@@ -5,6 +5,7 @@ import com.quno.qunobackend.application.errorsignature.QuestionErrorSignatureInd
 import com.quno.qunobackend.application.question.dto.QuestionMutationResult
 import com.quno.qunobackend.application.question.dto.ReviseQuestionCommand
 import com.quno.qunobackend.application.snapshot.EnvironmentSnapshotAttacher
+import com.quno.qunobackend.application.verification.QuestionVerificationService
 import com.quno.qunobackend.domain.common.OutboxEvent
 import com.quno.qunobackend.domain.common.OutboxEventRepository
 import com.quno.qunobackend.domain.common.OutboxEventTypes
@@ -34,6 +35,7 @@ class ReviseQuestionUseCase(
     private val questionDependencyRepository: QuestionDependencyRepository? = null,
     private val questionEngine: QuestionEngine? = null,
     private val snapshotAttacher: EnvironmentSnapshotAttacher? = null,
+    private val verificationService: QuestionVerificationService? = null,
 ) {
     @Transactional
     fun execute(command: ReviseQuestionCommand): QuestionMutationResult {
@@ -69,6 +71,9 @@ class ReviseQuestionUseCase(
         command.dependencies?.let {
             questionDependencyRepository?.replaceForQuestion(command.questionId, newVersion.versionNumber, checkedDependencies(it))
         }
+
+        // A revision can change the reported error, and with it whether a run still reproduces it (ADR-0089).
+        verificationService?.refresh(command.questionId)
 
         outboxEventRepository.save(
             OutboxEvent.create(

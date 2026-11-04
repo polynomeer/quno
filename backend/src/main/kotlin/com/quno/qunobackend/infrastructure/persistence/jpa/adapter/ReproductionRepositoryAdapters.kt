@@ -115,6 +115,9 @@ class ReproductionRunRepositoryAdapter(
         finishedAt = finishedAt,
         dependencyVersion = dependencyVersion,
         eventName = eventName,
+        signatureHashes = signatureHashes.takeIf { it.isNotEmpty() }?.joinToString(","),
+        messageKeys = messageKeys.takeIf { it.isNotEmpty() }?.joinToString(","),
+        exceptionClass = exceptionClass,
     )
 
     private fun ReproductionRunJpaEntity.toDomain() = ReproductionRun(
@@ -136,5 +139,8 @@ class ReproductionRunRepositoryAdapter(
         finishedAt = finishedAt,
         dependencyVersion = dependencyVersion,
         eventName = eventName,
+        signatureHashes = signatureHashes?.split(',').orEmpty(),
+        messageKeys = messageKeys?.split(',').orEmpty(),
+        exceptionClass = exceptionClass,
     )
 }

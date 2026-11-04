@@ -16,6 +16,7 @@ import com.quno.qunobackend.domain.reproduction.InvalidRunAttestationException
 import com.quno.qunobackend.domain.reproduction.ReproductionKind
 import com.quno.qunobackend.domain.reproduction.ReproductionMetrics
 import com.quno.qunobackend.domain.reproduction.ReproductionResult
+import com.quno.qunobackend.domain.snapshot.EnvironmentRecipe
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -205,6 +206,8 @@ data class ReproductionPanelResponse(
     /** When the scheduled run is next due; null when it is due now. */
     val nextDueAt: Instant?,
     val recentRuns: List<ReproductionRunResponse>,
+    /** Workflow settings nearest the question's snapshot (ADR-0089); null without one. */
+    val recipe: EnvironmentRecipe?,
 )
 
 data class ReproductionRunLogResponse(val runId: Long, val logTail: String?, val maskedSecretCount: Int)
@@ -213,6 +216,6 @@ private fun ReproductionCapsuleResult.toResponse() = ReproductionCapsuleResponse
 
 private fun ReproductionRunSummary.toResponse() = ReproductionRunResponse(id, result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, hasLog, dependencyVersion)
 
-private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() })
+private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() }, recipe)
 
 private fun ReproductionRunLogResult.toResponse() = ReproductionRunLogResponse(runId, logTail, maskedSecretCount)

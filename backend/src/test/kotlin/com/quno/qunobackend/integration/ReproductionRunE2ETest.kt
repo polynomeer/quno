@@ -220,6 +220,92 @@ class ReproductionRunE2ETest {
     }
 
     @Test
+    fun `a question climbs to L2 only when a trusted run fails with the reported error`() {
+        val token = "Zqx${UUID.randomUUID().toString().replace("-", "").take(10)}"
+        val author = signUp("rvauthor")
+        val reported = "java.lang.IllegalStateException: pool $token exhausted\n\tat com.zaxxer.hikari.Pool.get(Pool.java:42)\n\tat demo.App.main(App.java:7)"
+        val snapshot = mapOf(
+            "schemaVersion" to 1,
+            "source" to "COLLECTOR",
+            "tier0" to mapOf(
+                "os" to mapOf("name" to "Linux$token", "arch" to "x86_64"),
+                "runtimes" to listOf(mapOf("name" to "java", "vendor" to "Eclipse Adoptium", "version" to "21.0.5")),
+            ),
+        )
+        val questionId = createQuestion(author, mapOf("body" to "the pool runs dry $token"))
+        fun verification() = send(HttpMethod.GET, "/api/v1/questions/$questionId/verification", null, null, 200)
+
+        // L0: nothing structured yet; the checks say what's missing.
+        assertEquals("L0", verification()["level"])
+        assertEquals(false, verification().map("checks")["ERROR_SIGNATURE"])
+
+        // L1: signature, snapshot, expected/actual, steps.
+        val content = mapOf("title" to "Pool $token exhausted", "body" to "Expected: connections return. Actual: they do not.\n\n1. Run the load test", "logs" to reported, "environmentSnapshot" to snapshot)
+        send(HttpMethod.POST, "/api/v1/questions/$questionId/versions", author, content, 200)
+        assertEquals("L1", verification()["level"])
+
+        val repository = "octo-${UUID.randomUUID().toString().take(6)}/verify"
+        val capsuleId = send(HttpMethod.PUT, "/api/v1/questions/$questionId/reproduction", author, mapOf("repository" to repository, "ref" to "main", "kind" to "SCRIPT", "command" to "./repro.sh"), 200).long("id")
+        val run = mapOf("capsuleId" to capsuleId, "kind" to "SCRIPT", "command" to "./repro.sh", "environment" to "ubuntu24")
+
+        // Failing with some other error is not this bug: no L2, and the flag says why.
+        report(oidc(repository, runId = 3001), run + mapOf("exitCode" to 1, "logTail" to "java.lang.NullPointerException: other\n\tat demo.Other.x(Other.java:1)\n"), 201)
+        assertEquals("L1", verification()["level"])
+        assertEquals(listOf("SIGNATURE_MISMATCH"), verification()["flags"])
+
+        // The reported error, but through a hand-written workflow: the exit code could say anything.
+        report(oidc(repository, runId = 3002, workflowRef = "$repository/.github/workflows/own.yml@refs/heads/main"), run + mapOf("exitCode" to 1, "logTail" to reported), 201)
+        assertEquals("L1", verification()["level"])
+
+        // The reported error through Quno's workflow: L2, and search and the card both say so.
+        report(oidc(repository, runId = 3003), run + mapOf("exitCode" to 1, "logTail" to reported), 201)
+        assertEquals("L2", verification()["level"])
+        assertEquals(emptyList<Any>(), verification()["flags"])
+        val older = send(HttpMethod.POST, "/api/v1/questions", author, mapOf("title" to "Pool $token newer but unverified", "body" to "nothing yet"), 201).long("id").also { questionIds += it }
+        val hits = readList(perform(HttpMethod.GET, "/api/v1/search?q=$token", null, null).contentAsString)
+        assertEquals(listOf(questionId, older), hits.map { (it["id"] as Number).toLong() }, "the reproduced one first, though it is older")
+        assertEquals("L2", hits.first()["verifiedLevel"])
+        assertNull(hits.last()["verifiedLevel"])
+
+        val card = send(HttpMethod.GET, "/api/v1/questions/$questionId/evidence-card", null, null, 200)
+        assertEquals("quno.evidence/1", card["schema"])
+        assertEquals("L2", card["level"])
+        @Suppress("UNCHECKED_CAST")
+        assertEquals("https://github.com/$repository/actions/runs/3003/attempts/1", (card["reproducedIn"] as List<Map<String, Any?>>).single()["runUrl"])
+        assertEquals("Linux$token x86_64 · java 21", card.map("environment")["label"])
+        assertTrue((card.map("untrusted")["title"] as String).contains(token), "free text only under untrusted")
+        assertFalse((card - "untrusted").toString().contains("exhausted"), "the message itself stays out of the structured part")
+
+        // The recipe follows the snapshot; the aggregate counts this environment once per public question.
+        val recipe = send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200).map("recipe")
+        assertEquals("ubuntu-latest", recipe["runsOn"])
+        assertEquals("21", recipe["javaVersion"])
+        val other = createQuestion(author, mapOf("environmentSnapshot" to snapshot))
+        val groups = readList(perform(HttpMethod.GET, "/api/v1/environments?limit=50", null, null).contentAsString)
+        assertEquals(2, (groups.single { it["label"] == "Linux$token x86_64 · java 21" }["questionCount"] as Number).toInt())
+        assertTrue(other > 0)
+
+        // Rewriting the question to another error loses the level: the runs proved the old one.
+        send(HttpMethod.POST, "/api/v1/questions/$questionId/versions", author, content + ("logs" to "java.io.IOException: disk full\n\tat demo.Disk.write(Disk.java:3)"), 200)
+        assertEquals("L1", verification()["level"])
+        assertEquals(listOf("SIGNATURE_MISMATCH"), verification()["flags"])
+        assertNull(readList(perform(HttpMethod.GET, "/api/v1/search?q=$token", null, null).contentAsString).first { (it["id"] as Number).toLong() == questionId }["verifiedLevel"])
+        send(HttpMethod.POST, "/api/v1/questions/$questionId/versions", author, content, 200)
+        assertEquals("L2", verification()["level"])
+
+        // Now it passes: the latest run of the cell decides, so the level drops and says why.
+        report(oidc(repository, runId = 3004), run + mapOf("exitCode" to 0, "logTail" to "ok"), 201)
+        assertEquals("L1", verification()["level"])
+        assertEquals(listOf("NOT_REPRODUCING"), verification()["flags"])
+
+        // The author's classification keeps the question findable and shows on the card.
+        val classify = "/api/v1/questions/$questionId/verification/classification"
+        assertEquals(403, status(HttpMethod.PUT, classify, signUp("rvother"), mapOf("classification" to "MISUSE")))
+        assertEquals("MISUSE", send(HttpMethod.PUT, classify, author, mapOf("classification" to "MISUSE"), 200)["classification"])
+        assertEquals("MISUSE", send(HttpMethod.GET, "/api/v1/questions/$questionId/evidence-card", null, null, 200)["classification"])
+    }
+
+    @Test
     fun `a private question's reproduction stays behind the visibility gate`() {
         val author = signUp("rpprivate")
         val outsider = signUp("rpoutsider")
@@ -242,7 +328,7 @@ class ReproductionRunE2ETest {
         assertTrue(send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", author, null, 200)["capsule"] != null)
     }
 
-    private fun createQuestion(author: User, extra: Map<String, Any>): Long = send(HttpMethod.POST, "/api/v1/questions", author, mapOf("title" to "Pool leaks under load", "body" to "connections never return") + extra, 201)
+    private fun createQuestion(author: User, extra: Map<String, Any?>): Long = send(HttpMethod.POST, "/api/v1/questions", author, mapOf("title" to "Pool leaks under load", "body" to "connections never return") + extra, 201)
         .long("id").also { questionIds += it }
 
     private fun oidc(
@@ -315,6 +401,9 @@ class ReproductionRunE2ETest {
 
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any?>.map(key: String): Map<String, Any?> = this[key] as Map<String, Any?>
+
+    @Suppress("UNCHECKED_CAST")
+    private fun readList(json: String): List<Map<String, Any?>> = objectMapper.readValue(json, List::class.java) as List<Map<String, Any?>>
 
     @Suppress("UNCHECKED_CAST")
     private fun readMap(json: String): Map<String, Any?> = objectMapper.readValue(json, Map::class.java) as Map<String, Any?>
