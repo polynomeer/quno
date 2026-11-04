@@ -18,6 +18,8 @@ export interface QuestionSummary {
   updatedAt: string;
   /** ORG questions are visible to one organization's members only (Phase 79, ADR-0085). */
   visibility?: QuestionVisibility;
+  /** L2+ with a fresh reproduction (Phase 94, ADR-0089). */
+  verifiedLevel?: string | null;
 }
 
 export type QuestionVisibility = "PUBLIC" | "ORG";

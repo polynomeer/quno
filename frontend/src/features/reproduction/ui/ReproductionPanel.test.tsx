@@ -153,5 +153,13 @@ describe("workflowSnippet", () => {
     expect(snippet).toContain(`command: "test --tests 'demo.PoolTest'"`);
     expect(snippet).toContain("id-token: write");
     expect(snippet).toContain('java-version: "21"');
+    expect(snippet).not.toContain("runs-on:");
+  });
+
+  it("follows the question's environment recipe", () => {
+    const snippet = workflowSnippet(CAPSULE, "https://api.quno.example", { runsOn: "macos-latest", javaVersion: "17", nodeVersion: "22", notes: [] });
+    expect(snippet).toContain('java-version: "17"');
+    expect(snippet).toContain('node-version: "22"');
+    expect(snippet).toContain("runs-on: macos-latest");
   });
 });
