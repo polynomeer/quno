@@ -630,6 +630,23 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
   - 버전 형식이 아니어도 409다.
 - `GET /metrics/reproduction`(로그인): 최근 30일 `{since, runs, conclusiveRuns, trustedRuns, runnerMinutes, cells, flakyCells, activeCapsules, disputes}`
 
+## 검증 등급과 Evidence Card (Phase 94, ADR-0089)
+
+- `GET /questions/{id}/verification`(비로그인 허용): `{level, flags, classification, checks, lastReproducedAt, lastRunUrl}`
+  - `level`: `L0`~`L4`. 지금 도달할 수 있는 것은 `L2`까지다.
+  - `flags`: `NOT_REPRODUCING`, `SIGNATURE_MISMATCH`, `STALE`, `DISPUTED`
+  - `checks`: 조건별 충족 여부. 화면이 다음 등급 안내에 쓴다.
+- `PUT /questions/{id}/verification/classification`(작성자만): `{classification}`. `MISUSE`, `NOT_A_BUG`, 또는 `null`로 해제한다.
+- `GET /questions/{id}/evidence-card`(비로그인 허용): 스키마 `quno.evidence/1`. 자유 텍스트는 `untrusted.title`, `untrusted.bodyExcerpt`에만 있다.
+- 질문 요약에 `verifiedLevel`이 붙는다. 마지막 재현이 90일 이내인 L2 이상일 때만 값이 있다.
+- 검색 기본 정렬과 에러 시그니처 매칭은 이 값을 반영한다. 투표순 정렬은 그대로다.
+- 위 경로는 모두 공개 범위 게이트(ADR-0085)를 따른다.
+
+## 환경 집계 (Phase 93.6, ADR-0089)
+
+- `GET /environments?limit=`(비로그인 허용, 최대 50): 공개 질문 기준 `[{fingerprint, label, questionCount, lastSeenAt}]`, 질문 수가 많은 순
+- 재현 패널 응답의 `recipe`: `{runsOn, javaVersion, nodeVersion, notes}`. 스냅샷이 없으면 `null`이다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
