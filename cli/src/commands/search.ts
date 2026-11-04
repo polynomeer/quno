@@ -3,7 +3,8 @@ import type { CommandContext } from "./context.js";
 
 export function formatSummary(question: QuestionSummary, webUrl: string): string {
   const accepted = question.hasAcceptedAnswer ? " ✓채택" : "";
-  return `#${question.id} [${question.status}] ${question.title} (답변 ${question.answerCount}${accepted})\n    ${webUrl}/questions/${question.id}`;
+  const verified = question.verifiedLevel ? ` [재현됨 ${question.verifiedLevel}]` : "";
+  return `#${question.id} [${question.status}]${verified} ${question.title} (답변 ${question.answerCount}${accepted})\n    ${webUrl}/questions/${question.id}`;
 }
 
 export async function searchCommand(ctx: CommandContext, query: string, options: { limit: number; json: boolean }): Promise<number> {

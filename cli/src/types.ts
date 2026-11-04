@@ -26,6 +26,8 @@ export interface QuestionSummary {
   hasAcceptedAnswer: boolean;
   createdAt: string;
   updatedAt: string;
+  /** L2 or above with a fresh reproduction (ADR-0089); null otherwise. */
+  verifiedLevel?: string | null;
 }
 
 export interface QuestionDetail {
@@ -105,4 +107,15 @@ export interface StoredSnapshot {
       dependencies?: { resolution?: string; source?: string | null; items?: { name: string; version: string }[] };
     };
   };
+}
+
+/** A question as citable evidence (ADR-0089). Only `untrusted` holds free text. */
+export interface EvidenceCard {
+  schema: string;
+  questionId: number;
+  level: string;
+  flags: string[];
+  reproducedIn: unknown[];
+  untrusted: { title: string; bodyExcerpt: string };
+  [key: string]: unknown;
 }
