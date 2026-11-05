@@ -7,8 +7,9 @@ import { Button } from "@/shared/ui/Button";
 import { FormError } from "@/shared/ui/FormError";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
-import { useAttachCapsule, useReproductionPanel, useReproductionRunLog, useRequestRerun } from "../hooks/useReproduction";
-import type { EnvironmentRecipe, ReproductionCapsule, ReproductionKind, ReproductionResult, ReproductionRun } from "../api/reproduction.types";
+import { DiffView } from "@/features/question/ui/DiffView";
+import { useAttachCapsule, useReproductionComparison, useReproductionPanel, useReproductionRunLog, useRequestRerun } from "../hooks/useReproduction";
+import type { EnvironmentRecipe, ReproductionCapsule, ReproductionKind, ReproductionResult, ReproductionRun, ReproductionTransition } from "../api/reproduction.types";
 
 const RESULT: Record<ReproductionResult, { label: string; className: string }> = {
   REPRODUCED: { label: "재현됨", className: "bg-danger-subtle text-danger" },
@@ -54,6 +55,9 @@ export function ReproductionPanel({ questionId, isAuthor, signedIn }: { question
       ) : capsule ? (
         <>
           <CapsuleSummary capsule={capsule} />
+          {data.transitions?.map((transition) => (
+            <TransitionNotice key={transition.runId} questionId={questionId} transition={transition} />
+          ))}
           {data.latestByCell.length === 0 ? (
             <p className="text-sm text-text-secondary">아직 실행 결과가 없어요.</p>
           ) : capsule.matrixPackage ? (
@@ -159,6 +163,40 @@ function MatrixTable({ runs, plannedVersions }: { runs: ReproductionRun[]; plann
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/**
+ * A release that changed behaviour (Phase 82, ADR-0090). It's evidence for a person to read, so
+ * nothing changes state: the logs side by side are what the reader decides from.
+ */
+function TransitionNotice({ questionId, transition }: { questionId: number; transition: ReproductionTransition }) {
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useReproductionComparison(questionId, transition.runId, open);
+  const broke = transition.transition === "BROKE";
+
+  return (
+    <div className={`space-y-1.5 rounded-xl px-3 py-2 text-xs ${broke ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success"}`}>
+      <p className="font-semibold">
+        {broke ? "깨짐 감지" : "수정 후보"} · {transition.fromVersion} → {transition.toVersion}
+      </p>
+      <p>
+        {transition.environment} · {relativeTime(transition.finishedAt)}
+      </p>
+      <button type="button" className="font-semibold underline" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        {open ? "로그 비교 닫기" : "로그 비교"}
+      </button>
+      {open &&
+        (isLoading ? (
+          <p>불러오는 중...</p>
+        ) : data?.logsAvailable ? (
+          <div className="max-h-64 overflow-auto">
+            <DiffView lines={data.lines} />
+          </div>
+        ) : (
+          <p>로그가 남아 있지 않아요.</p>
+        ))}
     </div>
   );
 }

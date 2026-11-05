@@ -20,6 +20,14 @@ export function useReproductionRunLog(questionId: number, runId: number, enabled
   });
 }
 
+export function useReproductionComparison(questionId: number, runId: number, enabled: boolean) {
+  return useQuery({
+    queryKey: reproductionKeys.compare(questionId, runId),
+    queryFn: () => reproductionApi.compare(questionId, runId),
+    enabled,
+  });
+}
+
 export function useAttachCapsule(questionId: number) {
   const queryClient = useQueryClient();
   return useMutation({
