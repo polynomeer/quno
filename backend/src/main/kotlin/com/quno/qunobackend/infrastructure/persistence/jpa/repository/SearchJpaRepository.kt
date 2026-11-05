@@ -11,11 +11,13 @@ import org.springframework.data.repository.query.Param
  */
 interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
 
+    /** Reproduced questions first (Phase 94.4, ADR-0089); only L2+ moves anything, so L0 and L1 keep their order. */
     @Query(
         value = """
-            SELECT DISTINCT q.id
+            SELECT q.id
             FROM questions q
             JOIN question_versions v ON v.id = q.latest_version_id
+            LEFT JOIN question_verifications qv ON qv.question_id = q.id
             LEFT JOIN question_tags qt ON qt.question_id = q.id
             LEFT JOIN tags t ON t.id = qt.tag_id AND t.deleted_at IS NULL
             WHERE q.deleted_at IS NULL
@@ -25,7 +27,8 @@ interface SearchJpaRepository : Repository<QuestionJpaEntity, Long> {
                   @@ plainto_tsquery('simple', :query)
                 OR t.name ILIKE CONCAT('%', :query, '%')
               )
-            ORDER BY q.id DESC
+            GROUP BY q.id, qv.level, qv.last_reproduced_at
+            ORDER BY CASE WHEN qv.level IN ('L2', 'L3', 'L4') AND qv.last_reproduced_at >= NOW() - INTERVAL '90 days' THEN qv.level ELSE '' END DESC, q.id DESC
             LIMIT :limit
         """,
         nativeQuery = true,

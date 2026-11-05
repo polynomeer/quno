@@ -2,6 +2,7 @@ package com.quno.qunobackend.application.search.dto
 
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.domain.question.QuestionVisibility
+import com.quno.qunobackend.domain.verification.VerificationLevel
 import java.time.Instant
 
 data class QuestionSearchResult(
@@ -21,4 +22,6 @@ data class QuestionSearchResult(
     val viewCount: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** L2 or above with a fresh reproduction (Phase 94, ADR-0089); null otherwise. */
+    val verifiedLevel: VerificationLevel? = null,
 )

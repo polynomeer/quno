@@ -3,6 +3,7 @@ package com.quno.qunobackend.interfaces.api.search
 import com.quno.qunobackend.application.search.dto.QuestionSearchResult
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.domain.question.QuestionVisibility
+import com.quno.qunobackend.domain.verification.VerificationLevel
 import java.time.Instant
 
 data class QuestionSearchResultResponse(
@@ -19,6 +20,8 @@ data class QuestionSearchResultResponse(
     val updatedAt: Instant,
     /** Lets a list card show the lock (Phase 79, ADR-0085). */
     val visibility: QuestionVisibility = QuestionVisibility.PUBLIC,
+    /** L2+ with a fresh reproduction (Phase 94, ADR-0089). */
+    val verifiedLevel: VerificationLevel? = null,
 )
 
 fun QuestionSearchResult.toResponse() = QuestionSearchResultResponse(
@@ -34,4 +37,5 @@ fun QuestionSearchResult.toResponse() = QuestionSearchResultResponse(
     createdAt = createdAt,
     updatedAt = updatedAt,
     visibility = visibility,
+    verifiedLevel = verifiedLevel,
 )

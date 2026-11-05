@@ -46,6 +46,16 @@ export interface ReproductionPanel {
   /** When the scheduled run is next due; null when due now. */
   nextDueAt: string | null;
   recentRuns: ReproductionRun[];
+  /** Workflow settings nearest the question's snapshot (ADR-0089); null without one. */
+  recipe?: EnvironmentRecipe | null;
+}
+
+export interface EnvironmentRecipe {
+  runsOn: string;
+  javaVersion: string | null;
+  nodeVersion: string | null;
+  /** What could not be matched, for the author to judge. */
+  notes: string[];
 }
 
 export interface ReproductionRunLog {

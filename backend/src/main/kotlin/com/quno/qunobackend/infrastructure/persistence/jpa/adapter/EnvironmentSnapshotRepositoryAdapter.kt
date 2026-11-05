@@ -1,5 +1,7 @@
 package com.quno.qunobackend.infrastructure.persistence.jpa.adapter
 
+import com.quno.qunobackend.domain.snapshot.EnvironmentCoreReader
+import com.quno.qunobackend.domain.snapshot.EnvironmentGroup
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshot
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshotRepository
 import com.quno.qunobackend.domain.snapshot.SnapshotSource
@@ -11,7 +13,12 @@ import org.springframework.stereotype.Component
 @Component
 class EnvironmentSnapshotRepositoryAdapter(
     private val jpaRepository: QuestionEnvironmentSnapshotJpaRepository,
+    private val coreReader: EnvironmentCoreReader,
 ) : EnvironmentSnapshotRepository {
+
+    override fun findEnvironmentGroups(limit: Int): List<EnvironmentGroup> = jpaRepository.findEnvironmentGroups(limit).map {
+        EnvironmentGroup(it.getFingerprint(), it.getQuestionCount(), it.getLastSeenAt(), coreReader.read(it.getDocument()))
+    }
 
     override fun replaceForQuestion(snapshot: EnvironmentSnapshot) {
         jpaRepository.deleteByQuestionId(snapshot.questionId)

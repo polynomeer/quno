@@ -75,13 +75,14 @@ quno ask --last-failure --title "테스트 중 Hikari 커넥션 타임아웃" --
 
 ## MCP 서버
 
-Quno API를 읽는 도구 4개와, 이 컴퓨터의 환경을 보여 주는 `capture_environment`를 제공합니다. 출력은 본문 필드당 4,000자, 응답 전체 20,000자에서 잘립니다.
+Quno API를 읽는 도구 5개와, 이 컴퓨터의 환경을 보여 주는 `capture_environment`를 제공합니다. 출력은 본문 필드당 4,000자, 응답 전체 20,000자에서 잘립니다.
 
 | 도구 | 하는 일 |
 |---|---|
 | `search_known_issues` | 에러 텍스트로 같은 에러를 다룬 질문 찾기 |
 | `search_questions` | 키워드 검색 |
 | `get_question` | 질문과 답변(채택 답변 먼저, 적용 버전 범위 포함) |
+| `get_evidence_card` | 검증 등급과 근거: 에러 시그니처, 마지막 재현 시각, 재현된 환경·버전, 주의 사항. 자유 텍스트는 `untrusted` 아래에만 있음 |
 | `get_my_stack` | 웹에서 저장한 "내 스택" |
 | `capture_environment` | 이 컴퓨터의 환경 스냅샷을 만들어 보여 줌(전송 안 함). `failure`에 실패한 명령·종료 코드·출력을 넣으면 진단을 더하고 로컬에 기록해, 사용자가 `quno ask --last-failure`로 올릴 수 있게 함 |
 

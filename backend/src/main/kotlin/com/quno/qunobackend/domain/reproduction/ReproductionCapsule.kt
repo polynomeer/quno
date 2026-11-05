@@ -195,6 +195,11 @@ data class ReproductionRun(
     val dependencyVersion: String? = null,
     /** What started the run (`schedule`, `workflow_dispatch`, …), from the token. */
     val eventName: String? = null,
+    /** Error signatures found in the raw log tail (Phase 94, ADR-0089): keys only, one-way hashes. */
+    val signatureHashes: List<String> = emptyList(),
+    val messageKeys: List<String> = emptyList(),
+    /** The root cause's class, to say what the run failed with when it isn't the reported error. */
+    val exceptionClass: String? = null,
 )
 
 /**

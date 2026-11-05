@@ -8,7 +8,7 @@ import { FormError } from "@/shared/ui/FormError";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { useAttachCapsule, useReproductionPanel, useReproductionRunLog, useRequestRerun } from "../hooks/useReproduction";
-import type { ReproductionCapsule, ReproductionKind, ReproductionResult, ReproductionRun } from "../api/reproduction.types";
+import type { EnvironmentRecipe, ReproductionCapsule, ReproductionKind, ReproductionResult, ReproductionRun } from "../api/reproduction.types";
 
 const RESULT: Record<ReproductionResult, { label: string; className: string }> = {
   REPRODUCED: { label: "재현됨", className: "bg-danger-subtle text-danger" },
@@ -77,7 +77,7 @@ export function ReproductionPanel({ questionId, isAuthor, signedIn }: { question
           )}
           {data.nextDueAt && <p className="text-xs text-text-secondary">다음 정기 실행 {relativeTime(data.nextDueAt)}</p>}
           <RerunRequest questionId={questionId} capsule={capsule} signedIn={signedIn} />
-          {isAuthor && <WorkflowSnippet capsule={capsule} />}
+          {isAuthor && <WorkflowSnippet capsule={capsule} recipe={data.recipe} />}
         </>
       ) : (
         <p className="text-sm text-text-secondary">
@@ -373,8 +373,11 @@ function CapsuleForm({ questionId, current, onDone }: { questionId: number; curr
 }
 
 /** What the author adds to the repository: Quno's reusable workflow with this capsule's spec. */
-export function workflowSnippet(capsule: ReproductionCapsule, apiBaseUrl: string): string {
-  const javaLine = capsule.kind === "GRADLE" ? '\n      java-version: "21"' : "";
+export function workflowSnippet(capsule: ReproductionCapsule, apiBaseUrl: string, recipe?: EnvironmentRecipe | null): string {
+  const java = recipe?.javaVersion ?? (capsule.kind === "GRADLE" ? "21" : null);
+  const javaLine = java ? `\n      java-version: "${java}"` : "";
+  const nodeLine = recipe?.nodeVersion ? `\n      node-version: "${recipe.nodeVersion}"` : "";
+  const runnerLine = recipe && recipe.runsOn !== "ubuntu-latest" ? `\n      runs-on: ${recipe.runsOn}` : "";
   const matrixNote = capsule.matrixPackage
     ? `\n# ${capsule.matrixPackage} 버전은 QUNO_VERSION(Gradle은 findProperty("qunoVersion"))으로 들어옵니다.`
     : "";
@@ -392,13 +395,13 @@ jobs:
       quno-url: ${apiBaseUrl}
       capsule-id: ${capsule.id}
       kind: ${capsule.kind}
-      command: ${JSON.stringify(capsule.command)}${javaLine}
+      command: ${JSON.stringify(capsule.command)}${javaLine}${nodeLine}${runnerLine}
 `;
 }
 
-function WorkflowSnippet({ capsule }: { capsule: ReproductionCapsule }) {
+function WorkflowSnippet({ capsule, recipe }: { capsule: ReproductionCapsule; recipe?: EnvironmentRecipe | null }) {
   const [copied, setCopied] = useState(false);
-  const snippet = workflowSnippet(capsule, API_BASE_URL);
+  const snippet = workflowSnippet(capsule, API_BASE_URL, recipe);
 
   async function copy() {
     try {
@@ -417,6 +420,12 @@ function WorkflowSnippet({ capsule }: { capsule: ReproductionCapsule }) {
           저장소의 <code className="font-mono">.github/workflows/quno-reproduce.yml</code>로 추가하세요. 매일 Quno에 실행할 차례인지 묻고(조회가 많은
           질문일수록 자주), Actions 탭에서 직접 실행하거나 이의 제기가 있으면 바로 돌아요. 비밀값은 필요 없어요.
         </p>
+        {recipe && (
+          <p className="text-text-secondary">
+            질문의 환경 스냅샷에 가장 가까운 러너와 런타임으로 채웠어요.
+            {recipe.notes.length > 0 && ` ${recipe.notes.join(" ")}`}
+          </p>
+        )}
         <pre className="overflow-auto rounded-xl bg-surface-subtle p-3 font-mono text-[11px] leading-relaxed text-text-primary">{snippet}</pre>
         <Button variant="secondary" className="min-h-8 px-3 text-xs" onClick={copy}>
           {copied ? "복사했어요" : "복사"}

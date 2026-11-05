@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { reproductionApi, reproductionKeys } from "../api/reproduction.api";
 import type { AttachCapsuleInput } from "../api/reproduction.types";
+import { verificationKeys } from "@/features/verification/api/verification.api";
 
 export function useReproductionPanel(questionId: number) {
   return useQuery({
@@ -23,7 +24,11 @@ export function useAttachCapsule(questionId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: AttachCapsuleInput) => reproductionApi.attach(questionId, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: reproductionKeys.panel(questionId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reproductionKeys.panel(questionId) });
+      // A new capsule changes the checks and can drop a level earned through the old one.
+      queryClient.invalidateQueries({ queryKey: verificationKeys.detail(questionId) });
+    },
   });
 }
 
@@ -31,6 +36,9 @@ export function useRequestRerun(questionId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reason: string) => reproductionApi.requestRerun(questionId, reason),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: reproductionKeys.panel(questionId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reproductionKeys.panel(questionId) });
+      queryClient.invalidateQueries({ queryKey: verificationKeys.detail(questionId) });
+    },
   });
 }

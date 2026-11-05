@@ -1,6 +1,8 @@
 package com.quno.qunobackend.infrastructure.snapshot
 
 import com.quno.qunobackend.domain.engine.SecretDetector
+import com.quno.qunobackend.domain.snapshot.EnvironmentCore
+import com.quno.qunobackend.domain.snapshot.EnvironmentCoreReader
 import com.quno.qunobackend.domain.snapshot.EnvironmentFingerprint
 import com.quno.qunobackend.domain.snapshot.FingerprintRuntime
 import com.quno.qunobackend.domain.snapshot.InvalidEnvironmentSnapshotException
@@ -117,4 +119,23 @@ class JacksonSnapshotNormalizer(
     }
 
     private fun JsonNode.textOrNull(): String? = if (isString) asString().takeIf { it.isNotBlank() } else null
+}
+
+/** Reads the fingerprint's fields back out of a stored document (Phase 93.6, ADR-0089). */
+@Component
+class JacksonEnvironmentCoreReader(
+    private val objectMapper: ObjectMapper,
+) : EnvironmentCoreReader {
+    override fun read(document: String): EnvironmentCore {
+        val tier0 = objectMapper.readTree(document).path("tier0")
+        return EnvironmentCore(
+            osName = tier0.path("os").path("name").asString(null)?.takeIf { it.isNotBlank() },
+            arch = tier0.path("os").path("arch").asString(null)?.takeIf { it.isNotBlank() },
+            docker = tier0.path("container").path("docker").asBoolean(false),
+            wsl = tier0.path("container").path("wsl").asBoolean(false),
+            runtimes = tier0.path("runtimes").filter { it.path("name").asString("").isNotBlank() }.map {
+                FingerprintRuntime(it.path("name").asString(""), it.path("vendor").asString(null)?.takeIf(String::isNotBlank), it.path("version").asString(null)?.takeIf(String::isNotBlank))
+            },
+        )
+    }
 }

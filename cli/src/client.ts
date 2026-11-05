@@ -1,13 +1,4 @@
-import type {
-  Answer,
-  ErrorSignaturePreview,
-  Me,
-  NewQuestion,
-  ParsedDependencyFile,
-  QuestionDetail,
-  QuestionSummary,
-  StackDependency,
-} from "./types.js";
+import type { Answer, ErrorSignaturePreview, EvidenceCard, Me, NewQuestion, ParsedDependencyFile, QuestionDetail, QuestionSummary, StackDependency } from "./types.js";
 
 export const MAX_SIGNATURE_INPUT = 20_000;
 
@@ -45,6 +36,8 @@ export class QunoClient {
   createQuestion = (question: NewQuestion) => this.request<QuestionDetail>("POST", "/api/v1/questions", question);
 
   getQuestion = (id: number) => this.request<QuestionDetail>("GET", `/api/v1/questions/${id}`);
+
+  evidenceCard = (questionId: number) => this.request<EvidenceCard>("GET", `/api/v1/questions/${questionId}/evidence-card`);
 
   answers = (questionId: number) => this.request<Answer[]>("GET", `/api/v1/questions/${questionId}/answers`);
 
