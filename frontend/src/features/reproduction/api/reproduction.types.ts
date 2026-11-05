@@ -52,6 +52,27 @@ export interface ReproductionPanel {
   recipe?: EnvironmentRecipe | null;
   /** Newest first: releases that changed behaviour (Phase 82, ADR-0090). */
   transitions?: ReproductionTransition[];
+  /** The latest version search (Phase 83, ADR-0091). */
+  bisect?: VersionBisect | null;
+}
+
+export interface VersionBisect {
+  id: number;
+  fromVersion: string;
+  toVersion: string;
+  /** True when the bug appeared in the range; false when it went away. */
+  regression: boolean;
+  status: "RUNNING" | "FOUND" | "UNRESOLVED" | "BUDGET_REACHED" | "CANCELLED";
+  lowVersion: string;
+  highVersion: string;
+  confidence: "HIGH" | "MEDIUM" | "LOW" | null;
+  runsUsed: number;
+  maxRuns: number;
+  candidateCount: number;
+  probes: string[];
+  decision: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  finishedAt: string | null;
 }
 
 export interface ReproductionTransition {

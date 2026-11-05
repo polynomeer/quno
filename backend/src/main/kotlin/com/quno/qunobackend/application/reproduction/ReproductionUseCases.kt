@@ -86,6 +86,8 @@ data class ReproductionPanelResult(
     val recipe: EnvironmentRecipe? = null,
     /** Newest first: releases that changed behaviour (Phase 82, ADR-0090). */
     val transitions: List<ReproductionTransitionResult> = emptyList(),
+    /** The latest version search, running or finished (Phase 83, ADR-0091). */
+    val bisect: VersionBisectResult? = null,
 )
 
 data class ReproductionTransitionResult(
@@ -151,11 +153,15 @@ class ReproductionPlanner(
     private val dependencyRepository: QuestionDependencyRepository,
     private val applicabilityRepository: AnswerApplicabilityRepository,
     private val releaseRepository: TechnologyReleaseRepository,
+    private val bisectService: VersionBisectService,
 ) {
     fun plan(capsule: ReproductionCapsule, eventName: String?, now: Instant = Instant.now()): ReproductionPlan {
         val capsuleId = requireNotNull(capsule.id)
         val lastRunAt = runRepository.lastFinishedAt(capsuleId)
         val viewCount = viewCountRepository.countByQuestionId(capsule.questionId)
+        // A running search has the author's go-ahead and takes the whole slot: nothing else is learned as cheaply (ADR-0091).
+        val probes = bisectService.nextProbes(capsuleId)
+        if (!probes.isNullOrEmpty()) return ReproductionPlan(due = true, reason = "bisect", versions = probes, nextDueAt = null)
         // No fan-out when a release lands: the daily scan updates the table and the next plan sees it (ADR-0090).
         val release = latestRelease(capsule)?.let(Version::parseOrNull)
         val releaseUntested = release != null && runRepository.findLatestPerCell(capsuleId).none { run -> run.dependencyVersion?.let(Version::parseOrNull) == release }
@@ -185,6 +191,7 @@ class ReproductionPlanner(
 class AttachReproductionCapsuleUseCase(
     private val questionRepository: QuestionRepository,
     private val capsuleRepository: ReproductionCapsuleRepository,
+    private val bisectService: VersionBisectService,
     private val verificationService: QuestionVerificationService? = null,
 ) {
     @Transactional
@@ -192,7 +199,10 @@ class AttachReproductionCapsuleUseCase(
         val question = questionRepository.findByIdForUpdate(command.questionId) ?: throw QuestionNotFoundException(command.questionId)
         if (question.authorId != command.actorId) throw QuestionAccessDeniedException(command.questionId)
         val capsule = ReproductionCapsule.attach(command.questionId, command.repository, command.ref, command.kind, command.command, command.actorId, command.matrixPackage, command.matrixVersions)
-        capsuleRepository.findActiveByQuestionId(command.questionId)?.let { capsuleRepository.save(it.supersede()) }
+        capsuleRepository.findActiveByQuestionId(command.questionId)?.let {
+            bisectService.cancelFor(requireNotNull(it.id))
+            capsuleRepository.save(it.supersede())
+        }
         val saved = capsuleRepository.save(capsule).toResult()
         // The old capsule's runs stop counting, so a level earned through them goes with them.
         verificationService?.refresh(command.questionId)
@@ -207,6 +217,7 @@ class GetReproductionPanelUseCase(
     private val planner: ReproductionPlanner,
     private val snapshotRepository: EnvironmentSnapshotRepository,
     private val coreReader: EnvironmentCoreReader,
+    private val bisectService: VersionBisectService,
 ) {
     fun execute(questionId: Long): ReproductionPanelResult {
         val recipe = snapshotRepository.findByQuestionId(questionId)?.let { EnvironmentRecipe.from(coreReader.read(it.document)) }
@@ -216,11 +227,12 @@ class GetReproductionPanelUseCase(
         return ReproductionPanelResult(
             capsule = capsule.toResult(),
             latestByCell = runRepository.findLatestPerCell(capsuleId).map { it.toSummary() },
-            plannedVersions = plan.versions,
+            plannedVersions = planner.versions(capsule),
             nextDueAt = if (plan.due) null else plan.nextDueAt,
             recentRuns = runRepository.findRecentByCapsuleId(capsuleId, RECENT_RUNS).map { it.toSummary() },
             recipe = recipe,
             transitions = runRepository.findTransitions(capsuleId, MAX_TRANSITIONS).map { it.toTransition() },
+            bisect = bisectService.latest(capsuleId),
         )
     }
 
@@ -286,6 +298,7 @@ class RecordReproductionRunUseCase(
     private val questionRepository: QuestionRepository,
     private val answerRepository: AnswerRepository,
     private val outboxEventRepository: OutboxEventRepository,
+    private val bisectService: VersionBisectService,
     private val verificationService: QuestionVerificationService? = null,
 ) {
     @Transactional
@@ -340,6 +353,7 @@ class RecordReproductionRunUseCase(
         if (capsule.rerunRequestedAt != null) capsuleRepository.save(capsule.rerunAnswered())
         runRepository.pruneLogs(capsuleId, KEEP_LOGS)
         verificationService?.refresh(capsule.questionId)
+        bisectService.onRunRecorded(capsuleId)
         return ReportedRunResult(requireNotNull(run.id), run.result)
     }
 

@@ -28,6 +28,17 @@ export function useReproductionComparison(questionId: number, runId: number, ena
   });
 }
 
+/** Every search action changes the panel, and the card reads an approved boundary. */
+export function useBisectActions(questionId: number) {
+  const queryClient = useQueryClient();
+  const onSuccess = () => queryClient.invalidateQueries({ queryKey: reproductionKeys.panel(questionId) });
+  return {
+    start: useMutation({ mutationFn: (range: { from: string; to: string }) => reproductionApi.startBisect(questionId, range.from, range.to), onSuccess }),
+    cancel: useMutation({ mutationFn: (bisectId: number) => reproductionApi.cancelBisect(questionId, bisectId), onSuccess }),
+    decide: useMutation({ mutationFn: (input: { bisectId: number; approve: boolean }) => reproductionApi.decideBisect(questionId, input.bisectId, input.approve), onSuccess }),
+  };
+}
+
 export function useAttachCapsule(questionId: number) {
   const queryClient = useQueryClient();
   return useMutation({

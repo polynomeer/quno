@@ -62,6 +62,14 @@ export function describeNotification(notification: Notification): DescribedNotif
         href: `${questionHref}#qunobot`,
       };
     }
+    case "VERSION_SEARCH_FINISHED":
+      return {
+        message:
+          payload.status === "FOUND"
+            ? "버전 탐색이 끝났습니다. 찾은 경계를 확인하고 승인해 주세요"
+            : "버전 탐색이 경계를 정하지 못하고 끝났습니다. 좁혀진 범위를 확인해 주세요",
+        href,
+      };
     case "RELEASE_REPRODUCTION_CHANGED": {
       const version = typeof payload.toVersion === "string" ? ` ${payload.toVersion}` : "";
       return {

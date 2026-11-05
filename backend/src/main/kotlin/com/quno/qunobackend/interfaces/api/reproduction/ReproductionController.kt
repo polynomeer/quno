@@ -14,6 +14,9 @@ import com.quno.qunobackend.application.reproduction.ReproductionRunLogResult
 import com.quno.qunobackend.application.reproduction.ReproductionRunSummary
 import com.quno.qunobackend.application.reproduction.ReproductionTransitionResult
 import com.quno.qunobackend.application.reproduction.RequestReproductionRerunUseCase
+import com.quno.qunobackend.application.reproduction.StartVersionBisectUseCase
+import com.quno.qunobackend.application.reproduction.VersionBisectResult
+import com.quno.qunobackend.application.reproduction.VersionBisectService
 import com.quno.qunobackend.domain.reproduction.InvalidRunAttestationException
 import com.quno.qunobackend.domain.reproduction.ReproductionKind
 import com.quno.qunobackend.domain.reproduction.ReproductionMetrics
@@ -50,6 +53,8 @@ class ReproductionController(
     private val recordUseCase: RecordReproductionRunUseCase,
     private val planUseCase: PlanReproductionRunUseCase,
     private val metricsUseCase: GetReproductionMetricsUseCase,
+    private val startBisectUseCase: StartVersionBisectUseCase,
+    private val bisectService: VersionBisectService,
 ) {
 
     @GetMapping("/questions/{id}/reproduction")
@@ -77,6 +82,27 @@ class ReproductionController(
     /** The version before against the release, line by line (Phase 82.3, ADR-0090). */
     @GetMapping("/questions/{id}/reproduction/runs/{runId}/compare")
     fun compare(@PathVariable id: Long, @PathVariable runId: Long): ReproductionRunComparison = panelUseCase.compare(id, runId)
+
+    /** Spends the repository's CI minutes, so its question's author starts it (Phase 83, ADR-0091). */
+    @PostMapping("/questions/{id}/reproduction/bisects")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun startBisect(
+        @AuthenticationPrincipal actorId: Long,
+        @PathVariable id: Long,
+        @Valid @RequestBody request: StartBisectRequest,
+    ): VersionBisectResult = startBisectUseCase.execute(id, actorId, request.fromVersion, request.toVersion)
+
+    @PostMapping("/questions/{id}/reproduction/bisects/{bisectId}/cancel")
+    fun cancelBisect(@AuthenticationPrincipal actorId: Long, @PathVariable id: Long, @PathVariable bisectId: Long): VersionBisectResult = bisectService.cancel(id, bisectId, actorId)
+
+    /** A found boundary is a suggestion until its author approves it (Phase 83.2). */
+    @PostMapping("/questions/{id}/reproduction/bisects/{bisectId}/decision")
+    fun decideBisect(
+        @AuthenticationPrincipal actorId: Long,
+        @PathVariable id: Long,
+        @PathVariable bisectId: Long,
+        @RequestBody request: BisectDecisionRequest,
+    ): VersionBisectResult = bisectService.decide(id, bisectId, actorId, request.approve)
 
     @PostMapping("/reproduction-runs")
     @ResponseStatus(HttpStatus.CREATED)
@@ -137,6 +163,15 @@ data class AttachReproductionCapsuleRequest(
     @field:Size(max = 5)
     val matrixVersions: List<String> = emptyList(),
 )
+
+data class StartBisectRequest(
+    @field:NotBlank @field:Size(max = 100)
+    val fromVersion: String,
+    @field:NotBlank @field:Size(max = 100)
+    val toVersion: String,
+)
+
+data class BisectDecisionRequest(val approve: Boolean)
 
 data class PlanRequest(
     @field:NotNull
@@ -216,6 +251,8 @@ data class ReproductionPanelResponse(
     val recipe: EnvironmentRecipe?,
     /** Newest first: releases that changed behaviour (ADR-0090). */
     val transitions: List<ReproductionTransitionResult>,
+    /** The latest version search (ADR-0091); null before the first. */
+    val bisect: VersionBisectResult?,
 )
 
 data class ReproductionRunLogResponse(val runId: Long, val logTail: String?, val maskedSecretCount: Int)
@@ -224,6 +261,6 @@ private fun ReproductionCapsuleResult.toResponse() = ReproductionCapsuleResponse
 
 private fun ReproductionRunSummary.toResponse() = ReproductionRunResponse(id, result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, hasLog, dependencyVersion)
 
-private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() }, recipe, transitions)
+private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() }, recipe, transitions, bisect)
 
 private fun ReproductionRunLogResult.toResponse() = ReproductionRunLogResponse(runId, logTail, maskedSecretCount)

@@ -60,6 +60,7 @@ class ReproductionRunE2ETest {
     fun cleanUp() {
         fun run(sql: String, vararg args: Any) = runCatching { jdbcTemplate.update(sql, *args) }
         questionIds.reversed().forEach { id ->
+            run("DELETE FROM reproduction_bisects WHERE capsule_id IN (SELECT id FROM reproduction_capsules WHERE question_id = ?)", id)
             run("UPDATE reproduction_runs SET compared_run_id = NULL WHERE capsule_id IN (SELECT id FROM reproduction_capsules WHERE question_id = ?)", id)
             run("DELETE FROM watches WHERE question_id = ?", id)
             run("DELETE FROM reproduction_runs WHERE capsule_id IN (SELECT id FROM reproduction_capsules WHERE question_id = ?)", id)
@@ -376,6 +377,70 @@ class ReproductionRunE2ETest {
     }
 
     @Test
+    fun `a version search walks the releases to the first one that changed, and waits for its author`() {
+        val author = signUp("rbauthor")
+        val questionId = createQuestion(author, emptyMap())
+        val repository = "octo-${UUID.randomUUID().toString().take(6)}/bisect"
+        val spec = mapOf("repository" to repository, "ref" to "main", "kind" to "SCRIPT", "command" to "./r.sh", "matrixPackage" to "com.acme:widget", "matrixVersions" to listOf("1.0.0", "1.9.0"))
+        val capsuleId = send(HttpMethod.PUT, "/api/v1/questions/$questionId/reproduction", author, spec, 200).long("id")
+        val base = mapOf("capsuleId" to capsuleId, "kind" to "SCRIPT", "command" to "./r.sh", "environment" to "ubuntu24")
+        val start = "/api/v1/questions/$questionId/reproduction/bisects"
+        val range = mapOf("fromVersion" to "1.0.0", "toVersion" to "1.9.0")
+        var nextRun = 5000L
+        fun run(version: String, exit: Int) = report(oidc(repository, runId = nextRun++), base + mapOf("exitCode" to exit, "dependencyVersion" to version, "logTail" to "x"), 201)
+
+        // Needs conclusive ends that differ.
+        assertEquals(400, status(HttpMethod.POST, start, author, range))
+        run("1.0.0", 0)
+        run("1.9.0", 0)
+        assertEquals(400, status(HttpMethod.POST, start, author, range))
+        run("1.9.0", 1)
+        assertEquals(403, status(HttpMethod.POST, start, signUp("rbother"), range))
+
+        // In the registry, 1.5.0 is the first bad one; the pre-release must be skipped.
+        val bisect = send(HttpMethod.POST, start, author, range, 201)
+        val bisectId = bisect.long("id")
+        assertEquals("RUNNING", bisect["status"])
+        assertEquals(409, status(HttpMethod.POST, start, author, range), "one search at a time")
+
+        val badFrom = "1.5.0"
+        var rounds = 0
+        while (true) {
+            val plan = plan(oidc(repository), capsuleId, 200)
+            if (plan["reason"] != "bisect") break
+            assertEquals(true, plan["due"], "a search doesn't wait for the interval")
+            @Suppress("UNCHECKED_CAST")
+            val probes = (plan["matrix"] as List<Map<String, Any?>>).map { it["version"] as String }
+            assertFalse("1.3.0-rc1" in probes)
+            probes.forEach { run(it, if (it >= badFrom) 1 else 0) }
+            assertTrue(++rounds < 8, "must settle")
+        }
+        val found = send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200).map("bisect")
+        assertEquals("FOUND", found["status"])
+        assertEquals("1.4.0", found["lowVersion"])
+        assertEquals("1.5.0", found["highVersion"])
+        assertEquals("HIGH", found["confidence"], "both sides got a second run")
+        assertTrue((found["runsUsed"] as Number).toInt() <= 10)
+        assertEquals(true, found["regression"])
+
+        // A suggestion until approved: the card only carries an approved boundary.
+        assertNull(send(HttpMethod.GET, "/api/v1/questions/$questionId/evidence-card", null, null, 200)["versionBoundary"])
+        assertEquals(403, status(HttpMethod.POST, "$start/$bisectId/decision", signUp("rbother2"), mapOf("approve" to true)))
+        send(HttpMethod.POST, "$start/$bisectId/decision", author, mapOf("approve" to true), 200)
+        val boundary = send(HttpMethod.GET, "/api/v1/questions/$questionId/evidence-card", null, null, 200).map("versionBoundary")
+        assertEquals("1.5.0", boundary["boundaryVersion"])
+        assertEquals("1.4.0", boundary["previousVersion"])
+
+        // A package the registry doesn't know: 503, and nothing is started.
+        val unknown = createQuestion(author, emptyMap())
+        val unknownCapsule = send(HttpMethod.PUT, "/api/v1/questions/$unknown/reproduction", author, spec + mapOf("repository" to "$repository-2", "matrixPackage" to "com.acme:missing"), 200).long("id")
+        val other = mapOf("capsuleId" to unknownCapsule, "kind" to "SCRIPT", "command" to "./r.sh", "environment" to "ubuntu24")
+        report(oidc("$repository-2", runId = nextRun++), other + mapOf("exitCode" to 0, "dependencyVersion" to "1.0.0", "logTail" to "x"), 201)
+        report(oidc("$repository-2", runId = nextRun++), other + mapOf("exitCode" to 1, "dependencyVersion" to "1.9.0", "logTail" to "x"), 201)
+        assertEquals(503, status(HttpMethod.POST, "/api/v1/questions/$unknown/reproduction/bisects", author, range))
+    }
+
+    @Test
     fun `a private question's reproduction stays behind the visibility gate`() {
         val author = signUp("rpprivate")
         val outsider = signUp("rpoutsider")
@@ -491,6 +556,11 @@ class ReproductionRunE2ETest {
             val jwks = Files.createTempFile("quno-jwks", ".json")
             Files.writeString(jwks, """{"keys":[{"kty":"RSA","kid":"$KID","alg":"RS256","use":"sig","n":"${b64(publicKey.modulus)}","e":"${b64(publicKey.publicExponent)}"}]}""")
             registry.add("quno.runner.oidc.jwks-uri") { jwks.toUri().toString() }
+            val maven = Files.createTempDirectory("quno-maven")
+            val widget = Files.createDirectories(maven.resolve("com/acme/widget"))
+            val versions = listOf("1.0.0", "1.1.0", "1.2.0", "1.3.0-rc1", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "2.0.0")
+            Files.writeString(widget.resolve("maven-metadata.xml"), "<metadata><versioning><versions>${versions.joinToString("") { "<version>$it</version>" }}</versions></versioning></metadata>")
+            registry.add("quno.runner.registry.maven-url") { maven.toUri().toString().removeSuffix("/") }
         }
     }
 }

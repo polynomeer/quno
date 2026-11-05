@@ -49,9 +49,14 @@ import com.quno.qunobackend.domain.question.QuestionVersionNotFoundException
 import com.quno.qunobackend.domain.report.ModeratorAccessDeniedException
 import com.quno.qunobackend.domain.report.ReportAlreadyResolvedException
 import com.quno.qunobackend.domain.report.ReportNotFoundException
+import com.quno.qunobackend.domain.reproduction.BisectAlreadyRunningException
+import com.quno.qunobackend.domain.reproduction.BisectNotDecidableException
+import com.quno.qunobackend.domain.reproduction.BisectNotFoundException
 import com.quno.qunobackend.domain.reproduction.DuplicateReproductionRunException
+import com.quno.qunobackend.domain.reproduction.InvalidBisectRequestException
 import com.quno.qunobackend.domain.reproduction.InvalidReproductionCapsuleException
 import com.quno.qunobackend.domain.reproduction.InvalidRunAttestationException
+import com.quno.qunobackend.domain.reproduction.ReleaseListUnavailableException
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleNotFoundException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunMismatchException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunNotFoundException
@@ -114,8 +119,14 @@ class GlobalExceptionHandler {
         ReproductionRunMismatchException::class,
         DuplicateReproductionRunException::class,
         RerunAlreadyRequestedException::class,
+        BisectAlreadyRunningException::class,
+        BisectNotDecidableException::class,
     )
     fun handleConflict(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", ex.message.orEmpty()))
+
+    /** The registry is someone else's service: not the client's fault, and worth retrying (ADR-0091). */
+    @ExceptionHandler(ReleaseListUnavailableException::class)
+    fun handleUpstreamUnavailable(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ErrorResponse("UPSTREAM_UNAVAILABLE", ex.message.orEmpty()))
 
     @ExceptionHandler(InvalidCredentialsException::class, InvalidTokenException::class, InvalidRunAttestationException::class)
     fun handleUnauthorized(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse("UNAUTHORIZED", ex.message.orEmpty()))
@@ -141,6 +152,7 @@ class GlobalExceptionHandler {
         EngineSuggestionNotFoundException::class,
         ReproductionCapsuleNotFoundException::class,
         ReproductionRunNotFoundException::class,
+        BisectNotFoundException::class,
     )
     fun handleNotFound(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse("NOT_FOUND", ex.message.orEmpty()))
 
@@ -192,6 +204,7 @@ class GlobalExceptionHandler {
         QuestionPromotionNotAllowedException::class,
         PromotionBlockedException::class,
         InvalidReproductionCapsuleException::class,
+        InvalidBisectRequestException::class,
     )
     fun handleBadRequest(ex: RuntimeException): ResponseEntity<ErrorResponse> = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("BAD_REQUEST", ex.message.orEmpty()))
 

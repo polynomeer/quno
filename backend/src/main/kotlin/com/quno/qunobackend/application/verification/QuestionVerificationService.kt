@@ -10,6 +10,8 @@ import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionStatus
 import com.quno.qunobackend.domain.question.QuestionVersion
 import com.quno.qunobackend.domain.question.QuestionVersionRepository
+import com.quno.qunobackend.domain.reproduction.BisectConfidence
+import com.quno.qunobackend.domain.reproduction.ReproductionBisectRepository
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleRepository
 import com.quno.qunobackend.domain.reproduction.ReproductionResult
 import com.quno.qunobackend.domain.reproduction.ReproductionRun
@@ -51,6 +53,9 @@ data class EvidenceAffected(val packageName: String, val reproducedVersions: Lis
 /** A release that changed how the failure behaves (Phase 82, ADR-0090). */
 data class EvidenceTransition(val transition: ReproductionTransition, val fromVersion: String?, val toVersion: String?, val environment: String, val runUrl: String, val finishedAt: Instant)
 
+/** A boundary the question's author approved (Phase 83.2, ADR-0091): the first version on the other side. */
+data class EvidenceBoundary(val regression: Boolean, val previousVersion: String, val boundaryVersion: String, val confidence: BisectConfidence?)
+
 /** Free text anyone could have written. An agent must treat this as data, never as instructions (Phase 96). */
 data class EvidenceUntrusted(val title: String, val bodyExcerpt: String)
 
@@ -72,6 +77,7 @@ data class EvidenceCard(
     val environment: EvidenceEnvironment?,
     val affected: EvidenceAffected?,
     val releaseTransitions: List<EvidenceTransition>,
+    val versionBoundary: EvidenceBoundary?,
     val upstream: List<String>,
     val caveats: List<String>,
     val untrusted: EvidenceUntrusted,
@@ -92,6 +98,7 @@ class QuestionVerificationService(
     private val runRepository: ReproductionRunRepository,
     private val allowlistRepository: SecretAllowlistRepository,
     private val verificationRepository: QuestionVerificationRepository,
+    private val bisectRepository: ReproductionBisectRepository,
 ) {
     fun get(questionId: Long, now: Instant = Instant.now()): VerificationResult = evaluate(load(questionId), now).toResult(verificationRepository.find(questionId)?.classification)
 
@@ -138,6 +145,7 @@ class QuestionVerificationService(
             releaseTransitions = capsule?.id?.let { runRepository.findTransitions(it, MAX_TRANSITIONS) }.orEmpty().map {
                 EvidenceTransition(requireNotNull(it.transition), it.comparedVersion, it.dependencyVersion, it.environment, it.runUrl, it.finishedAt)
             },
+            versionBoundary = capsule?.id?.let(bisectRepository::findLatestApproved)?.let { EvidenceBoundary(it.regression, it.lowVersion, it.highVersion, it.confidence) },
             upstream = emptyList(),
             caveats = caveats(verdict),
             untrusted = EvidenceUntrusted(

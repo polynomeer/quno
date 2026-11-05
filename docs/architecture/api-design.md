@@ -655,6 +655,21 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - Evidence Card에 `releaseTransitions`가 더해진다.
 - 알림 유형 `RELEASE_REPRODUCTION_CHANGED`: 질문 작성자, Ward 구독자, 답변 작성자. 질문 상태는 바꾸지 않는다.
 
+## 버전 이분 탐색 (Phase 83, ADR-0091)
+
+- `POST /questions/{id}/reproduction/bisects`(작성자만): `{fromVersion, toVersion}`로 탐색을 시작한다. 201과 탐색 상태를 돌려준다.
+  - 두 끝 모두 신뢰 실행의 판정이 있고 결과가 달라야 한다. 아니면 400이다.
+  - 이미 돌고 있으면 409다.
+  - 릴리스 목록을 읽지 못하면 503이다.
+- `POST /questions/{id}/reproduction/bisects/{bisectId}/cancel`(작성자만)
+- `POST /questions/{id}/reproduction/bisects/{bisectId}/decision`(작성자만): `{approve}`. `FOUND`일 때만 가능하고, 아니면 409다.
+- 패널 응답의 `bisect`: `{id, fromVersion, toVersion, regression, status, lowVersion, highVersion, confidence, runsUsed, maxRuns, candidateCount, probes, decision, createdAt, finishedAt}`
+  - `status`: `RUNNING`, `FOUND`, `UNRESOLVED`, `BUDGET_REACHED`, `CANCELLED`
+  - `FOUND`이면 `highVersion`이 처음 달라진 버전, `lowVersion`이 그 직전 버전이다.
+- 탐색 중 계획 API는 `reason: bisect`와 다음 버전을 답한다.
+- Evidence Card의 `versionBoundary`: 승인된 경계 `{regression, previousVersion, boundaryVersion, confidence}`, 없으면 `null`
+- 알림 유형 `VERSION_SEARCH_FINISHED`: 탐색을 시작한 작성자에게만 간다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.
