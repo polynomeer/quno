@@ -1,5 +1,6 @@
 package com.quno.qunobackend.integration
 
+import com.quno.qunobackend.application.notification.usecase.DispatchOutboxEventsUseCase
 import io.jsonwebtoken.Jwts
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -46,6 +47,9 @@ class ReproductionRunE2ETest {
     @Autowired
     lateinit var jdbcTemplate: JdbcTemplate
 
+    @Autowired
+    lateinit var dispatchOutboxEventsUseCase: DispatchOutboxEventsUseCase
+
     private val userIds = mutableListOf<Long>()
     private val questionIds = mutableListOf<Long>()
     private val organizationIds = mutableListOf<Long>()
@@ -56,6 +60,8 @@ class ReproductionRunE2ETest {
     fun cleanUp() {
         fun run(sql: String, vararg args: Any) = runCatching { jdbcTemplate.update(sql, *args) }
         questionIds.reversed().forEach { id ->
+            run("UPDATE reproduction_runs SET compared_run_id = NULL WHERE capsule_id IN (SELECT id FROM reproduction_capsules WHERE question_id = ?)", id)
+            run("DELETE FROM watches WHERE question_id = ?", id)
             run("DELETE FROM reproduction_runs WHERE capsule_id IN (SELECT id FROM reproduction_capsules WHERE question_id = ?)", id)
             run("DELETE FROM reproduction_capsules WHERE question_id = ?", id)
             run("UPDATE questions SET latest_version_id = NULL WHERE id = ?", id)
@@ -303,6 +309,70 @@ class ReproductionRunE2ETest {
         assertEquals(403, status(HttpMethod.PUT, classify, signUp("rvother"), mapOf("classification" to "MISUSE")))
         assertEquals("MISUSE", send(HttpMethod.PUT, classify, author, mapOf("classification" to "MISUSE"), 200)["classification"])
         assertEquals("MISUSE", send(HttpMethod.GET, "/api/v1/questions/$questionId/evidence-card", null, null, 200)["classification"])
+    }
+
+    @Test
+    fun `a new release is run next, and behaviour that changed against the version before notifies people`() {
+        val author = signUp("rlauthor")
+        val answerer = signUp("rlanswerer")
+        val watcher = signUp("rlwatcher")
+        val questionId = createQuestion(author, emptyMap())
+        send(HttpMethod.POST, "/api/v1/questions/$questionId/answers", answerer, mapOf("body" to "pin the client"), 201)
+        status(HttpMethod.POST, "/api/v1/questions/$questionId/watch", watcher, null)
+        val repository = "octo-${UUID.randomUUID().toString().take(6)}/kafka-matrix"
+        val capsuleId = send(HttpMethod.PUT, "/api/v1/questions/$questionId/reproduction", author, mapOf("repository" to repository, "ref" to "main", "kind" to "SCRIPT", "command" to "./r.sh", "matrixPackage" to "org.apache.kafka:kafka-clients", "matrixVersions" to listOf("3.7.0")), 200).long("id")
+        val base = mapOf("capsuleId" to capsuleId, "kind" to "SCRIPT", "command" to "./r.sh", "environment" to "ubuntu24")
+        fun released(version: String) = jdbcTemplate.update(
+            "INSERT INTO technology_releases (tag_slug, product_slug, latest_version, latest_release_date, checked_at, updated_at) VALUES ('kafka', 'apache-kafka', ?, CURRENT_DATE, NOW(), NOW()) ON CONFLICT (tag_slug) DO UPDATE SET latest_version = EXCLUDED.latest_version",
+            version,
+        )
+        val original = jdbcTemplate.queryForList("SELECT latest_version FROM technology_releases WHERE tag_slug = 'kafka'", String::class.java).firstOrNull()
+        try {
+            released("3.8.0")
+            @Suppress("UNCHECKED_CAST")
+            assertEquals(listOf("3.7.0", "3.8.0"), (plan(oidc(repository), capsuleId, 200)["matrix"] as List<Map<String, Any?>>).map { it["version"] })
+
+            // The baseline: first-time runs never look like a regression, even out of order.
+            report(oidc(repository, runId = 4001), base + mapOf("exitCode" to 0, "dependencyVersion" to "3.7.0", "logTail" to "all good\nBUILD SUCCESSFUL"), 201)
+            assertEquals("new-release", plan(oidc(repository), capsuleId, 200)["reason"], "just ran, but the release hasn't")
+            assertEquals(emptyList<Any>(), send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200)["transitions"])
+
+            // The release fails where 3.7.0 passed: a transition, once.
+            val broke = report(oidc(repository, runId = 4002), base + mapOf("exitCode" to 1, "dependencyVersion" to "3.8.0", "logTail" to "all good\nBUILD FAILED"), 201)
+            assertEquals("not-due", plan(oidc(repository), capsuleId, 200)["reason"])
+            @Suppress("UNCHECKED_CAST")
+            val transitions = send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction", null, null, 200)["transitions"] as List<Map<String, Any?>>
+            assertEquals("BROKE", transitions.single()["transition"])
+            assertEquals("3.7.0", transitions.single()["fromVersion"])
+            assertEquals("3.8.0", transitions.single()["toVersion"])
+            report(oidc(repository, runId = 4003), base + mapOf("exitCode" to 1, "dependencyVersion" to "3.8.0", "logTail" to "BUILD FAILED"), 201)
+
+            // The two logs, line by line; a run with no transition has nothing to compare.
+            val compare = send(HttpMethod.GET, "/api/v1/questions/$questionId/reproduction/runs/${broke.long("runId")}/compare", null, null, 200)
+            assertEquals(true, compare["logsAvailable"])
+            @Suppress("UNCHECKED_CAST")
+            val lines = compare["lines"] as List<Map<String, Any?>>
+            assertEquals("BUILD SUCCESSFUL", lines.single { it["type"] == "REMOVED" }["text"])
+            assertEquals("BUILD FAILED", lines.single { it["type"] == "ADDED" }["text"])
+
+            // Everyone involved hears once; nothing changes state by itself (ADR-0033).
+            dispatchOutboxEventsUseCase.execute(500)
+            fun heard(user: User) = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND type = 'RELEASE_REPRODUCTION_CHANGED'", Long::class.java, user.id)
+            assertEquals(1L, heard(author))
+            assertEquals(1L, heard(answerer))
+            assertEquals(1L, heard(watcher))
+            assertEquals("OPEN", send(HttpMethod.GET, "/api/v1/questions/$questionId", null, null, 200)["status"])
+
+            // The next release passes again: a candidate fix, against the release before it.
+            released("3.9.0")
+            assertEquals("new-release", plan(oidc(repository), capsuleId, 200)["reason"])
+            report(oidc(repository, runId = 4004), base + mapOf("exitCode" to 0, "dependencyVersion" to "3.9.0", "logTail" to "ok"), 201)
+            val card = send(HttpMethod.GET, "/api/v1/questions/$questionId/evidence-card", null, null, 200)
+            @Suppress("UNCHECKED_CAST")
+            assertEquals(listOf("FIXED", "BROKE"), (card["releaseTransitions"] as List<Map<String, Any?>>).map { it["transition"] })
+        } finally {
+            if (original == null) jdbcTemplate.update("DELETE FROM technology_releases WHERE tag_slug = 'kafka'") else released(original)
+        }
     }
 
     @Test

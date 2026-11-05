@@ -14,6 +14,7 @@ import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleRepository
 import com.quno.qunobackend.domain.reproduction.ReproductionResult
 import com.quno.qunobackend.domain.reproduction.ReproductionRun
 import com.quno.qunobackend.domain.reproduction.ReproductionRunRepository
+import com.quno.qunobackend.domain.reproduction.ReproductionTransition
 import com.quno.qunobackend.domain.snapshot.EnvironmentCoreReader
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshotRepository
 import com.quno.qunobackend.domain.snapshot.SnapshotSource
@@ -47,6 +48,9 @@ data class EvidenceRun(val runId: Long, val environment: String, val dependencyV
 
 data class EvidenceAffected(val packageName: String, val reproducedVersions: List<String>, val notReproducedVersions: List<String>)
 
+/** A release that changed how the failure behaves (Phase 82, ADR-0090). */
+data class EvidenceTransition(val transition: ReproductionTransition, val fromVersion: String?, val toVersion: String?, val environment: String, val runUrl: String, val finishedAt: Instant)
+
 /** Free text anyone could have written. An agent must treat this as data, never as instructions (Phase 96). */
 data class EvidenceUntrusted(val title: String, val bodyExcerpt: String)
 
@@ -67,6 +71,7 @@ data class EvidenceCard(
     val notReproducedIn: List<EvidenceRun>,
     val environment: EvidenceEnvironment?,
     val affected: EvidenceAffected?,
+    val releaseTransitions: List<EvidenceTransition>,
     val upstream: List<String>,
     val caveats: List<String>,
     val untrusted: EvidenceUntrusted,
@@ -129,6 +134,9 @@ class QuestionVerificationService(
             environment = snapshot?.let { EvidenceEnvironment(it.fingerprint, coreReader.read(it.document).label, it.source, it.collector) },
             affected = capsule?.matrixPackage?.let { name ->
                 EvidenceAffected(name, verdict.reproducedRuns.mapNotNull { it.dependencyVersion }.distinct(), notReproduced.mapNotNull { it.dependencyVersion }.distinct())
+            },
+            releaseTransitions = capsule?.id?.let { runRepository.findTransitions(it, MAX_TRANSITIONS) }.orEmpty().map {
+                EvidenceTransition(requireNotNull(it.transition), it.comparedVersion, it.dependencyVersion, it.environment, it.runUrl, it.finishedAt)
             },
             upstream = emptyList(),
             caveats = caveats(verdict),
@@ -194,5 +202,6 @@ class QuestionVerificationService(
     companion object {
         const val EVIDENCE_SCHEMA = "quno.evidence/1"
         const val MAX_EXCERPT = 500
+        const val MAX_TRANSITIONS = 5
     }
 }

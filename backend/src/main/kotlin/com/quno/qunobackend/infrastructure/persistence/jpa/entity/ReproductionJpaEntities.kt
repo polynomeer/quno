@@ -2,6 +2,7 @@ package com.quno.qunobackend.infrastructure.persistence.jpa.entity
 
 import com.quno.qunobackend.domain.reproduction.ReproductionKind
 import com.quno.qunobackend.domain.reproduction.ReproductionResult
+import com.quno.qunobackend.domain.reproduction.ReproductionTransition
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -132,4 +133,14 @@ class ReproductionRunJpaEntity(
 
     @Column(name = "exception_class")
     val exceptionClass: String?,
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    val transition: ReproductionTransition?,
+
+    @Column(name = "compared_run_id")
+    val comparedRunId: Long?,
+
+    @Column(name = "compared_version")
+    val comparedVersion: String?,
 )

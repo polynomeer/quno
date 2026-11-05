@@ -108,6 +108,10 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.ANSWER_REVISION -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.MENTIONED_IN_COMMENT -> extractLongList(event.payload, "mentionedUserIds").forEach(recipients::add)
             OutboxEventTypes.TECH_VERSION_IMPACT_DETECTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.RELEASE_REPRODUCTION_CHANGED -> {
+                extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+                extractLongList(event.payload, "answerAuthorIds").forEach(recipients::add)
+            }
             OutboxEventTypes.DIRECT_ASK_REQUESTED -> extractLong(event.payload, "targetUserId")?.let(recipients::add)
             OutboxEventTypes.DIRECT_ASK_ACCEPTED, OutboxEventTypes.DIRECT_ASK_DECLINED ->
                 extractLong(event.payload, "requesterId")?.let(recipients::add)

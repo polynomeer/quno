@@ -124,6 +124,7 @@ class SecurityConfig(
                 // Reproduction status is part of what a shared question shows (Phase 80, ADR-0087).
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction", permitAll)
                 authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction/runs/{runId}/log", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/questions/{id}/reproduction/runs/{runId}/compare", permitAll)
                 // Reported by GitHub Actions, not a user: the OIDC token in X-Quno-Attestation is the credential.
                 authorize(HttpMethod.POST, "/api/v1/reproduction-runs", permitAll)
                 authorize(HttpMethod.POST, "/api/v1/reproduction-runs/plan", permitAll)

@@ -24,6 +24,8 @@ interface ReproductionRunJpaRepository : JpaRepository<ReproductionRunJpaEntity,
 
     fun findByCapsuleIdOrderByFinishedAtDescIdDesc(capsuleId: Long, limit: Limit): List<ReproductionRunJpaEntity>
 
+    fun findByCapsuleIdAndTransitionIsNotNullOrderByFinishedAtDescIdDesc(capsuleId: Long, limit: Limit): List<ReproductionRunJpaEntity>
+
     @Query(
         value = """
             SELECT DISTINCT ON (environment, dependency_version) * FROM reproduction_runs
@@ -64,6 +66,8 @@ interface ReproductionRunJpaRepository : JpaRepository<ReproductionRunJpaEntity,
         value = """
             UPDATE reproduction_runs SET log_tail = NULL
              WHERE capsule_id = :capsuleId AND log_tail IS NOT NULL
+               AND transition IS NULL
+               AND id NOT IN (SELECT compared_run_id FROM reproduction_runs WHERE capsule_id = :capsuleId AND compared_run_id IS NOT NULL)
                AND id NOT IN (SELECT id FROM reproduction_runs WHERE capsule_id = :capsuleId ORDER BY finished_at DESC, id DESC LIMIT :keep)
         """,
         nativeQuery = true,
