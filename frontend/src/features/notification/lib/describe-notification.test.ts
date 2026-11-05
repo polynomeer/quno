@@ -35,4 +35,9 @@ describe("describeNotification", () => {
     expect(describeNotification(notification("BROKE")).message).toBe("새 릴리스 3.8.0에서 이 문제가 재현됩니다. 답변을 다시 확인해 주세요");
     expect(describeNotification(notification("FIXED")).message).toBe("새 릴리스 3.8.0에서 이 문제가 재현되지 않습니다. 수정됐을 수 있어요");
   });
+
+  it("asks the author to judge a finished version search", () => {
+    const notification = { id: 3, type: "VERSION_SEARCH_FINISHED", questionId: 10, answerId: null, payload: '{"status":"FOUND"}', isRead: false, createdAt: "" } as unknown as Notification;
+    expect(describeNotification(notification).message).toBe("버전 탐색이 끝났습니다. 찾은 경계를 확인하고 승인해 주세요");
+  });
 });

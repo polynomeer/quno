@@ -8,8 +8,8 @@ import { FormError } from "@/shared/ui/FormError";
 import { Input } from "@/shared/ui/Input";
 import { Textarea } from "@/shared/ui/Textarea";
 import { DiffView } from "@/features/question/ui/DiffView";
-import { useAttachCapsule, useReproductionComparison, useReproductionPanel, useReproductionRunLog, useRequestRerun } from "../hooks/useReproduction";
-import type { EnvironmentRecipe, ReproductionCapsule, ReproductionKind, ReproductionResult, ReproductionRun, ReproductionTransition } from "../api/reproduction.types";
+import { useAttachCapsule, useBisectActions, useReproductionComparison, useReproductionPanel, useReproductionRunLog, useRequestRerun } from "../hooks/useReproduction";
+import type { EnvironmentRecipe, ReproductionCapsule, ReproductionKind, ReproductionResult, ReproductionRun, ReproductionTransition, VersionBisect } from "../api/reproduction.types";
 
 const RESULT: Record<ReproductionResult, { label: string; className: string }> = {
   REPRODUCED: { label: "재현됨", className: "bg-danger-subtle text-danger" },
@@ -56,8 +56,9 @@ export function ReproductionPanel({ questionId, isAuthor, signedIn }: { question
         <>
           <CapsuleSummary capsule={capsule} />
           {data.transitions?.map((transition) => (
-            <TransitionNotice key={transition.runId} questionId={questionId} transition={transition} />
+            <TransitionNotice key={transition.runId} questionId={questionId} transition={transition} canSearch={isAuthor && data.bisect?.status !== "RUNNING"} />
           ))}
+          {data.bisect && <BisectCard questionId={questionId} bisect={data.bisect} isAuthor={isAuthor} />}
           {data.latestByCell.length === 0 ? (
             <p className="text-sm text-text-secondary">아직 실행 결과가 없어요.</p>
           ) : capsule.matrixPackage ? (
@@ -121,7 +122,10 @@ function CapsuleSummary({ capsule }: { capsule: ReproductionCapsule }) {
  */
 function MatrixTable({ runs, plannedVersions }: { runs: ReproductionRun[]; plannedVersions: (string | null)[] }) {
   const environments = [...new Set(runs.map((run) => run.environment))];
-  const versions = [...new Set([...plannedVersions, ...runs.map((run) => run.dependencyVersion)].filter((v): v is string => v !== null))];
+  // A search adds versions as it goes, so the rows can't rely on arrival order.
+  const versions = [...new Set([...plannedVersions, ...runs.map((run) => run.dependencyVersion)].filter((v): v is string => v !== null))].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  );
   const cell = (version: string, environment: string) => runs.find((run) => run.dependencyVersion === version && run.environment === environment);
 
   return (
@@ -171,8 +175,9 @@ function MatrixTable({ runs, plannedVersions }: { runs: ReproductionRun[]; plann
  * A release that changed behaviour (Phase 82, ADR-0090). It's evidence for a person to read, so
  * nothing changes state: the logs side by side are what the reader decides from.
  */
-function TransitionNotice({ questionId, transition }: { questionId: number; transition: ReproductionTransition }) {
+function TransitionNotice({ questionId, transition, canSearch }: { questionId: number; transition: ReproductionTransition; canSearch: boolean }) {
   const [open, setOpen] = useState(false);
+  const { start } = useBisectActions(questionId);
   const { data, isLoading } = useReproductionComparison(questionId, transition.runId, open);
   const broke = transition.transition === "BROKE";
 
@@ -184,9 +189,22 @@ function TransitionNotice({ questionId, transition }: { questionId: number; tran
       <p>
         {transition.environment} · {relativeTime(transition.finishedAt)}
       </p>
-      <button type="button" className="font-semibold underline" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-        {open ? "로그 비교 닫기" : "로그 비교"}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button type="button" className="font-semibold underline" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+          {open ? "로그 비교 닫기" : "로그 비교"}
+        </button>
+        {canSearch && transition.fromVersion && transition.toVersion && (
+          <button
+            type="button"
+            className="font-semibold underline"
+            disabled={start.isPending}
+            onClick={() => start.mutate({ from: transition.fromVersion as string, to: transition.toVersion as string })}
+          >
+            달라진 버전 찾기
+          </button>
+        )}
+      </div>
+      <FormError error={start.error} fallback="버전 탐색을 시작하지 못했습니다." size="xs" />
       {open &&
         (isLoading ? (
           <p>불러오는 중...</p>
@@ -198,6 +216,65 @@ function TransitionNotice({ questionId, transition }: { questionId: number; tran
           <p>로그가 남아 있지 않아요.</p>
         ))}
     </div>
+  );
+}
+
+const CONFIDENCE = { HIGH: "높음", MEDIUM: "보통", LOW: "낮음" } as const;
+
+/**
+ * The version search (Phase 83, ADR-0091). A found boundary is only a suggestion: runs can be flaky
+ * and a reproduction can mislead, so its author decides, and the confidence says why they might not.
+ */
+function BisectCard({ questionId, bisect, isAuthor }: { questionId: number; bisect: VersionBisect; isAuthor: boolean }) {
+  const { cancel, decide } = useBisectActions(questionId);
+  const range = `${bisect.lowVersion} ~ ${bisect.highVersion}`;
+
+  return (
+    <section aria-label="버전 탐색" className="space-y-1.5 rounded-xl bg-surface-subtle px-3 py-2 text-xs">
+      {bisect.status === "RUNNING" && (
+        <>
+          <p className="font-semibold text-text-primary">버전 탐색 중 · {range}</p>
+          <p className="text-text-secondary">
+            {bisect.runsUsed}/{bisect.maxRuns}회 실행 · 다음: <span className="font-mono">{bisect.probes.join(", ")}</span>
+          </p>
+          {isAuthor && (
+            <button type="button" className="font-semibold text-text-secondary underline" disabled={cancel.isPending} onClick={() => cancel.mutate(bisect.id)}>
+              탐색 취소
+            </button>
+          )}
+        </>
+      )}
+      {bisect.status === "FOUND" && (
+        <>
+          <p className="font-semibold text-text-primary">
+            {bisect.regression ? "처음 재현된 버전" : "처음 재현되지 않은 버전"}: <span className="font-mono">{bisect.highVersion}</span>
+          </p>
+          <p className="text-text-secondary">
+            직전 버전 <span className="font-mono">{bisect.lowVersion}</span> · 신뢰도 {bisect.confidence ? CONFIDENCE[bisect.confidence] : "-"} · {bisect.runsUsed}회 실행
+          </p>
+          {bisect.decision === "APPROVED" && <p className="font-semibold text-success">작성자가 승인했어요.</p>}
+          {bisect.decision === "REJECTED" && <p className="font-semibold text-text-secondary">작성자가 받아들이지 않았어요.</p>}
+          {isAuthor && bisect.decision === "PENDING" && (
+            <div className="flex gap-3">
+              <button type="button" className="font-semibold text-brand underline" disabled={decide.isPending} onClick={() => decide.mutate({ bisectId: bisect.id, approve: true })}>
+                승인
+              </button>
+              <button type="button" className="font-semibold text-text-secondary underline" disabled={decide.isPending} onClick={() => decide.mutate({ bisectId: bisect.id, approve: false })}>
+                받아들이지 않음
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      {bisect.status === "UNRESOLVED" && <p className="text-text-primary">경계를 정하지 못했어요. 그 사이 버전이 모두 판정되지 않았습니다 · {range}</p>}
+      {bisect.status === "BUDGET_REACHED" && (
+        <p className="text-text-primary">
+          실행 상한({bisect.maxRuns}회)에 닿았어요. 좁혀진 범위 · {range}
+        </p>
+      )}
+      {bisect.status === "CANCELLED" && <p className="text-text-secondary">버전 탐색을 취소했어요 · {range}</p>}
+      <FormError error={cancel.error ?? decide.error} fallback="처리하지 못했습니다." size="xs" />
+    </section>
   );
 }
 

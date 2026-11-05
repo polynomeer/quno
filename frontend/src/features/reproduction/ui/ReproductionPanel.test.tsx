@@ -5,13 +5,13 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReproductionPanel, workflowSnippet } from "./ReproductionPanel";
 import { reproductionApi } from "../api/reproduction.api";
-import type { ReproductionCapsule, ReproductionPanel as Panel, ReproductionRun } from "../api/reproduction.types";
+import type { ReproductionCapsule, ReproductionPanel as Panel, ReproductionRun, VersionBisect } from "../api/reproduction.types";
 
 vi.mock("../api/reproduction.api", async (importOriginal) => {
   const original = await importOriginal<typeof import("../api/reproduction.api")>();
   return {
     ...original,
-    reproductionApi: { panel: vi.fn(), attach: vi.fn(), requestRerun: vi.fn(), log: vi.fn(), compare: vi.fn() },
+    reproductionApi: { panel: vi.fn(), attach: vi.fn(), requestRerun: vi.fn(), log: vi.fn(), compare: vi.fn(), startBisect: vi.fn(), cancelBisect: vi.fn(), decideBisect: vi.fn() },
   };
 });
 
@@ -110,10 +110,10 @@ describe("ReproductionPanel matrix", () => {
     renderPanel({
       capsule: matrix,
       latestByCell: [
-        { ...RUN, id: 1, dependencyVersion: "4.0.3", result: "NOT_REPRODUCED" },
         { ...RUN, id: 2, dependencyVersion: "5.1.0", result: "REPRODUCED" },
+        { ...RUN, id: 1, dependencyVersion: "4.0.3", result: "NOT_REPRODUCED" },
       ],
-      plannedVersions: ["4.0.3", "5.1.0", "6.0.0"],
+      plannedVersions: ["6.0.0", "4.0.3"],
       nextDueAt: new Date(Date.now() + 5 * 86_400_000 + 3_600_000).toISOString(),
       recentRuns: [],
     });
@@ -123,6 +123,18 @@ describe("ReproductionPanel matrix", () => {
     expect(rows.map((row) => row.textContent)).toEqual(["버전ubuntu24 · java 21.0.5", "4.0.3재현 안 됨", "5.1.0재현됨", "6.0.0—"]);
     expect(screen.getByText("다음 정기 실행 5일 후")).toBeInTheDocument();
     expect(screen.getByText("com.zaxxer:HikariCP")).toBeInTheDocument();
+  });
+
+  it("orders versions numerically, whatever order they arrived in", async () => {
+    renderPanel({
+      capsule: { ...CAPSULE, matrixPackage: "p" },
+      latestByCell: [{ ...RUN, dependencyVersion: "3.10.0" }],
+      plannedVersions: ["3.9.0", "3.8.1"],
+      nextDueAt: null,
+      recentRuns: [],
+    });
+    const rows = within(await screen.findByRole("table")).getAllByRole("row").slice(1);
+    expect(rows.map((row) => row.textContent?.slice(0, 5))).toEqual(["3.8.1", "3.9.0", "3.10."]);
   });
 
   it("sends the matrix package and versions from the form", async () => {
@@ -188,6 +200,57 @@ describe("ReproductionPanel release transitions", () => {
     expect(await screen.findByText("수정 후보 · 3.8.0 → 3.9.0")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "로그 비교" }));
     expect(await screen.findByText("로그가 남아 있지 않아요.")).toBeInTheDocument();
+  });
+});
+
+describe("ReproductionPanel version search", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const BISECT: VersionBisect = {
+    id: 3,
+    fromVersion: "1.0.0",
+    toVersion: "1.9.0",
+    regression: true,
+    status: "RUNNING",
+    lowVersion: "1.0.0",
+    highVersion: "1.9.0",
+    confidence: null,
+    runsUsed: 3,
+    maxRuns: 10,
+    candidateCount: 10,
+    probes: ["1.4.0", "1.6.0"],
+    decision: "PENDING",
+    createdAt: "",
+    finishedAt: null,
+  };
+  const panel = (bisect: VersionBisect | null, transitions: Panel["transitions"] = []): Panel => ({ capsule: CAPSULE, latestByCell: [], plannedVersions: [null], nextDueAt: null, recentRuns: [], transitions, bisect });
+
+  it("lets the author start one from a transition", async () => {
+    vi.mocked(reproductionApi.startBisect).mockResolvedValue(BISECT);
+    renderPanel(panel(null, [{ runId: 5, transition: "BROKE", fromVersion: "1.0.0", toVersion: "1.9.0", environment: "ubuntu24", runUrl: "u", finishedAt: RUN.finishedAt }]), { isAuthor: true, signedIn: true });
+    await userEvent.click(await screen.findByRole("button", { name: "달라진 버전 찾기" }));
+    expect(reproductionApi.startBisect).toHaveBeenCalledWith(7, "1.0.0", "1.9.0");
+  });
+
+  it("shows progress, and only the author can cancel", async () => {
+    renderPanel(panel(BISECT));
+    expect(await screen.findByText("버전 탐색 중 · 1.0.0 ~ 1.9.0")).toBeInTheDocument();
+    expect(screen.getByText("1.4.0, 1.6.0")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "탐색 취소" })).not.toBeInTheDocument();
+  });
+
+  it("offers a found boundary to its author as a suggestion", async () => {
+    vi.mocked(reproductionApi.decideBisect).mockResolvedValue(BISECT);
+    renderPanel(panel({ ...BISECT, status: "FOUND", lowVersion: "1.4.0", highVersion: "1.5.0", confidence: "LOW" }), { isAuthor: true, signedIn: true });
+    expect(await screen.findByText("1.5.0")).toBeInTheDocument();
+    expect(screen.getByText(/신뢰도 낮음/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "승인" }));
+    expect(reproductionApi.decideBisect).toHaveBeenCalledWith(7, 3, true);
+  });
+
+  it("says what is known when it can't decide", async () => {
+    renderPanel(panel({ ...BISECT, status: "BUDGET_REACHED", lowVersion: "1.2.0", highVersion: "1.7.0" }));
+    expect(await screen.findByText(/좁혀진 범위 · 1.2.0 ~ 1.7.0/)).toBeInTheDocument();
   });
 });
 
