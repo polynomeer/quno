@@ -62,6 +62,16 @@ export function describeNotification(notification: Notification): DescribedNotif
         href: `${questionHref}#qunobot`,
       };
     }
+    case "RELEASE_REPRODUCTION_CHANGED": {
+      const version = typeof payload.toVersion === "string" ? ` ${payload.toVersion}` : "";
+      return {
+        message:
+          payload.transition === "FIXED"
+            ? `새 릴리스${version}에서 이 문제가 재현되지 않습니다. 수정됐을 수 있어요`
+            : `새 릴리스${version}에서 이 문제가 재현됩니다. 답변을 다시 확인해 주세요`,
+        href,
+      };
+    }
     case "TECH_VERSION_IMPACT_DETECTED": {
       const tagSlug = typeof payload.tagSlug === "string" ? payload.tagSlug : null;
       const latestVersion = typeof payload.latestVersion === "string" ? payload.latestVersion : null;

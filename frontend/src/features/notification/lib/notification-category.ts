@@ -18,6 +18,7 @@ const CATEGORY: Record<NotificationType, NotificationCategory> = {
   QUESTION_REVISION: "change",
   QUESTION_OUTDATED: "change",
   TECH_VERSION_IMPACT_DETECTED: "change",
+  RELEASE_REPRODUCTION_CHANGED: "change",
   CONTENT_HIDDEN: "change",
   ENGINE_SECRET_DETECTED: "change",
 };

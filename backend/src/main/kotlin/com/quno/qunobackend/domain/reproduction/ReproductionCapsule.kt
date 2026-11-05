@@ -200,6 +200,10 @@ data class ReproductionRun(
     val messageKeys: List<String> = emptyList(),
     /** The root cause's class, to say what the run failed with when it isn't the reported error. */
     val exceptionClass: String? = null,
+    /** Set when this run of a new release behaved differently from the version before it (ADR-0090). */
+    val transition: ReproductionTransition? = null,
+    val comparedRunId: Long? = null,
+    val comparedVersion: String? = null,
 )
 
 /**
@@ -257,7 +261,10 @@ interface ReproductionRunRepository {
     /** Runner health since [since] (Phase 81.4). */
     fun metrics(since: Instant): ReproductionMetrics
 
-    /** Drops the log of all but the newest [keep] runs; their results stay. */
+    /** Newest first: runs of a release that changed behaviour. */
+    fun findTransitions(capsuleId: Long, limit: Int): List<ReproductionRun>
+
+    /** Drops the log of all but the newest [keep] runs, and the pairs a transition compares; their results stay. */
     fun pruneLogs(capsuleId: Long, keep: Int)
 }
 

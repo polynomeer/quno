@@ -18,6 +18,9 @@ object OutboxEventTypes {
     const val DIRECT_ASK_DECLINED = "DIRECT_ASK_DECLINED"
     const val LIVE_CHAT_STARTED = "LIVE_CHAT_STARTED"
 
+    /** A new release changed how a question's reproduction behaves (Phase 82, ADR-0090). */
+    const val RELEASE_REPRODUCTION_CHANGED = "RELEASE_REPRODUCTION_CHANGED"
+
     /** Author-only (ADR-0081): watchers must not learn where a secret sits. */
     const val ENGINE_SECRET_DETECTED = "ENGINE_SECRET_DETECTED"
 }

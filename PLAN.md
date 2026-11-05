@@ -933,10 +933,10 @@ IDE 연동(88)의 선행 조건이다. 지금 질문에는 공개 범위 개념�
 
 선행: 81. 기존 일 1회 버전 스캔([ADR-0033](docs/architecture/decisions/0033-technology-version-scan-detection-only-no-auto-outdated.md))이 트리거가 된다.
 
-- [ ] 82.1 트리거 — 새 릴리스 감지 시 해당 기술의 검증된 답변을 재실행 대기열에 넣는다(우선순위·예산 적용)
-- [ ] 82.2 "깨짐 감지" 증거 배지 + 답변 작성자·Ward 구독자 재검토 알림. OUTDATED 자동 전환은 하지 않는다
-- [ ] 82.3 프론트엔드 — 성공→실패 로그 비교
-- [ ] 82.4 검증·문서화
+- [x] 82.1 트리거 — 새 릴리스 감지 시 해당 기술의 검증된 답변을 재실행 대기열에 넣는다(우선순위·예산 적용) — 대기열 대신 계획 API가 추적 기술의 최신 릴리스를 칸으로 넣고 미실행이면 바로 실행. 대상은 재현 캡슐([ADR-0090](docs/architecture/decisions/0090-release-regression-watch-on-external-ci.md))
+- [x] 82.2 "깨짐 감지" 증거 배지 + 답변 작성자·Ward 구독자 재검토 알림. OUTDATED 자동 전환은 하지 않는다 — BROKE·FIXED, 질문 작성자에게도 알림
+- [x] 82.3 프론트엔드 — 성공→실패 로그 비교 — 재현 패널의 로그 비교
+- [x] 82.4 검증·문서화 — `ReproductionPlanTest`, `ReproductionRunE2ETest`, 브라우저
 
 ## Phase 83 — 버전 자동 이분 탐색
 

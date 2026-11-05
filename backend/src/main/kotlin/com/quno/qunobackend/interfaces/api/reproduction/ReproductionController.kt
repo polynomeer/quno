@@ -9,8 +9,10 @@ import com.quno.qunobackend.application.reproduction.RecordReproductionRunUseCas
 import com.quno.qunobackend.application.reproduction.ReportReproductionRunCommand
 import com.quno.qunobackend.application.reproduction.ReproductionCapsuleResult
 import com.quno.qunobackend.application.reproduction.ReproductionPanelResult
+import com.quno.qunobackend.application.reproduction.ReproductionRunComparison
 import com.quno.qunobackend.application.reproduction.ReproductionRunLogResult
 import com.quno.qunobackend.application.reproduction.ReproductionRunSummary
+import com.quno.qunobackend.application.reproduction.ReproductionTransitionResult
 import com.quno.qunobackend.application.reproduction.RequestReproductionRerunUseCase
 import com.quno.qunobackend.domain.reproduction.InvalidRunAttestationException
 import com.quno.qunobackend.domain.reproduction.ReproductionKind
@@ -71,6 +73,10 @@ class ReproductionController(
 
     @GetMapping("/questions/{id}/reproduction/runs/{runId}/log")
     fun log(@PathVariable id: Long, @PathVariable runId: Long): ReproductionRunLogResponse = panelUseCase.log(id, runId).toResponse()
+
+    /** The version before against the release, line by line (Phase 82.3, ADR-0090). */
+    @GetMapping("/questions/{id}/reproduction/runs/{runId}/compare")
+    fun compare(@PathVariable id: Long, @PathVariable runId: Long): ReproductionRunComparison = panelUseCase.compare(id, runId)
 
     @PostMapping("/reproduction-runs")
     @ResponseStatus(HttpStatus.CREATED)
@@ -208,6 +214,8 @@ data class ReproductionPanelResponse(
     val recentRuns: List<ReproductionRunResponse>,
     /** Workflow settings nearest the question's snapshot (ADR-0089); null without one. */
     val recipe: EnvironmentRecipe?,
+    /** Newest first: releases that changed behaviour (ADR-0090). */
+    val transitions: List<ReproductionTransitionResult>,
 )
 
 data class ReproductionRunLogResponse(val runId: Long, val logTail: String?, val maskedSecretCount: Int)
@@ -216,6 +224,6 @@ private fun ReproductionCapsuleResult.toResponse() = ReproductionCapsuleResponse
 
 private fun ReproductionRunSummary.toResponse() = ReproductionRunResponse(id, result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, hasLog, dependencyVersion)
 
-private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() }, recipe)
+private fun ReproductionPanelResult.toResponse() = ReproductionPanelResponse(capsule?.toResponse(), latestByCell.map { it.toResponse() }, plannedVersions, nextDueAt, recentRuns.map { it.toResponse() }, recipe, transitions)
 
 private fun ReproductionRunLogResult.toResponse() = ReproductionRunLogResponse(runId, logTail, maskedSecretCount)

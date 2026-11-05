@@ -78,6 +78,8 @@ class ReproductionRunRepositoryAdapter(
 
     override fun findLatestPerCell(capsuleId: Long): List<ReproductionRun> = jpaRepository.findLatestPerCell(capsuleId).map { it.toDomain() }.sortedByDescending { it.finishedAt }
 
+    override fun findTransitions(capsuleId: Long, limit: Int): List<ReproductionRun> = jpaRepository.findByCapsuleIdAndTransitionIsNotNullOrderByFinishedAtDescIdDesc(capsuleId, Limit.of(limit)).map { it.toDomain() }
+
     override fun lastFinishedAt(capsuleId: Long): Instant? = jpaRepository.lastFinishedAt(capsuleId)
 
     override fun metrics(since: Instant): ReproductionMetrics = jpaRepository.metrics(since).let {
@@ -118,6 +120,9 @@ class ReproductionRunRepositoryAdapter(
         signatureHashes = signatureHashes.takeIf { it.isNotEmpty() }?.joinToString(","),
         messageKeys = messageKeys.takeIf { it.isNotEmpty() }?.joinToString(","),
         exceptionClass = exceptionClass,
+        transition = transition,
+        comparedRunId = comparedRunId,
+        comparedVersion = comparedVersion,
     )
 
     private fun ReproductionRunJpaEntity.toDomain() = ReproductionRun(
@@ -142,5 +147,8 @@ class ReproductionRunRepositoryAdapter(
         signatureHashes = signatureHashes?.split(',').orEmpty(),
         messageKeys = messageKeys?.split(',').orEmpty(),
         exceptionClass = exceptionClass,
+        transition = transition,
+        comparedRunId = comparedRunId,
+        comparedVersion = comparedVersion,
     )
 }

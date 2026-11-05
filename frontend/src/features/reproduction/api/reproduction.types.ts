@@ -1,3 +1,5 @@
+import type { DiffLine } from "@/features/question/api/question.types";
+
 /** Mirrors backend ReproductionController (Phase 80, ADR-0087). */
 export type ReproductionKind = "SCRIPT" | "GRADLE" | "DOCKERFILE";
 
@@ -48,6 +50,28 @@ export interface ReproductionPanel {
   recentRuns: ReproductionRun[];
   /** Workflow settings nearest the question's snapshot (ADR-0089); null without one. */
   recipe?: EnvironmentRecipe | null;
+  /** Newest first: releases that changed behaviour (Phase 82, ADR-0090). */
+  transitions?: ReproductionTransition[];
+}
+
+export interface ReproductionTransition {
+  runId: number;
+  /** BROKE: the version before passed, this release fails. FIXED: the reverse. */
+  transition: "BROKE" | "FIXED";
+  fromVersion: string | null;
+  toVersion: string | null;
+  environment: string;
+  runUrl: string;
+  finishedAt: string;
+}
+
+export interface ReproductionRunComparison {
+  transition: "BROKE" | "FIXED";
+  fromVersion: string | null;
+  toVersion: string | null;
+  /** False when a log was pruned; `lines` is then empty. */
+  logsAvailable: boolean;
+  lines: DiffLine[];
 }
 
 export interface EnvironmentRecipe {

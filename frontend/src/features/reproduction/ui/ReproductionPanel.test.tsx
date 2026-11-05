@@ -11,7 +11,7 @@ vi.mock("../api/reproduction.api", async (importOriginal) => {
   const original = await importOriginal<typeof import("../api/reproduction.api")>();
   return {
     ...original,
-    reproductionApi: { panel: vi.fn(), attach: vi.fn(), requestRerun: vi.fn(), log: vi.fn() },
+    reproductionApi: { panel: vi.fn(), attach: vi.fn(), requestRerun: vi.fn(), log: vi.fn(), compare: vi.fn() },
   };
 });
 
@@ -142,6 +142,52 @@ describe("ReproductionPanel matrix", () => {
       matrixPackage: "com.zaxxer:HikariCP",
       matrixVersions: ["4.0.3", "6.0.0"],
     });
+  });
+});
+
+describe("ReproductionPanel release transitions", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("flags a release that broke and compares the two logs on demand", async () => {
+    vi.mocked(reproductionApi.compare).mockResolvedValue({
+      transition: "BROKE",
+      fromVersion: "3.7.0",
+      toVersion: "3.8.0",
+      logsAvailable: true,
+      lines: [
+        { type: "REMOVED", text: "BUILD SUCCESSFUL" },
+        { type: "ADDED", text: "BUILD FAILED" },
+      ],
+    });
+    renderPanel({
+      capsule: CAPSULE,
+      latestByCell: [RUN],
+      plannedVersions: [null],
+      nextDueAt: null,
+      recentRuns: [],
+      transitions: [{ runId: 5, transition: "BROKE", fromVersion: "3.7.0", toVersion: "3.8.0", environment: "ubuntu24", runUrl: "u", finishedAt: RUN.finishedAt }],
+    });
+
+    expect(await screen.findByText("깨짐 감지 · 3.7.0 → 3.8.0")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "로그 비교" }));
+    expect(await screen.findByText(/BUILD SUCCESSFUL/)).toBeInTheDocument();
+    expect(screen.getByText(/BUILD FAILED/)).toBeInTheDocument();
+    expect(reproductionApi.compare).toHaveBeenCalledWith(7, 5);
+  });
+
+  it("calls the reverse a candidate fix, and says when the logs are gone", async () => {
+    vi.mocked(reproductionApi.compare).mockResolvedValue({ transition: "FIXED", fromVersion: "3.8.0", toVersion: "3.9.0", logsAvailable: false, lines: [] });
+    renderPanel({
+      capsule: CAPSULE,
+      latestByCell: [],
+      plannedVersions: [null],
+      nextDueAt: null,
+      recentRuns: [],
+      transitions: [{ runId: 6, transition: "FIXED", fromVersion: "3.8.0", toVersion: "3.9.0", environment: "ubuntu24", runUrl: "u", finishedAt: RUN.finishedAt }],
+    });
+    expect(await screen.findByText("수정 후보 · 3.8.0 → 3.9.0")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "로그 비교" }));
+    expect(await screen.findByText("로그가 남아 있지 않아요.")).toBeInTheDocument();
   });
 });
 

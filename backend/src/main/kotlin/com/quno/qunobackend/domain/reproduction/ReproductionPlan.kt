@@ -9,6 +9,7 @@ import java.time.Instant
  * package, so it picks from what the question already knows, in this order, up to
  * [ReproductionCapsule.MAX_MATRIX_VERSIONS]:
  *
+ * 0. the tracked technology's latest release (Phase 82, ADR-0090), which always gets a cell,
  * 1. versions the author listed on the capsule,
  * 2. the version in the question's stack fingerprint (`^3.2.0` reads as `3.2.0`),
  * 3. the edges of the answers' applicability ranges — where an answer says it starts or stops
@@ -17,7 +18,7 @@ import java.time.Instant
  * The result is in version order. Without a matrix package there is one cell, `null`.
  */
 object ReproductionMatrix {
-    fun plan(capsule: ReproductionCapsule, questionVersion: String?, rangeEdges: List<String>): List<String?> {
+    fun plan(capsule: ReproductionCapsule, questionVersion: String?, rangeEdges: List<String>, latestRelease: String? = null): List<String?> {
         if (capsule.matrixPackage == null) return listOf(null)
         val picked = linkedMapOf<Version, String>()
         fun add(raw: String?, declared: Boolean = false) {
@@ -26,6 +27,7 @@ object ReproductionMatrix {
             val text = if (declared) raw.trim().trimStart('^', '~', '>', '=', '<', ' ') else raw.trim()
             picked.putIfAbsent(version, text)
         }
+        add(latestRelease)
         capsule.matrixVersions.forEach { add(it) }
         add(questionVersion, declared = true)
         rangeEdges.forEach { add(it) }
@@ -41,10 +43,11 @@ object ReproductionMatrix {
 object ReproductionSchedule {
     private val MANUAL_EVENTS = setOf("workflow_dispatch", "push", "pull_request")
 
-    fun dueReason(eventName: String?, rerunRequested: Boolean, lastRunAt: Instant?, viewCount: Long, now: Instant): String? = when {
+    fun dueReason(eventName: String?, rerunRequested: Boolean, lastRunAt: Instant?, viewCount: Long, now: Instant, releaseUntested: Boolean = false): String? = when {
         eventName in MANUAL_EVENTS -> "manual"
         rerunRequested -> "rerun-requested"
         lastRunAt == null -> "first-run"
+        releaseUntested -> "new-release"
         Duration.between(lastRunAt, now) >= intervalFor(viewCount) -> "interval"
         else -> null
     }
@@ -77,3 +80,50 @@ data class ReproductionMetrics(
     /** 이의 제기 ever made, open or answered. */
     val disputes: Long,
 )
+
+/** How a new release behaves compared with the version before it (Phase 82, ADR-0090). */
+enum class ReproductionTransition {
+    /** The version before passed, this release fails: "깨짐 감지". */
+    BROKE,
+
+    /** The version before failed, this release passes: a candidate fix. */
+    FIXED,
+}
+
+data class ReleaseComparison(val transition: ReproductionTransition, val comparedRun: ReproductionRun)
+
+/**
+ * Whether a run says a release changed behaviour. Only trusted, conclusive runs count, on both
+ * sides: a hand-edited exit code or a failed build says nothing about the release. It fires once per
+ * cell (the first conclusive run of the release in that environment), and only for the release, so
+ * walking a capsule's old versions for the first time never looks like a regression.
+ */
+object ReleaseRegression {
+    private val CONCLUSIVE = setOf(ReproductionResult.REPRODUCED, ReproductionResult.NOT_REPRODUCED)
+
+    fun detect(
+        result: ReproductionResult,
+        trusted: Boolean,
+        runner: String,
+        environment: String,
+        version: String?,
+        latestRelease: String?,
+        cellsBefore: List<ReproductionRun>,
+    ): ReleaseComparison? {
+        if (!trusted || runner != "github-hosted" || result !in CONCLUSIVE) return null
+        val parsed = version?.let(Version::parseOrNull) ?: return null
+        if (latestRelease == null || parsed != Version.parseOrNull(latestRelease)) return null
+        val sameEnvironment = cellsBefore.filter { it.environment == environment && it.trustedWorkflow && it.runnerEnvironment == "github-hosted" && it.result in CONCLUSIVE }
+        if (sameEnvironment.any { it.dependencyVersion?.let(Version::parseOrNull) == parsed }) return null
+        val previous = sameEnvironment
+            .mapNotNull { run -> run.dependencyVersion?.let(Version::parseOrNull)?.takeIf { it < parsed }?.let { it to run } }
+            .maxByOrNull { it.first }
+            ?.second
+            ?: return null
+        return when {
+            previous.result == result -> null
+            result == ReproductionResult.REPRODUCED -> ReleaseComparison(ReproductionTransition.BROKE, previous)
+            else -> ReleaseComparison(ReproductionTransition.FIXED, previous)
+        }
+    }
+}

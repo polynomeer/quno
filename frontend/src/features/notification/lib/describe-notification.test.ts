@@ -19,4 +19,20 @@ describe("describeNotification", () => {
       href: "/questions/10#qunobot",
     });
   });
+
+  it("says which way a release changed the reproduction", () => {
+    const notification = (transition: string) =>
+      ({
+        id: 2,
+        type: "RELEASE_REPRODUCTION_CHANGED",
+        questionId: 10,
+        answerId: null,
+        payload: JSON.stringify({ transition, fromVersion: "3.7.0", toVersion: "3.8.0" }),
+        isRead: false,
+        createdAt: "",
+      }) as unknown as Notification;
+
+    expect(describeNotification(notification("BROKE")).message).toBe("새 릴리스 3.8.0에서 이 문제가 재현됩니다. 답변을 다시 확인해 주세요");
+    expect(describeNotification(notification("FIXED")).message).toBe("새 릴리스 3.8.0에서 이 문제가 재현되지 않습니다. 수정됐을 수 있어요");
+  });
 });

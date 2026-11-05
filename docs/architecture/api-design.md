@@ -647,6 +647,14 @@ mvp-scope.md 로드맵 Phase 5(신뢰 네트워크)의 나머지 두 조각을 [
 - `GET /environments?limit=`(비로그인 허용, 최대 50): 공개 질문 기준 `[{fingerprint, label, questionCount, lastSeenAt}]`, 질문 수가 많은 순
 - 재현 패널 응답의 `recipe`: `{runsOn, javaVersion, nodeVersion, notes}`. 스냅샷이 없으면 `null`이다.
 
+## 신규 릴리스 회귀 감시 (Phase 82, ADR-0090)
+
+- 매트릭스 패키지가 추적 기술의 패키지이면 최신 릴리스가 `plannedVersions`와 계획의 `matrix`에 들어간다. 아직 실행이 없으면 계획의 `reason`은 `new-release`다.
+- 패널 응답의 `transitions`: `[{runId, transition, fromVersion, toVersion, environment, runUrl, finishedAt}]`, 최신순 최대 5개. `transition`은 `BROKE`(직전 통과 → 릴리스 실패) 또는 `FIXED`(반대)다.
+- `GET /questions/{id}/reproduction/runs/{runId}/compare`(비로그인 허용): `{transition, fromVersion, toVersion, logsAvailable, lines}`. 전환이 없는 실행은 404다. `lines`는 `/versions/{v}/diff`와 같은 형식이다.
+- Evidence Card에 `releaseTransitions`가 더해진다.
+- 알림 유형 `RELEASE_REPRODUCTION_CHANGED`: 질문 작성자, Ward 구독자, 답변 작성자. 질문 상태는 바꾸지 않는다.
+
 ## 입력 검증 공통 원칙
 
 - Markdown 본문은 렌더링 시 XSS Sanitization을 적용한다.

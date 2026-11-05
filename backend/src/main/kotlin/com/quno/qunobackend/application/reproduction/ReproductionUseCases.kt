@@ -1,13 +1,22 @@
 package com.quno.qunobackend.application.reproduction
 
 import com.quno.qunobackend.application.verification.QuestionVerificationService
+import com.quno.qunobackend.domain.answer.AnswerRepository
+import com.quno.qunobackend.domain.common.OutboxEvent
+import com.quno.qunobackend.domain.common.OutboxEventRepository
+import com.quno.qunobackend.domain.common.OutboxEventTypes
 import com.quno.qunobackend.domain.engine.SecretDetector
 import com.quno.qunobackend.domain.errorsignature.ErrorSignatureExtractor
+import com.quno.qunobackend.domain.question.DiffLine
 import com.quno.qunobackend.domain.question.QuestionAccessDeniedException
 import com.quno.qunobackend.domain.question.QuestionNotFoundException
 import com.quno.qunobackend.domain.question.QuestionRepository
 import com.quno.qunobackend.domain.question.QuestionViewCountRepository
+import com.quno.qunobackend.domain.question.TextDiffer
+import com.quno.qunobackend.domain.qunobot.TechnologyReleaseRepository
+import com.quno.qunobackend.domain.qunobot.TrackedTechnologies
 import com.quno.qunobackend.domain.reproduction.DuplicateReproductionRunException
+import com.quno.qunobackend.domain.reproduction.ReleaseRegression
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsule
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleNotFoundException
 import com.quno.qunobackend.domain.reproduction.ReproductionCapsuleRepository
@@ -21,12 +30,14 @@ import com.quno.qunobackend.domain.reproduction.ReproductionRunMismatchException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunNotFoundException
 import com.quno.qunobackend.domain.reproduction.ReproductionRunRepository
 import com.quno.qunobackend.domain.reproduction.ReproductionSchedule
+import com.quno.qunobackend.domain.reproduction.ReproductionTransition
 import com.quno.qunobackend.domain.reproduction.RunAttestationVerifier
 import com.quno.qunobackend.domain.snapshot.EnvironmentCoreReader
 import com.quno.qunobackend.domain.snapshot.EnvironmentRecipe
 import com.quno.qunobackend.domain.snapshot.EnvironmentSnapshotRepository
 import com.quno.qunobackend.domain.stack.AnswerApplicabilityRepository
 import com.quno.qunobackend.domain.stack.QuestionDependencyRepository
+import com.quno.qunobackend.domain.stack.Version
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
@@ -73,6 +84,28 @@ data class ReproductionPanelResult(
     val recentRuns: List<ReproductionRunSummary>,
     /** Workflow settings nearest the question's snapshot (Phase 93.6); null without one. */
     val recipe: EnvironmentRecipe? = null,
+    /** Newest first: releases that changed behaviour (Phase 82, ADR-0090). */
+    val transitions: List<ReproductionTransitionResult> = emptyList(),
+)
+
+data class ReproductionTransitionResult(
+    val runId: Long,
+    val transition: ReproductionTransition,
+    val fromVersion: String?,
+    val toVersion: String?,
+    val environment: String,
+    val runUrl: String,
+    val finishedAt: Instant,
+)
+
+/** Two runs' logs line by line: the version before against the release (Phase 82.3). */
+data class ReproductionRunComparison(
+    val transition: ReproductionTransition,
+    val fromVersion: String?,
+    val toVersion: String?,
+    /** False when either log is gone; [lines] is then empty. */
+    val logsAvailable: Boolean,
+    val lines: List<DiffLine>,
 )
 
 data class ReproductionRunLogResult(val runId: Long, val logTail: String?, val maskedSecretCount: Int)
@@ -106,6 +139,8 @@ data class ReportedRunResult(val runId: Long, val result: ReproductionResult)
 
 private fun ReproductionCapsule.toResult() = ReproductionCapsuleResult(requireNotNull(id), repository, ref, kind, command, createdBy, createdAt, rerunRequestedAt, rerunReason, matrixPackage, matrixVersions)
 
+private fun ReproductionRun.toTransition() = ReproductionTransitionResult(requireNotNull(id), requireNotNull(transition), comparedVersion, dependencyVersion, environment, runUrl, finishedAt)
+
 private fun ReproductionRun.toSummary() = ReproductionRunSummary(requireNotNull(id), result, exitCode, commitSha, environment, runnerEnvironment, trustedWorkflow, runUrl, durationMs, finishedAt, logTail != null, dependencyVersion)
 
 /** The plan for a capsule right now (Phase 81.2): due or not, and which versions. Shared by the page and the workflow. */
@@ -115,11 +150,16 @@ class ReproductionPlanner(
     private val viewCountRepository: QuestionViewCountRepository,
     private val dependencyRepository: QuestionDependencyRepository,
     private val applicabilityRepository: AnswerApplicabilityRepository,
+    private val releaseRepository: TechnologyReleaseRepository,
 ) {
     fun plan(capsule: ReproductionCapsule, eventName: String?, now: Instant = Instant.now()): ReproductionPlan {
-        val lastRunAt = runRepository.lastFinishedAt(requireNotNull(capsule.id))
+        val capsuleId = requireNotNull(capsule.id)
+        val lastRunAt = runRepository.lastFinishedAt(capsuleId)
         val viewCount = viewCountRepository.countByQuestionId(capsule.questionId)
-        val reason = ReproductionSchedule.dueReason(eventName, capsule.rerunRequestedAt != null, lastRunAt, viewCount, now)
+        // No fan-out when a release lands: the daily scan updates the table and the next plan sees it (ADR-0090).
+        val release = latestRelease(capsule)?.let(Version::parseOrNull)
+        val releaseUntested = release != null && runRepository.findLatestPerCell(capsuleId).none { run -> run.dependencyVersion?.let(Version::parseOrNull) == release }
+        val reason = ReproductionSchedule.dueReason(eventName, capsule.rerunRequestedAt != null, lastRunAt, viewCount, now, releaseUntested)
         val nextDueAt = lastRunAt?.plus(ReproductionSchedule.intervalFor(viewCount))
         return ReproductionPlan(due = reason != null, reason = reason ?: "not-due", versions = versions(capsule), nextDueAt = nextDueAt)
     }
@@ -130,8 +170,11 @@ class ReproductionPlanner(
         val edges = applicabilityRepository.findByQuestionIds(listOf(capsule.questionId))[capsule.questionId].orEmpty()
             .filter { it.name.equals(target, ignoreCase = true) }
             .flatMap { listOfNotNull(it.fromVersion, it.untilVersion) }
-        return ReproductionMatrix.plan(capsule, questionVersion, edges)
+        return ReproductionMatrix.plan(capsule, questionVersion, edges, latestRelease(capsule))
     }
+
+    /** The newest release of the tracked technology the capsule's package belongs to, if it is tracked. */
+    fun latestRelease(capsule: ReproductionCapsule): String? = capsule.matrixPackage?.let(TrackedTechnologies::tagForPackage)?.let(releaseRepository::findByTagSlug)?.latestVersion
 }
 
 /**
@@ -177,19 +220,41 @@ class GetReproductionPanelUseCase(
             nextDueAt = if (plan.due) null else plan.nextDueAt,
             recentRuns = runRepository.findRecentByCapsuleId(capsuleId, RECENT_RUNS).map { it.toSummary() },
             recipe = recipe,
+            transitions = runRepository.findTransitions(capsuleId, MAX_TRANSITIONS).map { it.toTransition() },
+        )
+    }
+
+    fun compare(questionId: Long, runId: Long): ReproductionRunComparison {
+        val run = owned(questionId, runId)
+        val transition = run.transition ?: throw ReproductionRunNotFoundException(runId)
+        val compared = run.comparedRunId?.let(runRepository::findById)
+        val before = compared?.logTail
+        val after = run.logTail
+        return ReproductionRunComparison(
+            transition = transition,
+            fromVersion = run.comparedVersion,
+            toVersion = run.dependencyVersion,
+            logsAvailable = before != null && after != null,
+            lines = if (before != null && after != null) TextDiffer.diffLines(before, after) else emptyList(),
         )
     }
 
     fun log(questionId: Long, runId: Long): ReproductionRunLogResult {
+        val run = owned(questionId, runId)
+        return ReproductionRunLogResult(runId, run.logTail, run.maskedSecretCount)
+    }
+
+    /** The URL names the question, so a run of another question's capsule is "not found" here. */
+    private fun owned(questionId: Long, runId: Long): ReproductionRun {
         val run = runRepository.findById(runId) ?: throw ReproductionRunNotFoundException(runId)
         val capsule = capsuleRepository.findById(run.capsuleId)
-        // The URL names the question, so a run of another question's capsule is "not found" here.
         if (capsule == null || capsule.questionId != questionId) throw ReproductionRunNotFoundException(runId)
-        return ReproductionRunLogResult(runId, run.logTail, run.maskedSecretCount)
+        return run
     }
 
     companion object {
         const val RECENT_RUNS = 10
+        const val MAX_TRANSITIONS = 5
     }
 }
 
@@ -217,6 +282,10 @@ class RecordReproductionRunUseCase(
     private val verifier: RunAttestationVerifier,
     private val capsuleRepository: ReproductionCapsuleRepository,
     private val runRepository: ReproductionRunRepository,
+    private val planner: ReproductionPlanner,
+    private val questionRepository: QuestionRepository,
+    private val answerRepository: AnswerRepository,
+    private val outboxEventRepository: OutboxEventRepository,
     private val verificationService: QuestionVerificationService? = null,
 ) {
     @Transactional
@@ -235,15 +304,19 @@ class RecordReproductionRunUseCase(
         // From the raw tail: masking a value must not change which error this was.
         val signatures = ErrorSignatureExtractor.extractAll(tail).take(MAX_SIGNATURES)
         val masked = tail?.let { SecretDetector.find(it).count { finding -> it.substring(finding.start, finding.end) != SecretDetector.REDACTED } } ?: 0
+        val result = ReproductionResult.of(command.buildFailed, command.exitCode)
+        val environment = command.environment.trim().take(MAX_ENVIRONMENT).ifEmpty { "unknown" }
+        val runner = attestation.runnerEnvironment.take(20)
+        val comparison = ReleaseRegression.detect(result, attestation.trustedWorkflow, runner, environment, dependencyVersion, planner.latestRelease(capsule), runRepository.findLatestPerCell(capsuleId))
         val run = runRepository.save(
             ReproductionRun(
                 id = null,
                 capsuleId = capsuleId,
-                result = ReproductionResult.of(command.buildFailed, command.exitCode),
+                result = result,
                 exitCode = command.exitCode,
                 commitSha = attestation.sha,
-                environment = command.environment.trim().take(MAX_ENVIRONMENT).ifEmpty { "unknown" },
-                runnerEnvironment = attestation.runnerEnvironment.take(20),
+                environment = environment,
+                runnerEnvironment = runner,
                 trustedWorkflow = attestation.trustedWorkflow,
                 workflowRef = attestation.workflowRef.take(500),
                 runId = attestation.runId,
@@ -258,13 +331,37 @@ class RecordReproductionRunUseCase(
                 signatureHashes = signatures.mapNotNull { it.signatureHash }.distinct(),
                 messageKeys = signatures.map { it.messageKey }.distinct(),
                 exceptionClass = signatures.firstOrNull()?.exceptionClass?.take(255),
+                transition = comparison?.transition,
+                comparedRunId = comparison?.comparedRun?.id,
+                comparedVersion = comparison?.comparedRun?.dependencyVersion,
             ),
         )
+        if (comparison != null) announce(capsule, run)
         if (capsule.rerunRequestedAt != null) capsuleRepository.save(capsule.rerunAnswered())
         runRepository.pruneLogs(capsuleId, KEEP_LOGS)
         verificationService?.refresh(capsule.questionId)
         return ReportedRunResult(requireNotNull(run.id), run.result)
     }
+
+    /**
+     * Tells the author, watchers and answerers to take another look (Phase 82.2, ADR-0090). It only
+     * ever notifies: whether the question is outdated stays a person's call (ADR-0033).
+     */
+    private fun announce(capsule: ReproductionCapsule, run: ReproductionRun) {
+        val question = questionRepository.findById(capsule.questionId) ?: return
+        val answerAuthors = answerRepository.findAllByQuestionId(capsule.questionId).map { it.authorId }.distinct()
+        outboxEventRepository.save(
+            OutboxEvent.create(
+                eventType = OutboxEventTypes.RELEASE_REPRODUCTION_CHANGED,
+                aggregateType = "QUESTION",
+                aggregateId = capsule.questionId,
+                payload = """{"questionAuthorId":${question.authorId},"answerAuthorIds":$answerAuthors,"transition":"${run.transition}","runId":${run.id},"packageName":${json(capsule.matrixPackage)},"fromVersion":${json(run.comparedVersion)},"toVersion":${json(run.dependencyVersion)}}""",
+            ),
+        )
+    }
+
+    /** Package names and versions come from people: a quote in one must not break the payload. */
+    private fun json(value: String?): String = if (value == null) "null" else "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     /** The last [MAX_LOG_LINES] lines, then at most [MAX_LOG_CHARS] characters from the end. */
     private fun tailOf(log: String): String = log.lines().takeLast(MAX_LOG_LINES).joinToString("\n").takeLast(MAX_LOG_CHARS)

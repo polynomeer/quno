@@ -38,4 +38,7 @@ object TrackedTechnologies {
         ),
         "kafka" to listOf(PackagePattern(Ecosystem.MAVEN, "org.apache.kafka:kafka-clients")),
     )
+
+    /** The tracked technology whose release version is [packageName]'s version, if any (Phase 82, ADR-0090). */
+    fun tagForPackage(packageName: String): String? = PACKAGES.entries.firstOrNull { (_, patterns) -> patterns.any { it.matches(it.ecosystem, packageName) } }?.key
 }
