@@ -87,6 +87,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.DIRECT_ASK_ACCEPTED,
             OutboxEventTypes.DIRECT_ASK_DECLINED,
             OutboxEventTypes.ENGINE_SECRET_DETECTED,
+            OutboxEventTypes.VERSION_SEARCH_FINISHED,
         )
         val recipients = if (event.eventType in targetedOnlyEventTypes) {
             mutableSetOf()
@@ -116,6 +117,7 @@ class DispatchOutboxEventsUseCase(
             OutboxEventTypes.DIRECT_ASK_ACCEPTED, OutboxEventTypes.DIRECT_ASK_DECLINED ->
                 extractLong(event.payload, "requesterId")?.let(recipients::add)
             OutboxEventTypes.LIVE_CHAT_STARTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
+            OutboxEventTypes.VERSION_SEARCH_FINISHED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
             OutboxEventTypes.ENGINE_SECRET_DETECTED -> extractLong(event.payload, "questionAuthorId")?.let(recipients::add)
         }
         actorId?.let(recipients::remove)

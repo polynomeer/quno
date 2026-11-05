@@ -255,6 +255,9 @@ interface ReproductionRunRepository {
     /** The newest run per matrix cell: [ReproductionRun.environment] × [ReproductionRun.dependencyVersion]. */
     fun findLatestPerCell(capsuleId: Long): List<ReproductionRun>
 
+    /** Every run finished at or after [since], for replaying a version search. */
+    fun findSince(capsuleId: Long, since: Instant): List<ReproductionRun>
+
     /** When the capsule's newest run finished, or null before the first one. */
     fun lastFinishedAt(capsuleId: Long): Instant?
 

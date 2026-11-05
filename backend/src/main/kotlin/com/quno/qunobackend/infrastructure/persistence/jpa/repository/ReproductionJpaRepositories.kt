@@ -24,6 +24,8 @@ interface ReproductionRunJpaRepository : JpaRepository<ReproductionRunJpaEntity,
 
     fun findByCapsuleIdOrderByFinishedAtDescIdDesc(capsuleId: Long, limit: Limit): List<ReproductionRunJpaEntity>
 
+    fun findByCapsuleIdAndFinishedAtGreaterThanEqual(capsuleId: Long, since: Instant): List<ReproductionRunJpaEntity>
+
     fun findByCapsuleIdAndTransitionIsNotNullOrderByFinishedAtDescIdDesc(capsuleId: Long, limit: Limit): List<ReproductionRunJpaEntity>
 
     @Query(

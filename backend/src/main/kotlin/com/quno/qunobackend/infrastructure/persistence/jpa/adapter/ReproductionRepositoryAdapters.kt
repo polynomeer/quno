@@ -80,6 +80,8 @@ class ReproductionRunRepositoryAdapter(
 
     override fun findTransitions(capsuleId: Long, limit: Int): List<ReproductionRun> = jpaRepository.findByCapsuleIdAndTransitionIsNotNullOrderByFinishedAtDescIdDesc(capsuleId, Limit.of(limit)).map { it.toDomain() }
 
+    override fun findSince(capsuleId: Long, since: Instant): List<ReproductionRun> = jpaRepository.findByCapsuleIdAndFinishedAtGreaterThanEqual(capsuleId, since).map { it.toDomain() }
+
     override fun lastFinishedAt(capsuleId: Long): Instant? = jpaRepository.lastFinishedAt(capsuleId)
 
     override fun metrics(since: Instant): ReproductionMetrics = jpaRepository.metrics(since).let {
